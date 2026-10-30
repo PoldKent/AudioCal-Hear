@@ -2,6 +2,14 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## v1.3 — 2026-10-30
+
+- Nueva prueba adaptativa: saltos de hasta 6 dB al principio y ajustes de 1 dB al final, con 3 segundos de escucha por nivel.
+- Máximo de 42 segundos en la primera pasada; la verificación opcional añade hasta 15 segundos: **57 segundos por frecuencia y oído**.
+- Una pasada por defecto y actualización de los avisos de duración y las indicaciones del examen.
+- Si no se encuentra el umbral, se registra como no determinado, sin inventar un resultado.
+- Se conservan los perfiles guardados anteriormente.
+
 ## v1.2 — 2026-10-30
 
 - Aviso de duración estimada en Configuración, actualizado al elegir bandas, canales, repeticiones o frecuencias propias.
