@@ -6,9 +6,19 @@
 
 **AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite explorar umbrales auditivos percibidos, comparar preferencias musicales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
 
-**[Abrir AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Pre-release oficial v1.7.0](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.7.0) · [Historial de cambios](CHANGELOG.es.md) · [Notas de lanzamiento](RELEASE_NOTES.md)
+**[Abrir AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Notas v1.8](RELEASE_NOTES_v1.8.md) · [Historial de cambios](CHANGELOG.es.md) · [Notas de lanzamiento](RELEASE_NOTES.md)
 
-> **Versión preliminar pública · v1.7.0 · octubre de 2026.** La aplicación está disponible para probarla; no está validada como examen médico de audición ni calibración acústica objetiva.
+> **Versión preliminar pública · v1.8.0 · octubre de 2026.** La aplicación está disponible para probarla; no está validada como examen médico de audición ni calibración acústica objetiva.
+
+## Novedades de AudioCal Hear v1.8
+
+- Rango digital ampliado a **−24…−84 dBFS**, comenzando por defecto en **−36 dBFS**; límites configurables y advertencias antes de niveles más altos. **dBFS no equivale al volumen acústico en el oído**.
+- Respuestas explícitas **«Sí lo escucho» / «Ya no lo escucho»**, búsqueda de 12 dB, ajuste de 1 dB y confirmaciones. Si alcanzas el mínimo existe **«Lo seguía escuchando»**, sin reducción automática del EQ.
+- Preparación guiada y comprobación opcional de ruido relativo con micrófono, sin afirmar valores dB SPL absolutos.
+- Prueba rápida de frecuencias representativas o completa de todas las bandas. Para auriculares, ambos oídos por separado son la opción predeterminada y se muestra una gráfica comparativa.
+- Máximo de **60 segundos de tonos por frecuencia en la primera búsqueda**; no incluye tiempo para responder. Se mantienen los perfiles, ecualizadores personalizados y ocho idiomas.
+
+[Notas completas de la v1.8](RELEASE_NOTES_v1.8.md). La validación con hardware Bluetooth real sigue pendiente.
 
 ## Actualización responsive — v1.6.1
 
