@@ -1,0 +1,38 @@
+name: Static app integrity
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - ".github/workflows/static-integrity.yml"
+  pull_request:
+    paths:
+      - "index.html"
+      - ".github/workflows/static-integrity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate HTML and embedded JavaScript
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import vm from 'node:vm';
+          const html=fs.readFileSync('index.html','utf8');
+          if(!html.startsWith('<!doctype html>') || !html.trimEnd().endsWith('</html>')) throw Error('HTML wrapper missing');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+          const js=scripts.filter(m=>!m[0].includes('type="application/json"')).map(m=>m[1]);
+          const json=scripts.find(m=>m[0].includes('id="audiocal-translations"'));
+          if(!json || js.length!==1) throw Error('Unexpected script structure');
+          const dictionaries=JSON.parse(json[1]);
+          for(const locale of ['en','fr','pt','it','de','zh','ja'])if(!dictionaries[locale])throw Error('Missing locale '+locale);
+          new vm.Script(js[0],{filename:'audiocal-embedded.js'});
+          for(const token of ['function answerTone(', 'function playTone(', 'function recommend(', 'function updatePlayerFilters(', 'function normalizedProfile(', 'TEST_END_DB=-84'])if(!js[0].includes(token))throw Error('Missing critical feature: '+token);
+          console.log('AudioCal Hear: HTML wrapper, 8 languages, JS syntax and feature markers OK');
+          NODE
