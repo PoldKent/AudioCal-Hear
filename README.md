@@ -89,6 +89,8 @@ AudioCal Hear is an independent project, **not affiliated with, sponsored by or 
 
 [Proprietary rights notice](LICENSE.md) · [Terms of use](TERMS.md) · [Terms in Spanish](TERMS.es.md) · [Contribution policy](CONTRIBUTING.md).
 
+**Latest technical audit:** [Code audit and optimization notes (2026-10-30)](AUDIT_2026-10-30.md). The report distinguishes applied changes from pending real-device tests.
+
 ## Technical details
 
 The project is a self-contained **HTML + CSS + JavaScript** app using the Web Audio API, with no runtime dependencies. It works as a static site on GitHub Pages; the standalone HTML can also be saved and opened offline, subject to browser support. The app is not an audiometer and does not measure sound-pressure levels.
