@@ -89,6 +89,8 @@ AudioCal Hear es un proyecto independiente, **sin afiliación, patrocinio ni res
 
 [Aviso de derechos reservados](LICENSE.md) · [Condiciones de uso](TERMS.es.md) · [Terms in English](TERMS.md) · [Política de contribuciones](CONTRIBUTING.es.md).
 
+**Última auditoría técnica:** [Informe de depuración y optimización (30/10/2026)](AUDIT_2026-10-30.md). Se distinguen las correcciones aplicadas de las pruebas con hardware aún pendientes.
+
 ## Tecnología y documentación
 
 El proyecto está desarrollado en un único archivo **HTML + CSS + JavaScript**, mediante Web Audio API y sin dependencias de ejecución. Se publica como sitio estático en GitHub Pages; también es posible guardar el archivo HTML y abrirlo sin Internet, según el navegador. No es un audiómetro ni mide niveles de presión sonora.
