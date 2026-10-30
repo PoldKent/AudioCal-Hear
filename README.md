@@ -8,7 +8,14 @@
 
 **[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
 
-> **Public preview · v1.6 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+> **Public preview · v1.6.1 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+
+## Responsive display update — v1.6.1
+
+- **Narrow smartphones (9:21):** the “No install” indicator now sits in its own left-aligned row beneath the brand and language selector instead of overflowing or disappearing.
+- **Desktop from 4:3 to 21:9:** responsive content width, a two-column setup at wider sizes, and separate EQ/music comparison columns on large desktops. Compact 4:3 screens retain a comfortable one-column layout.
+- Preserves all eight UI languages, existing local profiles and the current calibration/EQ logic.
+- Verified in simulated Chromium across 360 × 840, 393 × 917, 430 × 960, 1024 × 768, 1280 × 960, 1920 × 1080 and 2560 × 1080 screens, including eight localized badge variants.
 
 ## What you can do
 
