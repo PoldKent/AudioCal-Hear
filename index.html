@@ -97,16 +97,15 @@ function timeRange(p,done=0){
  const sides=p.channels==='separate'?['left','right']:['both'];
  const trials=plan(p),left=Math.max(0,trials.length-done);
  const maxPerSide=p.passes===2?MAX_FIRST+MAX_VERIFY:MAX_FIRST;
- let remainingMax=0,groupsPending=0;
+ let remainingMax=0,groupsPending=0,exampleLow=0,exampleHigh=0;
  for(const f of p.bands)for(const side of sides){
   const arr=p.measures?.[key(f,side)]||[];
-  if(arr[0]===undefined){remainingMax+=maxPerSide;groupsPending++}
-  else if(p.passes===2&&arr[1]===undefined){remainingMax+=MAX_VERIFY;groupsPending++}
+  if(arr[0]===undefined){remainingMax+=maxPerSide;groupsPending++;exampleLow+=p.passes===2?25:18;exampleHigh+=p.passes===2?48:35;}
+  else if(p.passes===2&&arr[1]===undefined){remainingMax+=MAX_VERIFY;groupsPending++;exampleLow+=6;exampleHigh+=12;}
  }
  const totalGroups=p.bands.length*sides.length;
- const typicalPerGroup=p.passes===2?[25,48]:[18,35];
  return {trials:trials.length,left,groupsPending,max:remainingMax,
-  exampleLow:groupsPending*typicalPerGroup[0],exampleHigh:groupsPending*typicalPerGroup[1],
+  exampleLow,exampleHigh,
   totalGroups,maxTotal:totalGroups*maxPerSide};
 }
 function durationNotice(p,done=0,inTest=false){const d=timeRange(p,done);
@@ -115,7 +114,7 @@ function durationNotice(p,done=0,inTest=false){const d=timeRange(p,done);
  return `<div class="soft info duration-notice" id="durationEstimate" role="status"><strong>⏱ ${inTest?'Tiempo restante':'Duración aproximada de la calibración'}</strong>
  <p class="small"><strong>${trialInfo}</strong> · ${p.bands.length} frecuencias · ${p.passes} ${p.passes===1?'pasada':'pasadas'} · ${p.channels==='separate'?'cada oído por separado':'ambos canales juntos'}.</p>
  <p class="small"><strong>Orientativo: ${timeLabel(d.exampleLow)} a ${timeLabel(d.exampleHigh)}</strong> <span class="muted small">según tus respuestas</span>.</p>
- <p class="tiny muted">Máximo de audio automático pendiente: <strong>${timeLabel(d.max)}</strong>. ${p.passes===2?'Hasta 57':'Hasta 42'} s por frecuencia ${p.channels==='separate'?'y por oído':'(ambos canales juntos)'}. Búsqueda: −6 dB/3 s; precisión: −1 dB/3 s. Las pausas, repeticiones manuales y el tiempo entre botones no se incluyen.</p></div>`;
+ <p class="tiny muted">Máximo de audio automático pendiente: <strong>${timeLabel(d.max)}</strong>. ${p.passes===2?'Hasta 57':'Hasta 42'} s por frecuencia ${p.channels==='separate'?'y por oído':'(ambos canales juntos)'}. Búsqueda: hasta −6 dB/3 s; precisión: −1 dB/3 s. Las pausas, repeticiones manuales y el tiempo entre botones no se incluyen.</p></div>`;
 }
 function refreshSetupDuration(){const box=$('#durationEstimate');if(!box||page!=='setup')return;
  const match=($('#customFreqs')&&temp.preset==='custom')?parseBands($('#customFreqs').value):temp.bands;
@@ -137,7 +136,7 @@ function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea
  const delta=active&&tone.stage==='coarse'?6:1;
  const elapsedUsed=active?(trialElapsed+getElapsed()):0;
  const prior=item.pass===1?(p.measures?.[key(item.f,item.side)]?.[0]?.elapsedS||0):0;
- return `<section class="hero"><p class="eyebrow">HEAR TEST · MODO INTELIGENTE</p><h1>Encuentra tu límite <em>en menos tiempo.</em></h1><p>Primero avanzamos en saltos de 6 dB. Cuando dejes de oírlo, buscamos el punto exacto con saltos de 1 dB; siempre 3 segundos por nivel. No cambies el volumen del teléfono.</p></section>
+ return `<section class="hero"><p class="eyebrow">HEAR TEST · MODO INTELIGENTE</p><h1>Encuentra tu límite <em>en menos tiempo.</em></h1><p>Primero avanzamos en saltos de hasta 6 dB. Cuando dejes de oírlo, buscamos el punto exacto con saltos de 1 dB; siempre 3 segundos por nivel. No cambies el volumen del teléfono.</p></section>
  <div class="card"><div class="row" style="justify-content:space-between"><strong>${esc(p.name)}</strong><span class="tag">${doneCount(p)} / ${total}</span></div><div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><div class="center muted small">${keyName} · ${stageName} · Repetición ${item.pass+1}/${p.passes}</div>
  ${durationNotice(p,doneCount(p),true)}
  <div class="wavebox"><span class="muted small">FRECUENCIA ACTUAL</span><div class="frequency">${item.f>=1000?Number((item.f/1000).toFixed(3)):item.f} <small>${item.f>=1000?'kHz':'Hz'}</small></div><div class="wave" aria-hidden="true" id="waves">${Array.from({length:32},(_,i)=>`<span style="height:${6+Math.round(Math.abs(Math.sin(i*.71)*30))}px"></span>`).join('')}</div></div>
