@@ -2,6 +2,14 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## v1.6 — 2026-10-30
+
+- Added offline localization for Spanish, English, French, Portuguese, Italian, German, Simplified Chinese and Japanese, with a persistent in-app selector and browser-language detection.
+- Translated setup, profiles, test screens, EQ editor, safety text, messages and accessible labels; user-created names are preserved.
+- Removed duplicate time-estimation helper, unused variables/constants, obsolete CSS rules and redundant EQ slider handling.
+- Maintained profile storage compatibility and did not change the audio calibration or EQ recommendation algorithms.
+- Tested 8 locales on simulated mobile Chromium and verified the coarse/fine audio flow and EQ controls.
+
 ## v1.5 — 2026-10-30
 
 - Replaced the form-heavy setup with tappable device and EQ cards, two-choice listening/verification modes and a live compact duration summary.
