@@ -4,7 +4,17 @@
 
 Asistente web de calibración auditiva perceptiva y generación de recomendaciones de ecualización para audífonos, parlantes y sistemas de audio de automóvil.
 
-**Versión:** 1.5 · **Idioma:** español · **Tecnología:** HTML, CSS, JavaScript y Web Audio API (sin dependencias externas).
+**Versión:** 1.6 · **Idioma:** español · **Tecnología:** HTML, CSS, JavaScript y Web Audio API (sin dependencias externas).
+
+## v1.6 — ocho idiomas y auditoría del código
+
+Puedes cambiar el idioma desde el selector que aparece en el encabezado de la aplicación. Están disponibles **español, inglés, francés, portugués, italiano, alemán, chino simplificado y japonés**. La primera vez se utiliza el idioma compatible del navegador; después se guarda tu selección.
+
+Las traducciones están integradas en **el mismo archivo HTML**, también sin Internet. Cambiar el idioma no borra perfiles ni reinicia el reproductor. Los nombres de equipos se conservan tal como los escribiste.
+
+La auditoría eliminó una función duplicada, estados/constantes sin uso y reglas CSS obsoletas; también simplificó el procesamiento del deslizador de EQ. Se preservan las frecuencias, el motor de tonos, la fórmula de ecualización y las claves utilizadas para guardar perfiles. El selector de archivos del sistema puede seguir mostrando el idioma del teléfono.
+
+Consulta la [auditoría en español](AUDIT.es.md) o [en inglés](AUDIT.md) para conocer el alcance y las limitaciones.
 
 ## Nueva experiencia v1.5
 
