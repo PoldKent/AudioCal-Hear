@@ -4,9 +4,19 @@
 
 **AudioCal Hear** is a single-file, mobile-friendly web app for subjective hearing-threshold testing and personalized equalizer suggestions for headphones, speakers, and car audio systems.
 
-**Version:** 1.5 · **App interface:** Spanish (for now) · **Stack:** HTML, CSS, vanilla JavaScript, Web Audio API · **No external libraries**.
+**Version:** 1.6 · **App interface:** Spanish (for now) · **Stack:** HTML, CSS, vanilla JavaScript, Web Audio API · **No external libraries**.
 
 > **Safety:** This is *not* a clinical hearing test or an objective acoustic calibration. Its results are approximate, subjective EQ suggestions. Begin at a low, comfortable volume. Do not raise the volume to chase hard-to-hear frequencies. Stop if you experience discomfort or ringing.
+
+## v1.6 — eight-language localization and code audit
+
+Select your language in the app header. **Eight languages are available:** Spanish (es), English (en), French (fr), Portuguese (pt), Italian (it), German (de), Simplified Chinese (zh), and Japanese (ja). The first visit follows the browser's supported language; subsequent visits use your saved selection.
+
+All translations are embedded in the **same offline HTML file**. Switching language does not delete profiles or reset the music player. Names you entered for devices remain unchanged.
+
+The code audit removed a duplicate function, unused state/constants and obsolete CSS, and simplified EQ slider event handling. Hearing-test logic, frequency presets, EQ algorithms and the existing profile storage keys were preserved. Native operating-system file-picker text may follow the device language.
+
+Read [code audit (English)](AUDIT.md) or [auditoría (español)](AUDIT.es.md) for the scope and test limitations.
 
 ## Interface update — v1.5
 
