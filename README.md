@@ -1,109 +1,67 @@
 # AudioCal Hear
 
-**EN** | [Español](README.es.md)
+**English** · [Español](README.es.md)
 
-**AudioCal Hear** is a single-file, mobile-friendly web app for subjective hearing-threshold testing and personalized equalizer suggestions for headphones, speakers, and car audio systems.
+### Hear. Adjust. Enjoy.
 
-**Version:** 1.6 · **App interface:** Spanish (for now) · **Stack:** HTML, CSS, vanilla JavaScript, Web Audio API · **No external libraries**.
+**AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Explore your perceived hearing thresholds, compare musical preferences and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
-> **Safety:** This is *not* a clinical hearing test or an objective acoustic calibration. Its results are approximate, subjective EQ suggestions. Begin at a low, comfortable volume. Do not raise the volume to chase hard-to-hear frequencies. Stop if you experience discomfort or ringing.
+**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
 
-## v1.6 — eight-language localization and code audit
+> **Public preview · v1.6 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
 
-Select your language in the app header. **Eight languages are available:** Spanish (es), English (en), French (fr), Portuguese (pt), Italian (it), German (de), Simplified Chinese (zh), and Japanese (ja). The first visit follows the browser's supported language; subsequent visits use your saved selection.
+## What you can do
 
-All translations are embedded in the **same offline HTML file**. Switching language does not delete profiles or reset the music player. Names you entered for devices remain unchanged.
+- **Guided listening:** an adaptive descending-tone test with 3 seconds at each digital level; a coarse search is followed by 1 dB steps near the perceived threshold.
+- **Personalize with music:** compare A/B sound choices for bass, vocals and treble, then fine-tune each band manually.
+- **Choose your equalizer:** your 7-band car EQ (64, 160, 400, 1,000, 2,500, 6,250, 15,625 Hz); your 10-band headphone EQ (30, 60, 120, 250, 500, 1k, 2k, 4k, 8k, 16k Hz); additional 5/7/10/15/31-band and custom presets.
+- **Save multiple profiles:** keep device-specific settings locally and export/import backup files.
+- **Use 8 languages:** English, Spanish, French, Portuguese, Italian, German, Simplified Chinese and Japanese.
+- **Run on mobile:** phone audio is sent to the output selected in the phone's own settings, including compatible Bluetooth devices.
 
-The code audit removed a duplicate function, unused state/constants and obsolete CSS, and simplified EQ slider event handling. Hearing-test logic, frequency presets, EQ algorithms and the existing profile storage keys were preserved. Native operating-system file-picker text may follow the device language.
+The adaptive test schedules at most **42 seconds of playback** for the first attempt on one ear/frequency and up to **15 additional seconds** for optional verification. These limits exclude pauses and manual repetitions. A threshold may remain *undetermined*; missing readings are not replaced with fabricated measurements.
 
-Read [code audit (English)](AUDIT.md) or [auditoría (español)](AUDIT.es.md) for the scope and test limitations.
+## Quick start
 
-## Interface update — v1.5
+1. Visit **https://poldkent.github.io/AudioCal-Hear/** on your phone in a modern browser.
+2. Connect your headphones, speaker or car audio using the phone's Bluetooth/audio settings. If testing a car, remain **parked**.
+3. Select your device, EQ preset and test mode. Set a **low, comfortable, fixed volume** in a quiet environment.
+4. Respond when each test tone becomes inaudible. Never increase the volume to chase a tone.
+5. Compare your own music, review the suggestions and **manually** enter the EQ values in your hardware or headphone app.
 
-- **Setup** now uses large tap targets for car, headphones and speakers, with fast/verify and joint/individual-ear choices. The selected test duration is shown immediately; custom bands, gain limits and audio check stay available in expandable sections.
-- **Profiles** puts the active device first, then other saved devices. Backups and supported frequency lists are collapsed below the profiles instead of occupying the main screen.
-- **EQ settings** lets you tap a frequency bar to select it, then fine-tune with a horizontal gain slider or ± buttons without restarting music. Exact band values and calibration details are expandable.
-- All previously saved local profiles use the same storage format, and the v1.3 adaptive 3-second tone algorithm is unchanged.
+The app does not detect every Bluetooth model, control the phone's system-wide EQ or update external devices automatically. Suggested settings may not yield a noticeable or preferable improvement on every device.
 
-## Try it on your phone
+## Hearing-safety and accuracy notice
 
-1. Connect your headphones, speaker, or car stereo using your phone's **Bluetooth/audio settings**. The browser uses the phone's selected system output; it cannot reliably detect or change the Bluetooth device itself.
-2. Open `index.html` in a modern mobile browser. If local-file restrictions interfere, use GitHub Pages over HTTPS (setup below).
-3. Choose the equalizer preset (including the exact **7-band car stereo** and **10-band headphones** from the project reference photos), stereo or individual ears, and one or two passes.
-4. Check the audio at a quiet, comfortable and unchanged phone volume, in a quiet environment. Keep the vehicle parked throughout the test.
-5. Start the adaptive test: first the tone drops by up to **6 dB every 3 seconds**. Tap when it disappears; the app returns to the region and uses **1 dB steps every 3 seconds** to find your threshold.
-6. Review estimated settings in **Ajustes**, compare using your local audio file, and enter the suggested settings manually into the device's equalizer.
+**Never test at maximum volume.** Stop immediately if a sound is uncomfortable, painful or causes ringing. Keep sessions short and use an appropriate listening level; high sound exposure can harm hearing. The displayed **dBFS** values are digital amplitude levels, **not** acoustic decibels measured at your ear.
 
-## New in v1.4 — musical preferences and better feedback
+**AudioCal Hear is not a hearing test for diagnosis, a hearing aid, a medical device, or a substitute for an audiologist.** Its listening thresholds and EQ curves are approximate and depend on the ear, playback device, fit, background noise and volume. Consult a qualified professional if you have hearing concerns.
 
-- The result page now distinguishes **completed trials** from **frequencies with a usable threshold**. If a frequency could not be measured, you can retry only those frequencies.
-- A new optional **music preference comparison** plays A/B EQ variations on the **same user-selected local audio file**. Three short rounds let you choose softer or more prominent bass, voices and high-frequency detail, or "Same". These deliberate preferences are stored separately from the subjective hearing thresholds.
-- To compare the versions, load an audio file, **play it**, listen to **both A and B**, then choose which is more comfortable. The changes are limited to moderate ±2 dB per zone around a broad center. This is not calibrated loudness matching, clinical hearing measurement, or a guaranteed improvement.
-- Hearing-based EQ compensation is withheld until at least 60% of the selected frequency bands have usable thresholds (a cautious design rule, **not** an audiometric standard). Preferences and manual gains remain available.
-- Editing individual gains no longer interrupts the music player. The note about the car stereo's provisional ±6 dB scale only appears when the original **car 7-band preset** is selected.
-- **Never test at maximum volume.** The WHO recommends listening below 60% of device maximum in typical personal listening and avoiding uncomfortable sound levels. A phone volume percentage cannot identify acoustic loudness in dB SPL, so use a quiet, comfortably low level and never increase it merely to hear a faint tone.
-- The application's headphone and car EQ recommendations must still be manually transferred to hardware. Do not apply an old profile to a different Bluetooth output without new evaluation.
+## Privacy
 
-## Supported equalizer presets
+The current app runs as a static page with **no AudioCal Hear accounts, app analytics or application-controlled backend**. Profiles and EQ preferences are stored in this browser's local storage. Selected music is handled locally in the browser. You can export backups yourself; anyone with access to your browser/device or exported files may be able to see them. GitHub, as the hosting provider, may process technical access information under its own policies.
 
-| Preset | Center frequencies (Hz) |
-| --- | --- |
-| Car stereo (7 bands — project reference) | 64, 160, 400, 1000, 2500, 6250, 15625 |
-| Headphones (10 bands — project reference) | 30, 60, 120, 250, 500, 1000, 2000, 4000, 8000, 16000 |
-| Common 7-band layout | 63, 160, 400, 1000, 2500, 6300, 16000 |
-| ISO octave-center 10-band layout | 31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 |
-| Additional options | 5, 15, 31 bands; custom frequencies |
+Read [Privacy notice](PRIVACY.md) · [Privacy notice in Spanish](PRIVACY.es.md).
 
-The car stereo's gain range is **provisionally** configured to ±6 dB. The supplied photo confirms a +6 reading, but not the complete scale. Adjust the gain limits to match your equipment.
+## Intellectual property and legal status
 
-## Faster test: maximum 57 seconds per frequency and ear
+**© 2026 PoldKent — All rights reserved, to the extent of rights lawfully held.**
 
-The adaptive sweep keeps the same 3-second listening time at each digital level and skips most unnecessary levels.
+**Free access to the official app does not mean open-source licensing.** This repository is public for transparency, learning about the product and review, but **no general license to copy, modify, redistribute, rehost or commercially exploit the project code, visual design or branding is granted**. Access to the official hosted app for personal, noncommercial use is permitted subject to applicable law and the published terms.
 
-| Stage | Steps | Maximum |
-| --- | --- | ---: |
-| Coarse | −28, −34, −40, −46, −52, −58, −64, −68 dBFS (up to 6 dB per step) | 8 × 3 = **24 s** |
-| Fine | Six 1 dB steps at most, close to the missed tone | 6 × 3 = **18 s** |
-| Optional verification | Up to five 1 dB levels around the first threshold | 5 × 3 = **15 s** |
-| **Total** | | **57 s** |
+GitHub's Terms of Service independently permit viewing and forking public repositories within GitHub's service. No repository notice can cancel those rights or guarantee that public HTML cannot be copied. Third-party rights and mandatory legal exceptions remain unaffected.
 
-If no threshold is registered in time, the attempt is marked **undetermined**: the app does not invent a result. This is an upper bound on **automatically played audio**, not pauses, manual retries or time between taps. Testing left and right ears separately doubles the ear/frequency combinations.
+AudioCal Hear is an independent project, **not affiliated with, sponsored by or endorsed by Soundcore, Anker or any audio-device manufacturer**. Brand and product names used to identify compatibility belong to their respective owners. No claim is made that the **AudioCal Hear** name is a registered trademark.
 
-| Both channels together | One pass maximum | Two passes maximum |
-| --- | ---: | ---: |
-| Car, 7 bands | 4 min 54 s | **6 min 39 s** |
-| Headphones, 10 bands | 7 min | **9 min 30 s** |
+[Proprietary rights notice](LICENSE.md) · [Terms of use](TERMS.md) · [Terms in Spanish](TERMS.es.md) · [Contribution policy](CONTRIBUTING.md).
 
-The default is **one pass**. The setup screen adapts estimates to your chosen bands, channels and repetitions. This is not medical audiometry or calibrated sound-pressure measurement.
+## Technical details
 
-## Data, audio and privacy
+The project is a self-contained **HTML + CSS + JavaScript** app using the Web Audio API, with no runtime dependencies. It works as a static site on GitHub Pages; the standalone HTML can also be saved and opened offline, subject to browser support. The app is not an audiometer and does not measure sound-pressure levels.
 
-- Profiles are stored locally in the same browser's `localStorage`. Back them up or move them using JSON export/import.
-- Your selected A/B comparison music file is processed in the browser, rather than uploaded to an AudioCal Hear server.
-- The browser's dBFS values are **digital signal levels**, not calibrated acoustic dB SPL.
-- EQ suggestions do not independently measure a loudspeaker's frequency response, room acoustics, or hearing loss.
-- The app **does not automatically modify** the car stereo or headphone system EQ; settings must be copied over manually.
-- If a frequency is not audible, avoid large compensating boosts and stop if the audio becomes uncomfortable or distorted.
+- [Spanish documentation](README.es.md)
+- [Release notes · English / Español](RELEASE_NOTES.md)
+- [Code audit · English](AUDIT.md) / [Español](AUDIT.es.md)
+- [Version history · English](CHANGELOG.md) / [Español](CHANGELOG.es.md)
 
-## Publish with GitHub Pages
-
-1. Open **Settings → Pages** in this repository.
-2. Under **Build and deployment**, select **Deploy from a branch**.
-3. Choose branch `main`, folder `/(root)`, and select **Save**.
-4. After GitHub reports that the site has been deployed, open the URL shown there on your phone.
-
-This project is a static HTML file and requires no server build.
-
-## Contributing and permissions
-
-This repository is **public to view**. Public visibility does **not** grant the ability to push changes. Only collaborators with explicit write access can push. Everyone else can propose changes through issues or pull requests, which the maintainer can review and decide whether to merge. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-No license has been added yet. Public access does not by itself grant an open-source license to redistribute or adapt the software.
-
-## Files
-
-- `index.html` — complete self-contained web app.
-- `README.md` — English project instructions.
-- `README.es.md` — Spanish project instructions.
-- `CHANGELOG.md` / `CHANGELOG.es.md` — version history in both languages.
-- `CONTRIBUTING.md` — contribution and access guidelines.
+**Project home:** https://github.com/PoldKent/AudioCal-Hear
