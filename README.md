@@ -4,9 +4,16 @@
 
 **AudioCal Hear** is a single-file, mobile-friendly web app for subjective hearing-threshold testing and personalized equalizer suggestions for headphones, speakers, and car audio systems.
 
-**Version:** 1.4 · **App interface:** Spanish (for now) · **Stack:** HTML, CSS, vanilla JavaScript, Web Audio API · **No external libraries**.
+**Version:** 1.5 · **App interface:** Spanish (for now) · **Stack:** HTML, CSS, vanilla JavaScript, Web Audio API · **No external libraries**.
 
 > **Safety:** This is *not* a clinical hearing test or an objective acoustic calibration. Its results are approximate, subjective EQ suggestions. Begin at a low, comfortable volume. Do not raise the volume to chase hard-to-hear frequencies. Stop if you experience discomfort or ringing.
+
+## Interface update — v1.5
+
+- **Setup** now uses large tap targets for car, headphones and speakers, with fast/verify and joint/individual-ear choices. The selected test duration is shown immediately; custom bands, gain limits and audio check stay available in expandable sections.
+- **Profiles** puts the active device first, then other saved devices. Backups and supported frequency lists are collapsed below the profiles instead of occupying the main screen.
+- **EQ settings** lets you tap a frequency bar to select it, then fine-tune with a horizontal gain slider or ± buttons without restarting music. Exact band values and calibration details are expandable.
+- All previously saved local profiles use the same storage format, and the v1.3 adaptive 3-second tone algorithm is unchanged.
 
 ## Try it on your phone
 
