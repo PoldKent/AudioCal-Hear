@@ -2,6 +2,14 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## v1.6 — 2026-10-30
+
+- Localización integrada para ocho idiomas (español, inglés, francés, portugués, italiano, alemán, chino simplificado y japonés), con selector persistente y detección del idioma del navegador.
+- Traducidas las pantallas principales, avisos de seguridad, mensajes y etiquetas de accesibilidad; se respetan los nombres que escribió el usuario.
+- Eliminados una función duplicada, estados y constantes sin uso, reglas CSS antiguas y procesamiento redundante del deslizador.
+- Sin modificar el motor auditivo, los algoritmos de EQ ni la compatibilidad de los perfiles anteriores.
+- Pruebas con los ocho idiomas en Chromium móvil simulado, examen de tonos y controles de EQ.
+
 ## v1.5 — 2026-10-30
 
 - Configuración rediseñada con tarjetas de dispositivo y ecualizador, opciones directas de escucha y verificación, y resumen compacto de duración.
