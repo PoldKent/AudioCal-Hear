@@ -4,7 +4,7 @@
 
 Asistente web de calibración auditiva perceptiva y generación de recomendaciones de ecualización para audífonos, parlantes y sistemas de audio de automóvil.
 
-**Versión:** 1.3 · **Idioma:** español · **Tecnología:** HTML, CSS, JavaScript y Web Audio API (sin dependencias externas).
+**Versión:** 1.4 · **Idioma:** español · **Tecnología:** HTML, CSS, JavaScript y Web Audio API (sin dependencias externas).
 
 ## Ejecutar en celular
 
@@ -13,6 +13,15 @@ Asistente web de calibración auditiva perceptiva y generación de recomendacion
 - Selecciona el ecualizador, los canales y las repeticiones. La pantalla **Configuración** muestra el número de pruebas, un escenario orientativo de duración y el tiempo máximo del barrido.
 - Comprueba el sonido a volumen bajo y estable; después inicia el examen. Primero desciende en pasos de **hasta 6 dB cada 3 segundos**. Pulsa cuando deje de escucharse; la app afina con pasos de **1 dB cada 3 segundos**.
 - Consulta **Ajustes** para ver los valores estimados, o compara con tu propio archivo de música en la app. Copia los ajustes al ecualizador del dispositivo manualmente.
+
+## Novedades v1.4: preferencias musicales y resultados más claros
+
+- La pantalla de resultados diferencia las **pruebas terminadas** de las **frecuencias con un umbral utilizable**. Si faltan datos, permite repetir solo esas frecuencias.
+- Añadimos una comparación opcional **A/B con tu propia música**: tres rondas para elegir graves, voces y brillo algo más suaves o destacados, o marcar «Iguales». Se guardan esas preferencias aparte de los umbrales auditivos.
+- Para comparar, elige un archivo de audio local, **reprodúcelo**, escucha **A y B** y selecciona la versión que te resulte más cómoda. Los ajustes son moderados, de hasta ±2 dB por zona y por decisión. No existe garantía de mejora ni una igualación de sonoridad clínicamente calibrada.
+- Los cambios manuales ya no detienen el reproductor. La advertencia sobre el rango provisional ±6 dB solo aparece al elegir el **ecualizador de automóvil de 7 bandas**.
+- **Nunca utilices el volumen máximo** para realizar la prueba. La OMS aconseja no superar el 60% del volumen máximo del dispositivo en el uso personal habitual; ese porcentaje no equivale a una medición real de dB SPL. Usa un nivel bajo y cómodo, mantenlo fijo y no lo aumentes para perseguir tonos que no oyes.
+- La aplicación no modifica automáticamente los ecualizadores del vehículo o los auriculares; los valores deben introducirse manualmente. No reutilices el perfil de un dispositivo para otro sin comprobarlo.
 
 ## Ecualizadores precargados
 
