@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#07111f">
 <meta name="description" content="AudioCal Hear: prueba de tonos descendentes y ajustes de ecualización personalizados. Funciona sin conexión.">
-<title>AudioCal Hear v1.2 · Calibrador auditivo</title>
+<title>AudioCal Hear v1.3 · Calibrador auditivo</title>
 <style>
 :root{color-scheme:dark;--bg:#07111f;--panel:#111f31;--panel2:#172a3e;--line:#263d52;--fg:#edf7ff;--muted:#91a8b9;--cyan:#49cdf5;--yellow:#ffca57;--green:#52d2a8;--red:#ff8292;--radius:18px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 50% -18%,#16364b 0%,var(--bg) 47%);font:15px/1.48 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--fg);min-height:100vh;padding-bottom:calc(96px + env(safe-area-inset-bottom))}button,input,select{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.44;cursor:not-allowed}a{color:var(--cyan)}input,select{max-width:100%}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
@@ -19,7 +19,7 @@
 <div class="shell">
 <header class="topbar"><div class="brand"><div class="logo" aria-hidden="true">◉</div><div><strong>AudioCal <span style="color:var(--cyan)">Hear</span></strong><small>CALIBRACIÓN PERSONAL</small></div></div><span class="pill">● SIN INSTALAR</span></header>
 <main id="root" aria-live="polite"></main>
-<footer class="foot">AudioCal Hear v1.2 · Procesamiento local y sin envío de datos · Estimaciones perceptivas, no audiometría médica ni medición calibrada del equipo. Nunca uses volumen alto para escuchar un tono que no aparece.</footer>
+<footer class="foot">AudioCal Hear v1.3 · Procesamiento local y sin envío de datos · Estimaciones perceptivas, no audiometría médica ni medición calibrada del equipo. Nunca uses volumen alto para escuchar un tono que no aparece.</footer>
 </div>
 <nav class="nav" aria-label="Navegación principal"><div class="navinner">
 <button type="button" class="navbtn" data-nav="setup"><b>⚙</b>Configurar</button>
@@ -47,9 +47,24 @@ function readProfiles(){try{let v=JSON.parse(localStorage.getItem(STORAGE));retu
 let profiles=readProfiles(),currentId='';try{currentId=localStorage.getItem(STATEKEY)||''}catch(e){};
 let current=profiles.find(p=>p.id===currentId)||null;
 const TEST_START_DB=-28, TEST_END_DB=-68, SECONDS_PER_DB=3;
-const TEST_STEPS=TEST_START_DB-TEST_END_DB+1, TEST_DURATION=TEST_STEPS*SECONDS_PER_DB;
-let page='setup',audioCtx=null,tone=null,frame=null,playerAudio=null,playerSource=null,filters=[],playerPreamp=null,playerOutput=null,playerUrl=null,eqBypass=false,selectedSetup='car7',showCustom=false,testStep=0,awaitNext=false,floorReached=false,notice='';
-let temp={name:'',type:'car',preset:'car7',channels:'both',passes:2,bands:presets.car7.bands.slice(),min:-6,max:6,step:1};
+// Adaptive sweep: 6 dB for discovery, then 1 dB close to the threshold.
+// A first attempt uses at most 8+6 plateaus = 42 s. An optional targeted
+// verification uses at most 5 plateaus = 15 s. Total <=57 s per band/ear.
+const COARSE_STEP=6, MAX_FIRST=42, MAX_VERIFY=15, MAX_FREQUENCY=60, TEST_DURATION=60;
+function stageLevels(stage,coarseDb,firstDb){
+ if(stage==='coarse')return [-28,-34,-40,-46,-52,-58,-64,-68];
+ if(stage==='fine'){
+  const from=Math.min(TEST_START_DB,coarseDb+COARSE_STEP);
+  return Array.from({length:Math.max(1,from-coarseDb)},(_,i)=>from-1-i).filter(v=>v>=TEST_END_DB);
+ }
+ if(stage==='verify'){
+  const start=clamp(firstDb+2,TEST_END_DB,TEST_START_DB);
+  return Array.from({length:5},(_,i)=>start-i).filter(v=>v>=TEST_END_DB);
+ }
+ return [];
+}
+let page='setup',audioCtx=null,tone=null,frame=null,playerAudio=null,playerSource=null,filters=[],playerPreamp=null,playerOutput=null,playerUrl=null,eqBypass=false,selectedSetup='car7',showCustom=false,testStep=0,awaitNext=false,floorReached=false,notice='',sampleNote='',trialElapsed=0;
+let temp={name:'',type:'car',preset:'car7',channels:'both',passes:1,bands:presets.car7.bands.slice(),min:-6,max:6,step:1};
 const save=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(profiles));localStorage.setItem(STATEKEY,current?.id||'')}catch(e){notice='No se pudo guardar localmente. Puedes exportar tus valores.'}};
 const touch=()=>{if(!current)return;current.updatedAt=Date.now();save()};
 const nav=p=>{if(tone)stopTone();floorReached=false;if(page==='results'&&playerAudio&&p!=='results')playerAudio.pause();page=p;render();window.scrollTo({top:0,behavior:'instant'})};
@@ -70,34 +85,37 @@ ${p?`<div class="soft info"><strong>Perfil activo: ${esc(p.name)}</strong><p cla
 <div class="grid2"><div><label for="eqMin">Ganancia mínima (dB)</label><input class="field" id="eqMin" type="number" min="-30" max="-1" step="1" value="${temp.min}"></div><div><label for="eqMax">Ganancia máxima (dB)</label><input class="field" id="eqMax" type="number" min="1" max="30" step="1" value="${temp.max}"></div></div>
 <div class="small muted" style="margin-top:9px">La escala de ±6 dB del auto es una suposición editable; tu foto solo demuestra que admite +6.</div></div>
 <div class="card"><h2>2. Modalidad de escucha</h2><label>Canales que quieres probar</label><div class="chips"><button type="button" data-channels="both" class="choice ${temp.channels==='both'?'selected':''}"><strong>🔊 Ambos / estéreo</strong><span>Ideal para auto y parlantes</span></button><button type="button" data-channels="separate" class="choice ${temp.channels==='separate'?'selected':''}"><strong>🎧 Izquierdo + derecho</strong><span>Para auriculares estéreo</span></button></div>
-<label>Repeticiones por frecuencia</label><div class="chips"><button type="button" data-passes="1" class="choice ${temp.passes===1?'selected':''}"><strong>1 vez · Rápida</strong><span>Menor fiabilidad</span></button><button type="button" data-passes="2" class="choice ${temp.passes===2?'selected':''}"><strong>2 veces · Recomendada</strong><span>Comprueba consistencia</span></button></div></div>
+<label>Repeticiones por frecuencia</label><div class="chips"><button type="button" data-passes="1" class="choice ${temp.passes===1?'selected':''}"><strong>1 vez · Rápida</strong><span>Hasta 42 s por banda y oído</span></button><button type="button" data-passes="2" class="choice ${temp.passes===2?'selected':''}"><strong>2 veces · Verificación</strong><span>Hasta 57 s por banda y oído</span></button></div></div>
 ${durationNotice({...temp,measures:{}},0,false)}
 <div class="soft warning"><strong>Antes de comenzar</strong><p class="small">Conecta el dispositivo en los ajustes Bluetooth del celular y selecciona allí la salida de audio. Esta web usa la salida del sistema: no puede garantizar detectar ni cambiar el Bluetooth desde el navegador. Desactiva otros ecualizadores o perfiles de sonido, baja el volumen y calibra en silencio con el vehículo estacionado. <strong>Si algo no se escucha, no subas bruscamente el volumen.</strong></p></div>
 <div class="card"><h2>3. Comprobar el sonido</h2><p class="small">Reproduce brevemente un pitido de 1 kHz a un nivel digital limitado. Ajusta el volumen del teléfono a un nivel bajo y cómodo; después no lo cambies durante el examen.</p><div class="row wrap">${button('▶ Escuchar comprobación','check','btn-alt grow')}${button('■ Detener audio','stopaudio','btn-ghost')}</div><div class="divider"></div>${button('Comenzar nueva calibración →','create','btn-primary full')}</div>`}
 function plan(p){let bands=p.bands.slice().sort((a,b)=>Math.abs(Math.log2(a/1000))-Math.abs(Math.log2(b/1000)));let sides=p.channels==='separate'?['left','right']:['both'];return bands.flatMap(f=>sides.flatMap(side=>Array.from({length:p.passes},(_,pass)=>({f,side,pass}))));}
 
-// Time forecasts: no fixed test length, because participants can mark a threshold at any step.
-// 41 levels (-28 through -68 dBFS), 3 seconds per level: at most 123 seconds per sample.
+// Estimates are bounded by the new adaptive scheduler; no fixed threshold is promised.
 function timeLabel(s){s=Math.max(0,Math.ceil(s));const m=Math.floor(s/60),r=s%60;return m?`${m} min${r?' '+r+' s':''}`:`${r} s`}
 function timeRange(p,done=0){
- const all=plan(p),left=Math.max(0,all.length-done);
- const trials=all.length;
- const observed=all.map(e=>p.measures?.[key(e.f,e.side)]?.[e.pass]?.elapsedS).filter(v=>Number.isFinite(v)&&v>=0&&v<=TEST_DURATION);
- const personalized=observed.length>=2 ? clamp(median(observed),3,TEST_DURATION) : null;
- return {trials,left,max:left*TEST_DURATION,
-   // Illustrative scenarios, not predictions of anyone's hearing.
-   exampleLow:left*30,exampleHigh:left*45,
-   personalized,personalTotal:personalized===null?null:left*personalized};
+ const sides=p.channels==='separate'?['left','right']:['both'];
+ const trials=plan(p),left=Math.max(0,trials.length-done);
+ const maxPerSide=p.passes===2?MAX_FIRST+MAX_VERIFY:MAX_FIRST;
+ let remainingMax=0,groupsPending=0;
+ for(const f of p.bands)for(const side of sides){
+  const arr=p.measures?.[key(f,side)]||[];
+  if(arr[0]===undefined){remainingMax+=maxPerSide;groupsPending++}
+  else if(p.passes===2&&arr[1]===undefined){remainingMax+=MAX_VERIFY;groupsPending++}
+ }
+ const totalGroups=p.bands.length*sides.length;
+ const typicalPerGroup=p.passes===2?[25,48]:[18,35];
+ return {trials:trials.length,left,groupsPending,max:remainingMax,
+  exampleLow:groupsPending*typicalPerGroup[0],exampleHigh:groupsPending*typicalPerGroup[1],
+  totalGroups,maxTotal:totalGroups*maxPerSide};
 }
 function durationNotice(p,done=0,inTest=false){const d=timeRange(p,done);
- const next=d.left===0?`No quedan pruebas pendientes.`:`${d.left} ${d.left===1?'prueba pendiente':'pruebas pendientes'}`;
+ const next=d.left===0?'No quedan pruebas pendientes.':`${d.left} ${d.left===1?'prueba pendiente':'pruebas pendientes'}`;
  const trialInfo=inTest?next:`${d.trials} ${d.trials===1?'prueba':'pruebas'} en total`;
- const estimate=d.personalized!==null&&inTest?`<strong>Tiempo restante orientativo: ${timeLabel(d.personalTotal)}</strong> <span class="muted small">según tus muestras anteriores</span>`:
- `<strong>Referencia: ${timeLabel(d.exampleLow)} a ${timeLabel(d.exampleHigh)}</strong> <span class="muted small">si marcas cada tono después de 30–45 s</span>`;
  return `<div class="soft info duration-notice" id="durationEstimate" role="status"><strong>⏱ ${inTest?'Tiempo restante':'Duración aproximada de la calibración'}</strong>
- <p class="small"><strong>${trialInfo}</strong> · ${p.bands.length} frecuencias · ${p.passes} ${p.passes===1?'repetición':'repeticiones'} · ${p.channels==='separate'?'dos oídos por separado':'ambos canales juntos'}.</p>
- <p class="small">${estimate}</p>
- <p class="tiny muted">Máximo del barrido: <strong>${timeLabel(d.max)}</strong> si ningún tono se detiene antes. Cada nivel dura 3 s y baja 1 dB. Pausas y repeticiones manuales no incluidas; no es un tiempo garantizado.</p></div>`;
+ <p class="small"><strong>${trialInfo}</strong> · ${p.bands.length} frecuencias · ${p.passes} ${p.passes===1?'pasada':'pasadas'} · ${p.channels==='separate'?'cada oído por separado':'ambos canales juntos'}.</p>
+ <p class="small"><strong>Orientativo: ${timeLabel(d.exampleLow)} a ${timeLabel(d.exampleHigh)}</strong> <span class="muted small">según tus respuestas</span>.</p>
+ <p class="tiny muted">Máximo de audio automático pendiente: <strong>${timeLabel(d.max)}</strong>. ${p.passes===2?'Hasta 57':'Hasta 42'} s por frecuencia ${p.channels==='separate'?'y por oído':'(ambos canales juntos)'}. Búsqueda: −6 dB/3 s; precisión: −1 dB/3 s. Las pausas, repeticiones manuales y el tiempo entre botones no se incluyen.</p></div>`;
 }
 function refreshSetupDuration(){const box=$('#durationEstimate');if(!box||page!=='setup')return;
  const match=($('#customFreqs')&&temp.preset==='custom')?parseBands($('#customFreqs').value):temp.bands;
@@ -111,55 +129,59 @@ function recorded(p,entry){return Array.isArray(p.measures?.[key(entry.f,entry.s
 function doneCount(p){return plan(p).filter(x=>recorded(p,x)).length}
 function firstMissing(p){return plan(p).findIndex(x=>!recorded(p,x))}
 function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea un perfil</h1><p>Elige tu ecualizador y el dispositivo que vas a calibrar.</p>${button('Ir a configurar','setup','btn-primary')}</section>`;
- const p=current,items=plan(p),total=items.length,missing=firstMissing(p);if(missing<0)return `<div class="card center"><h2>✓ Examen completado</h2><p>Ya tienes ${total} pruebas guardadas para <strong>${esc(p.name)}</strong>.</p>${button('Ver ajustes recomendados','results','btn-primary full')}${button('Repetir examen desde cero','resettest','btn-ghost full', 'style="margin-top:10px"')}</div>`;
- testStep=missing;const item=items[missing],active=tone?.mode==='test',keyName=item.side==='left'?'OÍDO IZQUIERDO':item.side==='right'?'OÍDO DERECHO':'AMBOS CANALES';let pct=Math.round(doneCount(p)/total*100);const currentDb=active?getCurrentDb():TEST_START_DB;
- return `<section class="hero"><p class="eyebrow">HEAR TEST · PRUEBA AUDITIVA</p><h1>Marca cuando <em>desaparezca.</em></h1><p>Cada nivel dura 3 segundos. Después baja automáticamente 1 dB, manteniendo la misma frecuencia. Pulsa el botón amarillo cuando dejes de oírlo.</p></section>
-<div class="card"><div class="row" style="justify-content:space-between"><strong>${esc(p.name)}</strong><span class="tag">${doneCount(p)} / ${total}</span></div><div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><div class="center muted small">${keyName} · Repetición ${item.pass+1}/${p.passes}</div>
-${durationNotice(p,doneCount(p),true)}
-<div class="wavebox"><span class="muted small">FRECUENCIA ACTUAL</span><div class="frequency">${item.f>=1000?Number((item.f/1000).toFixed(3)):item.f} <small>${item.f>=1000?'kHz':'Hz'}</small></div><div class="wave" aria-hidden="true" id="waves">${Array.from({length:32},(_,i)=>`<span style="height:${6+Math.round(Math.abs(Math.sin(i*.71)*30))}px"></span>`).join('')}</div></div>
-<div class="row" style="justify-content:space-between"><span class="small muted">Nivel digital del tono</span><strong id="levelText">${active?currentDb+' dBFS':'–'}</strong></div><div class="meter" style="margin:9px 0 13px"><div id="toneMeter" style="width:${active?clamp((currentDb-TEST_END_DB)/(TEST_START_DB-TEST_END_DB)*100,0,100):0}%"></div></div>
-${active?`<div class="soft center" style="margin:9px 0 12px"><span class="small muted">Siguiente descenso de 1 dB en </span><span class="hold-time" id="holdSeconds">3.0 s</span><div class="hold-meter"><div id="holdProgress"></div></div><span class="tiny muted">3 segundos completos para decidir en cada nivel</span></div>${button('YA NO LO ESCUCHO · MARCAR','mark','btn-primary full bigbutton')}<div style="margin-top:9px">${button('No lo escuché desde el inicio','unheard','btn-ghost full')}</div><p class="center small muted">−1 dB cada 3 segundos, sin cambiar de frecuencia. No modifiques el volumen del teléfono.</p>`:
- floorReached?`<div class="soft info center"><strong>Terminó el nivel más bajo (${TEST_END_DB} dBFS)</strong><p class="small">¿Dejaste de escucharlo en el último nivel o aún lo escuchabas?</p></div>${button('Dejé de escucharlo en el último nivel','endunheard','btn-primary full bigbutton')}<div style="margin-top:9px">${button('Lo seguía escuchando','floor','btn-alt full')}</div>`:
- awaitNext?`<div class="soft info center"><strong>Muestra registrada ✓</strong><p class="small">Puedes continuar con el siguiente tono.</p></div>${button('Siguiente frecuencia →','next','btn-primary full bigbutton')}`:
- `${button('▶ Reproducir pitido descendente','play','btn-primary full bigbutton')}`}
-<div class="row wrap" style="margin-top:11px">${button('■ Detener sin guardar','stopaudio','btn-ghost grow')}${button('Repetir muestra actual','retry','btn-ghost grow')}</div><div class="soft warning small"><strong>Protege tu oído.</strong> Si aparece dolor, zumbido o molestia, detén la prueba. No persigas tonos muy graves o agudos elevando el volumen. Esta herramienta no sustituye una evaluación auditiva.</div></div>
-${button('Cambiar perfil / ecualizador','setup','btn-ghost full')}`;
+ const p=current,items=plan(p),total=items.length,missing=firstMissing(p);
+ if(missing<0)return `<div class="card center"><h2>✓ Examen completado</h2><p>Ya tienes ${total} pruebas guardadas para <strong>${esc(p.name)}</strong>. Las pruebas sin umbral claro no se utilizan para calcular ganancias.</p>${button('Ver ajustes recomendados','results','btn-primary full')}${button('Repetir examen desde cero','resettest','btn-ghost full','style="margin-top:10px"')}</div>`;
+ testStep=missing;const item=items[missing],active=tone?.mode==='test',keyName=item.side==='left'?'OÍDO IZQUIERDO':item.side==='right'?'OÍDO DERECHO':'AMBOS CANALES';
+ const pct=Math.round(doneCount(p)/total*100),currentDb=active?getCurrentDb():TEST_START_DB;
+ const stageName=active?(tone.stage==='coarse'?'1/2 · Búsqueda rápida':tone.stage==='fine'?'2/2 · Ajuste fino':'Verificación de umbral'):(item.pass?'Verificación':'Búsqueda rápida');
+ const delta=active&&tone.stage==='coarse'?6:1;
+ const elapsedUsed=active?(trialElapsed+getElapsed()):0;
+ const prior=item.pass===1?(p.measures?.[key(item.f,item.side)]?.[0]?.elapsedS||0):0;
+ return `<section class="hero"><p class="eyebrow">HEAR TEST · MODO INTELIGENTE</p><h1>Encuentra tu límite <em>en menos tiempo.</em></h1><p>Primero avanzamos en saltos de 6 dB. Cuando dejes de oírlo, buscamos el punto exacto con saltos de 1 dB; siempre 3 segundos por nivel. No cambies el volumen del teléfono.</p></section>
+ <div class="card"><div class="row" style="justify-content:space-between"><strong>${esc(p.name)}</strong><span class="tag">${doneCount(p)} / ${total}</span></div><div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><div class="center muted small">${keyName} · ${stageName} · Repetición ${item.pass+1}/${p.passes}</div>
+ ${durationNotice(p,doneCount(p),true)}
+ <div class="wavebox"><span class="muted small">FRECUENCIA ACTUAL</span><div class="frequency">${item.f>=1000?Number((item.f/1000).toFixed(3)):item.f} <small>${item.f>=1000?'kHz':'Hz'}</small></div><div class="wave" aria-hidden="true" id="waves">${Array.from({length:32},(_,i)=>`<span style="height:${6+Math.round(Math.abs(Math.sin(i*.71)*30))}px"></span>`).join('')}</div></div>
+ <div class="row" style="justify-content:space-between"><span class="small muted">Nivel digital del tono</span><strong id="levelText">${active?currentDb+' dBFS':'–'}</strong></div><div class="meter" style="margin:9px 0 13px"><div id="toneMeter" style="width:${active?clamp((currentDb-TEST_END_DB)/(TEST_START_DB-TEST_END_DB)*100,0,100):0}%"></div></div>
+ ${active?`<div class="soft center" style="margin:9px 0 12px"><div class="small muted">${stageName} · baja ${delta} dB cada 3 s</div><span class="small muted">Siguiente paso en </span><span class="hold-time" id="holdSeconds">3.0 s</span><div class="hold-meter"><div id="holdProgress"></div></div><span class="tiny muted">Esta pasada: ${item.pass===1?'máximo 15 s':'máximo 42 s'} · Transcurrido: <span id="elapsedReadout">${Math.floor(prior+elapsedUsed)} s</span></span></div>${button(tone.stage==='coarse'?'YA NO LO OIGO · AFINAR 1 dB':'YA NO LO OIGO · GUARDAR','mark','btn-primary full bigbutton')}<div style="margin-top:9px">${button('No lo escuché desde el inicio','unheard','btn-ghost full')}</div><p class="center small muted">Si el pitido termina sin que marques un umbral, esa pasada quedará sin resultado. No subas el volumen.</p>`:
+ awaitNext?`<div class="soft info center"><strong>${sampleNote?esc(sampleNote):'Muestra registrada ✓'}</strong><p class="small">Puedes continuar con la siguiente prueba cuando estés listo.</p></div>${button('Siguiente prueba →','next','btn-primary full bigbutton')}`:
+ `${button(`▶ Iniciar frecuencia · máximo ${item.pass===1?'15':'42'} s`,'play','btn-primary full bigbutton')}`}
+ <div class="row wrap" style="margin-top:11px">${button('■ Detener sin guardar','stopaudio','btn-ghost grow')}${button('Repetir muestra actual','retry','btn-ghost grow')}</div><div class="soft warning small"><strong>Protege tu oído.</strong> Si aparece dolor, zumbido o molestia, detén la prueba. No persigas tonos muy graves o agudos elevando el volumen. Esta herramienta no sustituye una evaluación auditiva.</div></div>
+ ${button('Cambiar perfil / ecualizador','setup','btn-ghost full')}`;
 }
-// Exact digital plateau steps: 3 seconds at each level, then -1 dB.
-// These are dBFS relative to digital full-scale, NOT acoustic dB SPL.
+// Plateau levels use the audio-clock timeline, not imprecise setInterval timers.
+// Values are dBFS (digital), not clinical dB SPL.
 function getElapsed(){return tone?.mode==='test'&&audioCtx?Math.max(0,audioCtx.currentTime-tone.start):0}
-function getCurrentDb(){return Math.max(TEST_END_DB,TEST_START_DB-Math.floor(getElapsed()/SECONDS_PER_DB))}
-function getRemain(){const elapsed=getElapsed();return Math.max(0,SECONDS_PER_DB-(elapsed%SECONDS_PER_DB))}
+function getCurrentDb(){if(tone?.mode!=='test')return TEST_START_DB;return tone.levels[Math.min(tone.levels.length-1,Math.floor(getElapsed()/SECONDS_PER_DB))]}
+function getRemain(){return Math.max(0,SECONDS_PER_DB-(getElapsed()%SECONDS_PER_DB))}
 function startVisualizer(){
  if(frame)cancelAnimationFrame(frame);
  const update=()=>{
   if(!tone||tone.mode!=='test'||page!=='test'){frame=null;return}
-  const elapsed=getElapsed();
-  if(elapsed>=TEST_DURATION){stopTone();floorReached=true;render();return}
+  const elapsed=getElapsed(),duration=tone.levels.length*SECONDS_PER_DB;
+  if(elapsed>=duration){logMeasure('timeout');return}
   const db=getCurrentDb(),sec=getRemain();
-  const out=$('#levelText'),meter=$('#toneMeter'),waves=$('#waves'),timer=$('#holdSeconds'),hold=$('#holdProgress');
+  const out=$('#levelText'),meter=$('#toneMeter'),waves=$('#waves'),timer=$('#holdSeconds'),hold=$('#holdProgress'),elapsedReadout=$('#elapsedReadout');
   if(out)out.textContent=db+' dBFS';
   if(meter)meter.style.width=clamp((db-TEST_END_DB)/(TEST_START_DB-TEST_END_DB)*100,0,100)+'%';
   if(timer)timer.textContent=sec.toFixed(1)+' s';
   if(hold)hold.style.width=clamp(sec/SECONDS_PER_DB*100,0,100)+'%';
+  if(elapsedReadout)elapsedReadout.textContent=Math.floor((tone.prior||0)+trialElapsed+elapsed)+' s';
   if(waves)Array.from(waves.children).forEach((b,i)=>b.style.height=(5+(Math.sin(i*.69+performance.now()*.006)**2)*clamp((db-TEST_END_DB)/(TEST_START_DB-TEST_END_DB),0,1)*50)+'px');
   frame=requestAnimationFrame(update)
- };
- frame=requestAnimationFrame(update)
+ };frame=requestAnimationFrame(update)
 }
 async function ensureAudio(){if(!audioCtx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error('Tu navegador no es compatible con Web Audio. Prueba Chrome o Safari recientes.');audioCtx=new AC()}if(audioCtx.state!=='running')await audioCtx.resume();return audioCtx}
 function stopTone(){if(frame){cancelAnimationFrame(frame);frame=null}if(!tone)return;const t=tone;tone=null;try{if(audioCtx){t.gain.gain.cancelScheduledValues(audioCtx.currentTime);t.gain.gain.setTargetAtTime(0,audioCtx.currentTime,.012)}t.osc.stop((audioCtx?.currentTime||0)+.08)}catch(e){try{t.osc.stop()}catch(e2){}}}
-async function playTone(check=false){
+async function playTone(check=false,stage=null,coarseDb=null){
  try{
   stopTone();floorReached=false;
   if(playerAudio)playerAudio.pause();
-  const ctx=await ensureAudio(),osc=ctx.createOscillator(),gain=ctx.createGain(),pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
-  osc.type='sine';
-  const entry=check?null:plan(current)[firstMissing(current)];
+  const ctx=await ensureAudio(),entry=check?null:plan(current)[firstMissing(current)];
   if(!check&&!entry)return;
   const freq=check?1000:entry.f;
   if(freq>=ctx.sampleRate/2){alert('Tu dispositivo no puede generar '+fmt(freq)+' con su frecuencia de muestreo actual.');return}
-  osc.frequency.value=freq;
+  const osc=ctx.createOscillator(),gain=ctx.createGain(),pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
+  osc.type='sine';osc.frequency.value=freq;
   const side=entry?.side||'both';
   if(pan){pan.pan.value=side==='left'?-1:side==='right'?1:0;osc.connect(pan);pan.connect(gain)}else osc.connect(gain);
   gain.connect(ctx.destination);
@@ -173,26 +195,42 @@ async function playTone(check=false){
    tone={mode:'check',osc,gain};
    setTimeout(()=>{if(tone?.osc===osc)tone=null},1400);
   }else{
-   // A single audio-clock timeline avoids interval drift and preserves exact 1 dB steps.
-   const begin=now+.04;
-   gain.gain.linearRampToValueAtTime(amp(TEST_START_DB),begin);
-   for(let i=1;i<TEST_STEPS;i++){
-    const at=begin+i*SECONDS_PER_DB,previous=TEST_START_DB-(i-1),next=TEST_START_DB-i;
-    gain.gain.setValueAtTime(amp(previous),at);
-    gain.gain.linearRampToValueAtTime(amp(next),at+.025); // click-free 25 ms transition
-    gain.gain.setValueAtTime(amp(next),at+.025);
+   if(!stage){stage=entry.pass===1?'verify':'coarse';trialElapsed=0;sampleNote=''}
+   const prior=entry.pass===1?(current.measures?.[key(entry.f,entry.side)]?.[0]?.elapsedS||0):0;
+   const firstDb=entry.pass===1?current.measures?.[key(entry.f,entry.side)]?.[0]?.db:null;
+   if(stage==='verify'&&!Number.isFinite(firstDb)){logMeasure('timeout');return}
+   const levels=stageLevels(stage,coarseDb,firstDb);
+   if(!levels.length){logMeasure('timeout');return}
+   const begin=now+.045;
+   gain.gain.linearRampToValueAtTime(amp(levels[0]),begin);
+   for(let i=1;i<levels.length;i++){
+    const at=begin+i*SECONDS_PER_DB;
+    gain.gain.setValueAtTime(amp(levels[i-1]),at);
+    gain.gain.linearRampToValueAtTime(amp(levels[i]),at+.025);
+    gain.gain.setValueAtTime(amp(levels[i]),at+.025);
    }
-   gain.gain.setValueAtTime(amp(TEST_END_DB),begin+TEST_DURATION);
-   gain.gain.linearRampToValueAtTime(.0000001,begin+TEST_DURATION+.035);
-   osc.start(now);osc.stop(begin+TEST_DURATION+.06);
-   tone={mode:'test',osc,gain,start:begin};
+   const duration=levels.length*SECONDS_PER_DB;
+   gain.gain.setValueAtTime(amp(levels[levels.length-1]),begin+duration);
+   gain.gain.linearRampToValueAtTime(.0000001,begin+duration+.04);
+   osc.start(now);osc.stop(begin+duration+.06);
+   tone={mode:'test',stage,levels,osc,gain,start:begin,prior};
    awaitNext=false;
    render();
   }
  }catch(e){alert('No se pudo reproducir audio: '+e.message)}
 }
-function logMeasure(kind){if(!current)return;const entries=plan(current);const ix=firstMissing(current);if(ix<0)return;const e=entries[ix],k=key(e.f,e.side);const db=kind==='heard'?(tone?.mode==='test'?getCurrentDb():floorReached?TEST_END_DB:null):kind==='floor'||kind==='endunheard'?TEST_END_DB:null;
- if(!current.measures[k])current.measures[k]=[];current.measures[k][e.pass]={kind,db,elapsedS:tone?.mode==='test'?Math.min(TEST_DURATION,getElapsed()):(floorReached?TEST_DURATION:null),at:Date.now()};stopTone();floorReached=false;touch();awaitNext=true;render();}
+function logMeasure(kind){
+ if(!current)return;const entries=plan(current),ix=firstMissing(current);if(ix<0)return;
+ const e=entries[ix],k=key(e.f,e.side),active=tone?.mode==='test';
+ const db=kind==='heard'&&active&&tone.stage!=='coarse'?getCurrentDb():null;
+ const elapsedS=active?Math.min(e.pass===1?MAX_VERIFY:MAX_FIRST,trialElapsed+getElapsed()):0;
+ if(!current.measures[k])current.measures[k]=[];
+ current.measures[k][e.pass]={kind,db,elapsedS,at:Date.now(),method:'adaptive6-1'};
+ // A second pass only verifies a known first-pass threshold; it cannot estimate a missing one.
+ if(e.pass===0&&current.passes===2&&!Number.isFinite(db))current.measures[k][1]={kind:'skipped',db:null,elapsedS:0,at:Date.now(),method:'adaptive6-1'};
+ sampleNote=kind==='heard'?'Umbral aproximado registrado ✓':kind==='unheard'?'No se oyó desde el inicio; sin umbral medible.':'Se agotó el tiempo sin registrar un umbral claro; no se calculará desde esta pasada.';
+ trialElapsed=0;stopTone();floorReached=false;touch();awaitNext=true;render();
+}
 function parseBands(s){const arr=s.split(/[,;\s]+/).filter(Boolean).map(v=>Number(v));if(arr.length<2||arr.length>31||arr.some(x=>!Number.isFinite(x)||x<20||x>20000)||new Set(arr).size!==arr.length||arr.some((x,i)=>i&&x<=arr[i-1]))return null;return arr}
 function createProfile(){const name=$('#deviceName')?.value.trim()||'Mi equipo '+new Date().toLocaleDateString('es');const min=Number($('#eqMin')?.value),max=Number($('#eqMax')?.value);if(!Number.isFinite(min)||!Number.isFinite(max)||min>=0||max<=0||min<-30||max>30){alert('Introduce límites de dB válidos: mínimo negativo y máximo positivo (hasta 30 dB).');return}
  let bands=temp.preset==='custom'?parseBands($('#customFreqs')?.value||''):temp.bands.slice();if(!bands){alert('Revisa las frecuencias personalizadas: entre 2 y 31 valores, orden ascendente, de 20 a 20.000 Hz.');return}
@@ -231,7 +269,7 @@ function renderProfiles(){return `<section class="hero"><p class="eyebrow">BIBLI
 ${profiles.length?profiles.map(p=>`<div class="profile ${current?.id===p.id?'current':''}"><div class="row" style="justify-content:space-between;align-items:start"><div><h3>${esc(p.name)}</h3><small>${esc(presets[p.preset]?.short||'Personalizado')} · ${new Date(p.createdAt).toLocaleDateString('es')} · ${doneCount(p)}/${plan(p).length} pruebas</small></div>${current?.id===p.id?'<span class="tag">ACTIVO</span>':''}</div><div class="row wrap" style="margin-top:11px"><button type="button" data-load="${esc(p.id)}" class="btn btn-alt grow">Abrir perfil</button><button type="button" data-export="${esc(p.id)}" class="btn btn-ghost">Exportar</button><button type="button" data-delete="${esc(p.id)}" class="btn btn-danger">Borrar</button></div></div>`).join(''):`<div class="card"><h3>Todavía no tienes perfiles</h3><p>Cuando comiences tu primera calibración aparecerá aquí.</p></div>`}
 <div class="card"><h2>Respaldo de perfiles</h2><p class="small">Los perfiles se conservan en el almacenamiento del navegador actual, si está disponible. Un cambio de navegador, modo privado o borrado de datos puede eliminarlos.</p><div class="row wrap">${button('↓ Exportar todos (JSON)','exportall','btn-alt grow')}${button('↑ Importar JSON','import','btn-ghost grow')}</div><input id="importInput" class="hide" type="file" accept=".json,application/json"></div>
 <div class="card"><h2>Frecuencias disponibles</h2><p class="small">Los ecualizadores de 7 y 10 bandas de tus fotos están precargados exactamente. Otros fabricantes pueden usar frecuencias parecidas pero no iguales.</p>${Object.entries(presets).filter(([id])=>id!=='custom').map(([id,p])=>`<div class="small" style="margin:8px 0"><strong>${esc(p.short)}:</strong> ${esc(p.bands.map(short).join(' · '))}</div>`).join('')}</div>`}
-function setActive(p){stopTone();if(playerAudio)playerAudio.pause();current=p;currentId=p.id;awaitNext=false;floorReached=false;save();eqBypass=false;nav(firstMissing(p)<0?'results':'test')}
+function setActive(p){stopTone();if(playerAudio)playerAudio.pause();current=p;currentId=p.id;awaitNext=false;floorReached=false;trialElapsed=0;sampleNote='';save();eqBypass=false;nav(firstMissing(p)<0?'results':'test')}
 function exportDownload(name,text,mime){const blob=new Blob([text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)}
 const cleanName=s=>s.replace(/[^a-z0-9-_]/gi,'_').slice(0,48);
 function resultText(p){const r=recommend(p);return `AudioCal Hear · ${p.name}\nFrecuencias: ${p.bands.length} bandas\nResultado perceptivo estimado; revisar mediante escucha.\n\n`+r.map(x=>`${fmt(x.f).padEnd(11)} ${x.gain>=0?'+':''}${x.gain} dB${x.db===null?' (sin medición)':''}`).join('\n')+'\n\nNo constituye audiometría ni medición acústica.\n'}
@@ -256,16 +294,14 @@ switch(a){
 case 'setup':case 'test':case 'results':case 'profiles':nav(a);break;
 case 'create':createProfile();break;
 case 'check':await playTone(true);break;
-case 'stopaudio':stopTone();floorReached=false;if(playerAudio)playerAudio.pause();render();break;
+case 'stopaudio':stopTone();floorReached=false;trialElapsed=0;if(playerAudio)playerAudio.pause();render();break;
 case 'resume':nav(firstMissing(current)<0?'results':'test');break;
 case 'play':await playTone(false);break;
-case 'mark':if(tone?.mode==='test')logMeasure('heard');break;
-case 'unheard':if(tone?.mode==='test'&&current){if(confirm('¿No escuchaste nada desde que comenzó el pitido? No subas el volumen para perseguirlo.'))logMeasure('unheard')}break;
-case 'floor':if(current&&floorReached)logMeasure('floor');break;
-case 'endunheard':if(current&&floorReached)logMeasure('endunheard');break;
-case 'next':awaitNext=false;floorReached=false;render();break;
-case 'retry':awaitNext=false;floorReached=false;stopTone();render();break;
-case 'resettest':if(current&&confirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.manual={};awaitNext=false;floorReached=false;touch();render()}break;
+case 'mark':if(tone?.mode==='test'){if(tone.stage==='coarse'){const bracket=getCurrentDb();if(bracket===TEST_START_DB){logMeasure('unheard')}else{trialElapsed+=getElapsed();await playTone(false,'fine',bracket)}}else logMeasure('heard')}break;
+case 'unheard':if(tone?.mode==='test'&&current){if(confirm('¿No escuchaste el tono desde el principio de esta etapa? No subas el volumen para perseguirlo.'))logMeasure('unheard')}break;
+case 'next':awaitNext=false;floorReached=false;trialElapsed=0;sampleNote='';render();break;
+case 'retry':awaitNext=false;floorReached=false;trialElapsed=0;sampleNote='';stopTone();render();break;
+case 'resettest':if(current&&confirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.manual={};awaitNext=false;floorReached=false;trialElapsed=0;sampleNote='';touch();render()}break;
 case 'copy':{let ok=await copyText(resultText(current));$('#copyStatus').textContent=ok?'Valores copiados al portapapeles.':'No se pudo copiar. Usa Descargar TXT.';break}
 case 'downloadtxt':exportDownload('AudioCal_'+cleanName(current.name)+'.txt',resultText(current),'text/plain;charset=utf-8');break;
 case 'clearmanual':if(current){current.manual={};touch();render()}break;
