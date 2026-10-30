@@ -6,9 +6,13 @@
 
 **AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Explore your perceived hearing thresholds, compare musical preferences and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
-**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Official v1.8.0 pre-release](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.8.0) · [Release notes v1.8](RELEASE_NOTES_v1.8.md) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
+**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [v1.8.1 pre-release](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.8.1) · [Code audit](AUDIT.md) · [Maintenance release notes](RELEASE_NOTES_v1.8.1.md) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
 
-> **Public preview · v1.8.0 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+> **Public preview · v1.8.1 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+
+## Reliability improvements — v1.8.1
+
+Validated backup import (2 MB limit), corrected estimated vs. measured EQ bands, added combined-filter output headroom, restored music playback processing after page navigation and removed unused code. Eight languages, presets and profiles remain supported. See the [full audit](AUDIT.md) and [v1.8.1 release notes](RELEASE_NOTES_v1.8.1.md). Hardware verification remains pending.
 
 ## What's new in v1.8
 
