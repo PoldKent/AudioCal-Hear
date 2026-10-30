@@ -1,100 +1,67 @@
 # AudioCal Hear
 
-[English](README.md) | **Español**
+[English](README.md) · **Español**
 
-Asistente web de calibración auditiva perceptiva y generación de recomendaciones de ecualización para audífonos, parlantes y sistemas de audio de automóvil.
+### Escucha. Ajusta. Disfruta.
 
-**Versión:** 1.6 · **Idioma:** español · **Tecnología:** HTML, CSS, JavaScript y Web Audio API (sin dependencias externas).
+**AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite explorar umbrales auditivos percibidos, comparar preferencias musicales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
 
-## v1.6 — ocho idiomas y auditoría del código
+**[Abrir AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Historial de cambios](CHANGELOG.es.md) · [Notas de lanzamiento](RELEASE_NOTES.md)
 
-Puedes cambiar el idioma desde el selector que aparece en el encabezado de la aplicación. Están disponibles **español, inglés, francés, portugués, italiano, alemán, chino simplificado y japonés**. La primera vez se utiliza el idioma compatible del navegador; después se guarda tu selección.
+> **Versión preliminar pública · v1.6 · octubre de 2026.** La aplicación está disponible para probarla; no está validada como examen médico de audición ni calibración acústica objetiva.
 
-Las traducciones están integradas en **el mismo archivo HTML**, también sin Internet. Cambiar el idioma no borra perfiles ni reinicia el reproductor. Los nombres de equipos se conservan tal como los escribiste.
+## Funciones principales
 
-La auditoría eliminó una función duplicada, estados/constantes sin uso y reglas CSS obsoletas; también simplificó el procesamiento del deslizador de EQ. Se preservan las frecuencias, el motor de tonos, la fórmula de ecualización y las claves utilizadas para guardar perfiles. El selector de archivos del sistema puede seguir mostrando el idioma del teléfono.
+- **Prueba auditiva guiada:** sonidos descendentes que se mantienen 3 segundos en cada nivel digital; búsqueda inicial rápida y luego pasos de 1 dB cerca del umbral.
+- **Personalización musical:** comparación A/B de graves, voces y agudos, con ajustes individuales editables.
+- **Ecualizadores compatibles:** modelo de automóvil de 7 bandas (64, 160, 400, 1.000, 2.500, 6.250, 15.625 Hz), auriculares de 10 bandas (30, 60, 120, 250, 500, 1k, 2k, 4k, 8k, 16k Hz), otros formatos de 5/7/10/15/31 bandas y frecuencias personalizadas.
+- **Perfiles independientes:** ajustes guardados por equipo y opción de exportar/importar copias de respaldo.
+- **Ocho idiomas:** español, inglés, francés, portugués, italiano, alemán, chino simplificado y japonés.
+- **Compatible con celular:** reproduce audio por la salida configurada en el teléfono, incluidos dispositivos Bluetooth compatibles.
 
-Consulta la [auditoría en español](AUDIT.es.md) o [en inglés](AUDIT.md) para conocer el alcance y las limitaciones.
+La prueba adaptativa utiliza como máximo **42 segundos de reproducción automática** en la primera pasada por frecuencia y oído, y hasta **15 segundos adicionales** en la verificación opcional. Las pausas y repeticiones manuales no están incluidas. Un umbral puede quedar *sin determinar* y no se sustituyen los resultados ausentes por mediciones inventadas.
 
-## Nueva experiencia v1.5
+## Cómo utilizarla
 
-- **Configurar:** selección mediante tarjetas de automóvil, auriculares y parlantes, modos rápido/verificación y prueba conjunta/por oído. La duración se muestra al instante; las opciones avanzadas quedan plegadas.
-- **Perfiles:** el equipo activo tiene protagonismo, seguido de los demás perfiles. Respaldos y frecuencias compatibles se encuentran en menús desplegables compactos.
-- **Ajustes:** toca una barra de frecuencia para seleccionarla y modificarla con un deslizador y botones ±, sin interrumpir la música. Los valores exactos y los detalles de medición pueden desplegarse cuando se necesitan.
-- Se conservan los perfiles guardados, la compatibilidad con Bluetooth del sistema y el motor de tonos de 3 segundos por nivel de la v1.3.
+1. Abre **https://poldkent.github.io/AudioCal-Hear/** desde tu celular con un navegador moderno.
+2. Conecta los auriculares, parlantes o el automóvil desde la configuración Bluetooth/audio del teléfono. Para probar el automóvil, permanece **estacionado**.
+3. Selecciona equipo, ecualizador y modo. Utiliza un **volumen bajo, cómodo y fijo**, en un ambiente silencioso.
+4. Marca cuándo dejas de escuchar cada tono. Nunca aumentes el volumen para perseguir un sonido que no escuchas.
+5. Compara con tu música, revisa las recomendaciones y copia **manualmente** los valores al ecualizador de tu dispositivo.
 
-## Ejecutar en celular
+La app no detecta todos los modelos Bluetooth, no controla el ecualizador global del teléfono ni modifica automáticamente equipos externos. Sus recomendaciones pueden no producir una mejoría perceptible o preferible en todos los dispositivos.
 
-- Abre `index.html` en un navegador compatible. Para evitar las restricciones de algunos visores de archivos, también puedes publicar el mismo archivo por HTTPS (por ejemplo, con GitHub Pages).
-- Conecta los auriculares, parlantes o el automóvil en la **configuración Bluetooth del teléfono**, antes de empezar. El navegador utiliza la salida del sistema; no identifica ni cambia automáticamente dispositivos Bluetooth.
-- Selecciona el ecualizador, los canales y las repeticiones. La pantalla **Configuración** muestra el número de pruebas, un escenario orientativo de duración y el tiempo máximo del barrido.
-- Comprueba el sonido a volumen bajo y estable; después inicia el examen. Primero desciende en pasos de **hasta 6 dB cada 3 segundos**. Pulsa cuando deje de escucharse; la app afina con pasos de **1 dB cada 3 segundos**.
-- Consulta **Ajustes** para ver los valores estimados, o compara con tu propio archivo de música en la app. Copia los ajustes al ecualizador del dispositivo manualmente.
+## Seguridad auditiva y límites de precisión
 
-## Novedades v1.4: preferencias musicales y resultados más claros
+**Nunca realices la prueba con volumen máximo.** Detén la reproducción si aparece incomodidad, dolor o zumbidos. Mantén sesiones breves y un volumen seguro: la exposición excesiva puede dañar la audición. Los valores **dBFS** son niveles digitales y **no** son decibelios acústicos medidos en el oído.
 
-- La pantalla de resultados diferencia las **pruebas terminadas** de las **frecuencias con un umbral utilizable**. Si faltan datos, permite repetir solo esas frecuencias.
-- Añadimos una comparación opcional **A/B con tu propia música**: tres rondas para elegir graves, voces y brillo algo más suaves o destacados, o marcar «Iguales». Se guardan esas preferencias aparte de los umbrales auditivos.
-- Para comparar, elige un archivo de audio local, **reprodúcelo**, escucha **A y B** y selecciona la versión que te resulte más cómoda. Los ajustes son moderados, de hasta ±2 dB por zona y por decisión. No existe garantía de mejora ni una igualación de sonoridad clínicamente calibrada.
-- La compensación basada en umbrales se desactiva si menos del 60% de las frecuencias tienen resultados utilizables (criterio preventivo del proyecto, **no** un estándar de audiometría). Siguen disponibles las preferencias y los ajustes manuales.
-- Los cambios manuales ya no detienen el reproductor. La advertencia sobre el rango provisional ±6 dB solo aparece al elegir el **ecualizador de automóvil de 7 bandas**.
-- **Nunca utilices el volumen máximo** para realizar la prueba. La OMS aconseja no superar el 60% del volumen máximo del dispositivo en el uso personal habitual; ese porcentaje no equivale a una medición real de dB SPL. Usa un nivel bajo y cómodo, mantenlo fijo y no lo aumentes para perseguir tonos que no oyes.
-- La aplicación no modifica automáticamente los ecualizadores del vehículo o los auriculares; los valores deben introducirse manualmente. No reutilices el perfil de un dispositivo para otro sin comprobarlo.
+**AudioCal Hear no es una prueba médica de audición, un audífono terapéutico ni un sustituto de un profesional de audiología.** Los umbrales y curvas son aproximados y dependen del oído, dispositivo, ajuste físico, ruido ambiental y volumen. Consulta a un profesional si tienes preocupaciones auditivas.
 
-## Ecualizadores precargados
+## Privacidad
 
-| Perfil | Frecuencias centrales (Hz) |
-| --- | --- |
-| Automóvil 7 bandas (fotografías del proyecto) | 64, 160, 400, 1000, 2500, 6250, 15625 |
-| Auriculares 10 bandas (fotografía del proyecto) | 30, 60, 120, 250, 500, 1000, 2000, 4000, 8000, 16000 |
-| 7 bandas habitual | 63, 160, 400, 1000, 2500, 6300, 16000 |
-| 10 bandas ISO (octavas) | 31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 |
-| Otros | 5, 15, 31 bandas y selección personalizada |
+La aplicación actual es una página estática **sin cuentas de AudioCal Hear, sin analíticas propias y sin servidor de perfiles controlado por la app**. Tus perfiles y preferencias se guardan en el almacenamiento local del navegador. La música elegida se procesa en el propio navegador. Puedes exportar respaldos; otras personas con acceso a tu dispositivo, navegador o archivos exportados podrían consultarlos. GitHub, como proveedor de alojamiento, puede tratar datos técnicos de acceso conforme a sus propias políticas.
 
-La escala de ganancia del automóvil se configuró provisionalmente en ±6 dB. La fotografía verifica +6, pero no determina todo el rango de la radio; puedes cambiar los límites desde Configuración.
+[Política de privacidad](PRIVACY.es.md) · [Privacy notice](PRIVACY.md).
 
-## Examen rápido: máximo 57 segundos por frecuencia y oído
+## Derechos de autor y condiciones legales
 
-El barrido inteligente mantiene **3 segundos de escucha por nivel**, pero salta los niveles innecesarios.
+**© 2026 PoldKent — Todos los derechos reservados, en la medida legalmente aplicable a los derechos que le correspondan.**
 
-| Etapa | Saltos | Máximo |
-| --- | --- | ---: |
-| Búsqueda rápida | −28, −34, −40, −46, −52, −58, −64, −68 dBFS (hasta 6 dB por paso) | 8 × 3 = **24 s** |
-| Ajuste fino | Un máximo de seis pasos de 1 dB en la zona del umbral | 6 × 3 = **18 s** |
-| Verificación opcional | Hasta cinco pasos de 1 dB alrededor del primer umbral | 5 × 3 = **15 s** |
-| **Total** | | **57 s** |
+**Que la aplicación sea gratuita y el repositorio público no significa que el código sea de licencia abierta.** Se publica el repositorio para transparencia, evaluación y consulta; **no se concede una licencia general para copiar, modificar, redistribuir, alojar o explotar comercialmente su código, diseño o identidad visual**. Se permite utilizar la aplicación alojada oficialmente con fines personales y no comerciales, según las condiciones publicadas y la legislación aplicable.
 
-Si no se encuentra el umbral a tiempo, la prueba queda **sin determinar**, sin inventar valores. El límite corresponde únicamente al **audio reproducido automáticamente**; no cuenta pausas, repeticiones manuales ni el tiempo entre pulsaciones. Examinar los oídos por separado duplica las combinaciones de frecuencia/oído.
+Las condiciones de GitHub permiten, de manera independiente, ver y hacer *fork* de repositorios públicos dentro de su servicio. Ningún aviso de este repositorio elimina esos derechos ni impide físicamente que alguien copie el HTML público. Se respetan las excepciones legales obligatorias y los derechos de terceros.
 
-| Ambos canales juntos | Máximo con 1 pasada | Máximo con 2 pasadas |
-| --- | ---: | ---: |
-| Automóvil, 7 bandas | 4 min 54 s | **6 min 39 s** |
-| Auriculares, 10 bandas | 7 min | **9 min 30 s** |
+AudioCal Hear es un proyecto independiente, **sin afiliación, patrocinio ni respaldo de Soundcore, Anker ni de fabricantes de audio**. Las marcas de terceros utilizadas para identificar equipos pertenecen a sus respectivos titulares. No se afirma que el nombre **AudioCal Hear** sea una marca registrada.
 
-La configuración inicial utiliza **una pasada**. El aviso de duración se adapta a las bandas, canales y repeticiones seleccionadas. No constituye audiometría médica ni una medición acústica calibrada.
+[Aviso de derechos reservados](LICENSE.md) · [Condiciones de uso](TERMS.es.md) · [Terms in English](TERMS.md) · [Política de contribuciones](CONTRIBUTING.es.md).
 
-## Publicar con GitHub Pages
+## Tecnología y documentación
 
-1. Crea un repositorio GitHub, por ejemplo `AudioCal-Hear`.
-2. Sube los archivos de este proyecto al directorio raíz de la rama `main`, especialmente `index.html`.
-3. En el repositorio, abre **Settings → Pages**.
-4. En **Build and deployment**, selecciona **Deploy from a branch**, `main` y `/(root)`; guarda.
-5. GitHub Pages mostrará la URL publicada cuando finalice el despliegue. Ábrela desde el celular.
+El proyecto está desarrollado en un único archivo **HTML + CSS + JavaScript**, mediante Web Audio API y sin dependencias de ejecución. Se publica como sitio estático en GitHub Pages; también es posible guardar el archivo HTML y abrirlo sin Internet, según el navegador. No es un audiómetro ni mide niveles de presión sonora.
 
-GitHub Pages y sus requisitos de visibilidad dependen de la configuración y el plan de la cuenta.
+- [Documentación en inglés](README.md)
+- [Notas de lanzamiento · English / Español](RELEASE_NOTES.md)
+- [Auditoría · Español](AUDIT.es.md) / [English](AUDIT.md)
+- [Historial de versiones · Español](CHANGELOG.es.md) / [English](CHANGELOG.md)
 
-## Privacidad y limitaciones
-
-- Los perfiles se conservan en `localStorage` del navegador donde se crean. Puedes exportarlos/importarlos en JSON.
-- El archivo de música elegido para la comparación A/B se procesa dentro del navegador; no se sube a un servidor de AudioCal Hear.
-- Los dBFS mostrados son **niveles digitales**, no medidas acústicas de dB SPL. Los resultados **no son una audiometría ni una calibración acústica objetiva**.
-- Usa un volumen bajo y cómodo, no lo aumentes para buscar tonos inaudibles, y detén el examen si notas molestias.
-- Los ecualizadores del automóvil o de los auriculares no se modifican automáticamente: los resultados se transfieren manualmente.
-
-## Estructura
-
-- `index.html` — aplicación completa de archivo único.
-- `README.md` — instrucciones principales en inglés.
-- `README.es.md` — instrucciones en español.
-- `CHANGELOG.md` / `CHANGELOG.es.md` — historial de versiones en inglés y español.
-- `CONTRIBUTING.md` / `CONTRIBUTING.es.md` — cómo proponer cambios y quién puede editarlos.
+**Repositorio:** https://github.com/PoldKent/AudioCal-Hear
