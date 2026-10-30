@@ -1,0 +1,45 @@
+name: Publish AudioCal Hear v1.8.1 maintenance prerelease
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v1.8.1.yml"
+      - "RELEASE_NOTES_v1.8.1.md"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out versioned HTML
+        uses: actions/checkout@v4
+      - name: Validate release source
+        run: |
+          set -euo pipefail
+          grep -q 'AudioCal Hear v1.8.1' index.html
+          grep -q 'function normalizedProfile' index.html
+          grep -q 'function chainPeakDb' index.html
+          test -s RELEASE_NOTES_v1.8.1.md
+          cp index.html AudioCal_Hear_v1.8.1.html
+      - name: Create or update official prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.8.1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit v1.8.1 \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "AudioCal Hear v1.8.1 — Code Quality & Stability (Public Preview)" \
+              --notes-file RELEASE_NOTES_v1.8.1.md \
+              --prerelease
+          else
+            gh release create v1.8.1 AudioCal_Hear_v1.8.1.html \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "AudioCal Hear v1.8.1 — Code Quality & Stability (Public Preview)" \
+              --notes-file RELEASE_NOTES_v1.8.1.md \
+              --prerelease
+          fi
