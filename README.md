@@ -6,7 +6,7 @@
 
 **AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Explore your perceived hearing thresholds, compare musical preferences and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
-**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Release notes v1.8](RELEASE_NOTES_v1.8.md) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
+**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Official v1.8.0 pre-release](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.8.0) · [Release notes v1.8](RELEASE_NOTES_v1.8.md) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
 
 > **Public preview · v1.8.0 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
 
