@@ -6,6 +6,10 @@
 
 AudioCal Hear is presently a **static, client-side application**. Its source code does not contain an AudioCal Hear account service, app-owned analytics, tracking pixel, network requests for user profiles or an app-operated remote database. This statement describes the **current code**, not potential future versions or GitHub's independent hosting operations.
 
+## Optional microphone check (v1.8)
+
+Only if you expressly tap **Check relative background noise**, the browser requests microphone permission and briefly analyzes the audio waveform **in memory** to derive a relative noise indicator. The application does not store microphone recordings, upload microphone samples, or claim a calibrated acoustic dB SPL measurement. The microphone stream is stopped after the check. You may skip it and continue the test. Browser/operating-system permissions and device behavior remain outside this app's control.
+
 ## What is stored on your device
 
 - Your device/profile names, selected equalizer frequencies, hearing-test selections and outcomes, EQ settings and music preferences are kept in the browser's **localStorage**.
