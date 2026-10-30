@@ -2,6 +2,14 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## v1.6.1 — 2026-10-30
+
+- El indicador «Sin instalar» se alinea a la izquierda en su propia fila para móviles estrechos, incluidos los de proporción 9:21.
+- Tamaño adaptable del contenido y distribución en dos columnas en Configuración y Ajustes para pantallas de escritorio 4:3 a 21:9.
+- Eliminados espacios vacíos innecesarios junto al reproductor musical en pantallas ultrapanorámicas.
+- Verificados varios tamaños y ocho traducciones sin desbordamiento horizontal.
+- Sin alterar los algoritmos de audio, perfiles guardados ni frecuencias.
+
 ## v1.6 — 2026-10-30
 
 - Localización integrada para ocho idiomas (español, inglés, francés, portugués, italiano, alemán, chino simplificado y japonés), con selector persistente y detección del idioma del navegador.
