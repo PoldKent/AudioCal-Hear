@@ -6,6 +6,7 @@
 
 - Added 3-round optional music A/B preferences (bass, vocals, treble) and stored those separately from hearing thresholds.
 - Added results warning when a trial finishes without a usable threshold, and a targeted retry for those bands only.
+- Suppress hearing-threshold-based EQ unless at least 60% of bands have usable data; manual and music-preference settings remain available.
 - Stopped manual EQ gain adjustments from resetting the music player.
 - Limited the provisional ±6 dB car-range warning to the 7-band car preset.
 - Reinforced comfortable-volume safety guidance. No acoustic calibration or diagnostic claims.
