@@ -2,6 +2,15 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## v1.8.1 — 2026-10-30
+
+- Validación de perfiles importados y locales, arrays de mediciones y ganancias acotadas, con límite de respaldo de 2 MB.
+- Interpolación controlada de frecuencias internas no medidas en modo rápido, sin contar estimaciones como mediciones reales para la cobertura.
+- Estimación del margen digital de toda la cadena de filtros, estable durante A/B y bypass.
+- Corrección de la conexión Web Audio al volver al reproductor y limpieza de nodos al terminar tonos.
+- Eliminación de funciones, contadores y referencias obsoletas, y traducción de los nuevos avisos.
+- Superadas 12 pruebas de regresión más verificaciones DSP, datos y reproducción; todavía faltan pruebas acústicas físicas.
+
 ## v1.8.0 — 2026-10-30
 
 - Nuevo rango digital configurable de −24 a −84 dBFS, inicio seguro predeterminado de −36 dBFS, confirmaciones al aproximarse a −24 y advertencias en el mínimo.
