@@ -2,6 +2,15 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## v1.8.1 — 2026-10-30
+
+- Validated imported and locally stored profiles, bounded measurement arrays and gain values, with a 2 MB backup import limit.
+- Enabled bounded interpolation between observed frequencies in quick mode, while counting only actual measurements toward automatic EQ coverage.
+- Added cascaded peaking-filter headroom estimation with fixed preamp budget during A/B comparisons and bypass.
+- Restored Web Audio processing when resuming local music after changing pages; cleanly disconnect stopped tone nodes.
+- Removed obsolete functions, counters and a stale timer reference. Added translations of new warning/estimate labels.
+- Passed 12 headless-browser regression cases plus DSP/normalization and player lifecycle tests; physical acoustic testing remains outstanding.
+
 ## v1.8.0 — 2026-10-30
 
 - Added configurable −24 to −84 dBFS digital testing range with −36 dBFS default, explicit safety confirmation near −24, and warnings at the lower end.
