@@ -1,0 +1,43 @@
+name: Publish AudioCal Hear v1.8.0 prerelease
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v1.8.0.yml"
+      - "RELEASE_NOTES_v1.8.md"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out approved source
+        uses: actions/checkout@v4
+      - name: Verify source and prepare standalone HTML
+        run: |
+          set -euo pipefail
+          grep -q 'AudioCal Hear v1.8.0' index.html
+          grep -q 'TEST_END_DB=-84' index.html
+          grep -q "function answerTone" index.html
+          test -s RELEASE_NOTES_v1.8.md
+          cp index.html AudioCal_Hear_v1.8.0.html
+      - name: Publish bilingual public prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.8.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit v1.8.0 --repo "$GITHUB_REPOSITORY" \
+              --title "AudioCal Hear v1.8.0 — Adaptive Hearing Experience (Public Preview)" \
+              --notes-file RELEASE_NOTES_v1.8.md --prerelease
+          else
+            gh release create v1.8.0 AudioCal_Hear_v1.8.0.html \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "AudioCal Hear v1.8.0 — Adaptive Hearing Experience (Public Preview)" \
+              --notes-file RELEASE_NOTES_v1.8.md \
+              --prerelease
+          fi
