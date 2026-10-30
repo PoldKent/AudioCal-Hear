@@ -2,6 +2,14 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## v1.3 — 2026-10-30
+
+- Added an adaptive hearing test: coarse steps of up to 6 dB followed by 1 dB fine steps, each held for 3 seconds.
+- First-pass automatic audio lasts at most 42 seconds; optional verification adds at most 15 seconds, for **57 seconds per frequency and ear**.
+- Switched the default to one pass and updated the duration calculations and test indicators.
+- Timed-out tests are saved as undetermined rather than assigned an unmeasured threshold.
+- Previously saved profiles remain compatible.
+
 ## v1.2 — 2026-10-30
 
 - Added a duration estimate to setup that updates when users change the band layout, channel mode, number of passes, or custom frequencies.
