@@ -4,7 +4,7 @@
 
 **AudioCal Hear** is a single-file, mobile-friendly web app for subjective hearing-threshold testing and personalized equalizer suggestions for headphones, speakers, and car audio systems.
 
-**Version:** 1.2 · **App interface:** Spanish (for now) · **Stack:** HTML, CSS, vanilla JavaScript, Web Audio API · **No external libraries**.
+**Version:** 1.3 · **App interface:** Spanish (for now) · **Stack:** HTML, CSS, vanilla JavaScript, Web Audio API · **No external libraries**.
 
 > **Safety:** This is *not* a clinical hearing test or an objective acoustic calibration. Its results are approximate, subjective EQ suggestions. Begin at a low, comfortable volume. Do not raise the volume to chase hard-to-hear frequencies. Stop if you experience discomfort or ringing.
 
@@ -14,7 +14,7 @@
 2. Open `index.html` in a modern mobile browser. If local-file restrictions interfere, use GitHub Pages over HTTPS (setup below).
 3. Choose the equalizer preset (including the exact **7-band car stereo** and **10-band headphones** from the project reference photos), stereo or individual ears, and one or two passes.
 4. Check the audio at a quiet, comfortable and unchanged phone volume, in a quiet environment. Keep the vehicle parked throughout the test.
-5. Start the test. Each frequency plays at one digital level for **3 seconds** and then decreases by **1 dB**; tap the button when you can no longer hear it.
+5. Start the adaptive test: first the tone drops by up to **6 dB every 3 seconds**. Tap when it disappears; the app returns to the region and uses **1 dB steps every 3 seconds** to find your threshold.
 6. Review estimated settings in **Ajustes**, compare using your local audio file, and enter the suggested settings manually into the device's equalizer.
 
 ## Supported equalizer presets
@@ -29,24 +29,25 @@
 
 The car stereo's gain range is **provisionally** configured to ±6 dB. The supplied photo confirms a +6 reading, but not the complete scale. Adjust the gain limits to match your equipment.
 
-## Test duration: estimate and maximum
+## Faster test: maximum 57 seconds per frequency and ear
 
-The sweep covers **41 levels**, from −28 to −68 dBFS, at **3 seconds per level**. A single tone can therefore take up to **123 seconds**, but ends sooner when you mark your threshold.
+The adaptive sweep keeps the same 3-second listening time at each digital level and skips most unnecessary levels.
 
-Before starting, the app shows:
-- the number of trials derived from band count, ear/channel mode, and repetitions;
-- an **illustrative** 30–45 seconds per tone range, not a prediction of your hearing;
-- the maximum uninterrupted tone-playback time;
-- an updated remaining-time estimate after enough actual samples have been recorded.
+| Stage | Steps | Maximum |
+| --- | --- | ---: |
+| Coarse | −28, −34, −40, −46, −52, −58, −64, −68 dBFS (up to 6 dB per step) | 8 × 3 = **24 s** |
+| Fine | Six 1 dB steps at most, close to the missed tone | 6 × 3 = **18 s** |
+| Optional verification | Up to five 1 dB levels around the first threshold | 5 × 3 = **15 s** |
+| **Total** | | **57 s** |
 
-For both channels together and two passes:
+If no threshold is registered in time, the attempt is marked **undetermined**: the app does not invent a result. This is an upper bound on **automatically played audio**, not pauses, manual retries or time between taps. Testing left and right ears separately doubles the ear/frequency combinations.
 
-| Preset | Trials | Illustrative duration | Maximum sweep |
-| --- | ---: | --- | --- |
-| 7-band car | 14 | 7–10 min 30 sec | 28 min 42 sec |
-| 10-band headphones | 20 | 10–15 min | 41 min |
+| Both channels together | One pass maximum | Two passes maximum |
+| --- | ---: | ---: |
+| Car, 7 bands | 4 min 54 s | **6 min 39 s** |
+| Headphones, 10 bands | 7 min | **9 min 30 s** |
 
-Pauses and manually repeated trials are not included.
+The default is **one pass**. The setup screen adapts estimates to your chosen bands, channels and repetitions. This is not medical audiometry or calibrated sound-pressure measurement.
 
 ## Data, audio and privacy
 
