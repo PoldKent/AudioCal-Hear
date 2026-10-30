@@ -8,7 +8,7 @@
 
 **[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
 
-> **Public preview · v1.6.1 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+> **Public preview · v1.7.0 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
 
 ## Responsive display update — v1.6.1
 
@@ -16,6 +16,19 @@
 - **Desktop from 4:3 to 21:9:** responsive content width, a two-column setup at wider sizes, and separate EQ/music comparison columns on large desktops. Compact 4:3 screens retain a comfortable one-column layout.
 - Preserves all eight UI languages, existing local profiles and the current calibration/EQ logic.
 - Verified in simulated Chromium across 360 × 840, 393 × 917, 430 × 960, 1024 × 768, 1280 × 960, 1920 × 1080 and 2560 × 1080 screens, including eight localized badge variants.
+
+## New in v1.7.0 — smarter tonal balance
+
+**Hearing a fading test tone all the way to the final level is not a reason to cut that frequency.** The threshold test now records whether you still heard the tone or could not decide; these are **incomplete/censored measurements**, not evidence of excessive loudness.
+
+In **EQ Settings → Smart Tonal Balance**, load and play your own music. For each suggested frequency, compare **A and B twice** without adjusting your device volume. The second comparison reverses the A/B order and uses a smaller difference. You can select any available band, including one without a measured threshold. Only confirmed listening preferences affect the extra EQ adjustment:
+
+- Two consistent preferences: **±2 dB**; one directional preference with a neutral response: **±1 dB**.
+- Contradictory or equal responses: **no change**.
+- Additional cuts require repeating the listening comparison; cumulative cuts are capped at **−6 dB** per band (boosts at +3 dB).
+- Threshold, music taste and per-band balance adjustments are stored separately for each local profile; existing profiles remain readable.
+
+The A/B player keeps the same overall output gain and headroom between versions, but **does not guarantee precisely matched perceived loudness**. This is a subjective comfort/timbre aid—not clinical audiometry or objective loudspeaker measurement. Never turn up the volume to hear a faint tone.
 
 ## What you can do
 
