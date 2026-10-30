@@ -6,6 +6,7 @@
 
 - Tres rondas opcionales de preferencias musicales A/B (graves, voces y agudos), guardadas por separado del examen auditivo.
 - Aviso de frecuencias sin umbral utilizable y opción de repetir solo esas bandas.
+- Se evita calcular la compensación auditiva si menos del 60% de las bandas tienen resultados utilizables; siguen activos los ajustes de preferencias y los manuales.
 - Los cambios manuales de EQ ya no reinician la reproducción de música.
 - Aviso del rango ±6 dB exclusivamente para el ecualizador original de automóvil de 7 bandas.
 - Advertencias más claras sobre el uso de volumen cómodo y los límites de precisión.
