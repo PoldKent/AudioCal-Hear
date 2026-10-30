@@ -1,6 +1,36 @@
-# AudioCal Hear v1.6.1 — Responsive Public Preview
+# AudioCal Hear v1.7.0 — Smarter Tonal Balance Public Preview
 
 **[English](#english)** · **[Español](#español)**
+
+## AudioCal Hear v1.7.0 — Smarter Tonal Balance / Equilibrio tonal inteligente
+
+### English
+
+This public-preview update makes EQ personalization **bidirectional**: suggested per-band corrections can now be positive **or negative**, based on **confirmed A/B music preferences** rather than simply hearing a quiet test tone.
+
+- New optional **Smart Tonal Balance** panel in EQ Settings. Play a local music file, select any band and listen to two A/B comparisons. The verification reverses the A/B order.
+- Two consistent choices apply ±2 dB; one directional and one neutral choice apply ±1 dB; conflicting/equal choices cause no change. Cuts cannot exceed −6 dB and require repeated rounds. Additional boosts are limited to +3 dB.
+- If a fading test tone remains audible at the final step, the app records that it was still heard **without automatically recommending a cut**.
+- Hearing-threshold outcomes, broad sound preferences and music-confirmed tonal corrections remain separate in existing saved profiles.
+- Mobile and desktop layout, eight languages, local playback and fixed digital output headroom are retained.
+
+**Safety and limitations:** Never test at maximum volume. A/B comparisons do not guarantee equal *perceived* loudness, and hearing thresholds are not calibrated acoustic measurements or medical diagnoses. Try the result with your own headphones at comfortable volume. Hardware verification remains outstanding.
+
+### Español
+
+Esta actualización preliminar hace que la ecualización sea **bidireccional**: se pueden recomendar aumentos **o reducciones** por banda cuando las confirma una **comparación musical A/B**, sin asumir que escuchar un tono muy suave significa que la frecuencia está demasiado fuerte.
+
+- Nuevo apartado opcional **Equilibrio tonal inteligente** dentro de Ajustes. Reproduce música local, selecciona una banda y escucha dos comparaciones A/B. La verificación invierte el orden de A/B.
+- Dos decisiones coherentes producen ±2 dB; una decisión y una respuesta neutral producen ±1 dB. Si se contradicen o son iguales, no hay modificación. Los recortes están limitados a −6 dB con sesiones repetidas y los aumentos a +3 dB.
+- Si el tono continúa audible al finalizar la prueba, se registra ese hecho **sin bajar automáticamente esa banda**.
+- Se conservan por separado los umbrales, preferencias generales y ajustes musicales, con compatibilidad de perfiles anteriores.
+- Se mantienen los ocho idiomas, diseño adaptable, reproducción local y margen de salida digital.
+
+**Seguridad y límites:** No utilices volumen máximo. Las comparaciones A/B no garantizan idéntica *sonoridad percibida*. Los umbrales no son una medición acústica calibrada ni un diagnóstico médico. Se requieren pruebas con hardware real.
+
+**Suggested GitHub Release:** Tag `v1.7.0`, name `AudioCal Hear v1.7.0 — Smarter Tonal Balance`, mark **Pre-release**.
+
+---
 
 ## Responsive patch v1.6.1 / Parche responsive v1.6.1
 
