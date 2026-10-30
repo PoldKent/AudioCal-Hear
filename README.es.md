@@ -8,7 +8,14 @@
 
 **[Abrir AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Historial de cambios](CHANGELOG.es.md) · [Notas de lanzamiento](RELEASE_NOTES.md)
 
-> **Versión preliminar pública · v1.6 · octubre de 2026.** La aplicación está disponible para probarla; no está validada como examen médico de audición ni calibración acústica objetiva.
+> **Versión preliminar pública · v1.6.1 · octubre de 2026.** La aplicación está disponible para probarla; no está validada como examen médico de audición ni calibración acústica objetiva.
+
+## Actualización responsive — v1.6.1
+
+- **Celulares estrechos (9:21):** el distintivo «Sin instalar» aparece en una segunda línea alineada a la izquierda, sin salir del encuadre ni desaparecer.
+- **Escritorios 4:3 a 21:9:** anchura adaptable, Configuración en dos columnas cuando hay espacio y Ajustes con ecualizador y reproductor musical en columnas independientes. Los formatos 4:3 más compactos conservan una lectura cómoda.
+- Se mantienen los ocho idiomas, los perfiles locales y el motor actual de calibración/ecualización.
+- Comprobaciones realizadas en Chromium simulado a 360 × 840, 393 × 917, 430 × 960, 1024 × 768, 1280 × 960, 1920 × 1080 y 2560 × 1080, además de ocho variantes de idioma del distintivo.
 
 ## Funciones principales
 
