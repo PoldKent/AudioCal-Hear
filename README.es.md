@@ -58,5 +58,7 @@ GitHub Pages y sus requisitos de visibilidad dependen de la configuración y el 
 ## Estructura
 
 - `index.html` — aplicación completa de archivo único.
-- `README.md` — uso, duración, seguridad y publicación.
-- `CHANGELOG.md` — historial de versiones.
+- `README.md` — instrucciones principales en inglés.
+- `README.es.md` — instrucciones en español.
+- `CHANGELOG.md` / `CHANGELOG.es.md` — historial de versiones en inglés y español.
+- `CONTRIBUTING.md` / `CONTRIBUTING.es.md` — cómo proponer cambios y quién puede editarlos.
