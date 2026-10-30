@@ -6,9 +6,19 @@
 
 **AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Explore your perceived hearing thresholds, compare musical preferences and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
-**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Official v1.7.0 pre-release](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.7.0) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
+**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Release notes v1.8](RELEASE_NOTES_v1.8.md) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
 
-> **Public preview · v1.7.0 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+> **Public preview · v1.8.0 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+
+## What's new in v1.8
+
+- Expanded digital test range from **−24 to −84 dBFS**, with a safer default start of **−36 dBFS**, adjustable endpoints and explicit warnings near the louder end. **dBFS does not measure the sound pressure at your ear**.
+- Explicit **heard / not heard** responses, adaptive 12 dB discovery, 1 dB refinement and confirmation tones; **“I could still hear it”** at the floor records data without an automatic EQ cut.
+- Guided setup with optional **relative-noise microphone** check (not calibrated dB SPL); fast representative-frequency testing or complete testing of every selected EQ band.
+- Separate-ear headphone testing by default, with an explanatory left/right chart; existing saved profiles, EQ presets, A/B music balance and eight locales are retained.
+- The first search is limited to **60 seconds of playback per frequency**, excluding user response time. The full test may be longer.
+
+[Detailed v1.8 release notes](RELEASE_NOTES_v1.8.md). Real Bluetooth/acoustic validation is still pending.
 
 ## Responsive display update — v1.6.1
 
