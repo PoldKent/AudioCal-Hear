@@ -2,6 +2,14 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## v1.4 — 2026-10-30
+
+- Tres rondas opcionales de preferencias musicales A/B (graves, voces y agudos), guardadas por separado del examen auditivo.
+- Aviso de frecuencias sin umbral utilizable y opción de repetir solo esas bandas.
+- Los cambios manuales de EQ ya no reinician la reproducción de música.
+- Aviso del rango ±6 dB exclusivamente para el ecualizador original de automóvil de 7 bandas.
+- Advertencias más claras sobre el uso de volumen cómodo y los límites de precisión.
+
 ## v1.3 — 2026-10-30
 
 - Nueva prueba adaptativa: saltos de hasta 6 dB al principio y ajustes de 1 dB al final, con 3 segundos de escucha por nivel.
