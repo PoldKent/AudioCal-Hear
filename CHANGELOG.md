@@ -2,6 +2,15 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## v1.8.0 — 2026-10-30
+
+- Added configurable −24 to −84 dBFS digital testing range with −36 dBFS default, explicit safety confirmation near −24, and warnings at the lower end.
+- Replaced automatic coarse/fine descent with explicit heard/not-heard answers, adaptive ~12 dB discovery, 1 dB refinement, and two confirmation tones (up to 60 seconds of playback per first-pass frequency).
+- Preserved the “still audible at floor” outcome without automatically cutting EQ gain.
+- Added 3-step guided preparation, optional temporary microphone relative-noise check, fast (up to 6 frequencies) and complete modes, separate-ear default for headphones and a non-clinical left/right digital threshold chart.
+- Preserved 7- and 10-band photo EQs, standard/custom bands, local profile compatibility and eight-language support.
+- Verified JavaScript syntax, viewport layout, multilingual preparation and simulated threshold/still-heard flows; no physical-acoustic validation claimed.
+
 ## v1.7.0 — 2026-10-30
 
 - Added optional **Smart Tonal Balance** in the result screen: two music A/B comparisons per selected EQ band with reversed order and smaller verification step.
