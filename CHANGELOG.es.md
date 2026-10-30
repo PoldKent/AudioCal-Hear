@@ -2,6 +2,15 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## v1.8.0 — 2026-10-30
+
+- Nuevo rango digital configurable de −24 a −84 dBFS, inicio seguro predeterminado de −36 dBFS, confirmaciones al aproximarse a −24 y advertencias en el mínimo.
+- Respuestas explícitas escucho/no escucho, búsqueda aproximada de 12 dB, ajuste de 1 dB y dos tonos de confirmación; hasta 60 segundos de reproducción por primera prueba de frecuencia.
+- Se conserva la opción «Lo seguía escuchando» al alcanzar el mínimo sin generar recortes EQ automáticos.
+- Preparación guiada de tres pasos, micrófono opcional para ruido relativo no calibrado, modo rápido de hasta seis frecuencias y modo completo, auriculares por oído predeterminados y gráfica no clínica izquierda/derecha.
+- Se mantienen los ecualizadores de 7 y 10 bandas de las fotografías, los demás formatos y los perfiles anteriores.
+- Comprobaciones de sintaxis, adaptación de pantalla, traducciones y simulación de umbrales; pendiente validación acústica real.
+
 ## v1.7.0 — 2026-10-30
 
 - Nuevo módulo opcional de **Equilibrio tonal inteligente**: dos comparaciones musicales A/B por banda, invirtiendo el orden y afinando en la verificación.
