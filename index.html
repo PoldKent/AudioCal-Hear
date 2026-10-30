@@ -269,7 +269,7 @@ function setPreset(id){temp.preset=id;temp.bands=(presets[id]||presets.custom).b
 function render(){if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
  el.dataset.page=page;
  el.innerHTML=page==='setup'?renderSetup():page==='test'?renderTest():page==='results'?renderResults():renderProfiles();
- if(page==='test'&&tone?.mode==='test')startVisualizer();if(page==='results'&&current){const newPlayer=$('#audioPlayer');if(playerAudio!==newPlayer){try{playerAudio?.pause()}catch(e){}try{playerSource?.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});playerSource=null;filters=[];playerAudio=newPlayer;if(playerUrl)playerAudio.src=playerUrl;attachPlayerEvents(playerAudio)}updatePlayerFilters()}
+ if(page==='test'&&tone?.mode==='test')startVisualizer();if(page==='results'&&current){const newPlayer=$('#audioPlayer');if(playerAudio!==newPlayer){try{playerAudio?.pause()}catch(e){}try{playerSource?.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}playerPreamp=null;playerOutput=null;playerSource=null;filters=[];playerAudio=newPlayer;if(playerUrl)playerAudio.src=playerUrl;attachPlayerEvents(playerAudio)}updatePlayerFilters()}
  localize(document.body);
 }
 function approxTimeRange(d){return '~'+Math.max(1,Math.floor(d.exampleLow/60))+'–'+Math.max(1,Math.ceil(d.exampleHigh/60))+' min'}
@@ -596,7 +596,7 @@ function resultText(p){const r=recommend(p);return `AudioCal Hear · ${p.name}\n
 async function copyText(txt){try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(txt);return true}}catch(e){}try{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.top='-1000px';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();return ok}catch(e){return false}}
 function changeEqFormat(){if(!current)return;const ids=Object.keys(presets);const old=current.preset;const options=ids.map((id,i)=>`${i+1}. ${presets[id].name}`).join('\n');const response=uiPrompt('Elige un número de formato para ESTE perfil. Se conservarán los umbrales medidos y se interpolarán solo las frecuencias cercanas a las medidas.\n'+options,String(ids.indexOf(old)+1));if(response===null)return;const id=ids[Number(response)-1];if(!id){uiAlert('Opción inválida');return}if(id==='custom'){uiAlert('Para crear un formato personalizado usa Configurar → nueva calibración.');return}if(id!==old){current.preset=id;current.bands=presets[id].bands.slice();current.min=presets[id].min;current.max=presets[id].max; // Keep collected measurements; do not falsely mark new bands as measured.
  current.formatFrom=old;touch();render();uiAlert('Formato cambiado. Solo las frecuencias que ya probaste cuentan como medidas. Para una recomendación fiable en las nuevas bandas, completa el examen que aparece en Prueba. No reutilices el perfil con otro dispositivo Bluetooth.')}}
-async function setupPlayer(){if(!current||!playerAudio)return;const ctx=await ensureAudio();if(!playerSource)playerSource=ctx.createMediaElementSource(playerAudio);try{playerSource.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});filters=[];playerPreamp=ctx.createGain();playerOutput=ctx.createGain();const r=recommend(current);for(const b of r){if(b.f>=ctx.sampleRate/2)continue;const f=ctx.createBiquadFilter();f.type='peaking';f.frequency.value=b.f;let ratio=current.bands.length>1?Math.pow(current.bands[current.bands.length-1]/current.bands[0],1/(current.bands.length-1)):2;f.Q.value=clamp(Math.sqrt(ratio)/(ratio-1),.65,5.5);f.gain.value=eqBypass?0:b.gain;filters.push(f)}
+async function setupPlayer(){if(!current||!playerAudio)return;const ctx=await ensureAudio();if(!playerSource)playerSource=ctx.createMediaElementSource(playerAudio);try{playerSource.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}filters=[];playerPreamp=ctx.createGain();playerOutput=ctx.createGain();const r=recommend(current);for(const b of r){if(b.f>=ctx.sampleRate/2)continue;const f=ctx.createBiquadFilter();f.type='peaking';f.frequency.value=b.f;let ratio=current.bands.length>1?Math.pow(current.bands[current.bands.length-1]/current.bands[0],1/(current.bands.length-1)):2;f.Q.value=clamp(Math.sqrt(ratio)/(ratio-1),.65,5.5);f.gain.value=eqBypass?0:b.gain;filters.push(f)}
 let chain=playerSource;chain.connect(playerPreamp);chain=playerPreamp;filters.forEach(f=>{chain.connect(f);chain=f});chain.connect(playerOutput);playerOutput.connect(ctx.destination);updatePlayerFilters(preferencePreview?previewTaste():null)}
 // Conservative chain-wide peak estimate (RBJ peaking filters) for preamp headroom.
 // Includes +2 dB per band for A/B preview, so toggling A/B does not change volume budget.
@@ -620,6 +620,7 @@ function chainPeakDb(settings,sampleRate){
  }
  return Math.max(0,peak);
 }
+let cachedHeadroomKey='',cachedHeadroomDb=0;
 function updatePlayerFilters(preview=null){
  if(!audioCtx||!current||!filters.length)return;
  const r=new Map(recommend(current).map(x=>[x.f,x.gain])),now=audioCtx.currentTime;
@@ -636,7 +637,9 @@ function updatePlayerFilters(preview=null){
   const baseline=r.get(f.frequency.value)||0;
   settings.push({f:f.frequency.value,g:clamp(baseline+2,current.min,current.max),q:f.Q.value});
  });
- const totalPeak=chainPeakDb(settings,audioCtx.sampleRate);
+ const headroomKey=audioCtx.sampleRate+'|'+settings.map(s=>s.f+':'+s.g+':'+s.q).join('|');
+  if(headroomKey!==cachedHeadroomKey){cachedHeadroomDb=chainPeakDb(settings,audioCtx.sampleRate);cachedHeadroomKey=headroomKey}
+  const totalPeak=cachedHeadroomDb;
  playerPreamp?.gain.setTargetAtTime(Math.pow(10,(-totalPeak-2)/20),now,.06);
 }
 function attachPlayerEvents(player){if(!player)return;player.onplay=async()=>{try{await setupPlayer()}catch(e){player.pause();uiAlert('No se pudo iniciar la escucha A/B: '+e.message)}}}
@@ -707,7 +710,7 @@ if(t.id==='importInput'&&t.files?.length){
  if(file.size>2*1024*1024){uiAlert('El respaldo supera el límite de seguridad de 2 MB.');t.value='';return}
  file.text().then(s=>{
   let data;try{data=JSON.parse(s)}catch(e){uiAlert('Archivo JSON no válido.');return}
-  if(!Array.isArray(data?.profiles)){uiAlert('Formato de perfiles no reconocido.');return}
+  if(!data||typeof data!=='object'||data.app!=='AudioCal Hear'||!Array.isArray(data.profiles)){uiAlert('Formato de perfiles no reconocido.');return}
   let imported=0;
   for(const raw of data.profiles.slice(0,100)){
    if(profiles.length>=200)break;
@@ -721,7 +724,7 @@ if(t.id==='importInput'&&t.files?.length){
 }
 // Ensure user can change tabs without generating sound; pause on backgrounding.
 document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);document.addEventListener('input',e=>{const t=e.target;if(t.id==='eqSlider'&&current){const x=recommend(current).find(q=>q.f===selectedEqFreq);if(x){const desired=clamp(roundTo(Number(t.value),current.step),current.min,current.max);current.manual[x.f]=(Number(current.manual[x.f])||0)+(desired-x.gain);touch();refreshResultsUI()}return}if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin'&&Number.isFinite(Number(t.value)))temp.min=Number(t.value);if(t.id==='eqMax'&&Number.isFinite(Number(t.value)))temp.max=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;if($('#freqSummary'))$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='testStart'){const n=Number(t.value);if(Number.isFinite(n))temp.testStart=clamp(n,-84,-24)}if(t.id==='testFloor'){const n=Number(t.value);if(Number.isFinite(n))temp.testFloor=clamp(n,-84,-36)}if(['customFreqs','eqMin','eqMax','testStart','testFloor'].includes(t.id))refreshSetupDuration();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){stopTone();floorReached=false;if(playerAudio)playerAudio.pause();if(page==='test')render()}});window.addEventListener('pagehide',stopTone);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopTone();floorReached=false;if(playerAudio)playerAudio.pause();if(page==='test')render()}});window.addEventListener('pagehide',()=>{stopTone();if(playerAudio)playerAudio.pause();try{playerSource?.disconnect()}catch(e){}try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}if(playerUrl)URL.revokeObjectURL(playerUrl)});
 if(current)resetBalanceSession(current);
 render();
 })();
