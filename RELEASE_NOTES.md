@@ -1,76 +1,37 @@
-# AudioCal Hear v1.7.0 — Smarter Tonal Balance Public Preview
+# AudioCal Hear v1.7.0 — Smarter Tonal Balance (Public Preview)
 
-**[English](#english)** · **[Español](#español)**
+**English** · [Español](#español)
 
-## AudioCal Hear v1.7.0 — Smarter Tonal Balance / Equilibrio tonal inteligente
+**Official app / Aplicación:** https://poldkent.github.io/AudioCal-Hear/
 
-### English
-
-This public-preview update makes EQ personalization **bidirectional**: suggested per-band corrections can now be positive **or negative**, based on **confirmed A/B music preferences** rather than simply hearing a quiet test tone.
-
-- New optional **Smart Tonal Balance** panel in EQ Settings. Play a local music file, select any band and listen to two A/B comparisons. The verification reverses the A/B order.
-- Two consistent choices apply ±2 dB; one directional and one neutral choice apply ±1 dB; conflicting/equal choices cause no change. Cuts cannot exceed −6 dB and require repeated rounds. Additional boosts are limited to +3 dB.
-- If a fading test tone remains audible at the final step, the app records that it was still heard **without automatically recommending a cut**.
-- Hearing-threshold outcomes, broad sound preferences and music-confirmed tonal corrections remain separate in existing saved profiles.
-- Mobile and desktop layout, eight languages, local playback and fixed digital output headroom are retained.
-
-**Safety and limitations:** Never test at maximum volume. A/B comparisons do not guarantee equal *perceived* loudness, and hearing thresholds are not calibrated acoustic measurements or medical diagnoses. Try the result with your own headphones at comfortable volume. Hardware verification remains outstanding.
-
-### Español
-
-Esta actualización preliminar hace que la ecualización sea **bidireccional**: se pueden recomendar aumentos **o reducciones** por banda cuando las confirma una **comparación musical A/B**, sin asumir que escuchar un tono muy suave significa que la frecuencia está demasiado fuerte.
-
-- Nuevo apartado opcional **Equilibrio tonal inteligente** dentro de Ajustes. Reproduce música local, selecciona una banda y escucha dos comparaciones A/B. La verificación invierte el orden de A/B.
-- Dos decisiones coherentes producen ±2 dB; una decisión y una respuesta neutral producen ±1 dB. Si se contradicen o son iguales, no hay modificación. Los recortes están limitados a −6 dB con sesiones repetidas y los aumentos a +3 dB.
-- Si el tono continúa audible al finalizar la prueba, se registra ese hecho **sin bajar automáticamente esa banda**.
-- Se conservan por separado los umbrales, preferencias generales y ajustes musicales, con compatibilidad de perfiles anteriores.
-- Se mantienen los ocho idiomas, diseño adaptable, reproducción local y margen de salida digital.
-
-**Seguridad y límites:** No utilices volumen máximo. Las comparaciones A/B no garantizan idéntica *sonoridad percibida*. Los umbrales no son una medición acústica calibrada ni un diagnóstico médico. Se requieren pruebas con hardware real.
-
-**Suggested GitHub Release:** Tag `v1.7.0`, name `AudioCal Hear v1.7.0 — Smarter Tonal Balance`, mark **Pre-release**.
-
----
-
-## Responsive patch v1.6.1 / Parche responsive v1.6.1
-
-**English:** The “No install” indicator is now left-aligned on narrow mobile screens (including 9:21); desktop pages scale smoothly from 4:3 to 21:9, with wider setup panels and independent EQ/music columns. Profiles, EQ algorithms and eight-language localization are unchanged. Tested in simulated Chromium across mobile, 4:3, 16:9 and 21:9 viewports. This public preview is **not** clinical audiometry.
-
-**Español:** El distintivo «Sin instalar» se ubica a la izquierda en celulares estrechos, incluidos los 9:21. En escritorio, las pantallas se reorganizan entre 4:3 y 21:9 con configuración adaptable y columnas independientes para ecualizador y música. Se conservan perfiles, algoritmos y ocho idiomas. Comprobado en Chromium simulado; **no es audiometría clínica**.
-
-**Suggested tag / Etiqueta sugerida:** `v1.6.1`. Mark as **Pre-release**. This file documents the patch; no GitHub Release is created solely by editing it.
+**Version / Versión:** v1.7.0 · **Status / Estado:** Public pre-release / Versión preliminar pública
 
 ## English
 
 **Hear. Adjust. Enjoy.**
 
-We're introducing **AudioCal Hear**, a browser-based assistant to explore how you perceive sound and help you discover personal equalizer settings for headphones, speakers and car audio.
+AudioCal Hear v1.7.0 introduces **Smart Tonal Balance**, an optional music-listening process that helps you choose both positive and negative equalizer corrections without assuming that a tone you can still hear must be reduced.
 
-**Try it free:** https://poldkent.github.io/AudioCal-Hear/
+### What's new
 
-### Release highlights
+- **Two-step A/B comparisons:** compare the selected EQ band with your own local music. The second comparison reverses A/B order to help check consistency.
+- **Conservative, bidirectional adjustments:** matching choices produce a ±2 dB change; one directional and one neutral answer produce ±1 dB. Conflicting or equal choices leave the band unchanged. Repeat confirmed adjustments to reach a maximum total cut of −6 dB; additional boosts are capped at +3 dB.
+- **Honest threshold handling:** hearing a descending test tone at the lowest digital level is recorded as such, not treated as proof that the frequency is excessively loud.
+- **Profile compatibility:** existing local profiles remain available. Hearing thresholds, musical preferences and confirmed tonal changes are tracked separately.
+- **Ready for phones and desktops:** eight languages, responsive layouts and the preset 7-band/10-band equalizers remain available.
 
-- **8 interface languages:** Spanish, English, French, Portuguese, Italian, German, Simplified Chinese and Japanese.
-- **Adaptive guided listening:** fast coarse search, followed by 1 dB resolution near your perceived threshold; each level lasts 3 seconds.
-- **Personal EQ presets:** the original 7-band car and 10-band headphone layouts, common standards and custom frequency selections.
-- **Music A/B preferences:** compare bass, voice and treble alternatives and adjust EQ interactively.
-- **Device profiles:** save multiple profiles in your own browser and manually export/import backup files.
-- **Mobile-first, no install:** open in a compatible mobile browser and select Bluetooth output through your phone.
-- **Code quality pass:** removal of unused code and additional localization/regression checks.
+### How to try it
 
-### Preview limitations
+1. Open the [official web app](https://poldkent.github.io/AudioCal-Hear/) and connect the headphones or speakers using your phone's audio settings.
+2. Choose a saved device profile, open **EQ Settings → Smart Tonal Balance** and play a familiar music file.
+3. Listen to both A and B at a comfortable, unchanged volume and answer twice.
+4. Compare the resulting curve with EQ bypassed; manually transfer the suggested values to external headphone/car equalizers.
 
-This is an **experimental consumer listening tool**, not a medically validated hearing test, acoustic measurement instrument or professional EQ calibration. The results are subjective and may not improve every device. **Never use maximum volume**, and test car audio only while parked. Bluetooth configuration and device EQ changes are performed outside the app.
+### Safety, privacy, and release status
 
-### Privacy and rights
+**Never test at maximum volume.** The app is an experimental subjective listening assistant — **not** a clinical hearing test, hearing aid or calibrated acoustic instrument. A/B variants are not guaranteed to be matched for *perceived loudness*, and improvements are not guaranteed. Real-device Bluetooth/audio validation remains outstanding.
 
-The current app stores profiles locally and handles user-selected comparison audio in the browser. The project is **publicly viewable but proprietary**: free access to the official web app does **not** grant a general open-source or redistribution license. GitHub's viewing/forking rights and mandatory legal exceptions still apply.
-
-Read [Rights](LICENSE.md), [Terms](TERMS.md) and [Privacy](PRIVACY.md).
-
-### Release status
-
-**Public Preview v1.6**, not an acoustically/clinically validated production device. This text is ready to paste into a GitHub release tagged `v1.6.0` (mark **Pre-release**). Publishing this Markdown file alone **does not create a GitHub Release or tag**.
+Profiles and preference data are currently stored in your browser; the selected local music file is processed locally. The project is publicly visible but proprietary. Review [Rights](LICENSE.md), [Terms](TERMS.md) and [Privacy](PRIVACY.md).
 
 ---
 
@@ -78,30 +39,29 @@ Read [Rights](LICENSE.md), [Terms](TERMS.md) and [Privacy](PRIVACY.md).
 
 **Escucha. Ajusta. Disfruta.**
 
-Presentamos **AudioCal Hear**, un asistente web para explorar cómo percibes los sonidos y encontrar ajustes personalizados de ecualización para auriculares, parlantes y sistemas de audio de automóviles.
+AudioCal Hear v1.7.0 incorpora **Equilibrio tonal inteligente**, una evaluación musical opcional para elegir aumentos y reducciones de ecualización sin asumir que seguir oyendo un pitido significa que esa frecuencia está demasiado fuerte.
 
-**Prueba la aplicación gratis:** https://poldkent.github.io/AudioCal-Hear/
+### Novedades
 
-### Novedades del lanzamiento
+- **Comparación A/B en dos etapas:** selecciona una banda y escucha variaciones con tu propia música. La segunda comparación invierte el orden de A y B para comprobar la consistencia.
+- **Correcciones conservadoras en ambas direcciones:** dos elecciones coherentes generan ±2 dB; una elección y una respuesta neutral producen ±1 dB. Las respuestas contradictorias o iguales no modifican la banda. Las reducciones acumuladas tienen un límite de −6 dB y los aumentos adicionales de +3 dB.
+- **Umbrales sin conclusiones inventadas:** si todavía escuchas un tono en el último nivel, se registra ese resultado, sin reducir automáticamente la frecuencia.
+- **Compatibilidad de perfiles:** se conservan las calibraciones anteriores y se registran por separado los umbrales, preferencias musicales y correcciones confirmadas.
+- **Móvil y escritorio:** ocho idiomas, interfaz adaptable y ecualizadores preconfigurados de 7 y 10 bandas, entre otros formatos.
 
-- **Interfaz en ocho idiomas:** español, inglés, francés, portugués, italiano, alemán, chino simplificado y japonés.
-- **Prueba guiada adaptativa:** búsqueda inicial rápida y ajuste preciso de 1 dB cerca del umbral percibido; tres segundos por nivel.
-- **Ecualizadores personalizados:** perfiles originales de 7 y 10 bandas, formatos habituales y frecuencias configurables.
-- **Comparaciones musicales A/B:** pruebas de graves, voces y agudos y edición interactiva de cada banda.
-- **Perfiles por dispositivo:** almacenamiento en el navegador con importación y exportación manual de respaldos.
-- **Diseño móvil sin instalaciones:** abre la web desde el teléfono y elige Bluetooth desde el sistema operativo.
-- **Revisión del código:** limpieza de funciones obsoletas y comprobaciones adicionales de idiomas e interfaz.
+### Cómo probarla
 
-### Limitaciones de la versión preliminar
+1. Abre la [aplicación oficial](https://poldkent.github.io/AudioCal-Hear/) y conecta el equipo desde los ajustes de sonido del teléfono.
+2. Abre un perfil y entra en **Ajustes → Equilibrio tonal inteligente**; reproduce una canción conocida.
+3. Escucha ambas versiones A y B a volumen cómodo y constante, y responde las dos comparaciones.
+4. Compara el resultado con la ecualización desactivada e introduce manualmente los valores en los equipos externos.
 
-Es una **herramienta experimental de escucha**, no un examen auditivo con validación clínica, sonómetro ni calibración acústica profesional. Los resultados son subjetivos y pueden no mejorar todos los equipos. **Nunca uses volumen máximo** y realiza las pruebas del automóvil con el vehículo estacionado. Los ajustes Bluetooth y del ecualizador externo se efectúan fuera de la app.
+### Seguridad, privacidad y estado del lanzamiento
 
-### Privacidad y derechos
+**Nunca utilices el volumen máximo.** Se trata de una herramienta experimental de percepción auditiva, **no** de una prueba clínica, audífono terapéutico ni instrumento acústico calibrado. No se garantiza la igualación exacta de *sonoridad percibida* en las comparaciones ni una mejora para todos los equipos. La validación con dispositivos Bluetooth reales sigue pendiente.
 
-Los perfiles se guardan localmente y la música seleccionada se procesa en el navegador. El proyecto es **público para consulta, pero de carácter propietario**: el uso gratuito de la app oficial **no concede** una licencia general para reutilizar o distribuir el código. Se mantienen los derechos de visualización y *fork* que otorga GitHub y las excepciones legales obligatorias.
+Los perfiles y preferencias se guardan en el navegador y los archivos musicales seleccionados se procesan localmente. El repositorio es público para consulta, pero propietario. Consulta [Derechos](LICENSE.md), [Condiciones](TERMS.es.md) y [Privacidad](PRIVACY.es.md).
 
-Consulta [Derechos reservados](LICENSE.md), [Condiciones](TERMS.es.md) y [Privacidad](PRIVACY.es.md).
+---
 
-### Estado del lanzamiento
-
-**Versión preliminar pública v1.6**, no un dispositivo con validación clínica ni acústica. Estas notas están listas para crear en GitHub el release `v1.6.0` marcado como **Pre-release**. Añadir este archivo **no crea automáticamente un GitHub Release ni una etiqueta**.
+For earlier changes / Versiones anteriores: [CHANGELOG.md](CHANGELOG.md) · [CHANGELOG.es.md](CHANGELOG.es.md)
