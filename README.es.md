@@ -4,7 +4,14 @@
 
 Asistente web de calibración auditiva perceptiva y generación de recomendaciones de ecualización para audífonos, parlantes y sistemas de audio de automóvil.
 
-**Versión:** 1.4 · **Idioma:** español · **Tecnología:** HTML, CSS, JavaScript y Web Audio API (sin dependencias externas).
+**Versión:** 1.5 · **Idioma:** español · **Tecnología:** HTML, CSS, JavaScript y Web Audio API (sin dependencias externas).
+
+## Nueva experiencia v1.5
+
+- **Configurar:** selección mediante tarjetas de automóvil, auriculares y parlantes, modos rápido/verificación y prueba conjunta/por oído. La duración se muestra al instante; las opciones avanzadas quedan plegadas.
+- **Perfiles:** el equipo activo tiene protagonismo, seguido de los demás perfiles. Respaldos y frecuencias compatibles se encuentran en menús desplegables compactos.
+- **Ajustes:** toca una barra de frecuencia para seleccionarla y modificarla con un deslizador y botones ±, sin interrumpir la música. Los valores exactos y los detalles de medición pueden desplegarse cuando se necesitan.
+- Se conservan los perfiles guardados, la compatibilidad con Bluetooth del sistema y el motor de tonos de 3 segundos por nivel de la v1.3.
 
 ## Ejecutar en celular
 
