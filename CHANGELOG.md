@@ -2,6 +2,15 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## v1.7.0 — 2026-10-30
+
+- Added optional **Smart Tonal Balance** in the result screen: two music A/B comparisons per selected EQ band with reversed order and smaller verification step.
+- Automatically apply **±2 dB** only for consistent choices, **±1 dB** for a single supported preference, and **0 dB** for conflicting/equal decisions. Cumulative cuts limited to −6 dB and boosts to +3 dB; repeated sessions required for large cuts.
+- Preserve old threshold data and store balance adjustments plus simple decision history separately per device.
+- At the end of the threshold test, ask whether the tone remained audible; a still-audible tone does **not** automatically reduce any band.
+- Maintain fixed global playback headroom between comparisons; perceived loudness matching is not guaranteed.
+- Verified responsive UI, audio filter update, and profile persistence in a simulated Chromium browser at mobile and desktop sizes; hardware/Bluetooth validation remains pending.
+
 ## v1.6.1 — 2026-10-30
 
 - Repositioned the multilingual no-installation badge to its own left-aligned row on narrow mobile screens, including 9:21 portrait.
