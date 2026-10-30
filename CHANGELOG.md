@@ -2,6 +2,14 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## v1.5 — 2026-10-30
+
+- Replaced the form-heavy setup with tappable device and EQ cards, two-choice listening/verification modes and a live compact duration summary.
+- Featured the active profile and moved backups and supported-frequency catalogs into collapsible panels.
+- Added tap-to-select EQ bands and a compact slider/± editor that retains music playback and writes adjustments to the selected profile.
+- Kept detailed numeric values and hearing-test metrics behind expandable panels to reduce clutter.
+- Retained v1.4 profile storage compatibility and the existing adaptive hearing test.
+
 ## v1.4 — 2026-10-30
 
 - Added 3-round optional music A/B preferences (bass, vocals, treble) and stored those separately from hearing thresholds.
