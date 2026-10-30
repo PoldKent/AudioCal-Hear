@@ -1,0 +1,38 @@
+name: Publish AudioCal Hear v1.7.0 prerelease
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v1.7.0.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out published source
+        uses: actions/checkout@v4
+      - name: Validate and prepare release asset
+        run: |
+          set -euo pipefail
+          grep -q 'AudioCal Hear v1.7.0' index.html
+          test -s RELEASE_NOTES.md
+          cp index.html AudioCal_Hear_v1.7.0.html
+      - name: Create versioned public prerelease if absent
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.7.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v1.7.0 already exists; leaving it unchanged"
+          else
+            gh release create v1.7.0 AudioCal_Hear_v1.7.0.html \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "AudioCal Hear v1.7.0 — Smarter Tonal Balance (Public Preview)" \
+              --notes-file RELEASE_NOTES.md \
+              --prerelease
+          fi
