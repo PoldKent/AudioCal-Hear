@@ -2,6 +2,15 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## v1.7.0 — 2026-10-30
+
+- Nuevo módulo opcional de **Equilibrio tonal inteligente**: dos comparaciones musicales A/B por banda, invirtiendo el orden y afinando en la verificación.
+- Se aplican **±2 dB** solo con respuestas coherentes, **±1 dB** con una preferencia respaldada parcialmente y **0 dB** con respuestas contradictorias o iguales. Recortes limitados a −6 dB y aumentos a +3 dB mediante sesiones repetidas.
+- Los datos auditivos antiguos siguen siendo compatibles y se guardan ajustes de balance e historial de decisiones por equipo.
+- Al terminar el tono se pregunta si aún era audible; oírlo hasta el final **no provoca recortes automáticos**.
+- Margen de salida fijo entre A/B; la sonoridad percibida no queda perfectamente igualada.
+- Comprobaciones en Chromium simulado para móvil, escritorio, filtros de audio y persistencia local; faltan pruebas con hardware Bluetooth real.
+
 ## v1.6.1 — 2026-10-30
 
 - El indicador «Sin instalar» se alinea a la izquierda en su propia fila para móviles estrechos, incluidos los de proporción 9:21.
