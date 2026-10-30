@@ -2,6 +2,14 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## v1.6.1 — 2026-10-30
+
+- Repositioned the multilingual no-installation badge to its own left-aligned row on narrow mobile screens, including 9:21 portrait.
+- Added flexible container sizing and two-column setup/EQ comparison layouts on larger desktops (4:3 to 21:9).
+- Prevented large gaps between the music preview and optional EQ controls on ultrawide screens.
+- Verified eight screen sizes and badge translations in eight locales with no horizontal document overflow.
+- Left audio algorithms, stored profiles and frequency presets unchanged.
+
 ## v1.6 — 2026-10-30
 
 - Added offline localization for Spanish, English, French, Portuguese, Italian, German, Simplified Chinese and Japanese, with a persistent in-app selector and browser-language detection.
