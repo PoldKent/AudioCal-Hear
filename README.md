@@ -4,7 +4,7 @@
 
 **AudioCal Hear** is a single-file, mobile-friendly web app for subjective hearing-threshold testing and personalized equalizer suggestions for headphones, speakers, and car audio systems.
 
-**Version:** 1.3 · **App interface:** Spanish (for now) · **Stack:** HTML, CSS, vanilla JavaScript, Web Audio API · **No external libraries**.
+**Version:** 1.4 · **App interface:** Spanish (for now) · **Stack:** HTML, CSS, vanilla JavaScript, Web Audio API · **No external libraries**.
 
 > **Safety:** This is *not* a clinical hearing test or an objective acoustic calibration. Its results are approximate, subjective EQ suggestions. Begin at a low, comfortable volume. Do not raise the volume to chase hard-to-hear frequencies. Stop if you experience discomfort or ringing.
 
@@ -16,6 +16,15 @@
 4. Check the audio at a quiet, comfortable and unchanged phone volume, in a quiet environment. Keep the vehicle parked throughout the test.
 5. Start the adaptive test: first the tone drops by up to **6 dB every 3 seconds**. Tap when it disappears; the app returns to the region and uses **1 dB steps every 3 seconds** to find your threshold.
 6. Review estimated settings in **Ajustes**, compare using your local audio file, and enter the suggested settings manually into the device's equalizer.
+
+## New in v1.4 — musical preferences and better feedback
+
+- The result page now distinguishes **completed trials** from **frequencies with a usable threshold**. If a frequency could not be measured, you can retry only those frequencies.
+- A new optional **music preference comparison** plays A/B EQ variations on the **same user-selected local audio file**. Three short rounds let you choose softer or more prominent bass, voices and high-frequency detail, or "Same". These deliberate preferences are stored separately from the subjective hearing thresholds.
+- To compare the versions, load an audio file, **play it**, listen to **both A and B**, then choose which is more comfortable. The changes are limited to moderate ±2 dB per zone around a broad center. This is not calibrated loudness matching, clinical hearing measurement, or a guaranteed improvement.
+- Editing individual gains no longer interrupts the music player. The note about the car stereo's provisional ±6 dB scale only appears when the original **car 7-band preset** is selected.
+- **Never test at maximum volume.** The WHO recommends listening below 60% of device maximum in typical personal listening and avoiding uncomfortable sound levels. A phone volume percentage cannot identify acoustic loudness in dB SPL, so use a quiet, comfortably low level and never increase it merely to hear a faint tone.
+- The application's headphone and car EQ recommendations must still be manually transferred to hardware. Do not apply an old profile to a different Bluetooth output without new evaluation.
 
 ## Supported equalizer presets
 
