@@ -2,6 +2,14 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## v1.4 — 2026-10-30
+
+- Added 3-round optional music A/B preferences (bass, vocals, treble) and stored those separately from hearing thresholds.
+- Added results warning when a trial finishes without a usable threshold, and a targeted retry for those bands only.
+- Stopped manual EQ gain adjustments from resetting the music player.
+- Limited the provisional ±6 dB car-range warning to the 7-band car preset.
+- Reinforced comfortable-volume safety guidance. No acoustic calibration or diagnostic claims.
+
 ## v1.3 — 2026-10-30
 
 - Added an adaptive hearing test: coarse steps of up to 6 dB followed by 1 dB fine steps, each held for 3 seconds.
