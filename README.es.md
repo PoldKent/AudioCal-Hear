@@ -4,14 +4,14 @@
 
 Asistente web de calibración auditiva perceptiva y generación de recomendaciones de ecualización para audífonos, parlantes y sistemas de audio de automóvil.
 
-**Versión:** 1.2 · **Idioma:** español · **Tecnología:** HTML, CSS, JavaScript y Web Audio API (sin dependencias externas).
+**Versión:** 1.3 · **Idioma:** español · **Tecnología:** HTML, CSS, JavaScript y Web Audio API (sin dependencias externas).
 
 ## Ejecutar en celular
 
 - Abre `index.html` en un navegador compatible. Para evitar las restricciones de algunos visores de archivos, también puedes publicar el mismo archivo por HTTPS (por ejemplo, con GitHub Pages).
 - Conecta los auriculares, parlantes o el automóvil en la **configuración Bluetooth del teléfono**, antes de empezar. El navegador utiliza la salida del sistema; no identifica ni cambia automáticamente dispositivos Bluetooth.
 - Selecciona el ecualizador, los canales y las repeticiones. La pantalla **Configuración** muestra el número de pruebas, un escenario orientativo de duración y el tiempo máximo del barrido.
-- Comprueba el sonido a volumen bajo y estable; después inicia el examen. Cada nivel se mantiene **3 segundos** y desciende **1 dB digital**; marca cuando ya no oigas el tono.
+- Comprueba el sonido a volumen bajo y estable; después inicia el examen. Primero desciende en pasos de **hasta 6 dB cada 3 segundos**. Pulsa cuando deje de escucharse; la app afina con pasos de **1 dB cada 3 segundos**.
 - Consulta **Ajustes** para ver los valores estimados, o compara con tu propio archivo de música en la app. Copia los ajustes al ecualizador del dispositivo manualmente.
 
 ## Ecualizadores precargados
@@ -26,16 +26,25 @@ Asistente web de calibración auditiva perceptiva y generación de recomendacion
 
 La escala de ganancia del automóvil se configuró provisionalmente en ±6 dB. La fotografía verifica +6, pero no determina todo el rango de la radio; puedes cambiar los límites desde Configuración.
 
-## Duración del examen
+## Examen rápido: máximo 57 segundos por frecuencia y oído
 
-El barrido consta de 41 niveles digitales, desde −28 hasta −68 dBFS, con 3 segundos por nivel. Así, cada muestra dura **como máximo 123 segundos**, pero normalmente terminará antes si el usuario marca su umbral. La duración exacta no se puede conocer antes de escuchar el tono.
+El barrido inteligente mantiene **3 segundos de escucha por nivel**, pero salta los niveles innecesarios.
 
-La aplicación muestra un escenario de referencia calculado con **30–45 segundos por tono** (es una hipótesis ilustrativa, no una predicción de la audición del usuario), junto con el máximo matemático del barrido. Al disponer de dos o más muestras, calcula una orientación personalizada usando las duraciones observadas. Pausas y repeticiones manuales no están incluidas.
+| Etapa | Saltos | Máximo |
+| --- | --- | ---: |
+| Búsqueda rápida | −28, −34, −40, −46, −52, −58, −64, −68 dBFS (hasta 6 dB por paso) | 8 × 3 = **24 s** |
+| Ajuste fino | Un máximo de seis pasos de 1 dB en la zona del umbral | 6 × 3 = **18 s** |
+| Verificación opcional | Hasta cinco pasos de 1 dB alrededor del primer umbral | 5 × 3 = **15 s** |
+| **Total** | | **57 s** |
 
-Ejemplos con ambos canales juntos y 2 repeticiones:
+Si no se encuentra el umbral a tiempo, la prueba queda **sin determinar**, sin inventar valores. El límite corresponde únicamente al **audio reproducido automáticamente**; no cuenta pausas, repeticiones manuales ni el tiempo entre pulsaciones. Examinar los oídos por separado duplica las combinaciones de frecuencia/oído.
 
-- Auto 7 bandas: 14 muestras; escenario de referencia 7–10 min 30 s; máximo 28 min 42 s de tonos.
-- Auriculares 10 bandas: 20 muestras; escenario de referencia 10–15 min; máximo 41 minutos de tonos.
+| Ambos canales juntos | Máximo con 1 pasada | Máximo con 2 pasadas |
+| --- | ---: | ---: |
+| Automóvil, 7 bandas | 4 min 54 s | **6 min 39 s** |
+| Auriculares, 10 bandas | 7 min | **9 min 30 s** |
+
+La configuración inicial utiliza **una pasada**. El aviso de duración se adapta a las bandas, canales y repeticiones seleccionadas. No constituye audiometría médica ni una medición acústica calibrada.
 
 ## Publicar con GitHub Pages
 
