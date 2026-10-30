@@ -2,6 +2,14 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## v1.5 — 2026-10-30
+
+- Configuración rediseñada con tarjetas de dispositivo y ecualizador, opciones directas de escucha y verificación, y resumen compacto de duración.
+- El perfil activo es protagonista; los respaldos y la lista de frecuencias quedan en paneles plegables.
+- Nuevo editor de EQ: tocar una banda para seleccionarla y ajustar con deslizador o botones ±, sin reiniciar la música.
+- Valores detallados y estadísticas disponibles al expandir sus paneles; pantalla principal más compacta.
+- Compatibilidad con perfiles previos y motor de prueba auditiva conservados.
+
 ## v1.4 — 2026-10-30
 
 - Tres rondas opcionales de preferencias musicales A/B (graves, voces y agudos), guardadas por separado del examen auditivo.
