@@ -1,6 +1,14 @@
-# AudioCal Hear v1.6 — Multilingual Public Preview
+# AudioCal Hear v1.6.1 — Responsive Public Preview
 
 **[English](#english)** · **[Español](#español)**
+
+## Responsive patch v1.6.1 / Parche responsive v1.6.1
+
+**English:** The “No install” indicator is now left-aligned on narrow mobile screens (including 9:21); desktop pages scale smoothly from 4:3 to 21:9, with wider setup panels and independent EQ/music columns. Profiles, EQ algorithms and eight-language localization are unchanged. Tested in simulated Chromium across mobile, 4:3, 16:9 and 21:9 viewports. This public preview is **not** clinical audiometry.
+
+**Español:** El distintivo «Sin instalar» se ubica a la izquierda en celulares estrechos, incluidos los 9:21. En escritorio, las pantallas se reorganizan entre 4:3 y 21:9 con configuración adaptable y columnas independientes para ecualizador y música. Se conservan perfiles, algoritmos y ocho idiomas. Comprobado en Chromium simulado; **no es audiometría clínica**.
+
+**Suggested tag / Etiqueta sugerida:** `v1.6.1`. Mark as **Pre-release**. This file documents the patch; no GitHub Release is created solely by editing it.
 
 ## English
 
