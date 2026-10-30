@@ -6,6 +6,10 @@
 
 AudioCal Hear es actualmente una aplicación **estática que funciona en el navegador**. Su código no incluye cuentas propias, analíticas de AudioCal Hear, píxeles de seguimiento, solicitudes de red para enviar perfiles ni bases de datos remotas controladas por el proyecto. Esta descripción se refiere al **código actual**, no a posibles versiones futuras ni al funcionamiento independiente del alojamiento de GitHub.
 
+## Comprobación opcional del micrófono (v1.8)
+
+Solo si pulsas expresamente **Comprobar ruido relativo**, el navegador solicita permiso para el micrófono y analiza brevemente la señal de audio **en memoria** para generar una indicación relativa. La aplicación no guarda grabaciones, no envía muestras a servidores ni afirma medir dB SPL acústicos calibrados. El micrófono se detiene al terminar. Puedes omitirlo y continuar. Los permisos del sistema operativo y del navegador no dependen de AudioCal Hear.
+
 ## Qué se guarda en tu dispositivo
 
 - Nombres de equipos y perfiles, frecuencias del ecualizador, respuestas del examen, ajustes de EQ y preferencias musicales en el **localStorage** del navegador.
