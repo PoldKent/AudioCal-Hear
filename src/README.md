@@ -10,6 +10,7 @@
 - `js/03-hearing-test.js` — guided listening, tone generation and responses.
 - `js/04-equalization.js` — recommendations, visualizations and profile screens.
 - `js/05-audio-player.js` — local music player, filters, clipping headroom.
+- `js/05b-eq-transfer.js` — guided manual transfer to platform/device equalizers, exact/estimated mapping.
 - `js/06-interactions.js` — event listeners, import/export and bootstrapping.
 
 The six JS *source modules are intentionally concatenated in order within one shared closure* so the generated HTML behaves exactly like the prior monolith. They are **not independent ES modules**, because changing every cross-module binding at once would create unnecessary regression risk.
