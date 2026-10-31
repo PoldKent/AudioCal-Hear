@@ -149,6 +149,7 @@ test('a contradictory answer is rechecked instead of becoming an uncertain resul
 
 test('Spotify transfer guide keeps local audio upload and adapts to custom bands', async ({ page }) => {
   await newProfile(page, 'Auriculares EQ');
+  await page.locator('#uiLanguage').selectOption('es');
   await page.locator('[data-nav="results"]').click();
   await expect(page.locator('#musicFile')).toBeAttached();
   await page.locator('#eqEditor [data-delta="1"]').click();
@@ -171,6 +172,7 @@ test('Spotify transfer guide keeps local audio upload and adapts to custom bands
 
 test('YouTube Music iPhone shows external hardware fallback, not false automatic application', async ({ page }) => {
   await newProfile(page, 'Auriculares YT');
+  await page.locator('#uiLanguage').selectOption('es');
   await page.locator('[data-nav="results"]').click();
   await page.locator('[data-act="transfer-open"]').click();
   await page.locator('[data-transfer-target="youtube"]').click();
