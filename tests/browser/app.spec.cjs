@@ -146,3 +146,42 @@ test('a contradictory answer is rechecked instead of becoming an uncertain resul
   expect(measured[0].db).toBe(-49);
 });
 
+
+test('Spotify transfer guide keeps local audio upload and adapts to custom bands', async ({ page }) => {
+  await newProfile(page, 'Auriculares EQ');
+  await page.locator('[data-nav="results"]').click();
+  await expect(page.locator('#musicFile')).toBeAttached();
+  await page.locator('#eqEditor [data-delta="1"]').click();
+  await page.locator('[data-act="transfer-open"]').click();
+  await page.locator('[data-transfer-target="spotify"]').click();
+  await expect(page.locator('#transferPanel')).toContainText('Spotify Connect');
+  await page.locator('[data-act="transfer-next"]').click();
+  await page.locator('#transferFormat').selectOption('custom');
+  await page.locator('#transferCustom').fill('60, 150, 400, 1000, 2400, 15000');
+  await page.locator('[data-act="transfer-applyfreq"]').click();
+  await expect(page.locator('#transferPanel')).toContainText('6 bandas de destino');
+  await page.locator('[data-act="transfer-next"]').click();
+  await expect(page.locator('.transfer-current')).toContainText('60 Hz');
+  await page.locator('[data-act="transfer-mark"]').click();
+  await page.locator('[data-act="transfer-nextband"]').click();
+  await expect(page.locator('.transfer-current')).toContainText('150 Hz');
+  await expect(page.locator('#musicFile')).toBeAttached();
+  await noOverflow(page);
+});
+
+test('YouTube Music iPhone shows external hardware fallback, not false automatic application', async ({ page }) => {
+  await newProfile(page, 'Auriculares YT');
+  await page.locator('[data-nav="results"]').click();
+  await page.locator('[data-act="transfer-open"]').click();
+  await page.locator('[data-transfer-target="youtube"]').click();
+  await page.locator('[data-transfer-os="ios"]').click();
+  await expect(page.locator('#transferPanel')).toContainText('no ofrece un ecualizador manual universal');
+  await expect(page.locator('#transferPanel')).toContainText('sin acceso a tus cuentas');
+  await page.locator('[data-act="transfer-next"]').click();
+  await page.locator('#transferRange').selectOption('six');
+  await page.locator('[data-act="transfer-next"]').click();
+  await expect(page.locator('.transfer-current')).toBeVisible();
+  await page.locator('[data-act="transfer-close"]').click();
+  await expect(page.locator('[data-act="transfer-open"]')).toBeVisible();
+  await noOverflow(page);
+});
