@@ -11,7 +11,7 @@ const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 
 // Execute the actual production threshold-search function in isolation.
 // This tests its behavior rather than reproducing a second copy of the algorithm.
-const begin = source.indexOf('function nextTrialLevel(');
+const begin = source.indexOf('function boundaryVotes(');
 const end = source.indexOf('\nlet page=', begin);
 assert(begin >= 0 && end > begin, 'Hearing algorithm extraction boundary changed');
 const sandbox = {clamp, getStart: p => p.testStart, getFloor: p => p.testFloor, Math, Number};
