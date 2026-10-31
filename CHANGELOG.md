@@ -2,6 +2,17 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## v1.9.0 — 2026-10-31
+
+- Added **Apply my EQ settings**: manual guided transfer to Spotify, YouTube Music and headphones/speaker/car equalizers.
+- Kept local user-selected audio playback and direct A/B EQ comparison unchanged.
+- Added mobile/desktop-specific paths with clear restrictions and no remote control of streaming apps.
+- Supports original 7-/10-band presets, standard/custom frequency layouts, explicit target gain limits, exact and log-interpolated mappings.
+- Marks approximate, capped and unsupported frequencies instead of presenting them as exact EQ values.
+- Added band-by-band steps, progress, reviewed-band markers and copyable full frequency/gain instructions.
+- No account access, streaming capture, new runtime dependencies or profile migrations.
+- Added regression tests for mapping and browser workflows, retained the existing hearing-threshold and safety checks.
+
 ## v1.8.2 — 2026-10-31
 
 - When a tone response differs from an earlier answer near the threshold, perform up to six additional alternating checks instead of immediately discarding the frequency.
