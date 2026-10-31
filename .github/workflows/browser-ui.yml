@@ -1,0 +1,54 @@
+name: Browser UI regression (Android, iPhone, desktop)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/**'
+      - 'tools/**'
+      - 'tests/browser/**'
+      - 'playwright.config.cjs'
+      - 'package.json'
+      - '.github/workflows/browser-ui.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/**'
+      - 'tools/**'
+      - 'tests/browser/**'
+      - 'playwright.config.cjs'
+      - 'package.json'
+      - '.github/workflows/browser-ui.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned test runner (not a runtime app dependency)
+        run: npm install --no-save --ignore-scripts @playwright/test@1.56.1
+      - name: Install desktop/mobile browser engines
+        run: npx playwright install --with-deps chromium webkit
+      - name: Verify generated standalone HTML
+        run: npm run check:build
+      - name: Run Android-emulated, iPhone-WebKit, and desktop UI tests
+        run: npm run test:browser
+      - name: Upload failure screenshots, traces and reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ui-debug
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
