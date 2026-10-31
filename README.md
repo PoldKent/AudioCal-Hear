@@ -91,6 +91,12 @@ AudioCal Hear is an independent project, **not affiliated with, sponsored by or 
 
 **Latest technical audit:** [Code audit and optimization notes (2026-10-30)](AUDIT_2026-10-30.md). The report distinguishes applied changes from pending real-device tests.
 
+## Maintainable source and automated checks
+
+The editable sources now live in [`src/`](src/) (HTML template, CSS, localization and six ordered JavaScript source modules). A dependency-free Node.js build recreates the standalone `index.html` **byte for byte**, so GitHub Pages and offline single-file distribution are unchanged.
+
+To work on the app: `npm run build` followed by `npm run verify` (Node.js 20+, no `npm install`). [Development guide](DEV_GUIDE.md) · [Refactor audit and test results](AUDIT_2026-10-31.md) · [Automated regression tests](https://github.com/PoldKent/AudioCal-Hear/actions/workflows/source-tests.yml).
+
 ## Technical details
 
 The project is a self-contained **HTML + CSS + JavaScript** app using the Web Audio API, with no runtime dependencies. It works as a static site on GitHub Pages; the standalone HTML can also be saved and opened offline, subject to browser support. The app is not an audiometer and does not measure sound-pressure levels.
