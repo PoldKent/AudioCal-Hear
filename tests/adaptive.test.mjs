@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const html = fs.readFileSync('index.html', 'utf8');
-const source = fs.readFileSync('src/js/03-hearing-test.js', 'utf8');
+const source = fs.readFileSync('src/js/01-core.js', 'utf8');
 const audio = fs.readFileSync('src/js/05-audio-player.js', 'utf8');
 const translations = JSON.parse(fs.readFileSync('src/translations.json', 'utf8'));
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
