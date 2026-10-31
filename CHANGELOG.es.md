@@ -2,6 +2,15 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## v1.8.2 — 2026-10-31
+
+- Cuando una respuesta contradice otra cerca del umbral, se realizan hasta seis comprobaciones alternas adicionales en vez de descartar inmediatamente la frecuencia.
+- Solo se confirma un umbral si el nivel más alto se escucha repetidamente y el más bajo no se escucha repetidamente. Si falta consistencia se conservan las respuestas, sin inventar un valor de dB.
+- Nuevo botón **Repetir esta frecuencia** cuando no se pudo confirmar el límite, sin rehacer las demás pruebas.
+- Se reemplaza el mensaje «Resultado incierto» por una explicación concreta sobre la falta de confirmación.
+- Se mantiene el límite de 20 tonos / 60 segundos automáticos, el rango −24…−84 dBFS y la compatibilidad con perfiles.
+- Pruebas para respuestas contradictorias recuperables e irreproducibles, más un escenario de navegador real.
+
 ## v1.8.1 — 2026-10-30
 
 - Validación de perfiles importados y locales, arrays de mediciones y ganancias acotadas, con límite de respaldo de 2 MB.
