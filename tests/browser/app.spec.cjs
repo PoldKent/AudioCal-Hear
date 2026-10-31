@@ -128,3 +128,21 @@ test('optional microphone is not requested by default', async ({ page }) => {
   await passPreparation(page);
   expect(await page.evaluate(() => window.__micRequests)).toBe(0);
 });
+
+test('a contradictory answer is rechecked instead of becoming an uncertain result', async ({ page }) => {
+  await newProfile(page);
+  await passPreparation(page);
+  const reply = async heard => {
+    await page.locator('[data-act="play"]').click();
+    await page.locator('[data-act="'+(heard?'answerYes':'answerNo')+'"]').click();
+  };
+  for (const heard of [true,true,false,false,false,true,false,true,false,true,false]) await reply(heard);
+  await expect(page.locator('#root')).toContainText('Umbral aproximado confirmado');
+  await expect(page.locator('#root')).not.toContainText('Resultado incierto');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+  const measured = Object.values(stored.measures).flat().filter(Boolean);
+  expect(measured).toHaveLength(1);
+  expect(measured[0].kind).toBe('heard');
+  expect(measured[0].db).toBe(-50);
+});
+
