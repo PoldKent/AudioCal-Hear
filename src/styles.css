@@ -57,3 +57,20 @@
 
 /* AudioCal Hear v1.7 — comfort-based tonal balance */
 .balance-card{min-width:0}.balance-panel{min-width:0}.balance-progress{display:flex;gap:6px;flex-wrap:wrap;justify-content:space-between;margin:12px 0}.balance-result{margin:10px 0;padding:12px}.balance-result strong{font-size:13px}.balance-panel select{min-width:0;width:100%;margin-bottom:10px}.balance-panel .grid2{margin:8px 0}.balance-panel .choice{min-width:0}.balance-panel .row.wrap button{min-width:0}@media(max-width:430px){.balance-card{padding:12px}.balance-panel .choice{padding:12px 8px}.balance-panel .row.wrap{gap:5px}.balance-panel .row.wrap button{flex:1 1 42%;padding:10px 6px;font-size:12px}}
+
+/* AudioCal Hear v1.9 — guided external EQ transfer */
+.transfer-card{min-width:0}.transfer-guide,.transfer-intro{min-width:0}
+.transfer-guide h2,.transfer-intro h2{font-size:clamp(17px,2vw,21px);margin:0 0 10px}
+.transfer-guide label{display:block;margin:12px 0 5px;font-size:12px;color:var(--muted)}
+.transfer-guide select,.transfer-guide input{width:100%;min-width:0;max-width:100%}
+.transfer-targets,.transfer-os{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:12px 0}
+.transfer-targets .choice,.transfer-os .choice{min-width:0;font-size:12px;padding:11px 6px;word-break:normal}
+.transfer-step-head{margin:15px 0 13px}.transfer-step-head .progress{margin:9px 0 0}
+.transfer-steps{display:flex;flex-direction:column;gap:9px}.transfer-path{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;font-size:13px;line-height:1.5;align-items:start}
+.transfer-path strong{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--panel2);color:var(--cyan)}
+.transfer-current{text-align:center;border:1px solid var(--line);border-radius:16px;background:var(--panel2);padding:22px 12px;margin:12px 0}
+.transfer-freq{font-size:clamp(26px,4vw,36px);font-weight:750;line-height:1.35}
+.transfer-instruction{font-size:clamp(17px,3vw,24px);font-weight:650;color:var(--cyan);margin:10px 0}
+.transfer-nav{margin:15px 0 8px}.transfer-table{max-width:100%;overflow:auto}.transfer-line{display:grid;grid-template-columns:minmax(84px,.6fr) minmax(0,1.4fr);gap:12px;align-items:baseline;border-bottom:1px solid var(--line);padding:9px 1px;font-size:12px}
+.transfer-line span{overflow-wrap:anywhere}.transfer-card .row.wrap button{flex:1 1 120px}
+@media(max-width:390px){.transfer-card{padding:12px}.transfer-targets .choice,.transfer-os .choice{font-size:11px;padding:9px 4px}.transfer-line{gap:7px}}
