@@ -2,6 +2,14 @@
 
 **English** | [Español](#español)
 
+## Verified execution / Ejecución verificada — 2026-10-31
+
+- **24/24 browser scenarios passed**, 0 failed across four projects (6 scenarios × 4 browser/device configurations).
+- GitHub Actions: [successful browser run](https://github.com/PoldKent/AudioCal-Hear/actions/runs/41206200371).
+- **English:** Confirmed responsive device selection, all eight locales, saved-profile recovery after reload, explicit hearing responses, saved EQ edits, valid JSON export, and optional microphone behavior. HTML source/build check also passed.
+- **Español:** Se comprobaron selección adaptable de equipos, ocho idiomas, recuperación de perfiles al recargar, respuestas auditivas explícitas, edición de EQ guardada, exportación JSON válida y micrófono opcional. También pasó la comprobación de compilación.
+- **Scope:** Android and iPhone configurations are browser **emulations**, not real-phone or Bluetooth measurements. Tests do not establish calibrated sound levels, real ear/channel routing, or clinical precision.
+
 ## English
 
 AudioCal Hear is a self-contained web application. Its **browser-level** regression suite now checks real Chromium and WebKit browser engines under the following viewport/device emulations:
