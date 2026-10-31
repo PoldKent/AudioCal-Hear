@@ -2,6 +2,17 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## v1.9.0 — 2026-10-31
+
+- Nuevo asistente **Aplicar mis ajustes** para trasladar manualmente el EQ a Spotify, YouTube Music, auriculares, parlantes o automóvil.
+- Se conserva el reproductor de archivos musicales locales con comparación A/B y ecualización efectiva.
+- Rutas de configuración diferenciadas por Android, iPhone y escritorio, sin controlar las aplicaciones externas.
+- Bandas de origen originales de 7/10 frecuencias y otras estándar o personalizadas, con límites ajustables del equipo.
+- Correspondencias exactas, aproximaciones logarítmicas identificadas y aviso cuando no hay equivalencia fiable.
+- Guía paso a paso por banda, progreso, opción de marcar revisadas y copia completa de valores.
+- Sin permisos de cuentas, captura de streaming, nuevas dependencias ni migraciones de perfiles.
+- Pruebas de regresión de traducción de frecuencias y recorridos en navegadores; sin sustituir la validación acústica.
+
 ## v1.8.2 — 2026-10-31
 
 - Cuando una respuesta contradice otra cerca del umbral, se realizan hasta seis comprobaciones alternas adicionales en vez de descartar inmediatamente la frecuencia.
