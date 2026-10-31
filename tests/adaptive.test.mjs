@@ -51,10 +51,36 @@ test('inaudible first tone has no measured threshold', () => {
   assert.equal(next(t, false, profile), 'unheard');
 });
 
-test('contradictory verification is undetermined', () => {
-  const t = {phase:'verify',level:-50,heard:-50,missed:-51,verifyIndex:0};
-  assert.equal(next(t, false, profile), 'uncertain');
+test('one contradictory answer leads to additional checks and a confirmed threshold when repeatable', () => {
+  const t = {phase:'verify',level:-50,heard:-50,missed:-51,verifyIndex:0,
+    history:[{db:-50,heard:true},{db:-51,heard:false},{db:-50,heard:false}]};
+  assert.equal(next(t,false,profile),'next');
+  assert.equal(t.phase,'recheck');
+  for(const [db,heard] of [[-50,true],[-51,false],[-50,true],[-51,false]]){
+    assert.equal(t.level,db);
+    t.history.push({db,heard});
+    const result=next(t,heard,profile);
+    if(db===-51&&t.recheckIndex===4)assert.equal(result,'measured');
+    else assert.equal(result,'next');
+  }
+  assert.equal(t.heard,-50);
+  assert.equal(t.missed,-51);
 });
+
+test('repeatedly conflicting replies preserve observations without inventing a threshold', () => {
+  const t = {phase:'verify',level:-50,heard:-50,missed:-51,verifyIndex:0,
+    history:[{db:-50,heard:true},{db:-51,heard:false},{db:-50,heard:false}]};
+  assert.equal(next(t,false,profile),'next');
+  let result='next';
+  for(let i=0;i<6&&result==='next';i++){
+    const level=t.level,heard=level===-51;
+    t.history.push({db:level,heard});
+    result=next(t,heard,profile);
+  }
+  assert.equal(result,'unconfirmed');
+  assert.equal(t.history.length,9);
+});
+
 
 test('custom digital floor is respected in coarse descent', () => {
   const t = trial(), p = {testStart:-36, testFloor:-60};
