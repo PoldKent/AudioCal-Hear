@@ -95,7 +95,7 @@ AudioCal Hear is an independent project, **not affiliated with, sponsored by or 
 
 The editable sources now live in [`src/`](src/) (HTML template, CSS, localization and six ordered JavaScript source modules). A dependency-free Node.js build recreates the standalone `index.html` **byte for byte**, so GitHub Pages and offline single-file distribution are unchanged.
 
-To work on the app: `npm run build` followed by `npm run verify` (Node.js 20+, no `npm install`). [Development guide](DEV_GUIDE.md) · [Refactor audit and test results](AUDIT_2026-10-31.md) · [Automated regression tests](https://github.com/PoldKent/AudioCal-Hear/actions/workflows/source-tests.yml).
+To work on the app: `npm run build` followed by `npm run verify` (Node.js 20+, no `npm install`). [Browser QA matrix](BROWSER_QA.md) · [Mobile/desktop browser tests](https://github.com/PoldKent/AudioCal-Hear/actions/workflows/browser-ui.yml) · [Development guide](DEV_GUIDE.md) · [Refactor audit and test results](AUDIT_2026-10-31.md) · [Automated regression tests](https://github.com/PoldKent/AudioCal-Hear/actions/workflows/source-tests.yml).
 
 ## Technical details
 
