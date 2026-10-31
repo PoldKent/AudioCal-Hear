@@ -6,9 +6,9 @@
 
 **AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite explorar umbrales auditivos percibidos, comparar preferencias musicales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
 
-**[Abrir AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Pre-release v1.8.1](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.8.1) · [Auditoría](AUDIT.es.md) · [Notas de mantenimiento](RELEASE_NOTES_v1.8.1.md) · [Historial de cambios](CHANGELOG.es.md) · [Notas de lanzamiento](RELEASE_NOTES.md)
+**[Abrir AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Pre-release v1.8.2](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.8.2) · [Auditoría](AUDIT.es.md) · [Notas de mantenimiento](RELEASE_NOTES_v1.8.1.md) · [Historial de cambios](CHANGELOG.es.md) · [Notas de lanzamiento](RELEASE_NOTES.md)
 
-> **Versión preliminar pública · v1.8.1 · octubre de 2026.** La aplicación está disponible para probarla; no está validada como examen médico de audición ni calibración acústica objetiva.
+> **Versión preliminar pública · v1.8.2 · octubre de 2026.** La aplicación está disponible para probarla; no está validada como examen médico de audición ni calibración acústica objetiva.
 
 ## Mejoras de estabilidad — v1.8.1
 
@@ -43,6 +43,8 @@ En **Ajustes → Equilibrio tonal inteligente**, selecciona y reproduce tu propi
 - Umbrales, preferencias musicales y ajustes de equilibrio se guardan por separado en cada perfil, manteniendo la compatibilidad de los perfiles anteriores.
 
 El reproductor conserva un nivel general de salida fijo y margen contra saturación entre A y B, pero **no garantiza una sonoridad percibida idéntica**. Es una herramienta subjetiva de comodidad y equilibrio, no una audiometría clínica ni una medición objetiva. Nunca aumentes el volumen para perseguir tonos inaudibles.
+
+**Mejora del umbral auditivo v1.8.2:** una respuesta contradictoria activa comprobaciones adicionales en niveles vecinos; ya no descarta de inmediato toda la frecuencia. Si no se confirma el límite, puedes repetir solo esa frecuencia, sin inventar ganancias de EQ. [Notas bilingües](RELEASE_NOTES_v1.8.2.md).
 
 ## Funciones principales
 
