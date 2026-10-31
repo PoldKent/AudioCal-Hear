@@ -2,6 +2,8 @@
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
 if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;render();return}
+if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
+if(btn.dataset.transferOs&&current){transferOS=btn.dataset.transferOs;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();return}
 if(btn.dataset.eqSelect&&current){selectedEqFreq=Number(btn.dataset.eqSelect);updateSelectedEditor();return}
 if(btn.dataset.preset){temp.name=$('#deviceName')?.value||temp.name;temp.min=Number($('#eqMin')?.value)||temp.min;temp.max=Number($('#eqMax')?.value)||temp.max;setPreset(btn.dataset.preset);return}
 if(btn.dataset.channels){temp.name=$('#deviceName')?.value||temp.name;temp.channels=btn.dataset.channels;render();return}
@@ -53,6 +55,16 @@ case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'
  case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
 case 'retry':awaitNext=false;floorReached=false;trial=null;sampleNote='';stopTone();render();break;
 case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.manual={};awaitNext=false;floorReached=false;trial=null;introStep=3;sampleNote='';touch();render()}break;
+case 'transfer-open':transferOpen=true;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();break;
+case 'transfer-close':transferOpen=false;refreshTransfer();break;
+case 'transfer-next':if(!current)return;if(transferStep===1&&!transferMapping(current)){transferStatus='Revisa las frecuencias reales del ecualizador.';refreshTransfer();break}
+ transferStep=Math.min(3,transferStep+1);transferBandIndex=0;transferStatus='';refreshTransfer();break;
+case 'transfer-prev':transferStep=Math.max(0,transferStep-1);transferStatus='';refreshTransfer();break;
+case 'transfer-backbands':transferStep=2;transferStatus='';refreshTransfer();break;
+case 'transfer-nextband':if(current){const bands=transferMapping(current)||[];if(transferBandIndex+1<bands.length)transferBandIndex++;else transferStep=3;transferStatus='';refreshTransfer()}break;
+case 'transfer-mark':if(current){const bands=transferMapping(current)||[];const f=bands[transferBandIndex]?.f;if(f!==undefined){if(transferCompleted.has(f))transferCompleted.delete(f);else transferCompleted.add(f);refreshTransfer()}}break;
+case 'transfer-applyfreq':if(current){transferCustom=$('#transferCustom')?.value||transferCustom;transferStatus=transferMapping(current)?'Bandas registradas. Los valores aproximados se identificarán.':'Revisa las frecuencias: de 2 a 31 valores únicos en orden ascendente.';transferBandIndex=0;transferCompleted=new Set();refreshTransfer()}break;
+case 'transfer-copy':if(current){const ok=await copyText(transferCopy(current));transferStatus=ok?'Lista copiada. Debes introducirla manualmente.':'No se pudo copiar la lista.';refreshTransfer()}break;
 case 'copy':{let ok=await copyText(resultText(current));$('#copyStatus').textContent=ok?'Valores copiados al portapapeles.':'No se pudo copiar. Usa Descargar TXT.';break}
 case 'downloadtxt':exportDownload('AudioCal_'+cleanName(current.name)+'.txt',resultText(current),'text/plain;charset=utf-8');break;
 case 'clearmanual':if(current){current.manual={};touch();refreshResultsUI()}break;
@@ -65,7 +77,11 @@ case 'bypass':eqBypass=!eqBypass;balancePreview=null;updatePlayerFilters(prefere
 case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({app:'AudioCal Hear',version:1,profiles},null,2),'application/json');break;
 case 'import':$('#importInput')?.click();break;
 }}
-function handleChange(e){const t=e.target;if(t.id==='uiLanguage'){if(LOCALES.includes(t.value)){language=t.value;try{localStorage.setItem(LANGUAGE_KEY,language)}catch(e){}localize(document.body)}return}if(t.id==='balanceFrequency'&&current){balanceFreq=Number(t.value);resetBalanceRound();refreshBalanceUI();return}if(t.id==='extraPreset'&&t.value){temp.name=$('#deviceName')?.value||temp.name;setPreset(t.value);return}if(t.id==='resultProfileSelect'){const p=profiles.find(x=>x.id===t.value);if(p){selectedEqFreq=null;setActive(p);nav('results')}return}if(t.id==='eqSlider')return;if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin')temp.min=Number(t.value);if(t.id==='eqMax')temp.max=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='musicFile')handleResultsEvents(t);
+function handleChange(e){const t=e.target;
+if(current&&t.id==='transferFormat'){transferPreset=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';if(transferPreset==='custom'&&!transferCustom)transferCustom=current.bands.join(', ');refreshTransfer();return}
+if(current&&t.id==='transferRange'){transferRange=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
+if(current&&t.id==='transferCustom'){transferCustom=t.value;return}
+if(t.id==='uiLanguage'){if(LOCALES.includes(t.value)){language=t.value;try{localStorage.setItem(LANGUAGE_KEY,language)}catch(e){}localize(document.body)}return}if(t.id==='balanceFrequency'&&current){balanceFreq=Number(t.value);resetBalanceRound();refreshBalanceUI();return}if(t.id==='extraPreset'&&t.value){temp.name=$('#deviceName')?.value||temp.name;setPreset(t.value);return}if(t.id==='resultProfileSelect'){const p=profiles.find(x=>x.id===t.value);if(p){selectedEqFreq=null;setActive(p);nav('results')}return}if(t.id==='eqSlider')return;if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin')temp.min=Number(t.value);if(t.id==='eqMax')temp.max=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='musicFile')handleResultsEvents(t);
 if(t.id==='importInput'&&t.files?.length){
  const file=t.files[0];
  if(file.size>2*1024*1024){uiAlert('El respaldo supera el límite de seguridad de 2 MB.');t.value='';return}
