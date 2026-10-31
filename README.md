@@ -6,9 +6,9 @@
 
 **AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Explore your perceived hearing thresholds, compare musical preferences and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
-**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [v1.8.1 pre-release](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.8.1) · [Code audit](AUDIT.md) · [Maintenance release notes](RELEASE_NOTES_v1.8.1.md) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
+**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [v1.8.2 pre-release](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.8.2) · [Code audit](AUDIT.md) · [Maintenance release notes](RELEASE_NOTES_v1.8.1.md) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
 
-> **Public preview · v1.8.1 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+> **Public preview · v1.8.2 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
 
 ## Reliability improvements — v1.8.1
 
@@ -43,6 +43,8 @@ In **EQ Settings → Smart Tonal Balance**, load and play your own music. For ea
 - Threshold, music taste and per-band balance adjustments are stored separately for each local profile; existing profiles remain readable.
 
 The A/B player keeps the same overall output gain and headroom between versions, but **does not guarantee precisely matched perceived loudness**. This is a subjective comfort/timbre aid—not clinical audiometry or objective loudspeaker measurement. Never turn up the volume to hear a faint tone.
+
+**Hearing threshold improvement in v1.8.2:** a contradictory response now triggers additional adjacent-level checks instead of immediately discarding the frequency. If a repeatable limit cannot be confirmed, only that frequency can be retried, without inventing an EQ adjustment. [Bilingual release notes](RELEASE_NOTES_v1.8.2.md).
 
 ## What you can do
 
