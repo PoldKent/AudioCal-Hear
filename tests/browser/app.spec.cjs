@@ -64,7 +64,7 @@ test('profile creation and local persistence survive reload', async ({ page }) =
   await expect(page.locator('#root')).toHaveAttribute('data-page', 'test');
   await page.reload();
   await page.locator('[data-nav="profiles"]').click();
-  await expect(page.locator('[data-profile-name]').first()).toHaveText(profileName);
+  await expect(page.locator('.profile-focus .profile-title')).toHaveText(profileName);
   const records = await page.evaluate(() => JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1')));
   expect(records).toHaveLength(1);
   expect(records[0].preset).toBe('photo10');
