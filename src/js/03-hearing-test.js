@@ -91,7 +91,6 @@ function logMeasure(kind){
 function answerTone(heard){
  if(!current||!trial||(!trial.awaiting&&tone?.mode!=='test'))return;
  stopTone();trial.awaiting=false;trial.done++;trial.history.push({db:trial.level,heard});
- if(trial.done>=MAX_STEPS){logMeasure('unconfirmed');return}
  const status=nextTrialLevel(trial,heard,current);
   if(status==='stillheard'){floorReached=true;render();return}
  if(status==='unheard'){logMeasure('unheard');return}
