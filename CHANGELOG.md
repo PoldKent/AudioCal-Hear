@@ -2,6 +2,15 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## v1.8.2 — 2026-10-31
+
+- When a tone response differs from an earlier answer near the threshold, perform up to six additional alternating checks instead of immediately discarding the frequency.
+- Accept a threshold only when the louder boundary is heard repeatedly and the softer boundary is missed repeatedly; otherwise preserve the original answers without manufacturing a dB value.
+- Added an in-place **Repeat this frequency** action for measurements that could not be confirmed.
+- Replaced the misleading “uncertain result” message with an explicit explanation of why the threshold was not confirmed.
+- Retained the 20-tone / 60-second automatic sound-playback limit, the −24…−84 dBFS range and compatibility with local profiles.
+- Added unit tests for recoverable and irreproducible answers plus a real-browser regression scenario.
+
 ## v1.8.1 — 2026-10-30
 
 - Validated imported and locally stored profiles, bounded measurement arrays and gain values, with a 2 MB backup import limit.
