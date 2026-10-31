@@ -90,7 +90,7 @@ function normalizedProfile(p,importing=false){
   const freq=Number(bits[1]);if(!Number.isFinite(freq)||freq<20||freq>20000)continue;
   const checked=a.slice(0,2).map(v=>{
    if(!v||typeof v!=='object'||Array.isArray(v))return null;
-   const validKind=['heard','unheard','stillheard','timeout','skipped'].includes(v.kind)?v.kind:'timeout';
+   const validKind=['heard','unheard','stillheard','timeout','skipped','unconfirmed'].includes(v.kind)?v.kind:'timeout';
    const db=validKind==='heard'&&Number.isFinite(v.db)&&v.db>=-110&&v.db<=0?v.db:null;
    const history=Array.isArray(v.history)?v.history.slice(0,20).filter(x=>x&&Number.isFinite(x.db)&&x.db>=-110&&x.db<=0&&typeof x.heard==='boolean').map(x=>({db:x.db,heard:x.heard})):[];
    return {kind:validKind,db,elapsedS:safeNumber(v.elapsedS,0,0,180),lastAudibleDb:validKind==='stillheard'?safeNumber(v.lastAudibleDb,testFloor,-110,0):null,at:safeNumber(v.at,Date.now(),0,Date.now()+86400000),method:String(v.method||'imported').slice(0,40),history};
@@ -142,8 +142,20 @@ function newTrial(entry){
   missed:entry.pass===1&&prev!==null?prev-1:null,verifyIndex:0,done:0,
   awaiting:false,highConsent:false,history:[],lastTone:null};
 }
+function boundaryVotes(t,level){
+ let yes=0,no=0;
+ for(const answer of t.history||[]){
+  if(answer.db!==level)continue;
+  if(answer.heard)yes++;else no++;
+ }
+ return {yes,no};
+}
+function boundaryConfirmed(t){
+ const high=boundaryVotes(t,t.heard),low=boundaryVotes(t,t.missed);
+ return high.yes>=2&&low.no>=2&&high.yes>high.no&&low.no>low.yes;
+}
 function nextTrialLevel(t,heard,p){
- const floor=getFloor(p),start=getStart(p);
+ const floor=getFloor(p);
  if(t.phase==='coarse'){
    if(heard){t.heard=t.level;if(t.level<=floor)return 'stillheard';t.level=Math.max(floor,t.level-12);return 'next';}
    t.missed=t.level;
@@ -153,16 +165,28 @@ function nextTrialLevel(t,heard,p){
    if(heard)t.heard=t.level;else t.missed=t.level;
  }else if(t.phase==='verify'){
    const expected=t.verifyIndex===0;
-   if(heard!==expected)return 'uncertain';
+   if(heard!==expected){
+     // One different perception near the boundary is normal. Recheck rather
+     // than discarding the whole frequency or assigning an invented threshold.
+     t.phase='recheck';t.recheckIndex=0;t.level=t.heard;return 'next';
+   }
    t.verifyIndex++;
    if(t.verifyIndex>=2)return 'measured';
    t.level=t.missed;return 'next';
+ }else if(t.phase==='recheck'){
+   t.recheckIndex++;
+   // Alternate the louder / quieter adjacent levels. Each must have a
+   // reproducible majority, with at least two supporting responses.
+   if(t.recheckIndex>=4&&boundaryConfirmed(t))return 'measured';
+   if(t.recheckIndex>=6)return 'unconfirmed';
+   t.level=t.recheckIndex%2===0?t.heard:t.missed;
+   return 'next';
  }
  if(t.heard!==null&&t.missed!==null){
    if(t.heard-t.missed<=1){t.phase='verify';t.level=t.heard;t.verifyIndex=0;return 'next';}
    t.level=Math.round((t.heard+t.missed)/2);return 'next';
  }
- return 'uncertain';
+ return 'unconfirmed';
 }
 let page='setup',audioCtx=null,tone=null,frame=null,playerAudio=null,playerSource=null,filters=[],playerPreamp=null,playerOutput=null,playerUrl=null,eqBypass=false,awaitNext=false,floorReached=false,notice='',sampleNote='';
 let preferenceStage=0,preferencePreview=null,preferenceListened=new Set();
