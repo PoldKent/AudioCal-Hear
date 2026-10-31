@@ -1,0 +1,47 @@
+name: Publish AudioCal Hear v1.9.1 white minimal UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-v1.9.1.yml"
+      - "RELEASE_NOTES_v1.9.1.md"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Verify release build and key features
+        run: |
+          set -euo pipefail
+          node tools/build.mjs --check
+          npm test
+          grep -q 'AudioCal Hear v1.9.1' index.html
+          grep -q 'color-scheme:light' index.html
+          grep -q 'function transferMapping' index.html
+          grep -q 'id="musicFile"' index.html
+          grep -q 'id="transferPanel"' index.html
+          cp index.html AudioCal_Hear_v1.9.1.html
+      - name: Create or update public prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.9.1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit v1.9.1 --repo "$GITHUB_REPOSITORY" \
+              --title "AudioCal Hear v1.9.1 — Minimal White UI (Public Preview)" \
+              --notes-file RELEASE_NOTES_v1.9.1.md \
+              --prerelease
+          else
+            gh release create v1.9.1 AudioCal_Hear_v1.9.1.html \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "AudioCal Hear v1.9.1 — Minimal White UI (Public Preview)" \
+              --notes-file RELEASE_NOTES_v1.9.1.md \
+              --prerelease
+          fi
