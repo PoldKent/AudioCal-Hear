@@ -6,9 +6,13 @@
 
 **AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Explore your perceived hearing thresholds, compare musical preferences and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
-**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [v1.8.2 pre-release](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.8.2) · [Code audit](AUDIT.md) · [Maintenance release notes](RELEASE_NOTES_v1.8.1.md) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
+**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [v1.9.0 pre-release](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.9.0) · [Code audit](AUDIT.md) · [Maintenance release notes](RELEASE_NOTES_v1.8.1.md) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
 
-> **Public preview · v1.8.2 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+> **Public preview · v1.9.0 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+
+## New in v1.9 — transfer EQ settings step by step
+
+Keep using **your own music file** for true A/B equalization in AudioCal. The new **Apply my EQ settings** assistant helps you manually set up Spotify, YouTube Music, or the EQ built into your headphones, speakers or car. Select the destination, confirm actual center frequencies and gain limits, then follow each band's instructions. Approximate mappings are labeled, unreliable matches are left unchanged. No third-party app is modified automatically. [Read the bilingual guide](RELEASE_NOTES_v1.9.0.md).
 
 ## Reliability improvements — v1.8.1
 
