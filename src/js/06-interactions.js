@@ -43,8 +43,14 @@ case 'introBack':introStep=Math.max(0,introStep-1);render();break;
 case 'introNext':introStep=Math.min(3,introStep+1);render();break;
 case 'ambient':await checkAmbient();break;
 case 'endheard':if(current&&floorReached){logMeasure('stillheard')}break;
-case 'enduncertain':if(current&&floorReached)logMeasure('timeout');break;
-case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
+case 'enduncertain':if(current&&floorReached)logMeasure('unconfirmed');break;
+case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'){
+  const k=key(lastRecordedEntry.f,lastRecordedEntry.side);
+  if(lastRecordedEntry.pass===0){delete current.measures[k]}
+  else if(Array.isArray(current.measures[k]))current.measures[k].length=1;
+  awaitNext=false;floorReached=false;trial=null;sampleNote='';lastResultKind=null;lastRecordedEntry=null;stopTone();touch();render();
+ }break;
+ case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
 case 'retry':awaitNext=false;floorReached=false;trial=null;sampleNote='';stopTone();render();break;
 case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.manual={};awaitNext=false;floorReached=false;trial=null;introStep=3;sampleNote='';touch();render()}break;
 case 'copy':{let ok=await copyText(resultText(current));$('#copyStatus').textContent=ok?'Valores copiados al portapapeles.':'No se pudo copiar. Usa Descargar TXT.';break}
