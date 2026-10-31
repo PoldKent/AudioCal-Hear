@@ -102,6 +102,8 @@ test('EQ editor updates saved profile and JSON export is valid', async ({ page }
   expect(Object.values(stored.manual || {}).some(x => x !== 0)).toBeTruthy();
   await page.locator('[data-nav="profiles"]').click();
   const downloadWait = page.waitForEvent('download');
+  const backup = page.locator('details').filter({ has: page.locator('[data-act="exportall"]') });
+  await backup.locator('summary').click();
   await page.locator('[data-act="exportall"]').click();
   const download = await downloadWait;
   const exported = JSON.parse(fs.readFileSync(await download.path(), 'utf8'));
