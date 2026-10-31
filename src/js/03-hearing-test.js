@@ -14,13 +14,13 @@ function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea
  if(introStep<3&&!awaitNext)return renderIntro();
  const p=current,items=plan(p),total=items.length,missing=firstMissing(p);
  if(missing<0)return `<div class="card center"><h2>✓ Examen completado</h2><p>Se guardaron ${total} pruebas para <strong data-profile-name="true">${esc(p.name)}</strong>. Si no se encontró el umbral, no se inventa ninguna medida.</p>${button('Ver ajustes recomendados','results','btn-primary full')}${button('Repetir examen desde cero','resettest','btn-ghost full')}</div>`;
- if(awaitNext)return `<section class="hero"><p class="eyebrow">HEAR TEST</p><h1>Resultado guardado</h1></section><section class="card"><p>${esc(sampleNote)}</p><p class="small muted">Faltan ${total-doneCount(p)} pruebas por completar.</p>${button('Siguiente frecuencia →','next','btn-primary full bigbutton')}</section>`;
+ if(awaitNext)return `<section class="hero"><p class="eyebrow">HEAR TEST</p><h1>Resultado guardado</h1></section><section class="card"><p>${esc(sampleNote)}</p><p class="small muted">Faltan ${total-doneCount(p)} pruebas por completar.</p>${lastResultKind==='unconfirmed'?button('Repetir esta frecuencia','retryrecord','btn-alt full'):''}${button('Siguiente frecuencia →','next','btn-primary full bigbutton')}</section>`;
  const item=items[missing],active=tone?.mode==='test',keyName=item.side==='left'?'OÍDO IZQUIERDO':item.side==='right'?'OÍDO DERECHO':'AMBOS CANALES';
  const id=key(item.f,item.side)+'-'+item.pass;
  if(!trial||trial.id!==id)trial=newTrial(item);
  if(item.pass===1&&!Number.isFinite(trial.heard)){logMeasure('timeout');return renderTest()}
  const pct=Math.round(doneCount(p)/total*100),level=trial.level;
- const phase=trial.phase==='coarse'?'Búsqueda rápida · hasta 12 dB':trial.phase==='refine'?'Ajuste fino · hasta 1 dB':'Confirmación del umbral';
+ const phase=trial.phase==='coarse'?'Búsqueda rápida · hasta 12 dB':trial.phase==='refine'?'Ajuste fino · hasta 1 dB':trial.phase==='recheck'?'Comprobación adicional':'Confirmación del umbral';
  return `<section class="hero"><p class="eyebrow">HEAR TEST · GUÍA ADAPTATIVA</p><h1>¿Lo escuchaste?</h1><p class="subtle">Cada nivel se reproduce por separado. Responde explícitamente para continuar. No cambies el volumen del teléfono.</p></section>
  <section class="card"><div class="row" style="justify-content:space-between"><strong data-profile-name="true">${esc(p.name)}</strong><span class="tag">${doneCount(p)+1} / ${total}</span></div>
  <div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><p class="center small muted">${keyName} · ${phase} · Repetición ${item.pass+1}/${p.passes}</p>
@@ -76,26 +76,28 @@ async function playTone(check=false){
   render();
  }catch(e){uiAlert('No se pudo reproducir el tono: '+e.message)}
 }
+let lastResultKind=null,lastRecordedEntry=null;
 function logMeasure(kind){
  if(!current)return;
  const e=plan(current)[firstMissing(current)];if(!e)return;
  const k=key(e.f,e.side),db=kind==='heard'&&trial&&Number.isFinite(trial.heard)&&Number.isFinite(trial.missed)?trial.heard:null;
+ lastResultKind=kind;lastRecordedEntry={f:e.f,side:e.side,pass:e.pass};
  if(!current.measures[k])current.measures[k]=[];
  current.measures[k][e.pass]={kind,db,elapsedS:trial?.done*SECONDS_PER_DB||0,lastAudibleDb:kind==='stillheard'?getFloor(current):null,at:Date.now(),method:'adaptive-v18-explicit',testStart:getStart(current),testFloor:getFloor(current),history:trial?.history?.slice(0,MAX_STEPS)||[]};
  if(e.pass===0&&current.passes===2&&!Number.isFinite(db))current.measures[k][1]={kind:'skipped',db:null,elapsedS:0,at:Date.now(),method:'adaptive-v18-explicit'};
- sampleNote=kind==='heard'?'Umbral aproximado confirmado ✓':kind==='stillheard'?'Lo seguías escuchando al nivel mínimo; no implica bajar el EQ.':kind==='unheard'?'No era audible al nivel inicial. No aumentes el volumen.':'Resultado incierto: no se inventa un umbral.';
+ sampleNote=kind==='heard'?'Umbral aproximado confirmado ✓':kind==='stillheard'?'Lo seguías escuchando al nivel mínimo; no implica bajar el EQ.':kind==='unheard'?'No era audible al nivel inicial. No aumentes el volumen.':kind==='unconfirmed'?'No se pudo confirmar el límite de esta frecuencia. Se guardaron tus respuestas; puedes repetirla sin rehacer todo el examen.':'Prueba terminada sin un umbral confirmado. No se inventa una medida.';
  trial=null;stopTone();floorReached=false;touch();awaitNext=true;render();
 }
 function answerTone(heard){
  if(!current||!trial||(!trial.awaiting&&tone?.mode!=='test'))return;
  stopTone();trial.awaiting=false;trial.done++;trial.history.push({db:trial.level,heard});
- if(trial.done>=(trial.phase==='verify'?2:MAX_STEPS)&&trial.phase!=='verify'){logMeasure('timeout');return}
+ if(trial.done>=MAX_STEPS){logMeasure('unconfirmed');return}
  const status=nextTrialLevel(trial,heard,current);
- if(trial.done>=MAX_STEPS&&status==='next'){logMeasure('timeout');return}
- if(status==='stillheard'){floorReached=true;render();return}
+  if(status==='stillheard'){floorReached=true;render();return}
  if(status==='unheard'){logMeasure('unheard');return}
- if(status==='uncertain'){logMeasure('timeout');return}
+ if(status==='unconfirmed'){logMeasure('unconfirmed');return}
  if(status==='measured'){logMeasure('heard');return}
+ if(trial.done>=MAX_STEPS&&status==='next'){logMeasure('unconfirmed');return}
  render();
 }
 async function checkAmbient(){
