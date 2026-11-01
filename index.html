@@ -222,6 +222,16 @@ select option{background:#fff;color:#172033}
 .trace-table tbody tr:last-child th,.trace-table tbody tr:last-child td{border-bottom:0}
 .trace-table td:last-child strong{color:#205cc7;white-space:nowrap}
 @media(max-width:430px){.trace-panel{padding:9px}.trace-part{padding:9px}.trace-heading h2{font-size:16px}}
+
+/* Calibrated control-card preview: a local, offline canvas exported as PNG. */
+.eq-card-section{border:1px solid #dce6f2;border-radius:17px;background:#fff;padding:14px;margin:15px 0}
+.eq-card-section h2{font-size:19px;margin:0 0 7px;color:#223756}
+.eq-card-config{display:grid;gap:7px;margin:13px 0;padding:12px;border-radius:12px;background:#f6f9ff}
+.eq-card-config label{font-size:13px;font-weight:650;color:#39516f}
+.eq-card-canvas{width:100%;height:auto;border:1px solid #e2eaf4;border-radius:10px;display:block;background:#fff}
+.eq-card-alert{padding:10px 12px;background:#eff7ff;border-radius:10px;color:#2d5c91;font-size:12px;margin:10px 0}
+.eq-card-alert.eq-card-warning{background:#fff6ec;color:#80501f}
+.eq-card-actions{margin-top:12px}
 </style>
 </head>
 <body>
@@ -298,8 +308,8 @@ function uiConfirm(s){return window.confirm(trans(s))}
 function uiPrompt(s,v){return window.prompt(trans(s),v)}
 
 const presets={
- car7:{name:'Automóvil · 7 bandas (tus fotos)',short:'Auto 7',bands:[64,160,400,1000,2500,6250,15625],min:-6,max:6,step:1,note:'Las frecuencias coinciden exactamente con tus fotos. El rango ±6 dB es provisional: ajústalo si tu radio admite otros límites.'},
- photo10:{name:'Auriculares · 10 bandas (tu foto)',short:'Auriculares 10',bands:[30,60,120,250,500,1000,2000,4000,8000,16000],min:-20,max:20,step:1,note:'Frecuencias exactas de la primera imagen; escala visible de −20 a +20 dB.'},
+ car7:{name:'Automóvil · 7 bandas (tus fotos)',short:'Auto 7',bands:[64,160,400,1000,2500,6250,15625],min:-6,max:6,step:1,note:'Las frecuencias coinciden con tus fotos. El rango del control es de −6 a +6 posiciones; verifica cuántos dB equivale cada paso.'},
+ photo10:{name:'Auriculares · 10 bandas (tu foto)',short:'Auriculares 10',bands:[30,60,120,250,500,1000,2000,4000,8000,16000],min:-20,max:20,step:1,note:'Frecuencias exactas de la primera imagen; escala visible de −20 a +20 niveles. Comprueba si el fabricante expresa esos niveles en dB.'},
  iso10:{name:'ISO · 10 bandas (octavas)',short:'ISO 10',bands:[31.5,63,125,250,500,1000,2000,4000,8000,16000],min:-12,max:12,step:1,note:'Frecuencias preferidas ISO/ANSI para intervalos de una octava.'},
  iso7:{name:'Habitual · 7 bandas',short:'Estándar 7',bands:[63,160,400,1000,2500,6300,16000],min:-12,max:12,step:1,note:'Distribución frecuente de siete bandas; no todos los aparatos de 7 bandas son iguales.'},
  five:{name:'Habitual · 5 bandas',short:'5 bandas',bands:[60,250,1000,4000,16000],min:-12,max:12,step:1,note:'Configuración común de cinco bandas. Comprueba las etiquetas de tu equipo.'},
@@ -315,7 +325,7 @@ const median=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b.length%2?b
 
 /* v2 model: listening conditions are metadata, never invented acoustic corrections. */
 function defaultCalibrationContext(type){
- return {provenance:'captured',eqScale:'unknown',seat:'driver',windows:'closed',engine:'off',
+ return {provenance:'captured',eqScale:'unknown',eqStepDb:'unknown',seat:'driver',windows:'closed',engine:'off',
   connection:'bluetooth',subtype:'overear',anc:'unknown',seal:'unknown',
   room:'living',position:'main',placement:'unknown'};
 }
@@ -323,7 +333,7 @@ function normalizeCalibrationContext(raw,type){
  const data=defaultCalibrationContext(type);
  if(!raw||typeof raw!=='object'||Array.isArray(raw)){data.provenance='legacy';return data}
  const options={
-  eqScale:['unknown','steps','db'],seat:['driver','passenger','rear'],windows:['closed','open'],
+  eqScale:['unknown','steps','db'],eqStepDb:['unknown','1','2'],seat:['driver','passenger','rear'],windows:['closed','open'],
   engine:['off','on'],connection:['bluetooth','cable','other'],subtype:['overear','inear','onear'],
   anc:['unknown','on','off','none'],seal:['unknown','good','poor'],
   room:['living','desk','studio','other'],position:['main','near','far'],
@@ -497,7 +507,7 @@ function setPreset(id){temp.preset=id;temp.bands=(presets[id]||presets.custom).b
 function render(){if(page==='test'&&current&&firstMissing(current)<0)page='results';if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
  el.dataset.page=page;
  el.innerHTML=page==='setup'?renderSetup():page==='test'?renderTest():page==='results'?renderResults():renderProfiles();
- if(page==='test'&&tone?.mode==='test')startVisualizer();if(page==='results'&&current){const newPlayer=$('#audioPlayer');if(playerAudio!==newPlayer){try{playerAudio?.pause()}catch(e){}try{playerSource?.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}playerPreamp=null;playerOutput=null;playerSource=null;filters=[];playerAudio=newPlayer;if(playerUrl)playerAudio.src=playerUrl;attachPlayerEvents(playerAudio)}updatePlayerFilters()}
+ if(page==='test'&&tone?.mode==='test')startVisualizer();if(page==='results'&&current){const newPlayer=$('#audioPlayer');if(playerAudio!==newPlayer){try{playerAudio?.pause()}catch(e){}try{playerSource?.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}playerPreamp=null;playerOutput=null;playerSource=null;filters=[];playerAudio=newPlayer;if(playerUrl)playerAudio.src=playerUrl;attachPlayerEvents(playerAudio)}updatePlayerFilters();refreshEqCard()}
  localize(document.body);
 }
 function approxTimeRange(d){return '~'+Math.max(1,Math.floor(d.exampleLow/60))+'–'+Math.max(1,Math.ceil(d.exampleHigh/60))+' min'}
@@ -509,7 +519,9 @@ function contextSelect(field,label,options,value){
 function renderContextFields(){
  const c=temp.context||defaultCalibrationContext(temp.type);
  const scale=contextSelect('eqScale','¿Qué unidad muestran los controles del EQ?',
-  [['unknown','No estoy seguro'],['steps','Posiciones / niveles (sin dB)'],['db','Decibelios (dB)']],c.eqScale);
+  [['unknown','No estoy seguro'],['steps','Posiciones / niveles (sin dB)'],['db','Decibelios (dB)']],c.eqScale)+
+  (c.eqScale==='steps'?contextSelect('eqStepDb','Equivalencia por paso según manual del equipo',
+  [['unknown','Desconocida: no convertir'],['1','1 dB / paso confirmado'],['2','2 dB / paso confirmado']],c.eqStepDb):'');
  let specific='';
  if(temp.type==='car'){
   specific=contextSelect('seat','Asiento de escucha',[['driver','Conductor'],['passenger','Copiloto'],['rear','Fila trasera']],c.seat)+
@@ -551,7 +563,7 @@ ${temp.testMode==='quick'&&temp.bands.length>10?'<p class="soft warning small">E
 <div class="setup-summary" role="status" aria-live="polite"><div class="summary-line"><div><span class="tiny muted">TIEMPO ORIENTATIVO</span><span class="summary-time" id="setupTime">${approxTimeRange(duration)}</span></div><span class="tag" id="setupTrials">${duration.trials} pruebas</span></div><div class="tiny muted" id="setupMaximum">Máximo de tonos: ${timeLabel(duration.max)}</div><details><summary class="tiny" style="cursor:pointer;color:#9de5f5">Cómo se calcula el tiempo</summary><div id="durationEstimate">${durationNotice({...temp,measures:{}},0,false)}</div></details></div>
 <label for="deviceName">¿Cómo llamarás a este perfil?</label><input class="field" id="deviceName" maxlength="70" placeholder="Ej.: Mis Soundcore, Auto, Parlantes de sala" value="${esc(temp.name)}">
 <details class="unobtrusive"><summary>Rango de prueba y opciones avanzadas <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="small muted">Los niveles de prueba son dBFS digitales, no dB SPL ni ganancias del ecualizador. Rango disponible: −24 a −84 dBFS. Por seguridad empezamos en −36 dBFS; el nivel −24 requiere confirmación.</p><div class="grid2"><div><label for="testStart">Nivel inicial (dBFS)</label><input class="field" id="testStart" type="number" min="-84" max="-24" step="1" value="${temp.testStart}"></div><div><label for="testFloor">Nivel mínimo (dBFS)</label><input class="field" id="testFloor" type="number" min="-84" max="-36" step="1" value="${temp.testFloor}"></div></div><p class="small muted">Cerca de −24 dBFS el tono puede ser demasiado intenso para ciertos auriculares; cerca de −84 dBFS el ruido electrónico puede ocultarlo. No subas el volumen del teléfono para perseguir sonidos.</p></div></details>
-<details class="unobtrusive"><summary>Rango de ganancia y opciones avanzadas <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><div class="grid2"><div><label for="eqMin">Mínimo (dB)</label><input class="field" id="eqMin" type="number" min="-30" max="-1" step="1" value="${temp.min}"></div><div><label for="eqMax">Máximo (dB)</label><input class="field" id="eqMax" type="number" min="1" max="30" step="1" value="${temp.max}"></div></div>${temp.preset==='car7'?'<p class="small muted">Solo para tu auto de 7 bandas: rango ±6 dB provisional.</p>':''}</div></details>
+<details class="unobtrusive"><summary>Rango de ganancia y opciones avanzadas <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><div class="grid2"><div><label for="eqMin">Mínimo (dB)</label><input class="field" id="eqMin" type="number" min="-30" max="-1" step="1" value="${temp.min}"></div><div><label for="eqMax">Máximo (dB)</label><input class="field" id="eqMax" type="number" min="1" max="30" step="1" value="${temp.max}"></div></div>${temp.preset==='car7'?'<p class="small muted">Para tu auto de 7 bandas: controles de −6 a +6. La equivalencia en dB/paso no se presupone.</p>':''}</div></details>
 <details class="unobtrusive"><summary>Comprobar sonido y recomendaciones de seguridad</summary><div class="inner-detail"><p class="compact-note">Conecta el Bluetooth desde el teléfono. Elige un volumen bajo y cómodo, sin subirlo durante las pruebas. Haz la prueba en silencio; en el vehículo, siempre estacionado. <strong>Nunca uses el volumen máximo.</strong></p><div class="row wrap">${button('▶ Probar tono','check','btn-alt grow')}${button('■ Detener','stopaudio','btn-ghost grow')}</div></div></details>
 ${button('Comenzar mi calibración →','create','btn-primary full bigbutton')}
 <p class="tiny center muted">Los perfiles se guardan localmente. Se distinguen bandas medidas y estimadas.</p></section>`}
@@ -835,7 +847,7 @@ function refreshResultsUI(){
  updateSelectedEditor();
  const countEl=document.querySelector('.stat-grid .stat:nth-child(3) strong');if(countEl)countEl.textContent=count;
  const pref=document.querySelector('#prefRound');if(pref)pref.innerHTML=preferenceMarkup();
- updatePlayerFilters(preferencePreview?previewTaste():null);refreshTransfer();localize(document.body);
+ updatePlayerFilters(preferencePreview?previewTaste():null);refreshTransfer();refreshEqCard();localize(document.body);
 }
 function eqMark(b){return (b.gain>0?'+':'')+b.gain}
 function selectedBandInfo(b){return b.db===null?'Sin umbral medido · ajuste personal':b.derived?'Frecuencia estimada':b.quality==='good'?'Umbral consistente':'Umbral estimado · verifica si lo necesitas'}
@@ -914,6 +926,109 @@ function renderCalibrationTrace(p,r){
  <p class="tiny muted">Método de corrección: contrastes locales v2, experimental; conserva las medidas originales. Las curvas normales de igual sonoridad no pueden aplicarse directamente a este test digital sin calibración acústica. Una corrección neutral puede ser el único resultado justificable.</p></div></section>`;
 }
 
+
+// Transfer to a physical EQ is exact only when its unit is known.
+// Never turn a digital dB estimate into a step count by assumption.
+function eqResultModel(p){
+ const context=normalizeCalibrationContext(p.context,p.type);
+ const complete=firstMissing(p)<0;
+ const scale=context.eqScale;
+ const ratio=scale==='db'?1:(scale==='steps'&&['1','2'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
+ const rows=recommend(p).map(b=>{
+  const gain=b.gain;
+  const verified=Number.isFinite(ratio);
+  const position=verified?clamp(Math.round(gain/ratio),p.min,p.max):null;
+  const quality=b.db===null?'Sin umbral':b.derived?'Interpolado':b.quality==='mixed'?'Oídos distintos':b.quality==='good'?'Repetido':'Estimación';
+  return {f:b.f,gain,position,quality,auto:b.base,available:verified};
+ });
+ return {name:p.name,complete,scale,ratio,context:calibrationContextLabel(p),
+  device:p.type==='car'?'AUTO':p.type==='headphones'?'AURICULARES':'PARLANTES',
+  label:scale==='db'?'dB de control':scale==='steps'?'posición':'sin verificar',
+  rows,verified:Number.isFinite(ratio),
+  warning:(!complete?'Prueba incompleta: ajustes provisionales. ':'')+
+   (!Number.isFinite(ratio)?'Equivalencia del control desconocida. No hay posiciones verificadas.':
+   'Ajustes calculados: algoritmo experimental, sin calibración acústica.')};
+}
+function eqResultMarkup(p){
+ const m=eqResultModel(p);
+ const ctx=normalizeCalibrationContext(p.context,p.type);
+ const scaleOptions=[['unknown','Unidad sin verificar'],['db','Controles en dB'],['steps','Controles por posiciones']];
+ const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (manual confirmado)'],['2','2 dB por paso (manual confirmado)']];
+ return `<section id="eqCardSection" class="eq-card-section" aria-label="Imagen descargable del ecualizador">
+ <h2>Mi ecualizador · resultado para aplicar</h2>
+ <p class="compact-note">${esc(m.context)} · ${p.bands.length} bandas. ${m.complete?'Test completado':'Test pendiente de completar'}.</p>
+ <div class="eq-card-config"><label for="resultEqScale">Unidad real del ecualizador</label>
+ <select id="resultEqScale" class="field">${scaleOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqScale===k?'selected':'')+'>'+l+'</option>').join('')}</select>
+ ${ctx.eqScale==='steps'?'<label for="resultEqStepDb">Equivalencia documentada del control</label><select id="resultEqStepDb" class="field">'+stepOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqStepDb===k?'selected':'')+'>'+l+'</option>').join('')+'</select>':''}
+ <p class="tiny muted">Selecciona una equivalencia únicamente si tu equipo la especifica. El rango del auto es −6 a +6 posiciones; los auriculares de referencia, −20 a +20.</p></div>
+ <p class="eq-card-alert ${m.verified?'':'eq-card-warning'}" id="eqCardNotice">${esc(m.warning)}</p>
+ <canvas id="eqCardCanvas" class="eq-card-canvas" width="960" height="${440+m.rows.length*61}" role="img" aria-label="Vista previa del resultado visual y las bandas de EQ"></canvas>
+ <div class="row wrap eq-card-actions">${button('↓ Guardar imagen PNG','downloadpng','btn-primary grow')}${button('⎘ Copiar controles','copycontrols','btn-alt grow')}</div>
+ <p class="tiny muted">El PNG contiene los valores de cada banda, el contexto y las limitaciones. Los resultados numéricos no sustituyen una calibración acústica con micrófono.</p></section>`;
+}
+function paintEqResult(canvas,p){
+ if(!canvas||!p)return false;
+ const m=eqResultModel(p),rows=m.rows;
+ const w=960,h=440+rows.length*61;
+ canvas.width=w;canvas.height=h;
+ const c=canvas.getContext('2d');if(!c)return false;
+ const rounded=(x,y,width,height,r)=>{c.beginPath();c.roundRect(x,y,width,height,r)};
+ c.fillStyle='#ffffff';c.fillRect(0,0,w,h);
+ c.fillStyle='#2364cc';rounded(40,34,880,9,4);c.fill();
+ c.fillStyle='#192b47';c.font='bold 35px system-ui, sans-serif';c.fillText('AudioCal Hear',40,92);
+ c.fillStyle='#52647a';c.font='20px system-ui, sans-serif';c.fillText('MI ECUALIZADOR · '+m.device,40,130);
+ c.fillStyle='#1b3352';c.font='bold 25px system-ui, sans-serif';c.fillText(String(m.name).slice(0,50),40,181);
+ c.fillStyle='#63758c';c.font='16px system-ui, sans-serif';
+ const label=String(m.context);c.fillText(label.length>93?label.slice(0,90)+'...':label,40,217);
+ const labelVal=m.verified?(m.scale==='db'?'dB DEL CONTROL':'POSICIÓN DEL CONTROL'):'AJUSTE EQ ESTIMADO';
+ c.fillStyle='#2670d4';c.font='bold 18px system-ui, sans-serif';c.fillText(labelVal,40,273);
+ c.fillStyle='#64758b';c.font='15px system-ui, sans-serif';
+ c.fillText(m.verified?'Rango de control: '+p.min+' a +'+p.max+' · '+(m.scale==='steps'?m.ratio+' dB por paso':'en dB'):'Conversión a posiciones no confirmada',40,303);
+ const maxAbs=Math.max(3,...rows.map(r=>Math.abs(r.gain)));
+ rows.forEach((r,i)=>{
+  const y=345+i*61;
+  c.fillStyle=i%2===0?'#f4f7fc':'#ffffff';rounded(40,y-31,880,55,10);c.fill();
+  c.fillStyle='#1c3453';c.font='bold 19px system-ui, sans-serif';c.fillText(fmt(r.f),57,y+1);
+  const x0=425,maxWidth=185;
+  c.fillStyle='#ccd7e6';c.fillRect(x0-maxWidth,y-4,maxWidth*2,8);
+  const dx=r.gain/maxAbs*maxWidth;
+  c.fillStyle=dx>=0?'#2671db':'#df8843';
+  c.fillRect(dx<0?x0+dx:x0,y-10,Math.max(2,Math.abs(dx)),20);
+  c.fillStyle='#8595a8';c.fillRect(x0-1,y-15,2,30);
+  c.fillStyle='#1b3454';c.font='bold 24px system-ui, sans-serif';
+  const primary=r.position===null?'—':(r.position>0?'+':'')+r.position;
+  c.textAlign='right';c.fillText(primary,887,y+4);c.textAlign='left';
+  c.fillStyle='#8290a2';c.font='14px system-ui, sans-serif';
+  c.fillText('EQ '+(r.gain>0?'+':'')+r.gain+' dB · '+r.quality,57,y+22);
+ });
+ const foot=h-70;
+ c.fillStyle=m.verified?'#245787':'#95542a';c.font='bold 17px system-ui, sans-serif';
+ c.fillText(m.complete?'TEST FINALIZADO':'PRUEBA INCOMPLETA',40,foot);
+ c.fillStyle='#61748a';c.font='15px system-ui, sans-serif';
+ const warnings=m.verified?
+  'Corrección perceptiva experimental · verificar con escucha · sin medición acústica':
+  'SIN CONVERSIÓN VALIDADA: confirmar dB por nivel antes de mover controles';
+ c.fillText(warnings,40,foot+28);
+ return true;
+}
+function refreshEqCard(){if(page!=='results'||!current)return;const canvas=$('#eqCardCanvas');if(canvas)paintEqResult(canvas,current)}
+function eqControlText(p){
+ const m=eqResultModel(p);
+ return 'AudioCal Hear · '+m.name+'\n'+m.context+'\n'+m.warning+'\n'+m.rows.map(r=>
+  fmt(r.f)+' -> '+(r.position===null?'SIN POSICIÓN VERIFICADA':'control '+(r.position>=0?'+':'')+r.position+' '+m.label)+
+  ' · EQ '+(r.gain>=0?'+':'')+r.gain+' dB').join('\n');
+}
+function saveEqCardPng(p){
+ const canvas=document.createElement('canvas');
+ if(!paintEqResult(canvas,p))return false;
+ const filename='AudioCal_EQ_'+cleanName(p.name)+'.png';
+ const anchor=document.createElement('a');
+ anchor.download=filename;
+ anchor.href=canvas.toDataURL('image/png');
+ document.body.appendChild(anchor);anchor.click();anchor.remove();
+ return true;
+}
+
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
  const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),usable=r.filter(x=>x.db!==null&&!x.derived).length,derived=r.filter(x=>x.derived).length,required=Math.max(3,Math.ceil(p.bands.length*.6));
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
@@ -924,6 +1039,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral · <span>${esc(status)}</span></p>
  ${usable<p.bands.length?`<div class="soft warning"><strong>⚠ ${p.bands.length-usable} frecuencias sin umbral</strong><p class="small">Puedes repetir solo las que faltan. No aumentes el volumen para escucharlas.</p>${button('↺ Repetir pendientes','retrymissing','btn-alt full')}</div>`:''}
  ${renderCalibrationTrace(p,r)}
+ ${eqResultMarkup(p)}
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
  <div class="eq-util">${button('⎘ Copiar todos','copy','btn-alt')}${button('↓ TXT','downloadtxt','btn-ghost')}${button('↺ Reiniciar cambios','clearmanual','btn-ghost')}</div>
@@ -1171,6 +1287,8 @@ case 'transfer-mark':if(current){const bands=transferMapping(current)||[];const 
 case 'transfer-applyfreq':if(current){transferCustom=$('#transferCustom')?.value||transferCustom;transferStatus=transferMapping(current)?'Bandas registradas. Los valores aproximados se identificarán.':'Revisa las frecuencias: de 2 a 31 valores únicos en orden ascendente.';transferBandIndex=0;transferCompleted=new Set();refreshTransfer()}break;
 case 'transfer-copy':if(current){const ok=await copyText(transferCopy(current));transferStatus=ok?'Lista copiada. Debes introducirla manualmente.':'No se pudo copiar la lista.';refreshTransfer()}break;
 case 'copy':{let ok=await copyText(resultText(current));$('#copyStatus').textContent=ok?'Valores copiados al portapapeles.':'No se pudo copiar. Usa Descargar TXT.';break}
+case 'downloadpng':if(current&&!saveEqCardPng(current))uiAlert('No se pudo generar el PNG.');break;
+case 'copycontrols':if(current){const ok=await copyText(eqControlText(current));const el=$('#eqCardNotice');if(el)el.textContent=ok?'Instrucciones copiadas al portapapeles.':'No se pudieron copiar los valores.'}break;
 case 'downloadtxt':exportDownload('AudioCal_'+cleanName(current.name)+'.txt',resultText(current),'text/plain;charset=utf-8');break;
 case 'clearmanual':if(current){current.manual={};touch();refreshResultsUI()}break;
 case 'balance-next':if(current){balanceQueueIndex=(balanceQueueIndex+1)%balanceQueue.length;balanceFreq=balanceQueue[balanceQueueIndex];resetBalanceRound();refreshBalanceUI()}break;
@@ -1183,7 +1301,12 @@ case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({ap
 case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
-if(t.dataset.context&&temp.context){const f=t.dataset.context;const next={...temp.context,[f]:t.value};temp.context=normalizeCalibrationContext(next,temp.type);if(f==='subtype'){temp.name=$('#deviceName')?.value||temp.name;render()}return}
+if(current&&(t.id==='resultEqScale'||t.id==='resultEqStepDb')){
+ const f=t.id==='resultEqScale'?'eqScale':'eqStepDb';
+ const next={...normalizeCalibrationContext(current.context,current.type),provenance:'captured',[f]:t.value};
+ current.context=normalizeCalibrationContext(next,current.type);touch();render();return;
+}
+if(t.dataset.context&&temp.context){const f=t.dataset.context;const next={...temp.context,[f]:t.value};temp.context=normalizeCalibrationContext(next,temp.type);if(f==='subtype'||f==='eqScale'){temp.name=$('#deviceName')?.value||temp.name;render()}return}
 if(current&&t.id==='transferFormat'){transferPreset=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';if(transferPreset==='custom'&&!transferCustom)transferCustom=current.bands.join(', ');refreshTransfer();return}
 if(current&&t.id==='transferRange'){transferRange=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(current&&t.id==='transferCustom'){transferCustom=t.value;return}

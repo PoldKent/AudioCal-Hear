@@ -55,7 +55,8 @@ flowchart TD
 - [x] **Lote 0 (rama de desarrollo):** registrar y conservar contexto por dispositivo; perfiles antiguos tratados como contexto no conocido.
 - [x] **Lote 1 (rama de desarrollo):** vista comparativa visible de medición original, interpretación, propuesta automática y EQ final; entrada directa al terminar.
 - [x] **Lote 2A (rama de desarrollo):** sustituir regresión global por contrastes locales de umbrales directos, con límites y abstención por incertidumbre, extremos o contexto no fiable. Prueba a nivel cómodo y validación auditiva externa permanecen pendientes.
-- [ ] **Lote 3:** mapa validado a posiciones exactas del EQ, exportación PNG y trazabilidad de la versión del algoritmo/snapshot.
+- [x] **Lote 3A (en PR):** PNG local de bandas y controles con conversión solo cuando dB o dB/paso estén confirmados; límite y contexto visibles.
+- [ ] **Lote 3B:** versionado explícito de snapshots de resultados, calibración certificada de escalas y revisión del objetivo perceptivo.
 - [ ] **Posterior:** comparar música como validación opcional; medición de respuesta acústica con micrófono como ruta independiente.
 
 La implementación de los lotes 0–1 **no cambia** `recommend()`, los tonos ni las mediciones guardadas, y no convierte automáticamente pasos del ecualizador en decibelios.

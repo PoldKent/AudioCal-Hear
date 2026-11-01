@@ -66,6 +66,8 @@ case 'transfer-mark':if(current){const bands=transferMapping(current)||[];const 
 case 'transfer-applyfreq':if(current){transferCustom=$('#transferCustom')?.value||transferCustom;transferStatus=transferMapping(current)?'Bandas registradas. Los valores aproximados se identificarán.':'Revisa las frecuencias: de 2 a 31 valores únicos en orden ascendente.';transferBandIndex=0;transferCompleted=new Set();refreshTransfer()}break;
 case 'transfer-copy':if(current){const ok=await copyText(transferCopy(current));transferStatus=ok?'Lista copiada. Debes introducirla manualmente.':'No se pudo copiar la lista.';refreshTransfer()}break;
 case 'copy':{let ok=await copyText(resultText(current));$('#copyStatus').textContent=ok?'Valores copiados al portapapeles.':'No se pudo copiar. Usa Descargar TXT.';break}
+case 'downloadpng':if(current&&!saveEqCardPng(current))uiAlert('No se pudo generar el PNG.');break;
+case 'copycontrols':if(current){const ok=await copyText(eqControlText(current));const el=$('#eqCardNotice');if(el)el.textContent=ok?'Instrucciones copiadas al portapapeles.':'No se pudieron copiar los valores.'}break;
 case 'downloadtxt':exportDownload('AudioCal_'+cleanName(current.name)+'.txt',resultText(current),'text/plain;charset=utf-8');break;
 case 'clearmanual':if(current){current.manual={};touch();refreshResultsUI()}break;
 case 'balance-next':if(current){balanceQueueIndex=(balanceQueueIndex+1)%balanceQueue.length;balanceFreq=balanceQueue[balanceQueueIndex];resetBalanceRound();refreshBalanceUI()}break;
@@ -78,7 +80,12 @@ case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({ap
 case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
-if(t.dataset.context&&temp.context){const f=t.dataset.context;const next={...temp.context,[f]:t.value};temp.context=normalizeCalibrationContext(next,temp.type);if(f==='subtype'){temp.name=$('#deviceName')?.value||temp.name;render()}return}
+if(current&&(t.id==='resultEqScale'||t.id==='resultEqStepDb')){
+ const f=t.id==='resultEqScale'?'eqScale':'eqStepDb';
+ const next={...normalizeCalibrationContext(current.context,current.type),provenance:'captured',[f]:t.value};
+ current.context=normalizeCalibrationContext(next,current.type);touch();render();return;
+}
+if(t.dataset.context&&temp.context){const f=t.dataset.context;const next={...temp.context,[f]:t.value};temp.context=normalizeCalibrationContext(next,temp.type);if(f==='subtype'||f==='eqScale'){temp.name=$('#deviceName')?.value||temp.name;render()}return}
 if(current&&t.id==='transferFormat'){transferPreset=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';if(transferPreset==='custom'&&!transferCustom)transferCustom=current.bands.join(', ');refreshTransfer();return}
 if(current&&t.id==='transferRange'){transferRange=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(current&&t.id==='transferCustom'){transferCustom=t.value;return}

@@ -97,3 +97,31 @@ test('original response table, automatic explanation, and 7/10-band formats rema
  assert.match(script,/autoReason/);
  assert.match(html,/id="tracePanel"/);
 });
+
+
+test('EQ PNG positioning is only exact for verified control units',()=>{
+ const source=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const start=source.indexOf('function eqResultModel('),end=source.indexOf('function eqResultMarkup(',start);
+ assert.ok(start>=0&&end>start);
+ const context={normalizeCalibrationContext:(c)=>c,
+  firstMissing:()=>-1,calibrationContextLabel:()=> 'Auto · conductor',
+  recommend:()=>[{f:64,gain:4,db:-50,quality:'good',base:1},{f:160,gain:-2,db:-48,quality:'low',base:0}],
+  clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),Number,Math};
+ vm.runInNewContext(source.slice(start,end),context);
+ const p={name:'Mi auto',type:'car',bands:[64,160],min:-6,max:6,context:{eqScale:'unknown',eqStepDb:'unknown'}};
+ let m=context.eqResultModel(p);
+ assert.equal(m.verified,false);assert.equal(m.rows[0].position,null);
+ p.context={eqScale:'steps',eqStepDb:'unknown'};m=context.eqResultModel(p);
+ assert.equal(m.verified,false);assert.equal(m.rows[1].position,null);
+ p.context={eqScale:'steps',eqStepDb:'2'};m=context.eqResultModel(p);
+ assert.equal(m.verified,true);assert.equal(m.rows[0].position,2);assert.equal(m.rows[1].position,-1);
+ p.context={eqScale:'db',eqStepDb:'unknown'};m=context.eqResultModel(p);
+ assert.equal(m.rows[0].position,4);assert.equal(m.rows[1].position,-2);
+});
+test('PNG export is integrated into source and monolithic app',()=>{
+ const html=fs.readFileSync('index.html','utf8');
+ for(const word of ['id="eqCardCanvas"','function saveEqCardPng(','case \'downloadpng\'','eqStepDb:\'unknown\''])assert.ok(html.includes(word),word);
+ const src=fs.readFileSync('src/js/04-equalization.js','utf8');
+ assert.match(src,/toDataURL\('image\/png'\)/);
+ assert.match(src,/SIN CONVERSIÓN VALIDADA/);
+});
