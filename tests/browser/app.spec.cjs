@@ -202,6 +202,7 @@ test('context is saved and raw threshold/automatic EQ remain visibly distinct', 
   await page.locator('#context-seat').selectOption('passenger');
   await page.locator('#context-windows').selectOption('open');
   await page.locator('#context-eqScale').selectOption('steps');
+  await page.locator('#context-eqStepDb').selectOption('unknown');
   await page.locator('#deviceName').fill('Auto contexto QA');
   await page.locator('[data-act="create"]').click();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
@@ -232,6 +233,7 @@ test('in-ear parameters persist and do not claim an acoustic measurement', async
 
 test('EQ PNG card marks unknown units, then exports positions using a user-declared 2 dB step', async ({page})=>{
  await page.locator('[data-device="car"]').click();
+ await page.locator('#context-eqStepDb').selectOption('unknown');
  await page.locator('#deviceName').fill('Auto PNG QA');
  await page.locator('[data-act="create"]').click();
  await page.locator('[data-nav="results"]').click();
@@ -410,6 +412,7 @@ test('AF-02: transfer confirmation is invalidated after changing applied EQ valu
 
 test('AF-02: physical EQ scale changes invalidate checked transfer bands',async({page})=>{
  await page.locator('[data-device="car"]').click();
+ await page.locator('#context-eqStepDb').selectOption('unknown');
  await page.locator('#deviceName').fill('AF02 rango');
  await page.locator('[data-act="create"]').click();
  await page.locator('#uiLanguage').selectOption('es');
@@ -418,6 +421,7 @@ test('AF-02: physical EQ scale changes invalidate checked transfer bands',async(
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-mark"]').click();
+ await page.locator('#resultEqScale').selectOption('db');
  await page.locator('#resultEqScale').selectOption('steps');
  await expect(page.locator('#transferStatus')).toContainText('Cambió la escala');
  await expect(page.locator('#resultEqStepDb')).toHaveValue('unknown');
@@ -469,6 +473,32 @@ test('PNG horizontal EQ exports a landscape image with frequency columns for 7 a
   await noOverflow(page);
   await page.locator('[data-nav="setup"]').click();
  }
+});
+
+test('physical car control limits are independent of recommended digital gain limits',async({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await expect(page.locator('#context-eqScale')).toHaveValue('steps');
+ await expect(page.locator('#context-eqStepDb')).toHaveValue('3');
+ await expect(page.locator('#controlMin')).toHaveValue('-6');
+ await expect(page.locator('#controlMax')).toHaveValue('6');
+ await expect(page.locator('#eqMin')).toHaveValue('-6');
+ await expect(page.locator('#eqMax')).toHaveValue('6');
+ await page.locator('#controlMin').fill('-4');
+ await page.locator('#controlMax').fill('5');
+ await page.locator('#deviceName').fill('Auto límites independientes');
+ await page.locator('[data-act="create"]').click();
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect([saved.min,saved.max,saved.controlMin,saved.controlMax]).toEqual([-6,6,-4,5]);
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#resultControlMin')).toHaveValue('-4');
+ await expect(page.locator('#resultControlMax')).toHaveValue('5');
+ await expect(page.locator('#eqCardSection')).toContainText('equivalencia nominal -12 a +15 dB');
+ await page.locator('#resultControlMax').fill('4');
+ await page.locator('#resultControlMax').blur();
+ await expect(page.locator('#resultControlMax')).toHaveValue('4');
+ const updated=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect([updated.min,updated.max,updated.controlMin,updated.controlMax]).toEqual([-6,6,-4,4]);
+ await noOverflow(page);
 });
 
 test('car and speakers can opt into 0 dBFS only with staged manual volume verification',async({page})=>{

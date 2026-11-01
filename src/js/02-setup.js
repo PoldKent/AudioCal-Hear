@@ -10,6 +10,10 @@ function renderContextFields(){
   [['unknown','No estoy seguro'],['steps','Posiciones / niveles (sin dB)'],['db','Decibelios (dB)']],c.eqScale)+
   (c.eqScale==='steps'?contextSelect('eqStepDb','Equivalencia por paso según manual del equipo',
   [['unknown','Sin comprobar: no convertir'],['1','1 dB / paso (según manual)'],['2','2 dB / paso (según manual)'],['3','3 dB / paso (según manual)']],c.eqStepDb):'');
+ const unit=c.eqScale==='steps'?'posiciones':c.eqScale==='db'?'dB del control':'unidades por confirmar';
+ const physical='<div class="grid2"><div><label for="controlMin">Mínimo del control ('+unit+')</label><input class="field" id="controlMin" type="number" min="-30" max="-1" step="1" value="'+temp.controlMin+'"></div>'+
+  '<div><label for="controlMax">Máximo del control ('+unit+')</label><input class="field" id="controlMax" type="number" min="1" max="30" step="1" value="'+temp.controlMax+'"></div></div>'+
+  '<p class="tiny muted">Recorrido físico de los controles, independiente del límite de corrección en dB. En el auto de referencia: −6 a +6 posiciones; 3 dB/paso declarados según manual, revisables para otros modelos.</p>';
  let specific='';
  if(temp.type==='car'){
   specific=contextSelect('seat','Asiento de escucha',[['driver','Conductor'],['passenger','Copiloto'],['rear','Fila trasera']],c.seat)+
@@ -27,7 +31,7 @@ function renderContextFields(){
    contextSelect('placement','Ubicación',[['unknown','Sin comprobar'],['nearwall','Cerca de pared'],['free','Alejados de paredes']],c.placement);
  }
  return '<section class="context-config"><div class="setup-title"><h2>01B · Tu entorno de escucha</h2><span class="tiny muted">Guarda las condiciones</span></div>'+
-  '<div class="grid2">'+specific+scale+'</div>'+
+  '<div class="grid2">'+specific+scale+'</div>'+physical+
   '<div class="soft info small"><strong>Cómo influye realmente en el EQ:</strong> '+esc(calibrationContextEqExplanation({type:temp.type,context:c,bands:temp.bands}))+'</div>'+
   '<p class="compact-note">El entorno no genera ganancias acústicas en dB. Los dB/paso deben provenir del manual; Hear no comprueba su exactitud. Sin equivalencia no se calculan posiciones físicas.</p></section>';
 }
@@ -62,7 +66,7 @@ ${quickWarning?'<p class="soft warning small">La prueba rápida elegida no permi
 ${temp.type==='headphones'?'<p class="small muted">Auriculares: inicio máximo −24 dBFS. La amplificación física puede resultar peligrosa incluso con señales digitales atenuadas.</p>':
 '<div class="soft warning small"><strong>Auto y parlantes · rango avanzado hasta 0 dBFS:</strong> seleccionarlo no certifica que sea seguro ni necesario para calibrar. El ajuste del volumen físico seguirá siendo manual. Antes del test tendrás que escuchar progresivamente señales de referencia y confirmar cada nivel. Empieza con el amplificador muy bajo, detén la prueba si hay distorsión o molestia y, en un automóvil, permanece estacionado.</div>'}
 <p class="small muted">Mantén fijo el volumen físico durante toda la búsqueda de umbrales. Si no oyes un tono al nivel mínimo, no aumentes el volumen para perseguirlo. Cerca de −100 dBFS el ruido del sistema puede ocultarlo.</p></div></details>
-<details class="unobtrusive"><summary>Rango de ganancia y opciones avanzadas <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><div class="grid2"><div><label for="eqMin">Mínimo (dB)</label><input class="field" id="eqMin" type="number" min="-30" max="-1" step="1" value="${temp.min}"></div><div><label for="eqMax">Máximo (dB)</label><input class="field" id="eqMax" type="number" min="1" max="30" step="1" value="${temp.max}"></div></div>${temp.preset==='car7'?'<p class="small muted">Para tu auto de 7 bandas: controles de −6 a +6. La equivalencia en dB/paso no se presupone.</p>':''}</div></details>
+<details class="unobtrusive"><summary>Rango de ganancia y opciones avanzadas <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="small muted">Estos límites afectan a la ganancia digital sugerida por Hear; no son el número de posiciones que tiene tu equipo ni amplían los ajustes automáticos conservadores.</p><div class="grid2"><div><label for="eqMin">Corrección mínima (dB)</label><input class="field" id="eqMin" type="number" min="-30" max="-1" step="1" value="${temp.min}"></div><div><label for="eqMax">Corrección máxima (dB)</label><input class="field" id="eqMax" type="number" min="1" max="30" step="1" value="${temp.max}"></div></div>${temp.preset==='car7'?'<p class="small muted">El recorrido físico del auto de referencia es −6 a +6 pasos; con 3 dB/paso declarados, equivaldría nominalmente a −18 a +18 dB. Los límites de corrección de arriba son independientes.</p>':''}</div></details>
 <details class="unobtrusive"><summary>Comprobar sonido y recomendaciones de seguridad</summary><div class="inner-detail"><p class="compact-note">Conecta el Bluetooth desde el teléfono. Elige un volumen bajo y cómodo, sin subirlo durante las pruebas. Haz la prueba en silencio; en el vehículo, siempre estacionado. <strong>Nunca uses el volumen máximo.</strong></p><div class="row wrap">${button('▶ Probar tono','check','btn-alt grow')}${button('■ Detener','stopaudio','btn-ghost grow')}</div></div></details>
 ${button('Comenzar mi calibración →','create','btn-primary full bigbutton')}
 <p class="tiny center muted">Los perfiles se guardan localmente. Se distinguen bandas medidas y estimadas.</p></section>`}

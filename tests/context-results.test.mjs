@@ -332,3 +332,17 @@ test('PNG uses a common zero line and one column per band, not a vertical list',
  assert.match(plot,/SIN CONVERSIÓN VALIDADA/);
  assert.doesNotMatch(plot,/const y=345\+i\*61/);
 });
+
+test('physical control bounds are separate from the conservative EQ gain budget',()=>{
+ const script=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const start=script.indexOf('function physicalEqControl('),end=script.indexOf('function eqResultModel(',start);
+ const engine={Math,Number,clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),normalizeCalibrationContext:c=>c};
+ vm.runInNewContext(script.slice(start,end),engine);
+ const p={min:-2,max:2,controlMin:-6,controlMax:6,type:'car',context:{eqScale:'steps',eqStepDb:'3'}};
+ assert.equal(engine.physicalEqControl(15,p).position,5);
+ assert.equal(engine.physicalEqControl(-18,p).position,-6);
+ assert.equal(engine.physicalEqControl(24,p).position,6);
+ assert.equal(engine.physicalEqControl(24,p).actualGain,18);
+ assert.equal(engine.physicalEqControl(15,{...p,controlMax:2}).position,2);
+ assert.match(script,/roundTo\(automatic\.base\+manual\+taste\+balance,p\.step\|\|1\),p\.min,p\.max/);
+});

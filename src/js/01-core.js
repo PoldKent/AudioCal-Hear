@@ -65,7 +65,7 @@ function uiConfirm(s){return window.confirm(trans(s))}
 function uiPrompt(s,v){return window.prompt(trans(s),v)}
 
 const presets={
- car7:{name:'Automóvil · 7 bandas (tus fotos)',short:'Auto 7',bands:[64,160,400,1000,2500,6250,15625],min:-6,max:6,step:1,note:'Las frecuencias coinciden con tus fotos. El rango del control es de −6 a +6 posiciones; verifica cuántos dB equivale cada paso.'},
+ car7:{name:'Automóvil · 7 bandas (tus fotos)',short:'Auto 7',bands:[64,160,400,1000,2500,6250,15625],min:-6,max:6,controlMin:-6,controlMax:6,step:1,note:'Las frecuencias coinciden con tus fotos. El control tiene −6 a +6 posiciones. Para este equipo de referencia se declararon 3 dB por paso según manual; comprueba la equivalencia si usas otro modelo.'},
  photo10:{name:'Auriculares · 10 bandas (tu foto)',short:'Auriculares 10',bands:[30,60,120,250,500,1000,2000,4000,8000,16000],min:-20,max:20,step:1,note:'Frecuencias exactas de la primera imagen; escala visible de −20 a +20 niveles. Comprueba si el fabricante expresa esos niveles en dB.'},
  iso10:{name:'ISO · 10 bandas (octavas)',short:'ISO 10',bands:[31.5,63,125,250,500,1000,2000,4000,8000,16000],min:-12,max:12,step:1,note:'Frecuencias preferidas ISO/ANSI para intervalos de una octava.'},
  iso7:{name:'Habitual · 7 bandas',short:'Estándar 7',bands:[63,160,400,1000,2500,6300,16000],min:-12,max:12,step:1,note:'Distribución frecuente de siete bandas; no todos los aparatos de 7 bandas son iguales.'},
@@ -85,6 +85,12 @@ function defaultCalibrationContext(type){
  return {provenance:'captured',eqScale:'unknown',eqStepDb:'unknown',seat:'driver',windows:'closed',engine:'off',
   connection:'bluetooth',subtype:'overear',anc:'unknown',seal:'unknown',
   room:'living',position:'main',placement:'unknown'};
+}
+// Only this photographed car preset receives its documented, editable step scale.
+function presetCalibrationContext(type,preset){
+ const c=defaultCalibrationContext(type);
+ if(type==='car'&&preset==='car7'){c.eqScale='steps';c.eqStepDb='3'}
+ return c;
 }
 function normalizeCalibrationContext(raw,type){
  const data=defaultCalibrationContext(type);
@@ -179,6 +185,9 @@ function normalizedProfile(p,importing=false){
  if(bands.some(f=>!Number.isFinite(f)||f<20||f>20000)||new Set(bands).size!==bands.length||bands.some((f,i)=>i&&f<=bands[i-1]))return null;
  const safeNumber=(v,otherwise,min,max)=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?clamp(Number(v),min,max):otherwise;
  const min=safeNumber(p.min,-12,-30,-1),max=safeNumber(p.max,12,1,30);
+ // Separate physical positions from digital EQ correction bounds. Legacy presets keep their ranges.
+ const controlMin=safeNumber(p.controlMin,p.preset==='car7'?-6:min,-30,-1);
+ const controlMax=safeNumber(p.controlMax,p.preset==='car7'?6:max,1,30);
  const safeType=['car','speaker'].includes(p.type)?p.type:'headphones';
  // Normalization runs while profiles are loaded, before the playback constants initialize.
  const testStart=safeNumber(p.testStart,-36,-99,safeType==='headphones'?-24:0),
@@ -210,7 +219,7 @@ function normalizedProfile(p,importing=false){
  const taste=p.taste&&typeof p.taste==='object'&&!Array.isArray(p.taste)?p.taste:{};
  return {
   id,name:String(p.name||'Mi equipo').slice(0,70),type:['car','headphones','speaker'].includes(p.type)?p.type:'headphones',
-  preset:Object.hasOwn(presets,p.preset)?p.preset:'custom',bands,min,max,step:1,
+  preset:Object.hasOwn(presets,p.preset)?p.preset:'custom',bands,min,max,controlMin,controlMax,step:1,
   channels:p.channels==='separate'?'separate':'both',passes:p.passes===2?2:1,
   testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,
   // Freeze historical quick sampling so existing observations are never silently reassigned.
@@ -360,12 +369,12 @@ function resetBalanceRound(){balanceRound=0;balancePreview=null;balanceListened=
 function balanceDelta(){if(!balancePreview||balanceRound>=2)return 0;return balanceRound===0?(balancePreview==='A'?-2:2):(balancePreview==='A'?1:-1)}
 function suggestedBalanceBands(p){const result=recommend(p),n=p.bands.length;const priority=[Math.round((n-1)*.2),Math.round((n-1)*.52),Math.round((n-1)*.85)].map(i=>p.bands[i]);const deviations=result.slice().sort((a,b)=>(Math.abs(b.base||0)-Math.abs(a.base||0))).filter(x=>Math.abs(x.base||0)>=1.5).map(x=>x.f);return [...new Set([...deviations.slice(0,2),...priority,...p.bands])].slice(0,3)}
 function resetBalanceSession(p){balanceQueue=suggestedBalanceBands(p);balanceQueueIndex=0;balanceFreq=balanceQueue[0]||p.bands[0]||null;resetBalanceRound()}
-let temp={name:'',type:'car',preset:'car7',channels:'both',passes:1,testMode:'quick',testStart:TEST_START_DB,testFloor:TEST_END_DB,bands:presets.car7.bands.slice(),min:-6,max:6,step:1,context:defaultCalibrationContext('car')};
+let temp={name:'',type:'car',preset:'car7',channels:'both',passes:1,testMode:'quick',testStart:TEST_START_DB,testFloor:TEST_END_DB,bands:presets.car7.bands.slice(),min:-6,max:6,controlMin:-6,controlMax:6,step:1,context:presetCalibrationContext('car','car7')};
 const save=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(profiles));localStorage.setItem(STATEKEY,current?.id||'')}catch(e){notice='No se pudo guardar localmente. Puedes exportar tus valores.'}};
 const touch=()=>{if(!current)return;current.updatedAt=Date.now();save()};
 const nav=p=>{if(page==='results'&&p!=='results')resetLoudnessSession();if(tone)stopTone();floorReached=false;if(page==='results'&&playerAudio&&p!=='results')playerAudio.pause();page=p;render();window.scrollTo({top:0,behavior:'instant'})};
 const button=(text,action,cls='btn-ghost',extra='')=>`<button type="button" data-act="${action}" class="btn ${cls}" ${extra}>${text}</button>`;
-function setPreset(id){temp.preset=id;temp.bands=(presets[id]||presets.custom).bands.slice();temp.min=presets[id].min;temp.max=presets[id].max;temp.step=presets[id].step;render()}
+function setPreset(id){const preset=presets[id]||presets.custom;temp.preset=id;temp.bands=preset.bands.slice();temp.min=preset.min;temp.max=preset.max;temp.controlMin=preset.controlMin??preset.min;temp.controlMax=preset.controlMax??preset.max;temp.step=preset.step;const eq=presetCalibrationContext(temp.type,id);temp.context={...temp.context,eqScale:eq.eqScale,eqStepDb:eq.eqStepDb};render()}
 function render(){if(page==='test'&&current&&firstMissing(current)<0)page='results';if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
  el.dataset.page=page;
  el.innerHTML=page==='setup'?renderSetup():page==='test'?renderTest():page==='results'?renderResults():renderProfiles();

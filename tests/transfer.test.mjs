@@ -98,3 +98,12 @@ test('transfer uses declared 3 dB steps and preserves physical gain differences'
  assert.match(context.transferInstruction(p,item2),/control en \+2 posiciones/);
  assert.match(context.transferLabel(item2,p),/real \+6 dB/);
 });
+
+test('physical range and correction budget are not conflated in transfer',()=>{
+ vm.runInContext('transferTarget="device";transferPreset="profile";transferRange="profile"',context);
+ const car={...profile,type:'car',min:-2,max:2,controlMin:-6,controlMax:6,context:{eqScale:'steps',eqStepDb:'3'}};
+ assert.deepEqual(Array.from(context.transferBounds(car)),[-18,18]);
+ assert.equal(context.physicalEqControl(15,car).position,5);
+ assert.equal(context.physicalEqControl(21,car).position,6);
+ assert.deepEqual(Array.from(context.transferBounds({...car,context:{eqScale:'steps',eqStepDb:'unknown'}})),[-2,2]);
+});

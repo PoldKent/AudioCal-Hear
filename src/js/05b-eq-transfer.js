@@ -10,8 +10,9 @@ function transferBands(p){
 function transferBounds(p){
  if(transferRange!=='profile')return TRANSFER_LIMITS[transferRange]||[p.min,p.max];
  const context=normalizeCalibrationContext(p.context,p.type);
- const ratio=context.eqScale==='steps'&&['1','2','3'].includes(context.eqStepDb)?Number(context.eqStepDb):1;
- return [p.min*ratio,p.max*ratio]; // dB range, not physical positions
+ const ratio=context.eqScale==='db'?1:context.eqScale==='steps'&&['1','2','3'].includes(context.eqStepDb)?Number(context.eqStepDb):null;
+ if(ratio===null)return [p.min,p.max]; // Do not convert unverified positions.
+ return [(p.controlMin??p.min)*ratio,(p.controlMax??p.max)*ratio]; // Physical EQ bounds expressed as dB.
 }
 function transferMapping(p){
  const bands=transferBands(p);if(!bands)return null;
@@ -97,8 +98,8 @@ function transferMarkup(){
   const formatOptions=[['profile','Las bandas de mi perfil'],['car7','Auto · 7 bandas'],['photo10','Auriculares · 10 bandas'],['iso7','Estándar · 7 bandas'],['iso10','Estándar · 10 bandas'],['five','Estándar · 5 bandas'],['iso15','15 bandas'],['iso31','31 bandas'],['custom','Escribir otras frecuencias']];
   content='<p class="compact-note">Mira el ecualizador de destino: ¿qué frecuencias muestra? No asumas que Spotify o YouTube Music tienen las mismas bandas que AudioCal.</p><label for="transferFormat">Frecuencias del ecualizador de destino</label><select class="field" id="transferFormat">'+formatOptions.map(([v,l])=>'<option value="'+v+'" '+(transferPreset===v?'selected':'')+'>'+esc(l)+'</option>').join('')+'</select>'+
   (transferPreset==='custom'?'<label for="transferCustom">Frecuencias reales (Hz, en orden)</label><input id="transferCustom" class="field" value="'+esc(transferCustom)+'" placeholder="60, 150, 400, 1000, 2400, 15000">'+button('Comprobar estas bandas','transfer-applyfreq','btn-alt full'):'')+
-  '<label for="transferRange">Límite de ganancia visible en ese ecualizador</label><select id="transferRange" class="field">'+[['profile','El del perfil ('+p.min+' a +'+p.max+' '+(normalizeCalibrationContext(p.context,p.type).eqScale==='steps'?'posiciones':normalizeCalibrationContext(p.context,p.type).eqScale==='db'?'dB':'unidades no verificadas')+')'],['six','−6 a +6 dB'],['twelve','−12 a +12 dB'],['twenty','−20 a +20 dB']].map(([v,l])=>'<option value="'+v+'" '+(transferRange===v?'selected':'')+'>'+esc(l)+'</option>').join('')+'</select>'+
-  '<p class="tiny muted">Las posiciones del dispositivo solo se calculan para las bandas y el rango del perfil con equivalencia dB/paso documentada. En otro ecualizador no se presume esa equivalencia.</p>'+
+  '<label for="transferRange">Límite de ganancia visible en ese ecualizador</label><select id="transferRange" class="field">'+[['profile','Recorrido físico ('+(p.controlMin??p.min)+' a +'+(p.controlMax??p.max)+' '+(normalizeCalibrationContext(p.context,p.type).eqScale==='steps'?'posiciones':normalizeCalibrationContext(p.context,p.type).eqScale==='db'?'dB':'unidades no verificadas')+')'],['six','−6 a +6 dB'],['twelve','−12 a +12 dB'],['twenty','−20 a +20 dB']].map(([v,l])=>'<option value="'+v+'" '+(transferRange===v?'selected':'')+'>'+esc(l)+'</option>').join('')+'</select>'+
+  '<p class="tiny muted">Los dB sugeridos están limitados por la corrección de Hear; las posiciones se limitan por el recorrido físico del equipo y solo se calculan con escala documentada. En otro ecualizador no se presume esa equivalencia.</p>'+
   (list?'<p class="small muted">'+list.length+' bandas de destino · '+list.filter(x=>x.kind==='estimated').length+' aproximadas · '+list.filter(x=>x.kind==='unavailable').length+' sin equivalencia fiable</p>':'<p class="soft warning small">Introduce entre 2 y 31 frecuencias válidas, ascendentes, de 20 a 20.000 Hz.</p>');
  }else if(transferStep===2){
   if(!list)content='<p class="soft warning">Primero introduce frecuencias válidas.</p>';
