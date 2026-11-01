@@ -54,8 +54,16 @@ flowchart TD
 
 - [x] **Lote 0 (rama de desarrollo):** registrar y conservar contexto por dispositivo; perfiles antiguos tratados como contexto no conocido.
 - [x] **Lote 1 (rama de desarrollo):** vista comparativa visible de medición original, interpretación, propuesta automática y EQ final; entrada directa al terminar.
-- [ ] **Lote 2:** revisar con validación técnica la conversión de umbrales a EQ, igualación a nivel cómodo, sesgos y límites.
+- [x] **Lote 2A (rama de desarrollo):** sustituir regresión global por contrastes locales de umbrales directos, con límites y abstención por incertidumbre, extremos o contexto no fiable. Prueba a nivel cómodo y validación auditiva externa permanecen pendientes.
 - [ ] **Lote 3:** mapa validado a posiciones exactas del EQ, exportación PNG y trazabilidad de la versión del algoritmo/snapshot.
 - [ ] **Posterior:** comparar música como validación opcional; medición de respuesta acústica con micrófono como ruta independiente.
 
 La implementación de los lotes 0–1 **no cambia** `recommend()`, los tonos ni las mediciones guardadas, y no convierte automáticamente pasos del ecualizador en decibelios.
+
+## Lote 2A — límites del cálculo
+
+- No convierte los umbrales digitales directamente en dB SPL, ni presupone que una curva de audibilidad plana sea el objetivo acústico correcto.
+- Corrección automática solo exploratoria en puntos internos con medidas vecinas directas y consistentes; extremos, datos ausentes, oídos con discrepancia y ruido variable bloquean correcciones injustificadas.
+- Límite automático: ±1 dB en una pasada; hasta ±2 dB en medidas más consistentes, con máximo +1 dB en auto y parlantes.
+- Preferencias musicales y edición manual son *capas separadas* y no se reescriben. Sonoridad a volumen cómodo requiere diseñar y validar un protocolo antes de incorporarla a la ganancia automática.
+- La calibración exacta de respuesta de un recinto requiere medición acústica; la escala de pasos de los ecualizadores no se convierte a dB sin documentación.
