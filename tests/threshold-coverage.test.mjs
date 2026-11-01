@@ -56,7 +56,7 @@ test('missing a channel removes automatic eligibility without erasing its measur
  assert.equal(coverage.eligible.length,9);
  const rec=sandbox.recommend(p),band=rec.find(b=>b.f===2000);
  assert.equal(band.base,0);
- assert.match(band.autoReason,/falta un umbral/);
+ assert.match(band.autoReason,/faltan umbrales/);
 });
 test('marked left/right disagreement remains measured but blocks its automatic EQ band',()=>{
  const p=makeProfile();
