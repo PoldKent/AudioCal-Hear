@@ -204,7 +204,7 @@ test('context is saved and raw threshold/automatic EQ remain visibly distinct', 
   await expect(page.locator('#tracePanel')).toContainText('Medición original sin modificar');
   await expect(page.locator('#tracePanel')).toContainText('Corrección automática frente al ajuste final');
   await expect(page.locator('#tracePanel .trace-table tbody tr')).toHaveCount(7);
-  await expect(page.locator('#tracePanel')).toContainText('NO se ha verificado');
+  await expect(page.locator('#tracePanel')).toContainText('sin conversión dB/paso');
   await noOverflow(page);
 });
 test('in-ear parameters persist and do not claim an acoustic measurement', async ({page}) => {
@@ -221,7 +221,7 @@ test('in-ear parameters persist and do not claim an acoustic measurement', async
   await noOverflow(page);
 });
 
-test('EQ PNG card marks unknown units, then exports positions using an explicitly confirmed 2 dB step', async ({page})=>{
+test('EQ PNG card marks unknown units, then exports positions using a user-declared 2 dB step', async ({page})=>{
  await page.locator('[data-device="car"]').click();
  await page.locator('#deviceName').fill('Auto PNG QA');
  await page.locator('[data-act="create"]').click();
@@ -231,7 +231,7 @@ test('EQ PNG card marks unknown units, then exports positions using an explicitl
  await page.locator('#resultEqScale').selectOption('steps');
  await expect(page.locator('#resultEqStepDb')).toHaveValue('unknown');
  await page.locator('#resultEqStepDb').selectOption('2');
- await expect(page.locator('#eqCardNotice')).toContainText('experimental');
+ await expect(page.locator('#eqCardNotice')).toContainText('Hear no lo verifica');
  const imagePromise=page.waitForEvent('download');
  await page.locator('[data-act="downloadpng"]').click();
  const png=await imagePromise;expect(png.suggestedFilename()).toContain('.png');

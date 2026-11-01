@@ -28,10 +28,8 @@ function estimateThresholdContrast(p,data){
   if(idx<=0||idx===measured.length-1)return {...entry,autoReason:'banda extrema: no extrapolar'};
   const lo=measured[idx-1],hi=measured[idx+1];
   if(point.f/lo.f>3.5||hi.f/point.f>3.5)return {...entry,autoReason:'bandas vecinas demasiado separadas'};
-  if(p.type==='car'&&(context.windows==='open'||context.engine==='on'))
-   return {...entry,autoReason:'ruido variable del vehículo; no corregir automáticamente'};
-  if(p.type==='headphones'&&context.subtype==='inear'&&context.seal!=='good'&&point.f<250)
-   return {...entry,autoReason:'sellado in-ear no verificado; no compensar graves'};
+  const blockReason=contextAutoBlockReason(p,point.f,context);
+  if(blockReason)return {...entry,autoReason:blockReason};
   // Predict the local digital threshold from adjacent measured frequencies, not
   // from a population audiogram, a global quadratic or an acoustic room model.
   const ratio=Math.log(point.f/lo.f)/Math.log(hi.f/lo.f);
@@ -188,7 +186,7 @@ function renderCalibrationTrace(p,r){
  const incomplete=finished?'Prueba registrada: todos los pasos previstos están completos.':'Prueba todavía en curso: puedes revisar lo disponible, pero el resultado no es definitivo.';
  const c=normalizeCalibrationContext(p.context,p.type);
  const unit=c.eqScale==='db'?'El equipo indica dB, aunque la forma y anchura de sus filtros pueden diferir.':
-  c.eqScale==='steps'?'El equipo indica posiciones, no dB confirmados: NO se ha verificado la conversión dB/paso.':'La unidad real del equipo no se ha confirmado: NO se presupone una equivalencia entre dB y niveles.';
+  c.eqScale==='steps'?(c.eqStepDb==='unknown'?'El equipo indica posiciones sin conversión dB/paso.':'La equivalencia dB/paso fue declarada según manual y no está verificada por Hear.'):'La unidad real del equipo no se ha confirmado: NO se presupone una equivalencia entre dB y niveles.';
  const rows=r.map(x=>{
   const raw=p.channels==='separate'?
    'I: '+formatDb(rawFrequencyThreshold(p,x.f,'left'))+'; D: '+formatDb(rawFrequencyThreshold(p,x.f,'right')):
@@ -202,7 +200,7 @@ function renderCalibrationTrace(p,r){
  <div class="trace-plot"><div class="tiny muted">Umbral medido (dBFS) · eje horizontal en Hz</div><svg viewBox="0 0 630 225" width="100%" role="img" aria-label="Gráfica de umbrales digitales originales por frecuencia, sin interpolación">${axisLevels}${series}${labels}<text x="55" y="223" font-size="10" fill="#63738b">Hz · escala logarítmica</text></svg><div class="tiny">${legend}</div></div></div>
  <div class="trace-part"><h3>2 · Interpretación y fiabilidad</h3><p class="small">${totalDirect} de ${p.bands.length} bandas con umbral directo; ${absent} sin umbral. Las frecuencias estimadas están identificadas en la tabla y no aparecen como puntos medidos en la gráfica.</p>
  <p class="compact-note"><strong>Contexto:</strong> ${esc(calibrationContextLabel(p))}</p>
- <p class="compact-note">${esc(calibrationContextCaution(p))}</p></div>
+ <p class="compact-note">${esc(calibrationContextCaution(p))}</p><p class="compact-note"><strong>Efecto real sobre el algoritmo:</strong> ${esc(calibrationContextEqExplanation(p))}</p></div>
  <div class="trace-part"><h3>3 · Corrección automática frente al ajuste final</h3><p class="small muted">Automático: contrastes locales entre frecuencias realmente medidas, con margen de incertidumbre y límites conservadores. No equivale a audiometría ni corrige acústicamente un recinto. EQ final: incorpora ajustes manuales y preferencias si los realizaste; nunca cambia los datos medidos.</p>
  <div class="trace-table-scroll"><table class="trace-table"><thead><tr><th scope="col">Banda</th><th scope="col">Dato original</th><th scope="col">Interpretación</th><th scope="col">Automático</th><th scope="col">EQ final</th></tr></thead><tbody>${rows}</tbody></table></div>
  <p class="compact-note"><strong>Escala del ecualizador:</strong> ${esc(unit)} Los números de EQ son ganancias estimadas de procesamiento, no posiciones físicas verificadas del control.</p>
@@ -210,44 +208,52 @@ function renderCalibrationTrace(p,r){
 }
 
 
-// Transfer to a physical EQ is exact only when its unit is known.
-// Never turn a digital dB estimate into a step count by assumption.
-function eqResultModel(p){
- const context=normalizeCalibrationContext(p.context,p.type);
- const complete=firstMissing(p)<0;
+// Shared mapping for the export card and guided transfer; no invented dB/step.
+// Round exact half-steps toward zero to avoid unintended extra boost/cut.
+function physicalEqControl(gain,p,context=normalizeCalibrationContext(p.context,p.type)){
  const scale=context.eqScale;
  const ratio=scale==='db'?1:(scale==='steps'&&['1','2'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
+ if(!Number.isFinite(ratio))return {position:null,actualGain:null,delta:null,exact:false,ratio:null};
+ const magnitude=Math.round(Math.abs(gain)/ratio-1e-9);
+ const position=clamp(magnitude===0?0:Math.sign(gain)*magnitude,Math.ceil(p.min),Math.floor(p.max));
+ const actualGain=Number((position*ratio).toFixed(2));
+ const delta=Number((actualGain-gain).toFixed(2));
+ return {position,actualGain,delta,exact:Math.abs(delta)<.001,ratio};
+}
+function eqResultModel(p){
+ const context=normalizeCalibrationContext(p.context,p.type);
+ const complete=firstMissing(p)<0,scale=context.eqScale;
  const rows=recommend(p).map(b=>{
-  const gain=b.gain;
-  const verified=Number.isFinite(ratio);
-  const position=verified?clamp(Math.round(gain/ratio),p.min,p.max):null;
+  const projection=physicalEqControl(b.gain,p,context);
   const quality=b.db===null?'Sin umbral':b.derived?'Interpolado':b.quality==='mixed'?'Oídos distintos':b.quality==='good'?'Repetido':'Estimación';
-  return {f:b.f,gain,position,quality,auto:b.base,available:verified};
+  return {f:b.f,gain:b.gain,quality,auto:b.base,...projection};
  });
- return {name:p.name,complete,scale,ratio,context:calibrationContextLabel(p),
+ const verified=rows.every(r=>r.ratio!==null);
+ return {name:p.name,complete,scale,ratio:rows[0]?.ratio??null,context:calibrationContextLabel(p),
   device:p.type==='car'?'AUTO':p.type==='headphones'?'AURICULARES':'PARLANTES',
   label:scale==='db'?'dB de control':scale==='steps'?'posición':'sin verificar',
-  rows,verified:Number.isFinite(ratio),
+  rows,verified,
   warning:(!complete?'Prueba incompleta: ajustes provisionales. ':'')+
-   (!Number.isFinite(ratio)?'Equivalencia del control desconocida. No hay posiciones verificadas.':
-   'Ajustes calculados: algoritmo experimental, sin calibración acústica.')};
+   (!verified?'Equivalencia del control desconocida: no calcular posiciones.':
+   'Conversión de acuerdo con escala y dB/paso declarados por usuario (Hear no lo verifica). ')+
+   'Los dB efectivos pueden ser diferentes de la sugerencia tras el redondeo.'};
 }
 function eqResultMarkup(p){
  const m=eqResultModel(p);
  const ctx=normalizeCalibrationContext(p.context,p.type);
  const scaleOptions=[['unknown','Unidad sin verificar'],['db','Controles en dB'],['steps','Controles por posiciones']];
- const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (manual confirmado)'],['2','2 dB por paso (manual confirmado)']];
+ const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (según manual)'],['2','2 dB por paso (según manual)']];
  return `<section id="eqCardSection" class="eq-card-section" aria-label="Imagen descargable del ecualizador">
  <h2>Mi ecualizador · resultado para aplicar</h2>
  <p class="compact-note">${esc(m.context)} · ${p.bands.length} bandas. ${m.complete?'Test completado':'Test pendiente de completar'}.</p>
  <div class="eq-card-config"><label for="resultEqScale">Unidad real del ecualizador</label>
  <select id="resultEqScale" class="field">${scaleOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqScale===k?'selected':'')+'>'+l+'</option>').join('')}</select>
  ${ctx.eqScale==='steps'?'<label for="resultEqStepDb">Equivalencia documentada del control</label><select id="resultEqStepDb" class="field">'+stepOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqStepDb===k?'selected':'')+'>'+l+'</option>').join('')+'</select>':''}
- <p class="tiny muted">Selecciona una equivalencia únicamente si tu equipo la especifica. El rango del auto es −6 a +6 posiciones; los auriculares de referencia, −20 a +20.</p></div>
+ <p class="tiny muted">Los pasos y los dB no son la misma unidad. Indica una equivalencia solo si está documentada para tu modelo. El rango de auto −6 a +6 describe posiciones, no dB.</p></div>
  <p class="eq-card-alert ${m.verified?'':'eq-card-warning'}" id="eqCardNotice">${esc(m.warning)}</p>
  <canvas id="eqCardCanvas" class="eq-card-canvas" width="960" height="${440+m.rows.length*61}" role="img" aria-label="Vista previa del resultado visual y las bandas de EQ"></canvas>
  <div class="row wrap eq-card-actions">${button('↓ Guardar imagen PNG','downloadpng','btn-primary grow')}${button('⎘ Copiar controles','copycontrols','btn-alt grow')}</div>
- <p class="tiny muted">El PNG contiene los valores de cada banda, el contexto y las limitaciones. Los resultados numéricos no sustituyen una calibración acústica con micrófono.</p></section>`;
+ <p class="tiny muted">El PNG muestra los dB sugeridos, el control aplicable y la diferencia de dB por redondeo. No sustituye una medición acústica.</p></section>`;
 }
 function paintEqResult(canvas,p){
  if(!canvas||!p)return false;
@@ -266,7 +272,7 @@ function paintEqResult(canvas,p){
  const labelVal=m.verified?(m.scale==='db'?'dB DEL CONTROL':'POSICIÓN DEL CONTROL'):'AJUSTE EQ ESTIMADO';
  c.fillStyle='#2670d4';c.font='bold 18px system-ui, sans-serif';c.fillText(labelVal,40,273);
  c.fillStyle='#64758b';c.font='15px system-ui, sans-serif';
- c.fillText(m.verified?'Rango de control: '+p.min+' a +'+p.max+' · '+(m.scale==='steps'?m.ratio+' dB por paso':'en dB'):'Conversión a posiciones no confirmada',40,303);
+ c.fillText(m.verified?'Rango de control: '+p.min+' a +'+p.max+' · '+(m.scale==='steps'?m.ratio+' dB/paso declarado':'controles en dB declarados'):'Conversión a posiciones no confirmada',40,303);
  const maxAbs=Math.max(3,...rows.map(r=>Math.abs(r.gain)));
  rows.forEach((r,i)=>{
   const y=345+i*61;
@@ -282,14 +288,15 @@ function paintEqResult(canvas,p){
   const primary=r.position===null?'—':(r.position>0?'+':'')+r.position;
   c.textAlign='right';c.fillText(primary,887,y+4);c.textAlign='left';
   c.fillStyle='#8290a2';c.font='14px system-ui, sans-serif';
-  c.fillText('EQ '+(r.gain>0?'+':'')+r.gain+' dB · '+r.quality,57,y+22);
+  const signed=v=>(v>0?'+':'')+v;
+  c.fillText('Sugerido '+signed(r.gain)+' dB · '+(r.actualGain===null?'sin conversión':'Real '+signed(r.actualGain)+' dB'+(r.exact?' · exacto':' · diferencia '+signed(r.delta)+' dB')),57,y+22);
  });
  const foot=h-70;
  c.fillStyle=m.verified?'#245787':'#95542a';c.font='bold 17px system-ui, sans-serif';
  c.fillText(m.complete?'TEST FINALIZADO':'PRUEBA INCOMPLETA',40,foot);
  c.fillStyle='#61748a';c.font='15px system-ui, sans-serif';
  const warnings=m.verified?
-  'Corrección perceptiva experimental · verificar con escucha · sin medición acústica':
+  'dB/paso declarado, no verificado · EQ experimental · sin medición acústica':
   'SIN CONVERSIÓN VALIDADA: confirmar dB por nivel antes de mover controles';
  c.fillText(warnings,40,foot+28);
  return true;
@@ -299,7 +306,8 @@ function eqControlText(p){
  const m=eqResultModel(p);
  return 'AudioCal Hear · '+m.name+'\n'+m.context+'\n'+m.warning+'\n'+m.rows.map(r=>
   fmt(r.f)+' -> '+(r.position===null?'SIN POSICIÓN VERIFICADA':'control '+(r.position>=0?'+':'')+r.position+' '+m.label)+
-  ' · EQ '+(r.gain>=0?'+':'')+r.gain+' dB').join('\n');
+  ' · sugerido '+(r.gain>=0?'+':'')+r.gain+' dB'+
+  (r.actualGain===null?' · ganancia física desconocida':' · real según escala '+(r.actualGain>=0?'+':'')+r.actualGain+' dB · diferencia '+(r.delta>=0?'+':'')+r.delta+' dB')).join('\n');
 }
 function saveEqCardPng(p){
  const canvas=document.createElement('canvas');

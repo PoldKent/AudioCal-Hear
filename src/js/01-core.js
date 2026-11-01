@@ -117,6 +117,26 @@ function calibrationContextLabel(p){
   ' · escucha '+({main:'principal',near:'cercana',far:'lejana'}[c.position])+
   ' · colocación '+({nearwall:'cerca de pared',free:'despejada',unknown:'sin verificar'}[c.placement]);
 }
+// Listening conditions constrain interpretation; they are not acoustic measurements.
+function contextAutoBlockReason(p,f,c=normalizeCalibrationContext(p?.context,p?.type)){
+ if(p.type==='car'&&(c.windows==='open'||c.engine==='on'))
+  return 'ruido variable del vehículo; no corregir automáticamente';
+ if(p.type==='headphones'&&c.subtype==='inear'&&c.seal!=='good'&&f<250)
+  return 'sellado in-ear no verificado; no compensar graves';
+ return null;
+}
+function calibrationContextEqExplanation(p){
+ const c=normalizeCalibrationContext(p?.context,p?.type);
+ if(c.provenance==='legacy')return 'Entorno no registrado: no se aplican compensaciones ambientales.';
+ const blocked=(p.bands||[]).filter(f=>contextAutoBlockReason(p,f,c));
+ if(p.type==='car'&&blocked.length)
+  return 'Efecto real: ventanas abiertas o motor encendido bloquean correcciones automáticas. No se asignan dB a resonancias de cabina.';
+ if(p.type==='headphones'&&blocked.length)
+  return 'Efecto real: sellado in-ear sin verificar bloquea correcciones automáticas bajo 250 Hz. ANC y conexión no añaden dB.';
+ if(p.type==='speaker')
+  return 'Efecto real: sala, distancia y paredes documentan dónde se probó. No añaden ni restan dB. El contraste del test sigue siendo experimental; para corregir la sala hace falta medición acústica.';
+ return 'Efecto real: condiciones registradas para repetir y comparar. No añaden ni restan ganancias ambientales en dB.';
+}
 function calibrationContextCaution(p){
  const c=normalizeCalibrationContext(p?.context,p?.type);
  if(c.provenance==='legacy')return 'No hay condiciones históricas verificadas. Los resultados se conservan; conviene repetir la prueba si cambias de equipo o entorno.';
