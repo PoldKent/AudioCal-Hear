@@ -24,3 +24,7 @@
 Se reutilizan la base v1.10.0, perfiles locales, lógica de umbrales y recomendaciones conservadoras, reproductor A/B, transferencia guiada, exportación y tarjeta horizontal. Las nuevas mejoras modifican módulos fuente `src/js`, se recompilan a `index.html` y se comprueban con GitHub Actions.
 
 `main` y GitHub Pages oficial permanecen sin cambios por esta rama.
+
+## Protección de datos de la versión oficial
+
+La rama V2 escribe en el espacio local independiente `audiocal-hear-v2-profiles-preview`. Si está vacío puede leer una copia de perfiles de `audiocal-hear-profiles-v1`, pero **nunca escribe sobre esa clave oficial**. El importador y exportador JSON se conservan. La rama no se despliega ni fusiona automáticamente con `main`.
