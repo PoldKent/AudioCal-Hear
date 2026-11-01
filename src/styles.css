@@ -215,11 +215,8 @@ select option{background:#fff;color:#172033}
 @media(max-width:430px){.trace-panel{padding:9px}.trace-part{padding:9px}.trace-heading h2{font-size:16px}}
 
 /* Calibrated control-card preview: a local, offline canvas exported as PNG. */
-.eq-card-section{border:1px solid #dce6f2;border-radius:17px;background:#fff;padding:14px;margin:15px 0}
-.eq-card-section h2{font-size:19px;margin:0 0 7px;color:#223756}
 .eq-card-config{display:grid;gap:7px;margin:13px 0;padding:12px;border-radius:12px;background:#f6f9ff}
 .eq-card-config label{font-size:13px;font-weight:650;color:#39516f}
-.eq-card-canvas{width:100%;height:auto;border:1px solid #e2eaf4;border-radius:10px;display:block;background:#fff}
 .eq-card-alert{padding:10px 12px;background:#eff7ff;border-radius:10px;color:#2d5c91;font-size:12px;margin:10px 0}
 .eq-card-alert.eq-card-warning{background:#fff6ec;color:#80501f}
 .eq-card-actions{margin-top:12px}
@@ -259,3 +256,8 @@ select option{background:#fff;color:#172033}
 .results-side .music-options,.results-side .balance-card{margin:0}
 .results-side .music-options>.inner-detail,.results-side .balance-card>.inner-detail{min-width:0}
 @media(max-width:520px){.starter-card{padding:15px}.starter-card h2{font-size:20px}.starter-bands{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.starter-band{padding:6px 2px;min-height:77px}.starter-band span{font-size:16px}.starter-band strong{font-size:11px}.starter-band small{font-size:9px}}
+
+/* Unified results for v1.11: only one live EQ, PNG generated on demand. */
+.eq-main-card{min-width:0}.starter-inline{margin:12px 0;padding:12px;background:#f6f9ff;border:1px solid #dce7f7;border-radius:13px}.starter-inline p{margin:5px 0 9px}.starter-inline strong{color:#214d99}
+.eq-device-settings{margin-top:12px}.eq-device-settings>.inner-detail{padding-top:8px}.eq-card-config{padding:10px;margin:8px 0}.eq-card-config .field{min-width:0}
+.optional-tool>summary,.eq-device-settings>summary{font-weight:750;color:#253e69}.optional-tool .inner-detail{min-width:0}.eq-card-actions>.btn{flex:1 1 180px}
