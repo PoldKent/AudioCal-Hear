@@ -11,7 +11,7 @@ const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 
 // Execute the actual production threshold-search function in isolation.
 // This tests its behavior rather than reproducing a second copy of the algorithm.
-const begin = source.indexOf('function boundaryVotes(');
+const begin = source.indexOf('function trialEstimate(');
 const end = source.indexOf('\nlet page=', begin);
 assert(begin >= 0 && end > begin, 'Hearing algorithm extraction boundary changed');
 const sandbox = {clamp, getStart: p => p.testStart, getFloor: p => p.testFloor, Math, Number};
@@ -21,7 +21,7 @@ const next = sandbox.nextTrialLevel;
 const trial = () => ({phase:'coarse', level:-36, heard:null, missed:null, verifyIndex:0, done:0});
 const profile = {testStart:-36, testFloor:-100};
 
-test('adaptive search confirms a 1 dB threshold without guessing', () => {
+test('adaptive search uses ~2 dB interval with at most two final checks', () => {
   const t = trial();
   const expectedThreshold = -50;
   let status = 'next', checks = 0;
@@ -30,7 +30,7 @@ test('adaptive search confirms a 1 dB threshold without guessing', () => {
   }
   assert.equal(status, 'measured');
   assert.equal(t.heard, -50);
-  assert.equal(t.missed, -51);
+  assert.ok(t.heard-t.missed<=2);
   assert.equal(t.verifyIndex, 2);
   assert.ok(checks <= 20, 'Test should respect the bounded audio-level schedule');
 });
@@ -51,36 +51,33 @@ test('inaudible first tone has no measured threshold', () => {
   assert.equal(next(t, false, profile), 'unheard');
 });
 
-test('one contradictory answer leads to additional checks and a confirmed threshold when repeatable', () => {
-  const t = {phase:'verify',level:-50,heard:-50,missed:-51,verifyIndex:0,
-    history:[{db:-50,heard:true},{db:-51,heard:false},{db:-50,heard:false}]};
-  assert.equal(next(t,false,profile),'next');
-  assert.equal(t.phase,'recheck');
-  for(const [db,heard] of [[-50,true],[-51,false],[-50,true],[-51,false]]){
-    assert.equal(t.level,db);
-    t.history.push({db,heard});
-    const result=next(t,heard,profile);
-    if(db===-51&&t.recheckIndex===4)assert.equal(result,'measured');
-    else assert.equal(result,'next');
-  }
-  assert.equal(t.heard,-50);
-  assert.equal(t.missed,-51);
+test('two final checks always end the frequency, even when responses disagree',()=>{
+ const t={phase:'verify',level:-50,heard:-50,missed:-52,verifyIndex:0,
+  history:[{db:-50,heard:true},{db:-52,heard:false}]};
+ t.history.push({db:-50,heard:false});
+ assert.equal(next(t,false,profile),'next');
+ assert.equal(t.verifyIndex,1);
+ assert.equal(t.level,-52);
+ t.history.push({db:-52,heard:true});
+ assert.equal(next(t,true,profile),'measured');
+ assert.equal(t.verifyIndex,2);
+ assert.equal(t.history.length,4);
+ const e=sandbox.trialEstimate(t);
+ assert.ok(Number.isFinite(e.db));
+ assert.equal(e.confidence,'low');
+ assert.ok(e.contradictions>=1);
 });
 
-test('repeatedly conflicting replies preserve observations without inventing a threshold', () => {
-  const t = {phase:'verify',level:-50,heard:-50,missed:-51,verifyIndex:0,
-    history:[{db:-50,heard:true},{db:-51,heard:false},{db:-50,heard:false}]};
-  assert.equal(next(t,false,profile),'next');
-  let result='next';
-  for(let i=0;i<6&&result==='next';i++){
-    const level=t.level,heard=level===-51;
-    t.history.push({db:level,heard});
-    result=next(t,heard,profile);
-  }
-  assert.equal(result,'unconfirmed');
-  assert.equal(t.history.length,9);
+test('bracketed responses use midpoint; one-sided responses keep only observed bounds',()=>{
+ const e=sandbox.trialEstimate({heard:-50,missed:-52,verifyIndex:2,
+  history:[{db:-50,heard:true},{db:-52,heard:false},{db:-50,heard:true},{db:-52,heard:false}]});
+ assert.equal(e.db,-51);
+ assert.equal(e.confidence,'high');
+ assert.equal(e.audibleDb,-50);
+ assert.equal(e.inaudibleDb,-52);
+ assert.equal(sandbox.trialEstimate({history:[{db:-36,heard:false}],heard:null,missed:-36}).db,null);
+ assert.equal(sandbox.trialEstimate({history:[{db:-70,heard:true}],heard:-70,missed:null}).db,null);
 });
-
 
 test('custom digital floor is respected in coarse descent', () => {
   const t = trial(), p = {testStart:-36, testFloor:-60};
@@ -182,10 +179,11 @@ test('quick mode groups adjacent frequency bands; historical schedules stay stab
  const five={bands:[60,250,1000,4000,16000],testMode:'complete'};
  assert.equal(c.quickAutoFeasibility(five).structural,0);
 });
-test('channel answers are blocked before full tone playback',()=>{
+test('buttons can respond during active audio but cannot answer an unplayed level',()=>{
  const code=fs.readFileSync('src/js/03-hearing-test.js','utf8');
- assert.match(code,/!trial\.awaiting\|\|tone\?\.mode==='test'/);
- assert.match(code,/if\(side!=='both'&&!ctx\.createStereoPanner\)/);
+ assert.ok(code.includes("trial.awaiting||active"));
+ assert.ok(code.includes("if(!current||!trial||!trial.awaiting)return"));
+ assert.ok(!code.includes("!trial.awaiting||tone?.mode==='test'"));
  assert.match(code,/!channelsReady\(current\)/);
 });
 
@@ -210,4 +208,17 @@ test('device-aware digital ceilings and staged preview never start at 0 by defau
  assert.equal(ctx.needsVolumePreview(phones),false);
  assert.deepEqual(Array.from(ctx.volumePreviewSteps(phones)),[]);
  assert.match(source,/volumePreviewPlayed=false,volumeReady=false/);
+});
+
+test('full-band default and optional independent validation are present',()=>{
+ assert.match(source,/testMode:'complete',testStart:TEST_START_DB/);
+ assert.match(fs.readFileSync('src/js/02-setup.js','utf8'),/Validación avanzada · opcional/);
+ assert.match(fs.readFileSync('src/js/03-hearing-test.js','utf8'),/PREPARACIÓN · UN SOLO PASO/);
+});
+test('saved estimates preserve bounds, disagreements and actual listening time',()=>{
+ const core=fs.readFileSync('src/js/01-core.js','utf8');
+ const hear=fs.readFileSync('src/js/03-hearing-test.js','utf8');
+ assert.ok(core.includes('confidence,audibleDb,inaudibleDb,uncertaintyDb,contradictions,history'));
+ assert.ok(hear.includes('listenedSeconds'));
+ assert.ok(hear.includes('awaitNext=false;touch();render()'));
 });
