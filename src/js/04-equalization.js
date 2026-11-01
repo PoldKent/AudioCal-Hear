@@ -466,8 +466,12 @@ function renderFrequencySummary(p,rows){
  const physical=physicalEqControl(r.gain,p,context);
  const obs=r.db===null?'No confirmado':(pair(r.f)||r.db+' dBFS');
  const mic=p.type==='headphones'?'':(p.acoustic?.[r.f]?.detected?' · mic: tono observado':p.acoustic?.[r.f]?' · mic: inconcluso':'');
- const loud=p.inlineLoudness?.[r.f+'|'+(p.channels==='separate'?'left':'both')+'|0'];
- const loudLabel=loud?.status==='matched'?'Sonoridad: similar con '+(loud.offsetDb>0?'+':'')+loud.offsetDb+' dBFS relativo':loud?.status==='bounded'?'Sonoridad: diferencia sin igualación confirmada':loud?.status==='reference'?'Sonoridad: frecuencia de referencia':loud?.status==='unavailable'?'Sonoridad: no concluyente':'Sonoridad: sin medir';
+ const loudSides=p.channels==='separate'?['left','right']:['both'];
+ const loudLabel=loudSides.map(side=>{
+  const l=p.inlineLoudness?.[r.f+'|'+side+'|0'];
+  const detail=l?.status==='matched'?'similar con '+(l.offsetDb>0?'+':'')+l.offsetDb+' dBFS relativo':l?.status==='bounded'?'diferencia sin igualdad confirmada':l?.status==='reference'?'frecuencia de referencia':l?.status==='unavailable'?'no concluyente':'sin comparar';
+  return (loudSides.length===2?(side==='left'?'Izq. ':'Der. '):'Sonoridad: ')+detail;
+ }).join(' · ');
  const unit=physical.position===null?'Sin conversión fiable':(physical.position>0?'+':'')+physical.position+(context.eqScale==='db'?' dB':' pasos');
  return `<tr><th scope="row">${fmt(r.f)}</th><td>${esc(obs)}<small style="display:block">${mic}</small><small style="display:block">${esc(loudLabel)}</small></td><td>${confidence(r)}</td><td><strong>${r.gain>0?'+':''}${r.gain} dB</strong><small style="display:block">${unit}</small></td></tr>`;
  }).join('')}</tbody></table></div><p class="tiny muted">Si la equivalencia de pasos es desconocida, no se inventan posiciones físicas. El test no demuestra que una frecuencia audible necesite recortarse.</p></section>`;
