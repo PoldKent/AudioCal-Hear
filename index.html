@@ -2165,7 +2165,7 @@ case 'introBack':stopTone();introStep=0;render();break;
 case 'introNext':
  if(current?.channels==='separate'&&!channelsReady(current)){uiAlert('Comprueba y confirma los dos canales antes de comenzar.');break}
  if(needsVolumePreview(current)&&!volumeReady){uiAlert('Completa las referencias graduales antes de comenzar.');break}
- introStep=3;render();break;
+ stopTone();introStep=3;render();break;
 case 'previewlevel':if(current&&introStep===0&&needsVolumePreview(current)){
  volumePreviewPlayed=false;const level=volumePreviewSteps(current)[volumePreviewIndex];
  if(Number.isFinite(level))await playTone(true,'both',level);
