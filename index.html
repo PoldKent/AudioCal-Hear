@@ -800,7 +800,11 @@ async function ensureAudio(){if(!audioCtx){const AC=window.AudioContext||window.
 function stopTone(){if(frame){cancelAnimationFrame(frame);frame=null}if(!tone)return;const t=tone;tone=null;try{if(audioCtx){t.gain.gain.cancelScheduledValues(audioCtx.currentTime);t.gain.gain.setTargetAtTime(.00000001,audioCtx.currentTime,.012)}t.osc.stop((audioCtx?.currentTime||0)+.05)}catch(e){try{t.osc.stop()}catch(e2){}}}
 async function playTone(check=false,checkSide='both',previewDb=null){
  try{
+  const originalProfile=current,originalPage=page,originalIntro=introStep;
   stopTone();if(playerAudio)playerAudio.pause();const ctx=await ensureAudio();
+  // A suspended AudioContext can resume after a profile or screen changed.
+  // Never let a high-level preview play on an unexpected device/page.
+  if(current!==originalProfile||page!==originalPage||introStep!==originalIntro)return;
   const entry=check?null:plan(current)[firstMissing(current)];if(!check&&!entry)return;
   if(!check&&!trial)trial=newTrial(entry);
   const freq=check?1000:entry.f;
