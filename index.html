@@ -1003,14 +1003,14 @@ function sweepAssessment(record){
 }
 function sweepRecordSummary(record){
  const status=sweepAssessment(record);
- if(!status.known)return 'Sin respuestas: resultado inconcluso.';
- if(status.first===null)return 'No se indicaron zonas audibles al nivel utilizado. No implica pérdida de audición ni fallo del equipo.';
  const found=record.mic?.filter(x=>x.detected)||[];
  const microphone=record.micUsed?
-   (found.length?' · Micrófono: '+found.length+' muestras con señal superior al ruido de referencia, no calibradas.':' · Micrófono: sin evidencia suficiente de captación; no demuestra ausencia de sonido.'):'';
- return 'Zona declarada audible aprox.: '+Math.round(status.first)+'–'+Math.round(status.last)+' Hz. '+status.segments.length+' tramo(s).'+microphone;
+  (found.length?' Micrófono: señal relativa superior al ruido de referencia entre '+Math.min(...found.map(x=>x.hz))+' y '+Math.max(...found.map(x=>x.hz))+' Hz (estimación no calibrada).':
+   ' Micrófono: sin captación claramente distinguible del ruido; esto no demuestra ausencia de sonido.'):'';
+ if(!status.known)return 'Sin respuestas de audición: resultado perceptivo inconcluso.'+microphone;
+ if(status.first===null)return 'No se indicaron zonas audibles al nivel utilizado; no implica pérdida auditiva ni fallo del equipo.'+microphone;
+ return 'Zona declarada audible aprox.: '+Math.round(status.first)+'–'+Math.round(status.last)+' Hz, '+status.segments.length+' tramo(s).'+microphone;
 }
-
 function sweepSummaryMarkup(p){
  const records=Object.entries(p.sweepRecords||{}).filter(([side,record])=>['both','left','right'].includes(side)&&record?.method===SWEEP_METHOD);
  if(!records.length)return '';
