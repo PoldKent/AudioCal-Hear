@@ -296,3 +296,39 @@ test('automatic EQ requires both ears for each contributing frequency',()=>{
  const coverage=model.thresholdCoverage(profile,points);
  assert.equal(coverage.measured.length,6);
 });
+test('landscape PNG layout orders bands left to right, with physical and estimated units kept separate',()=>{
+ const src=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const a=src.indexOf('function eqPngLayout('),b=src.indexOf('function paintEqResult(',a);
+ assert.ok(a>=0&&b>a);
+ const ctx=vm.createContext({Math,Number,fmt:f=>f+' Hz',eqResultModel:()=>null});
+ vm.runInContext(src.slice(a,b),ctx);
+ for(const count of [7,10,31]){
+  const rows=Array.from({length:count},(_,i)=>({f:64+i*100,gain:i===0?3:i===1?-2:0,
+   position:i===0?1:i===1?-1:0,actualGain:0,delta:0}));
+  const model={rows,verified:true,scale:'steps'};
+  const layout=ctx.eqPngLayout({bands:rows.map(x=>x.f)},model);
+  assert.equal(layout.columns.length,count);
+  assert.ok(layout.width>=1080);
+  assert.equal(layout.height,782,'export image should use a consistent landscape height');
+  assert.ok(layout.width>layout.height);
+  assert.ok(layout.columns.every((x,i)=>i===0||x.x>layout.columns[i-1].x));
+  assert.ok(layout.columns.every(x=>x.x>=layout.left&&x.x<=layout.right));
+  assert.ok(layout.columns[0].y<layout.zeroY,'positive gain should move the control upward');
+  assert.ok(layout.columns[1].y>layout.zeroY,'negative gain should move the control downward');
+  assert.equal(layout.columns[0].value,1,'verified controls use positions, not estimated gains');
+  model.verified=false;
+  const unknown=ctx.eqPngLayout({},model);
+  assert.equal(unknown.columns[0].value,3,'unverified controls show only suggested EQ dB');
+  assert.match(unknown.unit,/SIN posiciones/);
+ }
+});
+test('PNG uses a common zero line and one column per band, not a vertical list',()=>{
+ const source=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const plot=source.slice(source.indexOf('function paintEqResult('),source.indexOf('function refreshEqCard('));
+ assert.match(plot,/layout\.columns\[i\]\.x/);
+ assert.match(plot,/c\.moveTo\(chartLeft-13,y\)/);
+ assert.match(plot,/Math\.min\(layout\.zeroY,y\)/);
+ assert.match(plot,/CONTROLES PARA APLICAR/);
+ assert.match(plot,/SIN CONVERSIÓN VALIDADA/);
+ assert.doesNotMatch(plot,/const y=345\+i\*61/);
+});
