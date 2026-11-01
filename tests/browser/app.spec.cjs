@@ -283,7 +283,7 @@ test('same hearing pass includes loudness check per band and saves it before adv
  expect(saved.inlineLoudness['64|both|0'].offsetDb).toBe(0);
  expect(saved.measures['64|both'][0].db).toBe(-52);
  await page.locator('[data-nav="results"]').click();
- await expect(page.locator('#hearFrequencyReport')).toContainText('Sonoridad: similar con +0 dBFS relativo');
+ await expect(page.locator('#hearFrequencyReport')).toContainText('Sonoridad: parecida con +0 dBFS relativo');
  await expect(page.locator('#loudnessPanel')).toHaveCount(0);
  await page.reload();
  await page.locator('[data-nav="results"]').click();
