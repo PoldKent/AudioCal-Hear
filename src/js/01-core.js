@@ -201,7 +201,7 @@ function normalizeInlineLoudness(raw,bands){
    ['reference','target','similar','uncertain'].includes(t.answer)&&Number.isInteger(t.offsetDb)&&Math.abs(t.offsetDb)<=9)
    .map(t=>({answer:t.answer,offsetDb:t.offsetDb})):[];
   out[k]={status,offsetDb,referenceDbfs:Number.isFinite(v.referenceDbfs)?clamp(v.referenceDbfs,-100,-24):null,
-   trials,method:'in-pass-relative-loudness-v1'};
+   trials,at:Number.isFinite(v.at)?clamp(v.at,0,Date.now()+86400000):Date.now(),method:'in-pass-relative-loudness-v1'};
  }
  return out;
 }
