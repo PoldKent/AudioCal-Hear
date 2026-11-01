@@ -469,7 +469,7 @@ function renderFrequencySummary(p,rows){
  const loudSides=p.channels==='separate'?['left','right']:['both'];
  const loudLabel=loudSides.map(side=>{
   const l=p.inlineLoudness?.[r.f+'|'+side+'|0'];
-  const detail=l?.status==='matched'?'similar con '+(l.offsetDb>0?'+':'')+l.offsetDb+' dBFS relativo':l?.status==='bounded'?'diferencia sin igualdad confirmada':l?.status==='reference'?'frecuencia de referencia':l?.status==='unavailable'?'no concluyente':'sin comparar';
+  const detail=l?.status==='matched'?'parecida con '+(l.offsetDb>0?'+':'')+l.offsetDb+' dBFS relativo (orientativo)':l?.status==='bounded'?'diferencia sin igualdad confirmada':l?.status==='reference'?'frecuencia de referencia':l?.status==='unavailable'?'no concluyente':'sin comparar';
   return (loudSides.length===2?(side==='left'?'Izq. ':'Der. '):'Sonoridad: ')+detail;
  }).join(' · ');
  const unit=physical.position===null?'Sin conversión fiable':(physical.position>0?'+':'')+physical.position+(context.eqScale==='db'?' dB':' pasos');
