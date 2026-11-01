@@ -158,10 +158,11 @@ test('cross-evidence marks truncated loudness as inconclusive and preserves data
  const source=fs.readFileSync('src/js/05d-evidence.js','utf8'),start=source.indexOf('const EVIDENCE_AUDIT_VERSION='),end=source.indexOf('function evidenceAuditMarkup(',start);
  const c=vm.createContext({Math,Number,Object,Array,median:x=>x[0],key:(f,s)=>f+'|'+s,EQ_ALGORITHM_VERSION:'v2',calibrationContextLabel:()=> 'auto',
   loudnessEligibleBands:p=>p.bands.filter(x=>x>=100&&x<=10000&&x!==1000),
+  independentThresholdPair:(p,f,s)=>p.measures[f+'|'+s]?.[1]?.method==='adaptive-v20-independent',
   recommend:p=>p.bands.map(f=>({f,base:f===400?1:0}))});
  vm.runInContext(source.slice(start,end),c);
  const p={name:'QA',bands:[64,160,400,1000,2500,6250,15625],channels:'both',passes:2,
-  measures:Object.fromEntries([64,160,400,1000,2500,6250,15625].map(f=>[f+'|both',[{kind:'heard',db:-48},{kind:'heard',db:-47}]])),
+  measures:Object.fromEntries([64,160,400,1000,2500,6250,15625].map(f=>[f+'|both',[{kind:'heard',db:-48},{kind:'heard',db:-47,method:'adaptive-v20-independent'}]])),
   loudness:{160:[{offsetDb:3},{offsetDb:4}],400:[{offsetDb:6},{offsetDb:6}],2500:[{offsetDb:-5},{offsetDb:4}]}};
  const before=JSON.stringify(p),a=c.evidenceReport(p);
  assert.equal(a.count.threshold,7);
@@ -174,6 +175,37 @@ test('cross-evidence marks truncated loudness as inconclusive and preserves data
 test('CSV export explicitly distinguishes dBFS from dB of EQ',()=>{
  const html=fs.readFileSync('index.html','utf8');
  for(const s of ['evidenceAuditMarkup(p)','function evidenceCsv(', "case 'download-audit'",'Sonoridad comparación 1 dBFS relativo'])assert.ok(html.includes(s),s);
+});
+
+test('older confirmations do not count as independent evidence',()=>{
+ const code=fs.readFileSync('src/js/05d-evidence.js','utf8'),a=code.indexOf('const EVIDENCE_AUDIT_VERSION='),b=code.indexOf('function evidenceAuditMarkup(',a);
+ const c=vm.createContext({Math,Number,Object,Array,median:s=>s[0],key:(f,s)=>f+'|'+s,
+  EQ_ALGORITHM_VERSION:'v2',calibrationContextLabel:()=> 'car',loudnessEligibleBands:p=>p.bands,
+  recommend:p=>p.bands.map(f=>({f,base:0})),
+  independentThresholdPair:(p,f,s)=>p.measures[f+'|'+s]?.[1]?.method==='adaptive-v20-independent'});
+ vm.runInContext(code.slice(a,b),c);
+ const p={name:'legacy',bands:[64,160],channels:'both',passes:2,loudness:{},
+  measures:{'64|both':[{kind:'heard',db:-50,method:'adaptive-v18-explicit'},{kind:'heard',db:-50,method:'adaptive-v18-explicit'}],
+    '160|both':[{kind:'heard',db:-54,method:'adaptive-v18-explicit'},{kind:'heard',db:-53,method:'adaptive-v20-independent'}]}};
+ const audit=c.evidenceReport(p);
+ assert.equal(audit.count.historical,1);
+ assert.equal(audit.count.thresholdPairs,1);
+ assert.equal(audit.count.threshold,1);
+ assert.match(audit.rows[0].threshold.status,/histórica/);
+ assert.match(audit.rows[0].auto.status,/histórica/);
+});
+
+test('incomplete L/R coverage cannot receive high confidence from a single ear',()=>{
+ const js=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const end=js.indexOf('const EQ_ALGORITHM_VERSION=');
+ const c=vm.createContext({Math,Number,Object,median:x=>x.slice().sort((a,b)=>a-b)[Math.floor((x.length-1)/2)],
+  key:(f,s)=>f+'|'+s,independentThresholdPair:(p,f,s)=>p.measures[f+'|'+s]?.[1]?.method==='adaptive-v20-independent'});
+ vm.runInContext(js.slice(0,end),c);
+ const samples=[{kind:'heard',db:-49,method:'adaptive-v20-search'},{kind:'heard',db:-50,method:'adaptive-v20-independent'}];
+ const p={bands:[400,1000],channels:'separate',testMode:'complete',measures:{'400|left':samples}};
+ assert.equal(c.gather(p)[0].quality,'low','one ear cannot justify combined confidence');
+ p.measures['400|right']=[{kind:'heard',db:-50,method:'adaptive-v20-search'},{kind:'heard',db:-51,method:'adaptive-v20-independent'}];
+ assert.equal(c.gather(p)[0].quality,'good');
 });
 
 test('context conditions describe their real impact without inventing acoustic dB',()=>{

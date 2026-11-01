@@ -86,3 +86,11 @@ La implementación de los lotes 0–1 **no cambia** `recommend()`, los tonos ni 
 - Las igualaciones que tocan ±6 dBFS se marcan inconcluyentes aunque coincidan; los umbrales se consideran repetibles con dos pasadas y un margen exploratorio ≤6 dBFS.
 - Con dos pasadas, se calcula el EQ experimental por pasada separada para evaluar si coincide la **dirección** de una corrección. No es validación acústica.
 - No se modifican los resultados, preferencias, datos originales ni PNG. Repetibilidad no equivale a ecualización musical óptima.
+
+
+## Corrección de auditoría AF-01 — dos búsquedas independientes
+
+- «Verificar» ejecuta una búsqueda completa de umbral en la segunda pasada, sin iniciar desde el valor anterior. El orden agenda todas las primeras pasadas y posteriormente las segundas.
+- Las nuevas segundas pasadas se etiquetan como `adaptive-v20-independent`; las confirmaciones históricas `adaptive-v18-explicit` se conservan intactas, pero **nunca** se cuentan como búsqueda independiente.
+- `gather()` no otorga confianza alta por dos valores heredados iguales; la auditoría muestra las confirmaciones históricas con su limitación y excluye sus valores del recuento de repetibilidad.
+- Una prueba completada sigue siendo una prueba digital en dBFS; este cambio no implica medir dB SPL ni validar un EQ acústico.

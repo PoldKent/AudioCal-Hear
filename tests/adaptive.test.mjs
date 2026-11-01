@@ -113,3 +113,43 @@ test('music playback applies headroom for boosted filters and caches identical s
   const boosted=ctx.chainPeakDb([{f:1000,g:8,q:1}],48000);
   assert.ok(boosted>3 && boosted<12, 'Unexpected peak estimate '+boosted);
 });
+
+test('second pass is a completely new search without using the first threshold',()=>{
+ const begin=source.indexOf('function newTrial('),end=source.indexOf('\nfunction boundaryVotes(',begin);
+ assert.ok(begin>=0&&end>begin);
+ const c={getStart:()=>-36,current:{measures:{'400|both':[{kind:'heard',db:-50}]}},key:(f,s)=>f+'|'+s,Math,Number};
+ vm.runInNewContext(source.slice(begin,end),c);
+ const second=c.newTrial({f:400,side:'both',pass:1});
+ assert.equal(second.level,-36);
+ assert.equal(second.phase,'coarse');
+ assert.equal(second.heard,null);
+ assert.equal(second.missed,null);
+ assert.equal(second.history.length,0);
+ let status='next',loops=0;
+ const p={testStart:-36,testFloor:-84};
+ while(status==='next'&&loops++<25)status=next(second,second.level>=-52,p);
+ assert.equal(status,'measured');
+ assert.equal(second.heard,-52,'second pass must not copy -50 from the first');
+});
+test('independent evidence requires explicit new method, legacy records are not upgraded',()=>{
+ const from=source.indexOf('const INDEPENDENT_PASS_METHOD=');
+ const to=source.indexOf('\nlet trial=null',from);
+ assert.ok(from>=0&&to>from);
+ const c={Number,key:(f,s)=>f+'|'+s};
+ vm.runInNewContext(source.slice(from,to),c);
+ const p={passes:2,measures:{'400|both':[
+  {kind:'heard',db:-50,method:'adaptive-v18-explicit'},
+  {kind:'heard',db:-50,method:'adaptive-v18-explicit'}]}};
+ assert.equal(c.independentThresholdPair(p,400,'both'),false);
+ p.measures['400|both'][1]={kind:'heard',db:-52,method:'adaptive-v20-independent'};
+ assert.equal(c.independentThresholdPair(p,400,'both'),true);
+ assert.equal(c.independentThresholdPair(p,600,'both'),false);
+});
+
+test('translation cannot replace a shorter word inside another word',()=>{
+ const start=source.indexOf('function trans('),end=source.indexOf('function localize(',start);
+ const context={language:'en',TEXTS:{en:{pendientes:'remaining'}},FRAGMENTS:{en:['pendientes']},String,Object,RegExp};
+ vm.runInNewContext(source.slice(start,end),context);
+ assert.equal(context.trans('Registros históricos no independientes'),'Registros históricos no independientes');
+ assert.equal(context.trans('3 pendientes'),'3 remaining');
+});

@@ -285,7 +285,14 @@ function trans(input){
  let result=s;
  // First translate complete known phrases (before individual words).
  const fragments=FRAGMENTS[language];
- for(const fragment of fragments){if(result.includes(fragment))result=result.split(fragment).join(table[fragment]);}
+ const isLetter=c=>Boolean(c)&&/\p{L}/u.test(c);
+ for(const fragment of fragments){
+  if(!result.includes(fragment))continue;
+  const leftIsLetter=/^\p{L}/u.test(fragment),rightIsLetter=/\p{L}$/u.test(fragment);
+  result=result.replaceAll(fragment,(matched,pos,full)=>
+   (leftIsLetter&&isLetter(full[pos-1]))||(rightIsLetter&&isLetter(full[pos+fragment.length]))
+    ?matched:table[fragment]);
+ }
  const tokens=['pruebas pendientes','prueba pendiente','frecuencias sin umbral','ambos canales juntos','según tus respuestas','seleccionado','pendientes','bandas','frecuencias','pruebas','prueba','pasadas','pasada','muestras','cambios','completado','frecuencia','Repetición','AMBOS CANALES','Mi equipo','Auto 7','Auriculares 10','Estándar 7','Opciones para'];
  for(const sp of tokens){const value=table[sp];if(!value)continue;
   const regex=new RegExp('(?<![\\p{L}])'+sp+'(?![\\p{L}])','giu');
@@ -484,7 +491,7 @@ let profiles=readProfiles(),currentId='';try{currentId=localStorage.getItem(STAT
 let current=profiles.find(p=>p.id===currentId)||null;
 // Playback dBFS is not the acoustic sound-pressure level reaching the ear.
 const TEST_START_DB=-36, TEST_END_DB=-84, MAX_SAFE_DB=-24, SECONDS_PER_DB=3;
-const MAX_FIRST=60, MAX_VERIFY=18, MAX_STEPS=20;
+const MAX_FIRST=60, MAX_VERIFY=60, MAX_STEPS=20;
 const getStart=p=>clamp(p?.testStart!=null&&Number.isFinite(Number(p.testStart))?Number(p.testStart):TEST_START_DB,TEST_END_DB,MAX_SAFE_DB);
 const getFloor=p=>clamp(p?.testFloor!=null&&Number.isFinite(Number(p.testFloor))?Number(p.testFloor):TEST_END_DB,TEST_END_DB,Math.min(-36,getStart(p)-1));
 const QUICK_LIMIT=6;
@@ -496,15 +503,25 @@ function testBands(p){
  for(let i=0;i<n;i++){const idx=Math.round(i*(bands.length-1)/(n-1));if(!chosen.includes(bands[idx]))chosen.push(bands[idx]);}
  return chosen;
 }
+
+/* Independent search provenance: historical second-pass confirmations remain
+   preserved, but never count as independent threshold measurements. */
+const INDEPENDENT_PASS_METHOD='adaptive-v20-independent';
+function independentThresholdPair(p,f,side){
+ const a=p?.measures?.[key(f,side)]||[];
+ return p?.passes===2&&a.length>=2&&a[0]?.kind==='heard'&&
+  Number.isFinite(a[0].db)&&a[1]?.kind==='heard'&&
+  Number.isFinite(a[1].db)&&a[1].method===INDEPENDENT_PASS_METHOD;
+}
+
 let trial=null, introStep=0, ambientStatus='', ambientBusy=false;
 function newTrial(entry){
- const first=current?.measures?.[key(entry.f,entry.side)]?.[0]?.db;
- const prev=Number.isFinite(first)?clamp(first,getFloor(current)+1,getStart(current)):null;
+ // Both passes start without any threshold borrowed from earlier measurements.
+ // The second run is a new adaptive search, not a confirmation of pass 1.
  return {id:key(entry.f,entry.side)+'-'+entry.pass,
-  level:entry.pass===1&&prev!==null?prev:getStart(current),
-  phase:entry.pass===1?'verify':'coarse',heard:entry.pass===1?prev:null,
-  missed:entry.pass===1&&prev!==null?prev-1:null,verifyIndex:0,done:0,
-  awaiting:false,highConsent:false,history:[],lastTone:null};
+  level:getStart(current),phase:'coarse',heard:null,missed:null,
+  verifyIndex:0,done:0,awaiting:false,highConsent:false,
+  history:[],lastTone:null};
 }
 function boundaryVotes(t,level){
  let yes=0,no=0;
@@ -627,7 +644,7 @@ ${renderContextFields()}
 <div class="setup-title"><h2>03 · Elige la experiencia</h2></div>
 <p class="tiny muted">Canales de escucha</p><div class="mini-options"><button type="button" data-channels="both" class="choice ${temp.channels==='both'?'selected':''}"><strong>🔊 Juntos</strong><span>Más rápido · ambos canales</span></button><button type="button" data-channels="separate" class="choice ${temp.channels==='separate'?'selected':''}"><strong>🎧 Por oído</strong><span>Izquierdo y derecho</span></button></div>
 <p class="tiny muted" style="margin-top:13px">Cobertura de frecuencias</p><div class="mini-options"><button type="button" data-testmode="quick" class="choice ${temp.testMode==='quick'?'selected':''}"><strong>⚡ Rápida</strong><span>Hasta 6 frecuencias representativas; otras se estiman</span></button><button type="button" data-testmode="complete" class="choice ${temp.testMode!=='quick'?'selected':''}"><strong>🎯 Completa</strong><span>Probar cada banda del ecualizador</span></button></div>
-${temp.testMode==='quick'&&temp.bands.length>10?'<p class="soft warning small">En este ecualizador, seis frecuencias no alcanzan la cobertura mínima para calcular compensación auditiva automática. Las bandas no medidas se mostrarán como estimadas; elige Completa para obtener más información.</p>':''}<p class="tiny muted" style="margin-top:13px">Precisión de la prueba</p><div class="mini-options"><button type="button" data-passes="1" class="choice ${temp.passes===1?'selected':''}"><strong>⚡ Rápida</strong><span>Una pasada · hasta 60 s por frecuencia</span></button><button type="button" data-passes="2" class="choice ${temp.passes===2?'selected':''}"><strong>🎯 Verificar</strong><span>Dos pasadas · requiere más tiempo</span></button></div>
+${temp.testMode==='quick'&&temp.bands.length>10?'<p class="soft warning small">En este ecualizador, seis frecuencias no alcanzan la cobertura mínima para calcular compensación auditiva automática. Las bandas no medidas se mostrarán como estimadas; elige Completa para obtener más información.</p>':''}<p class="tiny muted" style="margin-top:13px">Precisión de la prueba</p><div class="mini-options"><button type="button" data-passes="1" class="choice ${temp.passes===1?'selected':''}"><strong>⚡ Rápida</strong><span>Una pasada · hasta 60 s por frecuencia</span></button><button type="button" data-passes="2" class="choice ${temp.passes===2?'selected':''}"><strong>🎯 Verificar</strong><span>Dos búsquedas independientes · más tiempo</span></button></div>
 <div class="setup-summary" role="status" aria-live="polite"><div class="summary-line"><div><span class="tiny muted">TIEMPO ORIENTATIVO</span><span class="summary-time" id="setupTime">${approxTimeRange(duration)}</span></div><span class="tag" id="setupTrials">${duration.trials} pruebas</span></div><div class="tiny muted" id="setupMaximum">Máximo de tonos: ${timeLabel(duration.max)}</div><details><summary class="tiny" style="cursor:pointer;color:#9de5f5">Cómo se calcula el tiempo</summary><div id="durationEstimate">${durationNotice({...temp,measures:{}},0,false)}</div></details></div>
 <label for="deviceName">¿Cómo llamarás a este perfil?</label><input class="field" id="deviceName" maxlength="70" placeholder="Ej.: Mis Soundcore, Auto, Parlantes de sala" value="${esc(temp.name)}">
 <details class="unobtrusive"><summary>Rango de prueba y opciones avanzadas <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="small muted">Los niveles de prueba son dBFS digitales, no dB SPL ni ganancias del ecualizador. Rango disponible: −24 a −84 dBFS. Por seguridad empezamos en −36 dBFS; el nivel −24 requiere confirmación.</p><div class="grid2"><div><label for="testStart">Nivel inicial (dBFS)</label><input class="field" id="testStart" type="number" min="-84" max="-24" step="1" value="${temp.testStart}"></div><div><label for="testFloor">Nivel mínimo (dBFS)</label><input class="field" id="testFloor" type="number" min="-84" max="-36" step="1" value="${temp.testFloor}"></div></div><p class="small muted">Cerca de −24 dBFS el tono puede ser demasiado intenso para ciertos auriculares; cerca de −84 dBFS el ruido electrónico puede ocultarlo. No subas el volumen del teléfono para perseguir sonidos.</p></div></details>
@@ -635,7 +652,7 @@ ${temp.testMode==='quick'&&temp.bands.length>10?'<p class="soft warning small">E
 <details class="unobtrusive"><summary>Comprobar sonido y recomendaciones de seguridad</summary><div class="inner-detail"><p class="compact-note">Conecta el Bluetooth desde el teléfono. Elige un volumen bajo y cómodo, sin subirlo durante las pruebas. Haz la prueba en silencio; en el vehículo, siempre estacionado. <strong>Nunca uses el volumen máximo.</strong></p><div class="row wrap">${button('▶ Probar tono','check','btn-alt grow')}${button('■ Detener','stopaudio','btn-ghost grow')}</div></div></details>
 ${button('Comenzar mi calibración →','create','btn-primary full bigbutton')}
 <p class="tiny center muted">Los perfiles se guardan localmente. Se distinguen bandas medidas y estimadas.</p></section>`}
-function plan(p){let bands=testBands(p).sort((a,b)=>Math.abs(Math.log2(a/1000))-Math.abs(Math.log2(b/1000)));let sides=p.channels==='separate'?['left','right']:['both'];return bands.flatMap(f=>sides.flatMap(side=>Array.from({length:p.passes},(_,pass)=>({f,side,pass}))));}
+function plan(p){let bands=testBands(p).sort((a,b)=>Math.abs(Math.log2(a/1000))-Math.abs(Math.log2(b/1000)));let sides=p.channels==='separate'?['left','right']:['both'];return Array.from({length:p.passes},(_,pass)=>bands.flatMap(f=>sides.map(side=>({f,side,pass})))).flat();}
 
 // Estimates are bounded by the new adaptive scheduler; no fixed threshold is promised.
 function timeLabel(s){s=Math.max(0,Math.ceil(s));const m=Math.floor(s/60),r=s%60;return m?`${m} min${r?' '+r+' s':''}`:`${r} s`}
@@ -646,8 +663,8 @@ function timeRange(p,done=0){
  const pending=trials.filter(x=>!recorded(p,x));
  const max=pending.reduce((n,x)=>n+(x.pass===1?MAX_VERIFY:MAX_FIRST),0);
  const totalMax=trials.reduce((n,x)=>n+(x.pass===1?MAX_VERIFY:MAX_FIRST),0);
- const exampleLow=pending.reduce((n,x)=>n+(x.pass===1?6:20),0);
- const exampleHigh=pending.reduce((n,x)=>n+(x.pass===1?12:38),0);
+ const exampleLow=pending.reduce((n,x)=>n+20,0);
+ const exampleHigh=pending.reduce((n,x)=>n+38,0);
  return {trials:trials.length,left:remaining,groupsPending:remaining,max,exampleLow,exampleHigh,maxTotal:totalMax};
 }
 function durationNotice(p,done=0,inTest=false){const d=timeRange(p,done);
@@ -687,12 +704,11 @@ function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea
  const item=items[missing],active=tone?.mode==='test',keyName=item.side==='left'?'OÍDO IZQUIERDO':item.side==='right'?'OÍDO DERECHO':'AMBOS CANALES';
  const id=key(item.f,item.side)+'-'+item.pass;
  if(!trial||trial.id!==id)trial=newTrial(item);
- if(item.pass===1&&!Number.isFinite(trial.heard)){logMeasure('timeout');return renderTest()}
- const pct=Math.round(doneCount(p)/total*100),level=trial.level;
+  const pct=Math.round(doneCount(p)/total*100),level=trial.level;
  const phase=trial.phase==='coarse'?'Búsqueda rápida · hasta 12 dB':trial.phase==='refine'?'Ajuste fino · hasta 1 dB':trial.phase==='recheck'?'Comprobación adicional':'Confirmación del umbral';
  return `<section class="hero"><p class="eyebrow">HEAR TEST · GUÍA ADAPTATIVA</p><h1>¿Lo escuchaste?</h1><p class="subtle">Cada nivel se reproduce por separado. Responde explícitamente para continuar. No cambies el volumen del teléfono.</p></section>
  <section class="card"><div class="row" style="justify-content:space-between"><strong data-profile-name="true">${esc(p.name)}</strong><span class="tag">${doneCount(p)+1} / ${total}</span></div>
- <div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><p class="center small muted">${keyName} · ${phase} · Repetición ${item.pass+1}/${p.passes}</p>
+ <div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><p class="center small muted">${keyName} · ${phase} · Búsqueda independiente ${item.pass+1}/${p.passes}</p>
  <div class="wavebox"><span class="muted small">FRECUENCIA ACTUAL</span><div class="frequency">${fmt(item.f)}</div><p class="small muted">Nivel de la prueba: <strong id="levelText">${level} dBFS</strong></p><div class="wave" aria-hidden="true" id="waves">${Array.from({length:32},(_,i)=>`<span style="height:${6+Math.round(Math.abs(Math.sin(i*.71)*30))}px"></span>`).join('')}</div></div>
  <div class="soft center"><strong>${active?'Escuchando · 3 segundos':trial.awaiting?'¿Escuchaste el sonido?':'Listo para esta frecuencia'}</strong><p class="small muted">${phase} · ${trial.done}/${MAX_STEPS} niveles examinados</p>${active?`<span class="hold-time" id="holdSeconds">3.0 s</span><div class="hold-meter"><div id="holdProgress"></div></div>`:''}</div>
  ${floorReached?'':active||trial.awaiting?`<div class="mini-options"><button class="choice" type="button" data-act="answerYes"><strong>✓ Sí lo escucho</strong><span>El tono era audible</span></button><button class="choice" type="button" data-act="answerNo"><strong>✕ Ya no lo escucho</strong><span>No fue audible</span></button></div>${!active&&trial.awaiting?`<p class="tiny center muted">Puedes volver a reproducir antes de contestar.</p>${button('▶ Repetir este nivel','play','btn-ghost full')}`:''}`:
@@ -752,8 +768,8 @@ function logMeasure(kind){
  const k=key(e.f,e.side),db=kind==='heard'&&trial&&Number.isFinite(trial.heard)&&Number.isFinite(trial.missed)?trial.heard:null;
  lastResultKind=kind;lastRecordedEntry={f:e.f,side:e.side,pass:e.pass};
  if(!current.measures[k])current.measures[k]=[];
- current.measures[k][e.pass]={kind,db,elapsedS:trial?.done*SECONDS_PER_DB||0,lastAudibleDb:kind==='stillheard'?getFloor(current):null,at:Date.now(),method:'adaptive-v18-explicit',testStart:getStart(current),testFloor:getFloor(current),history:trial?.history?.slice(0,MAX_STEPS)||[]};
- if(e.pass===0&&current.passes===2&&!Number.isFinite(db))current.measures[k][1]={kind:'skipped',db:null,elapsedS:0,at:Date.now(),method:'adaptive-v18-explicit'};
+ current.measures[k][e.pass]={kind,db,elapsedS:trial?.done*SECONDS_PER_DB||0,lastAudibleDb:kind==='stillheard'?getFloor(current):null,at:Date.now(),method:e.pass===1?INDEPENDENT_PASS_METHOD:'adaptive-v20-search',testStart:getStart(current),testFloor:getFloor(current),history:trial?.history?.slice(0,MAX_STEPS)||[]};
+
  sampleNote=kind==='heard'?'Umbral aproximado confirmado ✓':kind==='stillheard'?'Lo seguías escuchando al nivel mínimo; no implica bajar el EQ.':kind==='unheard'?'No era audible al nivel inicial. No aumentes el volumen.':kind==='unconfirmed'?'No se pudo confirmar el límite de esta frecuencia. Se guardaron tus respuestas; puedes repetirla sin rehacer todo el examen.':'Prueba terminada sin un umbral confirmado. No se inventa una medida.';
  trial=null;stopTone();floorReached=false;touch();awaitNext=true;render();
 }
@@ -786,7 +802,7 @@ function createProfile(){const name=$('#deviceName')?.value.trim()||'Mi equipo '
  let bands=temp.preset==='custom'?parseBands($('#customFreqs')?.value||''):temp.bands.slice();if(!bands){uiAlert('Revisa las frecuencias personalizadas: entre 2 y 31 valores, orden ascendente, de 20 a 20.000 Hz.');return}
  if(temp.testStart<=temp.testFloor){uiAlert('El nivel inicial debe ser mayor que el mínimo en dBFS.');return}if(temp.testStart>-30&&!uiConfirm('Nivel inicial cercano a −24 dBFS. Puede ser demasiado intenso. Usa volumen bajo y cómodo, nunca máximo. ¿Confirmas esta configuración?'))return;temp.name=name;temp.min=min;temp.max=max;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},loudness:{},context:normalizeCalibrationContext(temp.context,temp.type),manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetLoudnessSession();resetBalanceSession(p);introStep=0;trial=null;nav('test')}
 function gather(p){
- const collect=f=>{let samples=[];for(const side of p.channels==='separate'?['left','right']:['both']){const arr=p.measures[key(f,side)]||[];const valid=arr.filter(r=>r&&r.db!==null&&Number.isFinite(r.db)).map(r=>r.db);if(valid.length){samples.push({db:median(valid),quality:Math.max(...valid)-Math.min(...valid)<=6&&valid.length>=2?'good':'low',side})}}if(!samples.length)return {f,db:null,quality:'unmeasurable'};const values=samples.map(s=>s.db),spread=Math.max(...values)-Math.min(...values);return {f,db:median(values),quality:spread>9?'mixed':samples.every(s=>s.quality==='good')?'good':'low'}};
+ const collect=f=>{let samples=[];for(const side of p.channels==='separate'?['left','right']:['both']){const arr=p.measures[key(f,side)]||[];const valid=arr.filter(r=>r&&r.db!==null&&Number.isFinite(r.db)).map(r=>r.db);if(valid.length){samples.push({db:median(valid),quality:valid.length>=2&&!independentThresholdPair(p,f,side)?'legacy':valid.length>=2&&Math.max(...valid)-Math.min(...valid)<=6?'good':'low',side})}}if(!samples.length)return {f,db:null,quality:'unmeasurable'};const values=samples.map(s=>s.db),spread=Math.max(...values)-Math.min(...values);return {f,db:median(values),quality:spread>9?'mixed':samples.some(s=>s.quality==='legacy')?'legacy':p.channels==='separate'&&samples.length<2?'low':samples.every(s=>s.quality==='good')?'good':'low'}};
  const allMeasured=[...new Set(Object.keys(p.measures).map(k=>Number(k.split('|')[0])).filter(Number.isFinite))].map(collect).filter(x=>x.db!==null).sort((a,b)=>a.f-b.f);
  return p.bands.map(f=>{let direct=collect(f);if(direct.db!==null||(p.testMode!=='quick'&&!p.formatFrom))return direct;
  const lo=allMeasured.filter(x=>x.f<f).pop(),hi=allMeasured.find(x=>x.f>f);
@@ -944,7 +960,8 @@ function rawFrequencyThreshold(p,f,side){
 function thresholdStatus(point){
  if(point.db===null)return 'Sin umbral confirmado';
  if(point.derived)return 'Interpolación; no medido aquí';
- if(point.quality==='good')return 'Repetible en dos pasadas';
+ if(point.quality==='good')return 'Repetible en dos búsquedas independientes';
+ if(point.quality==='legacy')return 'Segunda pasada histórica: confirmación, no búsqueda independiente';
  if(point.quality==='mixed')return 'Diferencias entre oídos';
  return 'Medición limitada; revisar';
 }
@@ -1450,7 +1467,9 @@ function evidenceReport(p){
    return [0,1].map(n=>a[n]?.kind==='heard'&&Number.isFinite(a[n].db)?a[n].db:null);
   });
   const first=trials.map(x=>x[0]).filter(Number.isFinite),second=trials.map(x=>x[1]).filter(Number.isFinite);
-  const paired=p.passes===2&&trials.every(x=>x.every(Number.isFinite));
+  const hasTwoValues=p.passes===2&&trials.every(x=>x.every(Number.isFinite));
+  const paired=hasTwoValues&&sides.every(side=>independentThresholdPair(p,f,side));
+  const historical=hasTwoValues&&!paired;
   const earsDiffer=first.length===2&&Math.abs(first[0]-first[1])>9;
   const repeated=paired&&!earsDiffer&&trials.every(x=>Math.abs(x[0]-x[1])<=6)&&
    (second.length<2||Math.abs(second[0]-second[1])<=9);
@@ -1458,21 +1477,23 @@ function evidenceReport(p){
   const offsets=raw.slice(0,2).filter(x=>Number.isInteger(x?.offsetDb)&&Math.abs(x.offsetDb)<=6).map(x=>x.offsetDb);
   const ceiling=offsets.some(x=>Math.abs(x)===6);
   const matchStable=offsets.length===2&&!ceiling&&Math.abs(offsets[0]-offsets[1])<=2;
-  const thresholdStatus=earsDiffer?'Oídos distintos':repeated?'Repetible':
-   paired?'Revisar variación':first.length?'Sin segunda pasada':'Sin umbral';
+  const thresholdStatus=historical?'Confirmación histórica; no son dos búsquedas independientes':
+   earsDiffer?'Oídos distintos':repeated?'Repetible en búsquedas independientes':
+   paired?'Revisar variación':first.length?'Sin segunda búsqueda independiente':'Sin umbral';
   const matchStatus=offsets.length<2?offsets.length?'Repetir':'Sin comparación':
    ceiling?'Límite del test':matchStable?'Repetible':'Inconsistente';
   const a=paired?split[0][i].base:null,b=paired?split[1][i].base:null;
   const autoStable=Boolean(repeated&&a!==null&&a*b>0);
-  const autoStatus=a===null?'Sin dos pasadas':!repeated?'No reproducible':
+  const autoStatus=a===null?(historical?'Confirmación histórica; no se valida estabilidad':'Sin dos búsquedas independientes'):!repeated?'No reproducible':
    a===0&&b===0?'Ambos neutros':autoStable?'Dirección repetida':'Cálculos distintos';
   return {f,threshold:{first:first.length?median(first):null,second:second.length?median(second):null,
-    paired,repeated,status:thresholdStatus},
+    paired,repeated,historical,status:thresholdStatus},
    loudness:{offsets,eligible:eligible.includes(f),stable:matchStable,status:matchStatus},
    auto:{gain:auto[i].base,stable:autoStable,status:autoStatus}};
  });
  const count={threshold:rows.filter(x=>x.threshold.repeated).length,
   thresholdPairs:rows.filter(x=>x.threshold.paired).length,
+  historical:rows.filter(x=>x.threshold.historical).length,
   matching:rows.filter(x=>x.loudness.stable).length,
   matchingPairs:rows.filter(x=>x.loudness.offsets.length===2).length,
   automatic:rows.filter(x=>x.auto.stable).length,
@@ -1497,8 +1518,8 @@ function evidenceAuditMarkup(p){
  '<div><strong>'+n.matching+'/'+loudnessEligibleBands(p).length+'</strong><span>Sonoridad repetible</span></div>'+
  '<div><strong>'+n.automatic+'/'+n.active+'</strong><span>Dirección del EQ repetida</span></div></div>'+
  '<p class="compact-note">'+(p.passes===2?'Umbrales con dos pasadas: '+n.thresholdPairs+'.':
- 'Para evaluar repetibilidad del test original, realiza dos pasadas.')+
- ' Comparaciones dobles de sonoridad: '+n.matchingPairs+'.</p>'+
+ 'Para evaluar repetibilidad del test original, realiza dos búsquedas independientes.')+
+ ' Registros históricos no independientes: '+n.historical+'. Comparaciones dobles de sonoridad: '+n.matchingPairs+'.</p>'+
  '<div class="trace-table-scroll"><table class="trace-table"><thead><tr><th>Frecuencia</th>'+
  '<th>Umbral pasada 1 / 2</th><th>Sonoridad comparación 1 / 2</th>'+
  '<th>EQ automático · estabilidad</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
@@ -1508,7 +1529,7 @@ function evidenceAuditMarkup(p){
 function evidenceCsv(p){
  const r=evidenceReport(p),q=x=>'"'+String(x??'').replace(/"/g,'""')+'"';
  const lines=[['AudioCal Hear','Evidencia experimental, no calibración acústica'],
-  ['Algoritmo',r.algorithm],['Informe',r.version],['Perfil',p.name],['Contexto',r.context],
+  ['Algoritmo',r.algorithm],['Informe',r.version],['Perfil',p.name],['Contexto',r.context],['Aclaración histórica','Las confirmaciones antiguas no cuentan como búsquedas independientes'],
   ['Frecuencia Hz','Umbral pasada 1 dBFS','Umbral pasada 2 dBFS','Estado umbral',
    'Sonoridad comparación 1 dBFS relativo','Sonoridad comparación 2 dBFS relativo',
    'Estado sonoridad','EQ automático dB','Estado EQ']];
