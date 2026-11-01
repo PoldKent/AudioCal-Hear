@@ -317,19 +317,19 @@ function eqResultMarkup(p){
  const physicalMin=p.controlMin??p.min,physicalMax=p.controlMax??p.max;
  const physicalUnit=ctx.eqScale==='steps'?'posiciones':ctx.eqScale==='db'?'dB del control':'unidades sin verificar';
  const nominal=ctx.eqScale==='steps'&&m.verified?' · equivalencia nominal '+(physicalMin*m.ratio)+' a +'+(physicalMax*m.ratio)+' dB (según manual declarado)':'';
- return `<section id="eqCardSection" class="eq-card-section" aria-label="Imagen descargable del ecualizador">
- <h2>Mi ecualizador · resultado para aplicar</h2>
- <p class="compact-note">${esc(m.context)} · ${p.bands.length} bandas. ${m.complete?'Test completado':'Test pendiente de completar'}.</p>
- <div class="eq-card-config"><label for="resultEqScale">Unidad real del ecualizador</label>
+ return `<details id="eqCardSection" class="unobtrusive eq-device-settings" ${eqPhysicalOpen?'open':''}><summary>Configurar controles físicos de mi equipo · opcional</summary><div class="inner-detail">
+ <p class="compact-note">Los ajustes anteriores son dB sugeridos. Configura una conversión a posiciones solamente si conoces la escala real del equipo.</p>
+ <div class="eq-card-config"><label for="resultEqScale">Unidad del control</label>
  <select id="resultEqScale" class="field">${scaleOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqScale===k?'selected':'')+'>'+l+'</option>').join('')}</select>
  ${ctx.eqScale==='steps'?'<label for="resultEqStepDb">Equivalencia documentada del control</label><select id="resultEqStepDb" class="field">'+stepOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqStepDb===k?'selected':'')+'>'+l+'</option>').join('')+'</select>':''}
  <div class="grid2"><div><label for="resultControlMin">Mínimo físico (${physicalUnit})</label><input class="field" id="resultControlMin" type="number" min="-30" max="-1" step="1" value="${physicalMin}"></div><div><label for="resultControlMax">Máximo físico (${physicalUnit})</label><input class="field" id="resultControlMax" type="number" min="1" max="30" step="1" value="${physicalMax}"></div></div>
  <p class="tiny muted">Rango físico del equipo: ${physicalMin} a +${physicalMax} ${physicalUnit}${nominal}. Límites independientes de corrección recomendada: ${p.min} a +${p.max} dB. Los pasos y los dB no son la misma unidad; verifica el manual de tu modelo.</p></div>
  <p class="eq-card-alert ${m.verified?'':'eq-card-warning'}" id="eqCardNotice">${esc(m.warning)}</p>
- <canvas id="eqCardCanvas" class="eq-card-canvas" width="${eqPngLayout(p,m).width}" height="782" role="img" aria-label="Ecualizador horizontal, frecuencias de izquierda a derecha y barras verticales sobre cero"></canvas>
- <div class="row wrap eq-card-actions">${button('↓ Guardar imagen PNG','downloadpng','btn-primary grow')}${button('⎘ Copiar controles','copycontrols','btn-alt grow')}</div>
- <p class="tiny muted">El PNG se muestra como ecualizador horizontal: frecuencias de izquierda a derecha, aumentos arriba de cero y recortes abajo. Cada banda incluye valor del control y dB sugeridos; una conversión no confirmada aparece como «—».</p></section>`;
+ <div class="row wrap eq-card-actions">${button('Copiar controles físicos','copycontrols','btn-alt grow')}</div>
+ <p class="tiny muted">Si desconoces la equivalencia, usa únicamente los dB sugeridos y verifica tu equipo antes de mover las posiciones.</p></div></details>`;
 }
+
+let eqPhysicalOpen=false;
 
 /* Landscape EQ image: one column per frequency. The primary value always
    comes from the same physicalEqControl projection as the transfer wizard. */
@@ -438,7 +438,6 @@ function paintEqResult(canvas,p){
  return true;
 }
 function refreshEqCard(){if(page!=='results'||!current)return;
- const canvas=$('#eqCardCanvas');if(canvas)paintEqResult(canvas,current);
  const notice=$('#eqCardNotice');if(notice){const m=eqResultModel(current);
   notice.textContent=m.warning;notice.classList.toggle('eq-card-warning',!m.verified);
  }
