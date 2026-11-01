@@ -227,9 +227,9 @@ function eqResultModel(p){
   device:p.type==='car'?'AUTO':p.type==='headphones'?'AURICULARES':'PARLANTES',
   label:scale==='db'?'dB de control':scale==='steps'?'posición':'sin verificar',
   rows,verified:Number.isFinite(ratio),
-  warning:!complete?'Prueba incompleta: ajustes provisionales.':
-   !Number.isFinite(ratio)?'Equivalencia del control desconocida. No hay posiciones verificadas.':
-   'Ajustes calculados: algoritmo experimental, sin calibración acústica.'};
+  warning:(!complete?'Prueba incompleta: ajustes provisionales. ':'')+
+   (!Number.isFinite(ratio)?'Equivalencia del control desconocida. No hay posiciones verificadas.':
+   'Ajustes calculados: algoritmo experimental, sin calibración acústica.')};
 }
 function eqResultMarkup(p){
  const m=eqResultModel(p);
