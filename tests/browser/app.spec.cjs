@@ -414,3 +414,26 @@ test('AF-02: physical EQ scale changes invalidate checked transfer bands',async(
  await expect(page.locator('#resultEqStepDb')).toHaveValue('unknown');
  await noOverflow(page);
 });
+
+test('PNG horizontal EQ exports a landscape image with frequency columns for 7 and 10 bands',async({page})=>{
+ for(const [device,count] of [['car',7],['headphones',10]]){
+  await page.locator('[data-device="'+device+'"]').click();
+  await page.locator('#deviceName').fill('Horizontal EQ '+count);
+  await page.locator('[data-act="create"]').click();
+  await page.locator('[data-nav="results"]').click();
+  const canvas=page.locator('#eqCardCanvas');
+  const dims=await canvas.evaluate(c=>({w:c.width,h:c.height,signature:c.toDataURL('image/png').slice(0,30)}));
+  expect(dims.w).toBeGreaterThan(dims.h);
+  expect(dims.h).toBe(782);
+  expect(dims.signature).toContain('data:image/png;base64,');
+  await expect(canvas).toHaveAttribute('aria-label',/Ecualizador horizontal/);
+  const download=page.waitForEvent('download');
+  await page.locator('[data-act="downloadpng"]').click();
+  const png=await download;
+  const file=fs.readFileSync(await png.path());
+  expect(file.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
+  expect(file.readUInt32BE(16)).toBeGreaterThan(file.readUInt32BE(20));
+  await noOverflow(page);
+  await page.locator('[data-nav="setup"]').click();
+ }
+});

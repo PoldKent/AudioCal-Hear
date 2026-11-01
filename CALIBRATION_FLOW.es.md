@@ -103,3 +103,12 @@ La implementación de los lotes 0–1 **no cambia** `recommend()`, los tonos ni 
 - El reproductor conserva el elemento de audio y la reproducción; solo se actualizan sus filtros. Los botones de copia y TXT calculan las ganancias actuales cuando se usan.
 - Cualquier modificación del resultado invalida las casillas previamente marcadas como transferidas: se requiere revisar las posiciones ajustadas antes de considerarlas aplicadas.
 - Se restaura en la tarjeta la advertencia técnica correspondiente tras cualquier cambio, evitando dejar un mensaje de «copiado» cuando los valores ya son distintos.
+
+
+## PNG de ecualizador horizontal (visualización solicitada)
+
+- El PNG representa el resultado **final** en un gráfico horizontal de izquierda a derecha por frecuencia, con columnas verticales que parten de cero: subidas hacia arriba, recortes hacia abajo.
+- Una fila alineada debajo de las frecuencias muestra el valor principal de cada control y la ganancia sugerida en dB. Si existe redondeo por pasos, muestra la diferencia de dB.
+- Cuando no se conoce dB/paso, los controles aparecen como «— / NO VERIFICADO» y las barras muestran solo ganancias **estimadas en dB**, no posiciones físicas.
+- Gráfico y tarjeta se construyen del mismo `eqResultModel()` y `physicalEqControl()` usados por el PNG anterior y las exportaciones de controles; no se tocan ni algoritmo ni mediciones originales.
+- Diseño apaisado para 7, 10 o hasta 31 bandas; tamaño de exportación adaptado a la cantidad de bandas y vista previa responsiva. La imagen conserva advertencias de incertidumbre y de límites de precisión.
