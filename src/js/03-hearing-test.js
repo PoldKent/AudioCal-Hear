@@ -85,7 +85,8 @@ function inlineMatchBase(p,entry){
  if(!observation||observation.kind==='unheard'||observation.kind==='unconfirmed'||observation.kind==='skipped'||observation.kind==='timeout')return null;
  const nearest=Number.isFinite(observation.db)?observation.db:Number.isFinite(observation.audibleDb)?observation.audibleDb:-55;
  const ceiling=Math.min(-36,getStart(p));
- const level=clamp(Math.round(nearest+12),-54,ceiling);
+ if(ceiling < -65)return null;
+ const level=clamp(Math.round(nearest+12),Math.min(-54,ceiling),ceiling);
  return level>=nearest+4?level:null;
 }
 function renderInlineMatch(p,entry,total){
