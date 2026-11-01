@@ -6,6 +6,8 @@ if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(btn.dataset.transferOs&&current){transferOS=btn.dataset.transferOs;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();return}
 if(btn.dataset.eqSelect&&current){selectedEqFreq=Number(btn.dataset.eqSelect);updateSelectedEditor();return}
+if(btn.dataset.eqUnit){temp.name=$('#deviceName')?.value||temp.name;temp.context=normalizeCalibrationContext({...temp.context,eqScale:btn.dataset.eqUnit},temp.type);render();return}
+if(btn.dataset.eqStep){temp.name=$('#deviceName')?.value||temp.name;temp.context=normalizeCalibrationContext({...temp.context,eqStepDb:btn.dataset.eqStep},temp.type);render();return}
 if(btn.dataset.preset){temp.name=$('#deviceName')?.value||temp.name;temp.min=Number($('#eqMin')?.value)||temp.min;temp.max=Number($('#eqMax')?.value)||temp.max;setPreset(btn.dataset.preset);return}
 if(btn.dataset.channels){temp.name=$('#deviceName')?.value||temp.name;temp.channels=btn.dataset.channels;render();return}
 if(btn.dataset.testmode){temp.name=$('#deviceName')?.value||temp.name;temp.testMode=btn.dataset.testmode;render();return}
