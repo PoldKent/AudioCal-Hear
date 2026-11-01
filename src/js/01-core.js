@@ -172,6 +172,7 @@ function loudnessEvidenceStatus(samples){
   'Repetible · descriptivo':'Inconsistente · no interpretar';
 }
 
+const QUICK_LIMIT=6;
 function normalizedProfile(p,importing=false){
  if(!p||typeof p!=='object'||Array.isArray(p)||!Array.isArray(p.bands)||p.bands.length<2||p.bands.length>31)return null;
  const bands=p.bands.map(Number);
@@ -232,7 +233,6 @@ const DIGITAL_REFERENCE_DBFS=0, TEST_START_DB=-36, TEST_END_DB=-100, MAX_SAFE_DB
 const MAX_FIRST=60, MAX_VERIFY=60, MAX_STEPS=20;
 const getStart=p=>clamp(p?.testStart!=null&&Number.isFinite(Number(p.testStart))?Number(p.testStart):TEST_START_DB,TEST_END_DB,MAX_SAFE_DB);
 const getFloor=p=>clamp(p?.testFloor!=null&&Number.isFinite(Number(p.testFloor))?Number(p.testFloor):TEST_END_DB,TEST_END_DB,Math.min(-36,getStart(p)-1));
-const QUICK_LIMIT=6;
 function legacyQuickBands(bands){
  const sorted=bands.slice().sort((a,b)=>a-b);
  if(sorted.length<=QUICK_LIMIT)return sorted;
