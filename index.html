@@ -1117,6 +1117,11 @@ function paintEqResult(canvas,p){
  // A common zero line and visible horizontal frequency axis.
  const chartLeft=layout.left,chartRight=layout.right;
  const n=layout.columns.length;
+ for(let i=0;i<n;i+=2){
+  const x=layout.columns[i].x;
+  c.fillStyle='#f7faff';
+  round(x-layout.gap*.48,layout.plotTop,layout.gap*.96,248,8);c.fill();
+ }
  for(const tick of layout.marks){
   if(layout.marks.indexOf(tick)!==layout.marks.lastIndexOf(tick))continue;
   const y=layout.zeroY-tick/layout.extent*88;
@@ -1130,9 +1135,6 @@ function paintEqResult(canvas,p){
  for(const [i,r] of rows.entries()){
   const point=layout.columns[i],x=point.x,y=point.y;
   const bw=Math.max(15,Math.min(50,layout.gap*.54));
-  if(i%2===0){
-   c.fillStyle='#f7faff';round(x-layout.gap*.48,layout.plotTop,layout.gap*.96,248,8);c.fill();
-  }
   // Draw each vertical control from zero, so boosts rise and cuts descend.
   if(point.value!==0){
    c.fillStyle=point.value>0?'#2a70d6':'#dc8247';
