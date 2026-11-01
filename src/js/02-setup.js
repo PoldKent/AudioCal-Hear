@@ -56,8 +56,12 @@ ${renderContextFields()}
 <div id="customSettings" class="${showCustom?'':'hide'}"><label for="customFreqs">Tus frecuencias (Hz, separadas por comas)</label><input id="customFreqs" class="field" value="${esc(temp.bands.join(', '))}" placeholder="63, 160, 400, 1000, 2500"><p class="tiny muted">De 2 a 31 bandas, entre 20 y 20.000 Hz.</p></div></div></details>
 <div class="setup-title"><h2>03 · Elige la experiencia</h2></div>
 <p class="tiny muted">Canales de escucha</p><div class="mini-options"><button type="button" data-channels="both" class="choice ${temp.channels==='both'?'selected':''}"><strong>🔊 Juntos</strong><span>Más rápido · ambos canales</span></button><button type="button" data-channels="separate" class="choice ${temp.channels==='separate'?'selected':''}"><strong>🎧 Por oído</strong><span>Izquierdo y derecho</span></button></div>
-<p class="tiny muted" style="margin-top:13px">Cobertura de frecuencias</p><div class="mini-options"><button type="button" data-testmode="quick" class="choice ${temp.testMode==='quick'?'selected':''}"><strong>⚡ Rápida</strong><span>Hasta 6 frecuencias representativas; otras se estiman</span></button><button type="button" data-testmode="complete" class="choice ${temp.testMode!=='quick'?'selected':''}"><strong>🎯 Completa</strong><span>Probar cada banda del ecualizador</span></button></div>
-${quickWarning?'<p class="soft warning small">La prueba rápida elegida no permite corrección automática fiable para este formato: '+(feasibility.coverage?'las frecuencias no tienen vecinos suficientemente cercanos.':'se requieren al menos '+autoCoverageMinimum(temp)+' umbrales directos y solo se prueban '+feasibility.selected.length+'.')+' Se guardarán los umbrales y podrás elegir Completa.</p>':''}${fullCandidates===0?'<p class="soft warning small">Este ecualizador tiene bandas demasiado separadas para que el algoritmo automático compare vecinos. Se obtendrán mediciones, pero el EQ automático se mantendrá neutro.</p>':''}<p class="tiny muted" style="margin-top:13px">Precisión de la prueba</p><div class="mini-options"><button type="button" data-passes="1" class="choice ${temp.passes===1?'selected':''}"><strong>⚡ Rápida</strong><span>Una pasada · hasta 60 s por frecuencia</span></button><button type="button" data-passes="2" class="choice ${temp.passes===2?'selected':''}"><strong>🎯 Verificar</strong><span>Dos búsquedas independientes · más tiempo</span></button></div>
+<p class="soft info small">Examen completo: se medirán las ${temp.bands.length} bandas del ecualizador, una búsqueda adaptativa por frecuencia y sin repeticiones obligatorias.</p>
+${fullCandidates===0?'<p class="soft warning small">Las bandas de este ecualizador están demasiado separadas para una corrección automática fiable; se conservarán las mediciones.</p>':''}
+<details class="unobtrusive"><summary>Validación avanzada · opcional</summary><div class="inner-detail">
+<p class="small muted">La calibración normal cubre todas las bandas con una pasada. Una segunda búsqueda independiente permite comparar la repetibilidad, pero requiere más tiempo.</p>
+<div class="mini-options"><button type="button" data-passes="1" class="choice ${temp.passes===1?'selected':''}"><strong>Una pasada</strong><span>Recomendado</span></button><button type="button" data-passes="2" class="choice ${temp.passes===2?'selected':''}"><strong>Dos pasadas independientes</strong><span>Validación opcional</span></button></div>
+</div></details>
 <div class="setup-summary" role="status" aria-live="polite"><div class="summary-line"><div><span class="tiny muted">TIEMPO ORIENTATIVO</span><span class="summary-time" id="setupTime">${approxTimeRange(duration)}</span></div><span class="tag" id="setupTrials">${duration.trials} pruebas</span></div><div class="tiny muted" id="setupMaximum">Máximo de tonos: ${timeLabel(duration.max)}</div><details><summary class="tiny" style="cursor:pointer;color:#9de5f5">Cómo se calcula el tiempo</summary><div id="durationEstimate">${durationNotice({...temp,measures:{}},0,false)}</div></details></div>
 <label for="deviceName">¿Cómo llamarás a este perfil?</label><input class="field" id="deviceName" maxlength="70" placeholder="Ej.: Mis Soundcore, Auto, Parlantes de sala" value="${esc(temp.name)}">
 <details class="unobtrusive"><summary>Rango de prueba y opciones avanzadas <span class="tiny muted">Opcional</span></summary><div class="inner-detail">
@@ -79,17 +83,17 @@ function timeRange(p,done=0){
  const completed=trials.filter(x=>recorded(p,x)).length;
  const remaining=Math.max(0,trials.length-completed);
  const pending=trials.filter(x=>!recorded(p,x));
- const max=pending.reduce((n,x)=>n+(x.pass===1?MAX_VERIFY:MAX_FIRST),0);
+ const max=pending.reduce((n,x)=>n+MAX_STEPS*SECONDS_PER_DB,0);
  const totalMax=trials.reduce((n,x)=>n+(x.pass===1?MAX_VERIFY:MAX_FIRST),0);
- const exampleLow=pending.reduce((n,x)=>n+20,0);
- const exampleHigh=pending.reduce((n,x)=>n+38,0);
+ const exampleLow=pending.reduce((n,x)=>n+12,0);
+ const exampleHigh=pending.reduce((n,x)=>n+30,0);
  return {trials:trials.length,left:remaining,groupsPending:remaining,max,exampleLow,exampleHigh,maxTotal:totalMax};
 }
 function durationNotice(p,done=0,inTest=false){const d=timeRange(p,done);
  return `<div class="soft info duration-notice" id="durationEstimate" role="status"><strong>⏱ ${inTest?'Tiempo restante':'Duración aproximada de la calibración'}</strong>
  <p class="small"><strong>${d.left} pruebas pendientes</strong> · ${testBands(p).length} frecuencias medidas de ${p.bands.length} bandas · ${p.channels==='separate'?'oídos por separado':'ambos canales juntos'}.</p>
  <p class="small"><strong>Orientativo: ${timeLabel(d.exampleLow)} a ${timeLabel(d.exampleHigh)}</strong> · depende de tus respuestas.</p>
- <p class="tiny muted">Hasta ${MAX_FIRST} s orientativos de tono por prueba; máximo de reproducción pendiente: ${timeLabel(d.max)}. Las pausas y decisiones manuales se excluyen. Pruebas de 3 s, búsqueda de 12 dB y precisión de 1 dB cerca del umbral.</p></div>`;
+ <p class="tiny muted">Hasta ${MAX_FIRST} s orientativos de tono por prueba; máximo de reproducción pendiente: ${timeLabel(d.max)}. Las pausas y decisiones manuales se excluyen. Hasta 3 s por tono; puedes responder antes. Búsqueda de 12 dB, ajuste a unos 2 dB y máximo dos comprobaciones finales.</p></div>`;
 }
 function refreshSetupDuration(){const box=$('#durationEstimate');if(!box||page!=='setup')return;
  const match=($('#customFreqs')&&temp.preset==='custom')?parseBands($('#customFreqs').value):temp.bands;

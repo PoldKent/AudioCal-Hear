@@ -112,3 +112,14 @@ La implementación de los lotes 0–1 **no cambia** `recommend()`, los tonos ni 
 - Cuando no se conoce dB/paso, los controles aparecen como «— / NO VERIFICADO» y las barras muestran solo ganancias **estimadas en dB**, no posiciones físicas.
 - Gráfico y tarjeta se construyen del mismo `eqResultModel()` y `physicalEqControl()` usados por el PNG anterior y las exportaciones de controles; no se tocan ni algoritmo ni mediciones originales.
 - Diseño apaisado para 7, 10 o hasta 31 bandas; tamaño de exportación adaptado a la cantidad de bandas y vista previa responsiva. La imagen conserva advertencias de incertidumbre y de límites de precisión.
+
+## Lote 4 — calibración perceptiva simplificada (v1.10.0)
+
+- Respuestas «sí» y «no» visibles mientras suena cada tono, con interrupción inmediata y registro de la respuesta; los tonos no inician solos.
+- Búsqueda fina hasta intervalo cercano a 2 dBFS y máximo dos preguntas adicionales, sin ciclos de contradicción.
+- Se conservan respuestas originales, extremos audibles e inaudibles, discrepancias, confianza y tiempo de escucha real. Si solo se conoce un extremo, se conserva como observación, sin inventar umbral.
+- Las estimaciones de baja confianza aparecen en el informe pero se excluyen de correcciones automáticas del EQ.
+- Pantalla única de preparación; controles de canales y comprobación escalonada del volumen avanzado siguen siendo obligatorios donde corresponda. Micrófono voluntario en opciones.
+- Calibración nueva completa por defecto en todas las bandas, una pasada. Una segunda pasada independiente es opcional para validación; los perfiles históricos conservan su programación.
+- Después de cada frecuencia se guarda y avanza sin pantalla intermedia; el siguiente tono requiere pulsar Reproducir.
+- La prueba auditiva digital no mide dB SPL clínicos ni calibración acústica del vehículo.

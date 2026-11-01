@@ -1,42 +1,35 @@
 
 function renderIntro(){
- const p=current,previewSteps=volumePreviewSteps(p),needsPreview=previewSteps.length>0,
-  previewLevel=previewSteps[Math.min(volumePreviewIndex,previewSteps.length-1)];
- const titles=['Prepara tu equipo','Comprueba el ambiente','Ajusta un volumen seguro'];
- const desc=[p.type==='car'?'Conecta el sistema del automóvil y realiza toda la prueba con el vehículo estacionado.':p.type==='headphones'?'Colócate bien los auriculares y elige el canal de escucha adecuado.':'Conecta tus parlantes y siéntate en tu posición habitual de escucha.',
- 'Busca un lugar silencioso. Opcionalmente puedes comprobar el ruido relativo mediante el micrófono; no se miden dB SPL calibrados.',
- 'Mantén constante el volumen físico durante el examen. El inicio digital de este perfil es '+getStart(p)+' dBFS; una señal digital alta no certifica seguridad acústica. No uses el máximo volumen del amplificador.'];
- return `<section class="hero"><p class="eyebrow">PREPARACIÓN · PASO ${introStep+1} DE 3</p><h1>${titles[introStep]}</h1><p class="subtle">${desc[introStep]}</p></section><section class="card"><div class="wavebox center"><span class="frequency">${introStep===0?'🎧':introStep===1?'🌿':'🔉'}</span><p class="small muted">${introStep===0?'Equipo y colocación':introStep===1?'Ambiente de escucha':'Seguridad auditiva'}</p></div>
- ${introStep===0&&p.channels==='separate'?'<div class="soft info"><strong>Comprobar izquierda y derecha</strong><p class="small">Reproduce cada tono y confirma que solo se escucha en el lado indicado. La comprobación es subjetiva: el navegador no puede certificar el cableado físico.</p><div class="row wrap">'+button('▶ Probar izquierda','checkleft','btn-alt grow')+button('▶ Probar derecha','checkright','btn-alt grow')+'</div><div class="row wrap">'+button((channelVerified.left?'✓ ':'')+'Confirmar izquierda','confirmleft','btn-ghost grow',channelCheckPlayed.left?'':'disabled')+button((channelVerified.right?'✓ ':'')+'Confirmar derecha','confirmright','btn-ghost grow',channelCheckPlayed.right?'':'disabled')+'</div><p class="tiny muted">Es obligatorio confirmar ambos lados antes de la prueba separada. Si el sonido llega a ambos, cambia a canales juntos o revisa la conexión.</p></div>':''}
- ${introStep===1?`<div class="soft info"><strong>Micrófono opcional</strong><p class="small">${ambientStatus||'Sin datos; puedes continuar sin dar permisos.'}</p></div>${button(ambientBusy?'Analizando…':'Comprobar ruido relativo','ambient','btn-alt full',ambientBusy?'disabled':'')}<p class="tiny muted">No grabamos ni enviamos audio. Los indicadores del teléfono no sustituyen un sonómetro calibrado.</p>`:''}
- ${introStep===2?`<div class="soft warning small"><strong>Antes de comenzar:</strong> pon el volumen físico del equipo bajo, con el vehículo estacionado cuando corresponda. Mantén la misma posición y volumen durante el examen. Detén inmediatamente si el sonido es fuerte, molesto o distorsiona. 0 dBFS es amplitud digital máxima, no un valor acústico seguro.</div>
- ${needsPreview?`<div class="soft info"><strong>Comprobación progresiva del volumen del equipo</strong><p class="small">Nivel ${Math.min(volumePreviewIndex+1,previewSteps.length)} de ${previewSteps.length}. Cada referencia solo se reproduce al pulsar el botón. Empieza con el volumen físico muy bajo. Antes de avanzar confirma que el tono fue cómodo y sin distorsión. Puedes reducir el volumen físico y repetir un nivel, pero después no lo modifiques durante el examen.</p>
- <p class="small"><strong>${volumeReady?'Comprobación finalizada':previewLevel+' dBFS digitales'}</strong> ${volumeReady?'El volumen físico sigue sin estar calibrado en dB SPL.':''}</p>
- ${volumeReady?'':button('▶ Reproducir referencia '+previewLevel+' dBFS','previewlevel','btn-alt full bigbutton')}
- ${volumeReady?'':button('Confirmo que fue cómodo y sin distorsión →','confirmlevel','btn-ghost full',volumePreviewPlayed?'':'disabled')}</div>`:
- `<div class="row wrap">${button('▶ Probar tono breve de referencia','check','btn-alt grow')}</div>`}
- <div class="row wrap">${button('■ Detener sonido','stopaudio','btn-ghost grow')}</div>`:''}
- <div class="row wrap" style="margin-top:15px">${introStep>0?button('← Atrás','introBack','btn-ghost grow'):''}${button(introStep===2?'Comenzar examen →':'Siguiente →','introNext','btn-primary grow')}</div></section>`;
+ const p=current,previewSteps=volumePreviewSteps(p),needsPreview=previewSteps.length>0;
+ const previewLevel=previewSteps[Math.min(volumePreviewIndex,previewSteps.length-1)];
+ const channelSection=p.channels==='separate'?'<div class="soft info"><strong>Comprobar izquierda y derecha</strong><p class="small">Comprueba ambos canales una vez antes del examen. Esta verificación subjetiva evita confundir los oídos.</p><div class="row wrap">'+button('▶ Probar izquierda','checkleft','btn-alt grow')+button('▶ Probar derecha','checkright','btn-alt grow')+'</div><div class="row wrap">'+button((channelVerified.left?'✓ ':'')+'Confirmar izquierda','confirmleft','btn-ghost grow',channelCheckPlayed.left?'':'disabled')+button((channelVerified.right?'✓ ':'')+'Confirmar derecha','confirmright','btn-ghost grow',channelCheckPlayed.right?'':'disabled')+'</div></div>':'';
+ return `<section class="hero"><p class="eyebrow">PREPARACIÓN · UN SOLO PASO</p><h1>Prepara tu sonido</h1><p class="subtle">Busca silencio, mantén el volumen físico bajo y constante y responde mientras suena cada tono. ${p.type==='car'?'En el automóvil, realiza el examen estacionado.':''}</p></section>
+ <section class="card">
+ <div class="soft warning small"><strong>Volumen cómodo y constante.</strong> No uses el máximo, no subas el volumen para encontrar tonos que no oyes y detén el examen ante molestia, dolor, zumbido o distorsión. Los dBFS no son dB SPL medidos.</div>
+ ${channelSection}
+ ${needsPreview?`<div class="soft info"><strong>Comprobación gradual de nivel avanzado</strong><p class="small">Escucha cada referencia con el amplificador inicialmente bajo y confirma únicamente si fue cómoda y sin distorsión. Este control es necesario cuando solicitas niveles digitales altos para auto o parlantes.</p><p class="small">${volumeReady?'Referencias completadas':('Referencia '+(volumePreviewIndex+1)+' / '+previewSteps.length+': '+previewLevel+' dBFS')}</p>${volumeReady?'':button('▶ Reproducir referencia','previewlevel','btn-alt full')}${volumeReady?'':button('Confirmar nivel cómodo →','confirmlevel','btn-ghost full',volumePreviewPlayed?'':'disabled')}</div>`:
+ `<div class="row wrap">${button('▶ Escuchar tono de referencia','check','btn-alt grow')}${button('■ Detener','stopaudio','btn-ghost grow')}</div>`}
+ <details class="unobtrusive"><summary>Comprobación ambiental con micrófono · opcional</summary><div class="inner-detail"><p class="small muted">${ambientStatus||'Puedes continuar sin micrófono; la prueba no requiere permisos ni mide dB SPL calibrados.'}</p>${button(ambientBusy?'Analizando…':'Comprobar ruido relativo','ambient','btn-alt full',ambientBusy?'disabled':'')}</div></details>
+ ${button('Comenzar examen completo →','introNext','btn-primary full bigbutton')}
+ </section>`;
 }
 function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea un perfil</h1><p>Elige tu ecualizador y el dispositivo que vas a calibrar.</p>${button('Ir a configurar','setup','btn-primary')}</section>`;
- if((introStep<3&&!awaitNext)||!channelsReady(current)||(needsVolumePreview(current)&&!volumeReady)){if(!channelsReady(current))introStep=0;else if(needsVolumePreview(current)&&!volumeReady&&introStep>=3)introStep=2;return renderIntro();}
+ if(introStep<3||!channelsReady(current)||(needsVolumePreview(current)&&!volumeReady)){introStep=0;return renderIntro();}
  const p=current,items=plan(p),total=items.length,missing=firstMissing(p);
  if(missing<0)return `<div class="card center"><h2>✓ Búsquedas realizadas</h2><p>Se registraron ${total} búsquedas (no necesariamente ${total} umbrales confirmados) para <strong data-profile-name="true">${esc(p.name)}</strong>. Si no se encontró el umbral, no se inventa ninguna medida.</p>${button('Ver ajustes recomendados','results','btn-primary full')}${button('Repetir examen desde cero','resettest','btn-ghost full')}</div>`;
- if(awaitNext)return `<section class="hero"><p class="eyebrow">HEAR TEST</p><h1>Resultado guardado</h1></section><section class="card"><p>${esc(sampleNote)}</p><p class="small muted">Faltan ${total-doneCount(p)} pruebas por completar.</p>${lastResultKind==='unconfirmed'?button('Repetir esta frecuencia','retryrecord','btn-alt full'):''}${button('Siguiente frecuencia →','next','btn-primary full bigbutton')}</section>`;
  const item=items[missing],active=tone?.mode==='test',keyName=item.side==='left'?'OÍDO IZQUIERDO':item.side==='right'?'OÍDO DERECHO':'AMBOS CANALES';
  const id=key(item.f,item.side)+'-'+item.pass;
  if(!trial||trial.id!==id)trial=newTrial(item);
   const pct=Math.round(doneCount(p)/total*100),level=trial.level;
- const phase=trial.phase==='coarse'?'Búsqueda rápida · hasta 12 dB':trial.phase==='refine'?'Ajuste fino · hasta 1 dB':trial.phase==='recheck'?'Comprobación adicional':'Confirmación del umbral';
- return `<section class="hero"><p class="eyebrow">HEAR TEST · GUÍA ADAPTATIVA</p><h1>¿Lo escuchaste?</h1><p class="subtle">Cada nivel se reproduce por separado. Responde explícitamente para continuar. No cambies el volumen del teléfono.</p></section>
+ const phase=trial.phase==='coarse'?'Búsqueda rápida · hasta 12 dB':trial.phase==='refine'?'Ajuste fino · intervalo de 2 dB':'Confirmación breve · máximo 2';
+ return `<section class="hero"><p class="eyebrow">HEAR TEST · GUÍA ADAPTATIVA</p><h1>¿Lo escuchaste?</h1><p class="subtle">Responde tan pronto como lo escuches o decidas que no lo escuchas: el tono se detiene al tocar tu respuesta. Mantén fijo el volumen físico.</p></section>
  <section class="card"><div class="row" style="justify-content:space-between"><strong data-profile-name="true">${esc(p.name)}</strong><span class="tag">${doneCount(p)+1} / ${total}</span></div>
  <div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><p class="center small muted">${keyName} · ${phase} · Búsqueda independiente ${item.pass+1}/${p.passes}</p>
  <div class="wavebox"><span class="muted small">FRECUENCIA ACTUAL</span><div class="frequency">${fmt(item.f)}</div><p class="small muted">Nivel de la prueba: <strong id="levelText">${level} dBFS</strong></p><div class="wave" aria-hidden="true" id="waves">${Array.from({length:32},(_,i)=>`<span style="height:${6+Math.round(Math.abs(Math.sin(i*.71)*30))}px"></span>`).join('')}</div></div>
  <div class="soft center"><strong>${active?'Escuchando · 3 segundos':trial.awaiting?'¿Escuchaste el sonido?':'Listo para esta frecuencia'}</strong><p class="small muted">${phase} · ${trial.done}/${MAX_STEPS} niveles examinados</p>${active?`<span class="hold-time" id="holdSeconds">3.0 s</span><div class="hold-meter"><div id="holdProgress"></div></div>`:''}</div>
- ${floorReached?'':trial.awaiting?`<div class="mini-options"><button class="choice" type="button" data-act="answerYes"><strong>✓ Sí lo escucho</strong><span>El tono era audible</span></button><button class="choice" type="button" data-act="answerNo"><strong>✕ Ya no lo escucho</strong><span>No fue audible</span></button></div>${trial.awaiting?`<p class="tiny center muted">Puedes volver a reproducir antes de contestar.</p>${button('▶ Repetir este nivel','play','btn-ghost full')}`:''}`:
- `${floorReached?'':active?'<p class="tiny center muted">Espera a que finalice el tono antes de responder.</p>':button('▶ Reproducir nivel · '+level+' dBFS','play','btn-primary full bigbutton')}`}
+ ${floorReached?'':(trial.awaiting||active)?`<div class="mini-options"><button class="choice" type="button" data-act="answerYes"><strong>✓ Sí lo escucho</strong><span>Interrumpir y registrar</span></button><button class="choice" type="button" data-act="answerNo"><strong>✕ No lo escucho</strong><span>Interrumpir y registrar</span></button></div>${trial.awaiting&&!active?'<p class="tiny center muted">Puedes repetir el nivel antes de contestar.</p>'+button('▶ Reproducir este nivel','play','btn-ghost full'):''}`:
+ button('▶ Reproducir nivel · '+level+' dBFS','play','btn-primary full bigbutton')}
  ${floorReached?`<div class="soft info center"><strong>Se alcanzó ${getFloor(p)} dBFS</strong><p class="small">Si seguías escuchando el tono, regístralo. Eso NO implica reducir automáticamente el EQ.</p>${button('Lo seguía escuchando','endheard','btn-alt full')}${button('No estoy seguro','enduncertain','btn-ghost full')}</div>`:''}
- ${awaitNext?`<div class="soft info center"><strong>${esc(sampleNote)}</strong>${button('Siguiente prueba →','next','btn-primary full bigbutton')}</div>`:''}
  <div class="row wrap" style="margin-top:12px">${button('■ Detener','stopaudio','btn-ghost grow')}${button('Reiniciar frecuencia','retry','btn-ghost grow')}</div><p class="tiny muted center">${getStart(p)} a ${getFloor(p)} dBFS · no son niveles acústicos. No uses el volumen máximo ni lo aumentes para buscar tonos inaudibles.</p></section>`;
 }
 // Three seconds per tone, explicit yes/no answers. A skipped tap never becomes an audible response.
@@ -46,7 +39,7 @@ function startVisualizer(){
  const update=()=>{
   if(!tone||tone.mode!=='test'||page!=='test'){frame=null;return}
   const elapsed=getElapsed();
-  if(elapsed>=SECONDS_PER_DB){stopTone();if(trial)trial.awaiting=true;render();return}
+  if(elapsed>=SECONDS_PER_DB){if(trial){trial.listenedSeconds=(trial.listenedSeconds||0)+SECONDS_PER_DB;trial.awaiting=true;}stopTone();render();return}
   const counter=$('#holdSeconds'),meter=$('#holdProgress');
   if(counter)counter.textContent=(SECONDS_PER_DB-elapsed).toFixed(1)+' s';
   if(meter)meter.style.width=clamp(elapsed/SECONDS_PER_DB*100,0,100)+'%';
@@ -72,7 +65,7 @@ async function playTone(check=false,checkSide='both',previewDb=null){
   const isPreview=check&&Number.isFinite(previewDb);
   if(isPreview){
    const steps=volumePreviewSteps(current);
-   if(page!=='test'||introStep!==2||volumeReady||steps[volumePreviewIndex]!==previewDb){uiAlert('La referencia avanzada debe reproducirse en orden y de forma manual.');return}
+   if(page!=='test'||introStep!==0||volumeReady||steps[volumePreviewIndex]!==previewDb){uiAlert('La referencia avanzada debe reproducirse en orden y de forma manual.');return}
   }
   if(!check&&needsVolumePreview(current)&&!volumeReady){uiAlert('Completa primero la comprobación progresiva de volumen.');return}
   const db=isPreview?previewDb:check?-42:trial.level;
@@ -91,13 +84,13 @@ async function playTone(check=false,checkSide='both',previewDb=null){
   osc.start(now);osc.stop(now+len+.025);
   osc.onended=()=>{
    try{osc.disconnect();if(pan)pan.disconnect();gain.disconnect()}catch(e){}
-   if(isPreview&&tone?.osc===osc){tone=null;volumePreviewPlayed=true;if(page==='test'&&introStep===2)render()}
+   if(isPreview&&tone?.osc===osc){tone=null;volumePreviewPlayed=true;if(page==='test'&&introStep===0)render()}
   };
   tone={mode:isPreview?'preview':check?'check':'test',osc,gain,pan,start:now,levels:[db]};
   if(check){if(side==='left'||side==='right')channelCheckPlayed[side]=true;
    if(!isPreview)setTimeout(()=>{if(tone?.osc===osc)stopTone()},1200);
    render();return}
-  trial.awaiting=false;
+  trial.awaiting=true;
   render();
  }catch(e){uiAlert('No se pudo reproducir el tono: '+e.message)}
 }
@@ -105,19 +98,33 @@ let lastResultKind=null,lastRecordedEntry=null;
 function logMeasure(kind){
  if(!current)return;
  const e=plan(current)[firstMissing(current)];if(!e)return;
- const k=key(e.f,e.side),db=kind==='heard'&&trial&&Number.isFinite(trial.heard)&&Number.isFinite(trial.missed)?trial.heard:null;
- lastResultKind=kind;lastRecordedEntry={f:e.f,side:e.side,pass:e.pass};
+ const k=key(e.f,e.side),estimate=trial?trialEstimate(trial):null;
+ const usable=estimate&&Number.isFinite(estimate.db);
+ const finalKind=(kind==='unconfirmed'&&usable)?'heard':kind;
+ const db=finalKind==='heard'&&usable?estimate.db:null;
+ lastResultKind=finalKind;lastRecordedEntry={f:e.f,side:e.side,pass:e.pass};
  if(!current.measures[k])current.measures[k]=[];
- current.measures[k][e.pass]={kind,db,elapsedS:trial?.done*SECONDS_PER_DB||0,lastAudibleDb:kind==='stillheard'?getFloor(current):null,at:Date.now(),method:e.pass===1?INDEPENDENT_PASS_METHOD:'adaptive-v20-search',testStart:getStart(current),testFloor:getFloor(current),history:trial?.history?.slice(0,MAX_STEPS)||[]};
-
- sampleNote=kind==='heard'?'Umbral aproximado confirmado ✓':kind==='stillheard'?'Lo seguías escuchando al nivel mínimo; no implica bajar el EQ.':kind==='unheard'?'No era audible al nivel inicial. No aumentes el volumen.':kind==='unconfirmed'?'No se pudo confirmar el límite de esta frecuencia. Se guardaron tus respuestas; puedes repetirla sin rehacer todo el examen.':'Prueba terminada sin un umbral confirmado. No se inventa una medida.';
- trial=null;stopTone();floorReached=false;touch();awaitNext=true;render();
+ current.measures[k][e.pass]={
+  kind:finalKind,db,confidence:usable?estimate.confidence:'bounded',
+  audibleDb:estimate?.audibleDb??null,inaudibleDb:estimate?.inaudibleDb??null,
+  uncertaintyDb:estimate?.uncertaintyDb??null,contradictions:estimate?.contradictions??0,
+  elapsedS:Number((trial?.listenedSeconds||0).toFixed(2)),
+  lastAudibleDb:finalKind==='stillheard'?getFloor(current):null,
+  at:Date.now(),method:e.pass===1?INDEPENDENT_PASS_METHOD:'adaptive-v21-short',
+  testStart:getStart(current),testFloor:getFloor(current),history:trial?.history?.slice(0,MAX_STEPS)||[]
+ };
+ sampleNote=finalKind==='heard'?'Estimación guardada con confianza '+estimate.confidence:
+  finalKind==='stillheard'?'Audible hasta el límite inferior; se guardó esta observación.':
+  finalKind==='unheard'?'No audible al nivel inicial; se guardó este límite.':'Respuestas guardadas; sin dos extremos para estimar un umbral.';
+ trial=null;stopTone();floorReached=false;awaitNext=false;touch();render();
 }
 function answerTone(heard){
- if(!current||!trial||!trial.awaiting||tone?.mode==='test')return;
- stopTone();trial.awaiting=false;trial.done++;trial.history.push({db:trial.level,heard});
+ if(!current||!trial||!trial.awaiting)return;
+ if(tone?.mode==='test')trial.listenedSeconds=(trial.listenedSeconds||0)+Math.max(0,Math.min(SECONDS_PER_DB,getElapsed()));
+ stopTone();trial.awaiting=false;trial.done++;
+ trial.history.push({db:trial.level,heard});
  const status=nextTrialLevel(trial,heard,current);
-  if(status==='stillheard'){floorReached=true;render();return}
+ if(status==='stillheard'){logMeasure('stillheard');return}
  if(status==='unheard'){logMeasure('unheard');return}
  if(status==='unconfirmed'){logMeasure('unconfirmed');return}
  if(status==='measured'){logMeasure('heard');return}

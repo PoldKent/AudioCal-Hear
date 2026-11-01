@@ -1,13 +1,33 @@
 
 function gather(p){
- const collect=f=>{let samples=[];for(const side of p.channels==='separate'?['left','right']:['both']){const arr=p.measures[key(f,side)]||[];const valid=arr.filter(r=>r&&r.db!==null&&Number.isFinite(r.db)).map(r=>r.db);if(valid.length){samples.push({db:median(valid),quality:valid.length>=2&&!independentThresholdPair(p,f,side)?'legacy':valid.length>=2&&Math.max(...valid)-Math.min(...valid)<=6?'good':'low',side})}}if(!samples.length)return {f,db:null,quality:'unmeasurable'};const values=samples.map(s=>s.db),spread=Math.max(...values)-Math.min(...values);return {f,db:median(values),quality:spread>9?'mixed':samples.some(s=>s.quality==='legacy')?'legacy':p.channels==='separate'&&samples.length<2?'low':samples.every(s=>s.quality==='good')?'good':'low'}};
- const allMeasured=[...new Set(Object.keys(p.measures).map(k=>Number(k.split('|')[0])).filter(Number.isFinite))].map(collect).filter(x=>x.db!==null).sort((a,b)=>a.f-b.f);
- return p.bands.map(f=>{let direct=collect(f);if(direct.db!==null||(p.testMode!=='quick'&&!p.formatFrom))return direct;
- const lo=allMeasured.filter(x=>x.f<f).pop(),hi=allMeasured.find(x=>x.f>f);
- // Interpolate only between observed points, never extrapolate outside tested range or over large gaps.
- if(!lo||!hi||hi.f/lo.f>5)return direct;
- const frac=Math.log(f/lo.f)/Math.log(hi.f/lo.f),db=lo.db+(hi.db-lo.db)*frac;
- return {f,db,quality:'interpolated',derived:true};
+ const collect=f=>{
+  let samples=[];
+  for(const side of p.channels==='separate'?['left','right']:['both']){
+   const arr=p.measures?.[key(f,side)]||[];
+   const valid=arr.filter(r=>r?.kind==='heard'&&Number.isFinite(r.db));
+   if(valid.length){
+    const values=valid.map(r=>r.db);
+    const confidence=valid.some(r=>r.confidence==='low')?'uncertain':
+     valid.length>=2&&!independentThresholdPair(p,f,side)?'legacy':
+     valid.length>=2&&Math.max(...values)-Math.min(...values)<=6?'good':'low';
+    samples.push({db:median(values),quality:confidence,side});
+   }
+  }
+  if(!samples.length)return {f,db:null,quality:'unmeasurable'};
+  const values=samples.map(s=>s.db),spread=Math.max(...values)-Math.min(...values);
+  return {f,db:median(values),quality:spread>9?'mixed':
+   samples.some(s=>s.quality==='uncertain')?'uncertain':
+   samples.some(s=>s.quality==='legacy')?'legacy':
+   p.channels==='separate'&&samples.length<2?'low':
+   samples.every(s=>s.quality==='good')?'good':'low'};
+ };
+ const allMeasured=[...new Set(Object.keys(p.measures||{}).map(k=>Number(k.split('|')[0])).filter(Number.isFinite))].map(collect).filter(x=>x.db!==null).sort((a,b)=>a.f-b.f);
+ return p.bands.map(f=>{
+  const direct=collect(f);if(direct.db!==null||(p.testMode!=='quick'&&!p.formatFrom))return direct;
+  const lo=allMeasured.filter(x=>x.f<f).pop(),hi=allMeasured.find(x=>x.f>f);
+  if(!lo||!hi||hi.f/lo.f>5)return direct;
+  const frac=Math.log(f/lo.f)/Math.log(hi.f/lo.f),db=lo.db+(hi.db-lo.db)*frac;
+  return {f,db,quality:'interpolated',derived:true};
  });
 }
 // v2: Local threshold contrasts are an exploratory cue, NOT calibrated EQ.
@@ -20,7 +40,7 @@ function hasBothChannelThresholds(p,f){
 }
 // This function is shared by the algorithm and result labels.
 function thresholdCoverage(p,data){
- const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived&&x.quality!=='mixed'&&x.quality!=='unmeasurable'&&hasBothChannelThresholds(p,x.f));
+ const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived&&x.quality!=='mixed'&&x.quality!=='unmeasurable'&&x.quality!=='uncertain'&&hasBothChannelThresholds(p,x.f));
  const required=autoCoverageMinimum(p);
  const candidates=measured.slice(1,-1).filter((x,i)=>x.f/measured[i].f<=3.5&&measured[i+2].f/x.f<=3.5).length;
  return {measured,required,enough:measured.length>=required,candidates};
@@ -34,6 +54,7 @@ function estimateThresholdContrast(p,data){
   if(!Number.isFinite(point.db)||point.derived)return {...entry,autoReason:'frecuencia no medida directamente'};
   if(!hasBothChannelThresholds(p,point.f))return {...entry,autoReason:'faltan umbrales de uno de los oídos: no corregir automáticamente'};
   if(point.quality==='mixed')return {...entry,autoReason:'respuesta diferente entre oídos'};
+  if(point.quality==='uncertain')return {...entry,autoReason:'umbral estimado con confianza baja: no aplicar EQ automático'};
   if(point.quality==='unmeasurable')return {...entry,autoReason:'sin umbral confirmado'};
   const idx=measured.findIndex(x=>x.f===point.f);
   if(idx<=0||idx===measured.length-1)return {...entry,autoReason:'banda extrema: no extrapolar'};
@@ -183,11 +204,29 @@ function thresholdStatus(point){
  if(point.db===null)return 'Sin umbral confirmado';
  if(point.derived)return 'Interpolación; no medido aquí';
  if(point.quality==='good')return 'Repetible en dos búsquedas independientes';
+ if(point.quality==='uncertain')return 'Umbral estimado · confianza baja; sin corrección automática';
  if(point.quality==='legacy')return 'Segunda pasada histórica: confirmación, no búsqueda independiente';
  if(point.quality==='mixed')return 'Diferencias entre oídos';
  return 'Medición limitada; revisar';
 }
 
+function thresholdEvidenceLabel(p,f){
+ const sides=p.channels==='separate'?['left','right']:['both'];
+ return sides.map(side=>{
+  const records=(p.measures?.[key(f,side)]||[]).filter(Boolean);
+  if(!records.length)return '';
+  return records.map(m=>{
+   const known=Number.isFinite(m.audibleDb)||Number.isFinite(m.inaudibleDb);
+   if(!known)return '';
+   const interval='Oído '+(side==='both'?'ambos':side==='left'?'izquierdo':'derecho')+
+    ' · audible '+(Number.isFinite(m.audibleDb)?m.audibleDb+' dBFS':'sin límite')+
+    ' / inaudible '+(Number.isFinite(m.inaudibleDb)?m.inaudibleDb+' dBFS':'sin límite');
+   const confidenceLabel={high:'alta',medium:'media',low:'baja',bounded:'límite observado'}[m.confidence]||'no clasificada';
+   return interval+' · confianza '+confidenceLabel+
+    (m.contradictions?' · '+m.contradictions+' discrepancias':'');
+  }).filter(Boolean).join(' | ');
+ }).filter(Boolean).join(' | ');
+}
 function renderCalibrationTrace(p,r){
  const finished=firstMissing(p)<0;
  const sides=p.channels==='separate'?['left','right']:['both'];
@@ -217,7 +256,7 @@ function renderCalibrationTrace(p,r){
    'I: '+formatDb(rawFrequencyThreshold(p,x.f,'left'))+'; D: '+formatDb(rawFrequencyThreshold(p,x.f,'right')):
    formatDb(rawFrequencyThreshold(p,x.f,'both'));
   const gain=(Number(x.gain)||0),automatic=(Number(x.base)||0);
-  return `<tr><th scope="row">${fmt(x.f)}</th><td>${raw}</td><td>${thresholdStatus(x)}<span class="tiny muted" style="display:block">${esc(x.autoReason||'')}</span></td><td>${automatic>=0?'+':''}${Number(automatic.toFixed(2))} dB</td><td><strong data-trace-final="${x.f}">${gain>=0?'+':''}${gain} dB</strong></td></tr>`;
+  return `<tr><th scope="row">${fmt(x.f)}</th><td>${raw}<span class="tiny muted" style="display:block">${esc(thresholdEvidenceLabel(p,x.f))}</span></td><td>${thresholdStatus(x)}<span class="tiny muted" style="display:block">${esc(x.autoReason||'')}</span></td><td>${automatic>=0?'+':''}${Number(automatic.toFixed(2))} dB</td><td><strong data-trace-final="${x.f}">${gain>=0?'+':''}${gain} dB</strong></td></tr>`;
  }).join('');
  return `<section id="tracePanel" class="trace-panel" aria-label="Comparación transparente de la calibración">
  <header class="trace-heading"><h2>Resultados del test · antes y después</h2><p class="compact-note">${incomplete}</p></header>
