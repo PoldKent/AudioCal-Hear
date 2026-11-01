@@ -474,14 +474,14 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
  <div class="eq-util">${button('⎘ Copiar ajustes','copy','btn-alt')}${button('↓ Guardar PNG','downloadpng','btn-ghost')}${button('↺ Reiniciar','clearmanual','btn-ghost')}</div>
- \${eqResultMarkup(p)}
+ ${eqResultMarkup(p)}
  <details class="unobtrusive eq-more-options"><summary>Más opciones de ecualización</summary><div class="inner-detail">
-  <div class="row wrap">\${button('Cambiar formato de bandas','format','btn-ghost grow')}\${button('Descargar TXT','downloadtxt','btn-ghost grow')}</div>
+  <div class="row wrap">${button('Cambiar formato de bandas','format','btn-ghost grow')}${button('Descargar TXT','downloadtxt','btn-ghost grow')}</div>
  </div></details>
- <details class="unobtrusive test-records" id="testRecords"><summary>Mediciones del test y fiabilidad · \${progress}/\${total}</summary><div class="inner-detail">
-  \${renderCalibrationTrace(p,r)}
-  \${evidenceAuditMarkup(p)}
-  <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>Comparación de sonoridad · opcional</summary><div class="inner-detail" id="loudnessInner">\${loudnessMarkup(p)}</div></details>
+ <details class="unobtrusive test-records" id="testRecords"><summary>Mediciones del test y fiabilidad · ${progress}/${total}</summary><div class="inner-detail">
+  ${renderCalibrationTrace(p,r)}
+  ${evidenceAuditMarkup(p)}
+  <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>Comparación de sonoridad · opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
   <p class="tiny muted">Los dBFS del test no son dB SPL ni ganancias de ecualización. No subas el volumen para escuchar tonos que no percibes. Detente ante molestias o distorsión.</p>
  </div></details>
  <p id="copyStatus" class="status" role="status"></p></section>
