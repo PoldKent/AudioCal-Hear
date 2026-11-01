@@ -308,7 +308,7 @@ function eqResultMarkup(p){
  const m=eqResultModel(p);
  const ctx=normalizeCalibrationContext(p.context,p.type);
  const scaleOptions=[['unknown','Unidad sin verificar'],['db','Controles en dB'],['steps','Controles por posiciones']];
- const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (según manual)'],['2','2 dB por paso (según manual)'],['3','3 dB por paso (según manual)']];
+ const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (según manual)'],['2','2 dB por paso (según manual)'],['3','3 dB por paso (según manual)'],['4','4 dB por paso (según manual)']];
  const physicalMin=p.controlMin??p.min,physicalMax=p.controlMax??p.max;
  const physicalUnit=ctx.eqScale==='steps'?'posiciones':ctx.eqScale==='db'?'dB del control':'unidades sin verificar';
  const nominal=ctx.eqScale==='steps'&&m.verified?' · equivalencia nominal '+(physicalMin*m.ratio)+' a +'+(physicalMax*m.ratio)+' dB (según manual declarado)':'';
