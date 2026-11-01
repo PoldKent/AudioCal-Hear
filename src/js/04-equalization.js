@@ -15,7 +15,7 @@ function gather(p){
 // Never apply measured threshold differences directly as equalizer gains.
 const EQ_ALGORITHM_VERSION='local-contrast-v2-experimental';
 function estimateThresholdContrast(p,data){
- const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived&&x.quality!=='mixed'&&x.quality!=='unmeasurable');
+ const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived&&x.quality!=='mixed'&&x.quality!=='unmeasurable'&&!(p.channels==='separate'&&x.quality==='low'));
  const enough=measured.length>=minimumAutoCoverage(p);
  const context=normalizeCalibrationContext(p.context,p.type);
  return data.map((point,i)=>{
