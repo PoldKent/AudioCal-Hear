@@ -356,7 +356,7 @@ test('verify mode starts a fresh search for the second pass',async({page})=>{
  await page.locator('[data-act="create"]').click();
  await page.evaluate(()=>{
    const list=JSON.parse(localStorage.getItem('audiocal-hear-v2-profiles-preview'));
-   for(const f of list[0].bands)list[0].measures[f+'|both']=[{kind:'heard',db:-50,method:'adaptive-v20-search'}];
+   for(const f of list[0].bands){list[0].measures[f+'|both']=[{kind:'heard',db:-50,method:'adaptive-v20-search'}];list[0].inlineLoudness[f+'|both|0']={status:f===1000?'reference':'unavailable',offsetDb:null,referenceDbfs:null,trials:[],method:'in-pass-relative-loudness-v1'};}
    localStorage.setItem('audiocal-hear-v2-profiles-preview',JSON.stringify(list));
  });
  await page.reload();
