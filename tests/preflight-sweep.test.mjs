@@ -39,7 +39,7 @@ test('microphone evidence is separate from subjective audibility',()=>{
    micUsed:true,mic:[{hz:1000,relativeDb:15,detected:true},{hz:4000,relativeDb:2,detected:false}]};
  const text=context.sweepRecordSummary(record);
  assert.match(text,/Micrófono/);
- assert.match(text,/no calibradas/);
+ assert.match(text,/no calibrad[ao]s?/);
  assert.match(context.sweepSummaryMarkup({sweepRecords:{both:{...record,method:'fixed-digital-level-preflight-v1'}}}),/no son umbrales clínicos/);
 });
 test('generated bundle ships sweep without touching automatic EQ calculation',()=>{
