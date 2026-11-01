@@ -486,6 +486,7 @@ test('PNG horizontal EQ exports a landscape image with frequency columns for 7 a
   await page.locator('#deviceName').fill('Horizontal EQ '+count);
   await page.locator('[data-act="create"]').click();
   await page.locator('[data-nav="results"]').click();
+  await page.locator('#technicalResults > summary').click();
   const canvas=page.locator('#eqCardCanvas');
   const dims=await canvas.evaluate(c=>({w:c.width,h:c.height,signature:c.toDataURL('image/png').slice(0,30)}));
   expect(dims.w).toBeGreaterThan(dims.h);
@@ -607,5 +608,20 @@ test('results prioritize an actionable 10-band starter EQ and keep the evidence 
  const p=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(p.measures['250|left'][0].db).toBe(-72);
  expect(Object.values(p.manual).some(x=>x!==0)).toBeTruthy();
+ await noOverflow(page);
+});
+
+test('opening advanced results stays preserved when physical EQ unit changes',async({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await page.locator('#deviceName').fill('Paneles persistentes');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
+ await expect(page.locator('#technicalResults')).toHaveAttribute('open','');
+ await page.locator('#resultEqScale').selectOption('db');
+ await expect(page.locator('#technicalResults')).toHaveAttribute('open','');
+ await page.locator('#resultEqScale').selectOption('steps');
+ await expect(page.locator('#technicalResults')).toHaveAttribute('open','');
+ await expect(page.locator('#resultEqStepDb')).toBeVisible();
  await noOverflow(page);
 });
