@@ -84,3 +84,17 @@ test('device transfer uses physical positions and shows gain residuals, not just
  vm.runInContext('transferPreset="custom";transferCustom="100, 400, 1000"',context);
  assert.match(context.transferInstruction(car,item),/No convertir a posiciones/);
 });
+
+test('transfer uses declared 3 dB steps and preserves physical gain differences',()=>{
+ vm.runInContext('transferTarget="device";transferPreset="profile";transferRange="profile"',context);
+ const p={...profile,type:'car',min:-6,max:6,context:{eqScale:'steps',eqStepDb:'3'}};
+ const item={f:1000,gain:4,kind:'exact',limited:false};
+ assert.deepEqual(Array.from(context.transferBounds(p)),[-18,18]);
+ assert.match(context.transferInstruction(p,item),/control en \+1 posiciones/);
+ assert.match(context.transferLabel(item,p),/solicitado \+4 dB/);
+ assert.match(context.transferLabel(item,p),/real \+3 dB/);
+ assert.match(context.transferLabel(item,p),/diferencia -1 dB/);
+ const item2={...item,gain:5};
+ assert.match(context.transferInstruction(p,item2),/control en \+2 posiciones/);
+ assert.match(context.transferLabel(item2,p),/real \+6 dB/);
+});
