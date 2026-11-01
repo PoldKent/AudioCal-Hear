@@ -1,7 +1,7 @@
 
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
-if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;render();return}
+if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.context=defaultCalibrationContext(type);temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;render();return}
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(btn.dataset.transferOs&&current){transferOS=btn.dataset.transferOs;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();return}
 if(btn.dataset.eqSelect&&current){selectedEqFreq=Number(btn.dataset.eqSelect);updateSelectedEditor();return}
@@ -78,6 +78,7 @@ case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({ap
 case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
+if(t.dataset.context&&temp.context){const f=t.dataset.context;const next={...temp.context,[f]:t.value};temp.context=normalizeCalibrationContext(next,temp.type);if(f==='subtype'){temp.name=$('#deviceName')?.value||temp.name;render()}return}
 if(current&&t.id==='transferFormat'){transferPreset=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';if(transferPreset==='custom'&&!transferCustom)transferCustom=current.bands.join(', ');refreshTransfer();return}
 if(current&&t.id==='transferRange'){transferRange=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(current&&t.id==='transferCustom'){transferCustom=t.value;return}

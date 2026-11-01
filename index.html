@@ -294,6 +294,53 @@ const $=s=>document.querySelector(s);const fmt=f=>f>=1000?(Number((f/1000).toFix
 const short=f=>f>=1000?Number((f/1000).toFixed(3))+'k':String(f);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));const roundTo=(x,s)=>Math.round(x/s)*s;
 const median=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b.length%2?b[(b.length-1)/2]:(b[b.length/2-1]+b[b.length/2])/2:null};
 // Only read bounded, well-formed profile data. Backups can contain arbitrary JSON.
+
+/* v2 model: listening conditions are metadata, never invented acoustic corrections. */
+function defaultCalibrationContext(type){
+ return {provenance:'captured',eqScale:'unknown',seat:'driver',windows:'closed',engine:'off',
+  connection:'bluetooth',subtype:'overear',anc:'unknown',seal:'unknown',
+  room:'living',position:'main',placement:'unknown'};
+}
+function normalizeCalibrationContext(raw,type){
+ const data=defaultCalibrationContext(type);
+ if(!raw||typeof raw!=='object'||Array.isArray(raw)){data.provenance='legacy';return data}
+ const options={
+  eqScale:['unknown','steps','db'],seat:['driver','passenger','rear'],windows:['closed','open'],
+  engine:['off','on'],connection:['bluetooth','cable','other'],subtype:['overear','inear','onear'],
+  anc:['unknown','on','off','none'],seal:['unknown','good','poor'],
+  room:['living','desk','studio','other'],position:['main','near','far'],
+  placement:['unknown','nearwall','free']
+ };
+ for(const [field,valid] of Object.entries(options)){
+  if(typeof raw[field]==='string'&&valid.includes(raw[field]))data[field]=raw[field];
+ }
+ data.provenance=raw.provenance==='legacy'?'legacy':'captured';
+ return data;
+}
+function calibrationContextLabel(p){
+ const c=normalizeCalibrationContext(p?.context,p?.type);
+ if(c.provenance==='legacy')return 'Perfil antiguo: entorno no registrado';
+ if(p.type==='car')return 'Auto · '+({driver:'conductor',passenger:'copiloto',rear:'asiento trasero'}[c.seat])+
+  ' · ventanas '+(c.windows==='closed'?'cerradas':'abiertas')+
+  ' · motor '+(c.engine==='off'?'apagado':'encendido')+
+  ' · '+({bluetooth:'Bluetooth',cable:'cable',other:'otra fuente'}[c.connection]);
+ if(p.type==='headphones')return ({inear:'In-ear',overear:'Over-ear',onear:'On-ear'}[c.subtype])+
+  ' · ANC '+({on:'activo',off:'apagado',none:'no disponible',unknown:'sin verificar'}[c.anc])+
+  ' · ajuste '+({good:'comprobado',poor:'deficiente',unknown:'sin verificar'}[c.seal])+
+  ' · '+({bluetooth:'Bluetooth',cable:'cable',other:'otra fuente'}[c.connection]);
+ return 'Parlantes · '+({living:'sala',desk:'escritorio',studio:'estudio',other:'otro lugar'}[c.room])+
+  ' · escucha '+({main:'principal',near:'cercana',far:'lejana'}[c.position])+
+  ' · colocación '+({nearwall:'cerca de pared',free:'despejada',unknown:'sin verificar'}[c.placement]);
+}
+function calibrationContextCaution(p){
+ const c=normalizeCalibrationContext(p?.context,p?.type);
+ if(c.provenance==='legacy')return 'No hay condiciones históricas verificadas. Los resultados se conservan; conviene repetir la prueba si cambias de equipo o entorno.';
+ if(p.type==='car'&&(c.windows==='open'||c.engine==='on'))return 'El ruido y la posición dentro del auto pueden afectar la detección de tonos; no se compensa automáticamente ninguna resonancia de cabina.';
+ if(p.type==='headphones'&&c.subtype==='inear'&&c.seal!=='good')return 'En in-ear, un sellado no comprobado puede reducir mucho los graves; comprueba la colocación antes de confiar en una compensación.';
+ if(p.type==='speaker')return 'La sala y las paredes alteran la respuesta en el punto de escucha. Este test perceptivo no sustituye una medición acústica con micrófono.';
+ return 'Contexto registrado para comparar pruebas. No se aplican ganancias ambientales sin medición adicional.';
+}
+
 function normalizedProfile(p,importing=false){
  if(!p||typeof p!=='object'||Array.isArray(p)||!Array.isArray(p.bands)||p.bands.length<2||p.bands.length>31)return null;
  const bands=p.bands.map(Number);
@@ -333,6 +380,7 @@ function normalizedProfile(p,importing=false){
   testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,
   manual:finiteMap(p.manual,-30,30),balance:finiteMap(p.balance,-6,3),balanceProof:Object.fromEntries(bands.map(f=>[f,(Array.isArray(p.balanceProof?.[f])?p.balanceProof[f]:[]).slice(-10).filter(x=>x&&Number.isFinite(x.change)&&Math.abs(x.change)<=3).map(x=>({at:safeNumber(x.at,Date.now(),0,Date.now()+86400000),choices:Array.isArray(x.choices)?x.choices.slice(0,2).filter(q=>[-1,0,1].includes(q)):[],change:x.change,method:'music-ab-two-rounds'}))])),
   taste:{bass:safeNumber(taste.bass,0,-3,3),voices:safeNumber(taste.voices,0,-3,3),air:safeNumber(taste.air,0,-3,3)},
+  context:normalizeCalibrationContext(p.context,p.type),
   formatFrom:Object.hasOwn(presets,p.formatFrom)?p.formatFrom:null,
   createdAt:safeNumber(p.createdAt,Date.now(),0,Date.now()+86400000),updatedAt:safeNumber(p.updatedAt,Date.now(),0,Date.now()+86400000)
  };
@@ -422,7 +470,7 @@ function resetBalanceRound(){balanceRound=0;balancePreview=null;balanceListened=
 function balanceDelta(){if(!balancePreview||balanceRound>=2)return 0;return balanceRound===0?(balancePreview==='A'?-2:2):(balancePreview==='A'?1:-1)}
 function suggestedBalanceBands(p){const result=recommend(p),n=p.bands.length;const priority=[Math.round((n-1)*.2),Math.round((n-1)*.52),Math.round((n-1)*.85)].map(i=>p.bands[i]);const deviations=result.slice().sort((a,b)=>(Math.abs(b.base||0)-Math.abs(a.base||0))).filter(x=>Math.abs(x.base||0)>=1.5).map(x=>x.f);return [...new Set([...deviations.slice(0,2),...priority,...p.bands])].slice(0,3)}
 function resetBalanceSession(p){balanceQueue=suggestedBalanceBands(p);balanceQueueIndex=0;balanceFreq=balanceQueue[0]||p.bands[0]||null;resetBalanceRound()}
-let temp={name:'',type:'car',preset:'car7',channels:'both',passes:1,testMode:'quick',testStart:TEST_START_DB,testFloor:TEST_END_DB,bands:presets.car7.bands.slice(),min:-6,max:6,step:1};
+let temp={name:'',type:'car',preset:'car7',channels:'both',passes:1,testMode:'quick',testStart:TEST_START_DB,testFloor:TEST_END_DB,bands:presets.car7.bands.slice(),min:-6,max:6,step:1,context:defaultCalibrationContext('car')};
 const save=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(profiles));localStorage.setItem(STATEKEY,current?.id||'')}catch(e){notice='No se pudo guardar localmente. Puedes exportar tus valores.'}};
 const touch=()=>{if(!current)return;current.updatedAt=Date.now();save()};
 const nav=p=>{if(tone)stopTone();floorReached=false;if(page==='results'&&playerAudio&&p!=='results')playerAudio.pause();page=p;render();window.scrollTo({top:0,behavior:'instant'})};
@@ -435,6 +483,35 @@ function render(){if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlaye
  localize(document.body);
 }
 function approxTimeRange(d){return '~'+Math.max(1,Math.floor(d.exampleLow/60))+'–'+Math.max(1,Math.ceil(d.exampleHigh/60))+' min'}
+
+function contextSelect(field,label,options,value){
+ return '<div><label for="context-'+field+'">'+label+'</label><select class="field" id="context-'+field+'" data-context="'+field+'">'+
+  options.map(([v,t])=>'<option value="'+v+'" '+(value===v?'selected':'')+'>'+t+'</option>').join('')+'</select></div>';
+}
+function renderContextFields(){
+ const c=temp.context||defaultCalibrationContext(temp.type);
+ const scale=contextSelect('eqScale','¿Qué unidad muestran los controles del EQ?',
+  [['unknown','No estoy seguro'],['steps','Posiciones / niveles (sin dB)'],['db','Decibelios (dB)']],c.eqScale);
+ let specific='';
+ if(temp.type==='car'){
+  specific=contextSelect('seat','Asiento de escucha',[['driver','Conductor'],['passenger','Copiloto'],['rear','Fila trasera']],c.seat)+
+   contextSelect('windows','Ventanas',[['closed','Cerradas'],['open','Abiertas']],c.windows)+
+   contextSelect('engine','Motor',[['off','Apagado'],['on','Encendido']],c.engine)+
+   contextSelect('connection','Fuente de audio',[['bluetooth','Bluetooth'],['cable','Cable'],['other','Otra']],c.connection);
+ }else if(temp.type==='headphones'){
+  specific=contextSelect('subtype','Tipo de auricular',[['overear','Headset / over-ear'],['inear','In-ear'],['onear','On-ear']],c.subtype)+
+   contextSelect('anc','Cancelación activa de ruido',[['unknown','No sé'],['on','Activada'],['off','Desactivada'],['none','No tiene']],c.anc)+
+   contextSelect('seal','Colocación / sellado',[['unknown','Sin comprobar'],['good','Comprobado / correcto'],['poor','No ajusta bien']],c.seal)+
+   contextSelect('connection','Conexión',[['bluetooth','Bluetooth'],['cable','Cable'],['other','Otra']],c.connection);
+ }else{
+  specific=contextSelect('room','Dónde están los parlantes',[['living','Sala'],['desk','Escritorio'],['studio','Estudio'],['other','Otro']],c.room)+
+   contextSelect('position','Posición de escucha',[['main','Punto principal'],['near','Cerca de los parlantes'],['far','Lejos de los parlantes']],c.position)+
+   contextSelect('placement','Ubicación',[['unknown','Sin comprobar'],['nearwall','Cerca de pared'],['free','Alejados de paredes']],c.placement);
+ }
+ return '<section class="context-config"><div class="setup-title"><h2>01B · Tu entorno de escucha</h2><span class="tiny muted">Guarda las condiciones</span></div>'+
+  '<div class="grid2">'+specific+scale+'</div><p class="compact-note">Estos datos identifican cuándo es válida la prueba; no añaden correcciones acústicas inventadas. Si la escala de EQ no está confirmada, no asumiremos cuántos dB equivale un nivel.</p></section>';
+}
+
 function renderSetup(){const showCustom=temp.preset==='custom',p=current;const duration=timeRange({...temp,measures:{}},0);
 return `<section class="hero"><p class="eyebrow">CONFIGURAR · NUEVA CALIBRACIÓN</p><h1>Tu sonido,<br><em>a tu manera.</em></h1><p class="subtle">Elige tu equipo, cómo quieres escucharlo y comienza. Nada de formularios interminables.</p></section>
 ${p?`<div class="inline-hero"><div class="row" style="justify-content:space-between"><div><span class="tag">PERFIL ACTUAL</span><strong data-profile-name="true" style="display:block;margin-top:7px">${esc(p.name)}</strong><span class="tiny muted">${doneCount(p)}/${plan(p).length} pruebas · ${esc(presets[p.preset]?.short||'Personalizado')}</span></div>${button('Ver ajustes ↗','results','btn-alt')}</div></div>`:''}
@@ -443,6 +520,7 @@ ${p?`<div class="inline-hero"><div class="row" style="justify-content:space-betw
 <button type="button" data-device="car" class="device-tile ${temp.type==='car'?'selected':''}"><span class="tile-icon">🚗</span><strong>Mi auto</strong></button>
 <button type="button" data-device="headphones" class="device-tile ${temp.type==='headphones'?'selected':''}"><span class="tile-icon">🎧</span><strong>Auriculares</strong></button>
 <button type="button" data-device="speaker" class="device-tile ${temp.type==='speaker'?'selected':''}"><span class="tile-icon">🔊</span><strong>Parlantes</strong></button></div>
+${renderContextFields()}
 <div class="setup-title"><h2>02 · Elige tu ecualizador</h2><span class="tiny muted">${esc(presets[temp.preset]?.short||'')} seleccionado</span></div>
 <div class="preset-grid"><button type="button" data-preset="car7" class="preset-tile ${temp.preset==='car7'?'selected':''}"><strong>🚗 7 bandas</strong><small>64 · 160 · 400 · 1K · 2.5K · 6.25K · 15.625K</small></button><button type="button" data-preset="photo10" class="preset-tile ${temp.preset==='photo10'?'selected':''}"><strong>🎧 10 bandas</strong><small>30 · 60 · 120 · 250 · 500 · 1K · 2K · 4K · 8K · 16K</small></button></div>
 <details class="unobtrusive" id="moreFormats" ${!['car7','photo10'].includes(temp.preset)?'open':''}><summary>Más ecualizadores y frecuencias <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><label for="extraPreset">Otros formatos estándar</label><select id="extraPreset" class="field"><option value="">Seleccionar formato…</option>${['iso7','iso10','five','iso15','iso31','custom'].map(id=>`<option value="${id}" ${temp.preset===id?'selected':''}>${esc(presets[id].name)}</option>`).join('')}</select>
@@ -608,7 +686,7 @@ async function checkAmbient(){
 function parseBands(s){const arr=s.split(/[,;\s]+/).filter(Boolean).map(v=>Number(v));if(arr.length<2||arr.length>31||arr.some(x=>!Number.isFinite(x)||x<20||x>20000)||new Set(arr).size!==arr.length||arr.some((x,i)=>i&&x<=arr[i-1]))return null;return arr}
 function createProfile(){const name=$('#deviceName')?.value.trim()||'Mi equipo '+new Date().toLocaleDateString('es');const min=Number($('#eqMin')?.value),max=Number($('#eqMax')?.value);if(!Number.isFinite(min)||!Number.isFinite(max)||min>=0||max<=0||min<-30||max>30){uiAlert('Introduce límites de dB válidos: mínimo negativo y máximo positivo (hasta 30 dB).');return}
  let bands=temp.preset==='custom'?parseBands($('#customFreqs')?.value||''):temp.bands.slice();if(!bands){uiAlert('Revisa las frecuencias personalizadas: entre 2 y 31 valores, orden ascendente, de 20 a 20.000 Hz.');return}
- if(temp.testStart<=temp.testFloor){uiAlert('El nivel inicial debe ser mayor que el mínimo en dBFS.');return}if(temp.testStart>-30&&!uiConfirm('Nivel inicial cercano a −24 dBFS. Puede ser demasiado intenso. Usa volumen bajo y cómodo, nunca máximo. ¿Confirmas esta configuración?'))return;temp.name=name;temp.min=min;temp.max=max;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetBalanceSession(p);introStep=0;trial=null;nav('test')}
+ if(temp.testStart<=temp.testFloor){uiAlert('El nivel inicial debe ser mayor que el mínimo en dBFS.');return}if(temp.testStart>-30&&!uiConfirm('Nivel inicial cercano a −24 dBFS. Puede ser demasiado intenso. Usa volumen bajo y cómodo, nunca máximo. ¿Confirmas esta configuración?'))return;temp.name=name;temp.min=min;temp.max=max;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},context:normalizeCalibrationContext(temp.context,temp.type),manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetBalanceSession(p);introStep=0;trial=null;nav('test')}
 function gather(p){
  const collect=f=>{let samples=[];for(const side of p.channels==='separate'?['left','right']:['both']){const arr=p.measures[key(f,side)]||[];const valid=arr.filter(r=>r&&r.db!==null&&Number.isFinite(r.db)).map(r=>r.db);if(valid.length){samples.push({db:median(valid),quality:Math.max(...valid)-Math.min(...valid)<=6&&valid.length>=2?'good':'low',side})}}if(!samples.length)return {f,db:null,quality:'unmeasurable'};const values=samples.map(s=>s.db),spread=Math.max(...values)-Math.min(...values);return {f,db:median(values),quality:spread>9?'mixed':samples.every(s=>s.quality==='good')?'good':'low'}};
  const allMeasured=[...new Set(Object.keys(p.measures).map(k=>Number(k.split('|')[0])).filter(Number.isFinite))].map(collect).filter(x=>x.db!==null).sort((a,b)=>a.f-b.f);
@@ -913,7 +991,7 @@ function refreshTransfer(){const target=$('#transferPanel');if(!target)return;ta
 
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
-if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;render();return}
+if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.context=defaultCalibrationContext(type);temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;render();return}
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(btn.dataset.transferOs&&current){transferOS=btn.dataset.transferOs;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();return}
 if(btn.dataset.eqSelect&&current){selectedEqFreq=Number(btn.dataset.eqSelect);updateSelectedEditor();return}
@@ -990,6 +1068,7 @@ case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({ap
 case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
+if(t.dataset.context&&temp.context){const f=t.dataset.context;const next={...temp.context,[f]:t.value};temp.context=normalizeCalibrationContext(next,temp.type);if(f==='subtype'){temp.name=$('#deviceName')?.value||temp.name;render()}return}
 if(current&&t.id==='transferFormat'){transferPreset=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';if(transferPreset==='custom'&&!transferCustom)transferCustom=current.bands.join(', ');refreshTransfer();return}
 if(current&&t.id==='transferRange'){transferRange=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(current&&t.id==='transferCustom'){transferCustom=t.value;return}
