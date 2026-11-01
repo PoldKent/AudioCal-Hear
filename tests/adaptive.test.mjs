@@ -96,7 +96,7 @@ test('eight localization options, without remote runtime scripts', () => {
 });
 
 test('critical protections and original hardware presets remain present', () => {
-  for (const text of ["const STORAGE='audiocal-hear-profiles-v1'",'TEST_END_DB=-100','MAX_SAFE_DB=-24',"case 'endheard'","case 'enduncertain'",'function normalizedProfile(']) assert.ok(html.includes(text),text);
+  for (const text of ["const STORAGE='audiocal-hear-v2-profiles-preview'",'TEST_END_DB=-100','MAX_SAFE_DB=-24',"case 'endheard'","case 'enduncertain'",'function normalizedProfile(']) assert.ok(html.includes(text),text);
   assert.ok(html.includes("pan.pan.value=side==='left'?-1:side==='right'?1:0"));
 });
 
@@ -212,7 +212,7 @@ test('device-aware digital ceilings and staged preview never start at 0 by defau
 
 test('full-band default and optional independent validation are present',()=>{
  assert.match(source,/testMode:'complete',testStart:TEST_START_DB/);
- assert.match(fs.readFileSync('src/js/02-setup.js','utf8'),/Validación avanzada · opcional/);
+ assert.match(fs.readFileSync('src/js/02-setup.js','utf8'),/Opciones técnicas y límites del ecualizador · opcional/);
  assert.match(fs.readFileSync('src/js/03-hearing-test.js','utf8'),/PREPARACIÓN · UN SOLO PASO/);
 });
 test('saved estimates preserve bounds, disagreements and actual listening time',()=>{

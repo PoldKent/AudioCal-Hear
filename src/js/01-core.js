@@ -36,7 +36,7 @@ function trans(input){
 }
 function localize(root=document.body){
  document.documentElement.lang=language==='zh'?'zh-CN':language;
- const title=document.querySelector('title');if(title)title.textContent='AudioCal Hear v1.10.0 · '+(language==='es'?'Calibrador auditivo':({en:'Hearing and EQ assistant',fr:'Assistant auditif et EQ',pt:'Assistente auditivo e EQ',it:'Assistente uditivo ed EQ',de:'Hör- und EQ-Assistent',zh:'听觉与均衡器助手',ja:'聴覚・EQアシスタント'}[language]));
+ const title=document.querySelector('title');if(title)title.textContent='AudioCal Hear V2 Preview · '+(language==='es'?'Calibrador auditivo':({en:'Hearing and EQ assistant',fr:'Assistant auditif et EQ',pt:'Assistente auditivo e EQ',it:'Assistente uditivo ed EQ',de:'Hör- und EQ-Assistent',zh:'听觉与均衡器助手',ja:'聴覚・EQアシスタント'}[language]));
  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
  while((n=walker.nextNode())){
   if(n.parentElement?.closest('script,style,#audiocal-translations,.profile-title,.profile-row-body strong,#resultProfileSelect option,[data-profile-name]'))continue;
@@ -65,6 +65,12 @@ function uiConfirm(s){return window.confirm(trans(s))}
 function uiPrompt(s,v){return window.prompt(trans(s),v)}
 
 const presets={
+ two:{name:'Gráfico · 2 bandas (graves/agudos)',short:'2 bandas',bands:[100,10000],min:-12,max:12,step:1,note:'Ejemplo de dos controles; comprueba las frecuencias reales.'},
+ three:{name:'Gráfico · 3 bandas',short:'3 bandas',bands:[100,1000,10000],min:-12,max:12,step:1,note:'Graves/medios/agudos; frecuencias orientativas, confirma etiquetas.'},
+ four:{name:'Gráfico · 4 bandas',short:'4 bandas',bands:[60,250,1000,8000],min:-12,max:12,step:1,note:'Ejemplo orientativo de 4 bandas; cambia frecuencias si tu equipo difiere.'},
+ six:{name:'Aplicaciones · 6 bandas',short:'6 bandas',bands:[60,150,400,1000,2400,15000],min:-12,max:12,step:1,note:'Frecuencias orientativas; varían entre sistemas y aplicaciones.'},
+ eight:{name:'Gráfico · 8 bandas',short:'8 bandas',bands:[63,125,250,500,1000,2000,4000,8000],min:-12,max:12,step:1,note:'Distribución orientativa; confirma frecuencias mostradas.'},
+ nine:{name:'Gráfico · 9 bandas',short:'9 bandas',bands:[63,125,250,500,1000,2000,4000,8000,16000],min:-12,max:12,step:1,note:'Distribución orientativa; confirma frecuencias mostradas.'},
  car7:{name:'Automóvil · 7 bandas (tus fotos)',short:'Auto 7',bands:[64,160,400,1000,2500,6250,15625],min:-6,max:6,controlMin:-6,controlMax:6,step:1,note:'Las frecuencias coinciden con tus fotos. El control tiene −6 a +6 posiciones. Para este equipo de referencia se declararon 3 dB por paso según manual; comprueba la equivalencia si usas otro modelo.'},
  photo10:{name:'Auriculares · 10 bandas (tu foto)',short:'Auriculares 10',bands:[30,60,120,250,500,1000,2000,4000,8000,16000],min:-20,max:20,step:1,note:'Frecuencias exactas de la primera imagen; escala visible de −20 a +20 niveles. Comprueba si el fabricante expresa esos niveles en dB.'},
  iso10:{name:'ISO · 10 bandas (octavas)',short:'ISO 10',bands:[31.5,63,125,250,500,1000,2000,4000,8000,16000],min:-12,max:12,step:1,note:'Frecuencias preferidas ISO/ANSI para intervalos de una octava.'},
@@ -74,7 +80,7 @@ const presets={
  iso31:{name:'ISO · 31 bandas (tercio de octava)',short:'ISO 31',bands:[20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000],min:-12,max:12,step:1,note:'31 bandas profesionales en tercios de octava. El examen completo es más largo.'},
  custom:{name:'Personalizado · frecuencias propias',short:'Personalizado',bands:[63,160,400,1000,2500,6300,16000],min:-12,max:12,step:1,note:'Escribe las frecuencias que aparecen en tu ecualizador.'}
 };
-const el=document.getElementById('root');const STORAGE='audiocal-hear-profiles-v1';const STATEKEY='audiocal-hear-active-v1';
+const el=document.getElementById('root');const STORAGE='audiocal-hear-v2-profiles-preview';const STATEKEY='audiocal-hear-v2-active-preview';
 const $=s=>document.querySelector(s);const fmt=f=>f>=1000?(Number((f/1000).toFixed(3))+' kHz'):(f+' Hz');
 const short=f=>f>=1000?Number((f/1000).toFixed(3))+'k':String(f);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));const roundTo=(x,s)=>Math.round(x/s)*s;
 const median=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b.length%2?b[(b.length-1)/2]:(b[b.length/2-1]+b[b.length/2])/2:null};
@@ -96,7 +102,7 @@ function normalizeCalibrationContext(raw,type){
  const data=defaultCalibrationContext(type);
  if(!raw||typeof raw!=='object'||Array.isArray(raw)){data.provenance='legacy';return data}
  const options={
-  eqScale:['unknown','steps','db'],eqStepDb:['unknown','1','2','3'],seat:['driver','passenger','rear'],windows:['closed','open'],
+  eqScale:['unknown','steps','db'],eqStepDb:['unknown','1','2','3','4'],seat:['driver','passenger','rear'],windows:['closed','open'],
   engine:['off','on'],connection:['bluetooth','cable','other'],subtype:['overear','inear','onear'],
   anc:['unknown','on','off','none'],seal:['unknown','good','poor'],
   room:['living','desk','studio','other'],position:['main','near','far'],
@@ -178,6 +184,37 @@ function loudnessEvidenceStatus(samples){
   'Repetible · descriptivo':'Inconsistente · no interpretar';
 }
 
+
+// Each measured EQ band is visited exactly once in the same test pass.
+// These relative loudness observations are descriptive, not calibrated EQ gains.
+function normalizeInlineLoudness(raw,bands){
+ const out=Object.create(null);
+ if(!raw||typeof raw!=='object'||Array.isArray(raw))return out;
+ for(const [k,v] of Object.entries(raw).slice(0,96)){
+  const parts=/^(\d+(?:\.\d+)?)\|(both|left|right)\|([01])$/.exec(k);
+  if(!parts||!bands.includes(Number(parts[1]))||!v||typeof v!=='object'||Array.isArray(v))continue;
+  const status=['matched','bounded','unavailable','reference'].includes(v.status)?v.status:null;
+  if(!status)continue;
+  const offsetDb=status==='matched'&&Number.isInteger(v.offsetDb)&&Math.abs(v.offsetDb)<=9?v.offsetDb:null;
+  if(status==='matched'&&offsetDb===null)continue;
+  const trials=Array.isArray(v.trials)?v.trials.slice(0,3).filter(t=>t&&
+   ['reference','target','similar','uncertain'].includes(t.answer)&&Number.isInteger(t.offsetDb)&&Math.abs(t.offsetDb)<=9)
+   .map(t=>({answer:t.answer,offsetDb:t.offsetDb})):[];
+  out[k]={status,offsetDb,referenceDbfs:Number.isFinite(v.referenceDbfs)?clamp(v.referenceDbfs,-100,-24):null,
+   trials,at:Number.isFinite(v.at)?clamp(v.at,0,Date.now()+86400000):Date.now(),method:'in-pass-relative-loudness-v1'};
+ }
+ return out;
+}
+function inlineLoudnessKey(e){return e.f+'|'+e.side+'|'+e.pass}
+function inlineLoudnessPending(p){
+ if(!p?.integratedLoudness)return null;
+ for(const e of plan(p)){
+  if(!recorded(p,e))continue;
+  if(!p.inlineLoudness?.[inlineLoudnessKey(e)])return e;
+ }
+ return null;
+}
+
 const QUICK_LIMIT=6;
 function normalizedProfile(p,importing=false){
  if(!p||typeof p!=='object'||Array.isArray(p)||!Array.isArray(p.bands)||p.bands.length<2||p.bands.length>31)return null;
@@ -234,6 +271,11 @@ function normalizedProfile(p,importing=false){
     p.testBandPlan.slice():legacyQuickBands(bands)
   ):null,
   loudness:normalizeLoudness(p.loudness,bands),
+  integratedLoudness:p.integratedLoudness===true,
+  inlineLoudness:normalizeInlineLoudness(p.inlineLoudness,bands),
+  acoustic:Object.fromEntries(bands.filter(f=>{
+   const x=p.acoustic?.[f];return x&&typeof x==='object'&&Number.isFinite(x.contrastDb)&&x.contrastDb>=-30&&x.contrastDb<=60&&typeof x.detected==='boolean';
+  }).map(f=>[f,{contrastDb:p.acoustic[f].contrastDb,detected:p.acoustic[f].detected,at:safeNumber(p.acoustic[f].at,Date.now(),0,Date.now()+86400000),method:'mic-spectral-presence-unvalidated'}])),
   manual:finiteMap(p.manual,-30,30),balance:finiteMap(p.balance,-6,3),balanceProof:Object.fromEntries(bands.map(f=>[f,(Array.isArray(p.balanceProof?.[f])?p.balanceProof[f]:[]).slice(-10).filter(x=>x&&Number.isFinite(x.change)&&Math.abs(x.change)<=3).map(x=>({at:safeNumber(x.at,Date.now(),0,Date.now()+86400000),choices:Array.isArray(x.choices)?x.choices.slice(0,2).filter(q=>[-1,0,1].includes(q)):[],change:x.change,method:'music-ab-two-rounds'}))])),
   taste:{bass:safeNumber(taste.bass,0,-3,3),voices:safeNumber(taste.voices,0,-3,3),air:safeNumber(taste.air,0,-3,3)},
   context:normalizeCalibrationContext(p.context,p.type),
@@ -241,7 +283,7 @@ function normalizedProfile(p,importing=false){
   createdAt:safeNumber(p.createdAt,Date.now(),0,Date.now()+86400000),updatedAt:safeNumber(p.updatedAt,Date.now(),0,Date.now()+86400000)
  };
 }
-function readProfiles(){try{const saved=JSON.parse(localStorage.getItem(STORAGE));return Array.isArray(saved)?saved.slice(0,200).map(p=>normalizedProfile(p)).filter(Boolean):[]}catch(e){return[]}}
+function readProfiles(){try{const saved=JSON.parse(localStorage.getItem(STORAGE)||localStorage.getItem('audiocal-hear-profiles-v1'));return Array.isArray(saved)?saved.slice(0,200).map(p=>normalizedProfile(p)).filter(Boolean):[]}catch(e){return[]}}
 let profiles=readProfiles(),currentId='';try{currentId=localStorage.getItem(STATEKEY)||''}catch(e){};
 let current=profiles.find(p=>p.id===currentId)||null;
 // Playback dBFS is not the acoustic sound-pressure level reaching the ear.
@@ -390,10 +432,10 @@ function resetBalanceSession(p){balanceQueue=suggestedBalanceBands(p);balanceQue
 let temp={name:'',type:'car',preset:'car7',channels:'both',passes:1,testMode:'complete',testStart:TEST_START_DB,testFloor:TEST_END_DB,bands:presets.car7.bands.slice(),min:-6,max:6,controlMin:-6,controlMax:6,step:1,context:presetCalibrationContext('car','car7')};
 const save=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(profiles));localStorage.setItem(STATEKEY,current?.id||'')}catch(e){notice='No se pudo guardar localmente. Puedes exportar tus valores.'}};
 const touch=()=>{if(!current)return;current.updatedAt=Date.now();save()};
-const nav=p=>{if(page==='results'&&p!=='results')resetLoudnessSession();if(tone)stopTone();floorReached=false;if(page==='results'&&playerAudio&&p!=='results')playerAudio.pause();page=p;render();window.scrollTo({top:0,behavior:'instant'})};
+const nav=p=>{if(p!=='test')inlineMatch=null;if(page==='test'&&p!=='test')stopMicAssist();if(page==='results'&&p!=='results')resetLoudnessSession();if(tone)stopTone();floorReached=false;if(page==='results'&&playerAudio&&p!=='results')playerAudio.pause();page=p;render();window.scrollTo({top:0,behavior:'instant'})};
 const button=(text,action,cls='btn-ghost',extra='')=>`<button type="button" data-act="${action}" class="btn ${cls}" ${extra}>${text}</button>`;
 function setPreset(id){const preset=presets[id]||presets.custom;temp.preset=id;temp.bands=preset.bands.slice();temp.min=preset.min;temp.max=preset.max;temp.controlMin=preset.controlMin??preset.min;temp.controlMax=preset.controlMax??preset.max;temp.step=preset.step;const eq=presetCalibrationContext(temp.type,id);temp.context={...temp.context,eqScale:eq.eqScale,eqStepDb:eq.eqStepDb};render()}
-function render(){if(page==='test'&&current&&firstMissing(current)<0)page='results';if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
+function render(){if(page==='test'&&current&&firstMissing(current)<0&&!inlineLoudnessPending(current)){stopMicAssist();page='results'}if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
  el.dataset.page=page;
  el.innerHTML=page==='setup'?renderSetup():page==='test'?renderTest():page==='results'?renderResults():renderProfiles();
  if(page==='test'&&tone?.mode==='test')startVisualizer();if(page==='results'&&current){const newPlayer=$('#audioPlayer');if(playerAudio!==newPlayer){try{playerAudio?.pause()}catch(e){}try{playerSource?.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}playerPreamp=null;playerOutput=null;playerSource=null;filters=[];playerAudio=newPlayer;if(playerUrl)playerAudio.src=playerUrl;attachPlayerEvents(playerAudio)}updatePlayerFilters();refreshEqCard()}

@@ -1,11 +1,13 @@
 
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
-if(btn.dataset.loudness){loudnessAction(btn.dataset.loudness);return}
+if(btn.dataset.inlineChoice){answerInlineMatch(btn.dataset.inlineChoice);return}
 if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.context=defaultCalibrationContext(type);temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;temp.testStart=Math.min(temp.testStart,maxTestStart(temp));render();return}
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(btn.dataset.transferOs&&current){transferOS=btn.dataset.transferOs;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();return}
 if(btn.dataset.eqSelect&&current){selectedEqFreq=Number(btn.dataset.eqSelect);updateSelectedEditor();return}
+if(btn.dataset.eqUnit){temp.name=$('#deviceName')?.value||temp.name;temp.context=normalizeCalibrationContext({...temp.context,eqScale:btn.dataset.eqUnit},temp.type);render();return}
+if(btn.dataset.eqStep){temp.name=$('#deviceName')?.value||temp.name;temp.context=normalizeCalibrationContext({...temp.context,eqStepDb:btn.dataset.eqStep},temp.type);render();return}
 if(btn.dataset.preset){temp.name=$('#deviceName')?.value||temp.name;temp.min=Number($('#eqMin')?.value)||temp.min;temp.max=Number($('#eqMax')?.value)||temp.max;setPreset(btn.dataset.preset);return}
 if(btn.dataset.channels){temp.name=$('#deviceName')?.value||temp.name;temp.channels=btn.dataset.channels;render();return}
 if(btn.dataset.testmode){temp.name=$('#deviceName')?.value||temp.name;temp.testMode=btn.dataset.testmode;render();return}
@@ -44,6 +46,8 @@ case 'confirmright':if(channelCheckPlayed.right){channelVerified.right=true;rend
 case 'stopaudio':stopTone();if(trial)trial.awaiting=false;floorReached=false;if(playerAudio)playerAudio.pause();render();break;
 case 'resume':nav(firstMissing(current)<0?'results':'test');break;
 case 'play':await playTone(false);break;
+case 'inline-play':await playInlineMatch();break;
+case 'inline-skip':inlineRecord('unavailable');break;
 case 'answerYes':answerTone(true);break;
 case 'answerNo':answerTone(false);break;
 case 'introBack':stopTone();introStep=0;render();break;
@@ -61,17 +65,18 @@ case 'confirmlevel':if(current&&introStep===0&&volumePreviewPlayed&&tone?.mode!=
  render();
 }break;
 case 'ambient':await checkAmbient();break;
+case 'mic-assist':await toggleMicAssist();break;
 case 'endheard':if(current&&floorReached){logMeasure('stillheard')}break;
 case 'enduncertain':if(current&&floorReached)logMeasure('unconfirmed');break;
 case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'){
   const k=key(lastRecordedEntry.f,lastRecordedEntry.side);
   if(lastRecordedEntry.pass===0){delete current.measures[k]}
   else if(Array.isArray(current.measures[k]))current.measures[k].length=1;
-  awaitNext=false;floorReached=false;trial=null;sampleNote='';lastResultKind=null;lastRecordedEntry=null;stopTone();touch();render();
+  awaitNext=false;floorReached=false;trial=null;inlineMatch=null;sampleNote='';lastResultKind=null;lastRecordedEntry=null;stopTone();touch();render();
  }break;
  case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
 case 'retry':awaitNext=false;floorReached=false;trial=null;sampleNote='';stopTone();render();break;
-case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.manual={};awaitNext=false;floorReached=false;trial=null;resetChannelCheck();resetVolumePreview();introStep=0;sampleNote='';touch();render()}break;
+case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.inlineLoudness={};current.integratedLoudness=true;inlineMatch=null;current.acoustic={};current.manual={};awaitNext=false;floorReached=false;trial=null;resetChannelCheck();resetVolumePreview();introStep=0;sampleNote='';touch();render()}break;
 case 'transfer-open':transferOpen=true;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();break;
 case 'transfer-close':transferOpen=false;refreshTransfer();break;
 case 'transfer-next':if(!current)return;if(transferStep===1&&!transferMapping(current)){transferStatus='Revisa las frecuencias reales del ecualizador.';refreshTransfer();break}
@@ -109,7 +114,6 @@ case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({ap
 case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
-if(t.id==='loudnessFrequency'&&current){stopTone();loudnessFreq=Number(t.value);loudnessOffsetDb=0;loudnessListened=new Set();loudnessMessage='Nueva frecuencia seleccionada. Compara las dos señales.';refreshLoudnessUI();return}
 if(current&&(t.id==='resultControlMin'||t.id==='resultControlMax')){
   const value=Number(t.value),field=t.id==='resultControlMin'?'controlMin':'controlMax';
   if(!Number.isInteger(value)||(field==='controlMin'&&(value>=0||value<-30))||(field==='controlMax'&&(value<=0||value>30))){
@@ -151,7 +155,7 @@ if(t.id==='importInput'&&t.files?.length){
 }
 // Ensure user can change tabs without generating sound; pause on backgrounding.
 document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);document.addEventListener('input',e=>{const t=e.target;if(t.id==='eqSlider'&&current){const x=recommend(current).find(q=>q.f===selectedEqFreq);if(x){const desired=clamp(roundTo(Number(t.value),current.step),current.min,current.max);current.manual[x.f]=(Number(current.manual[x.f])||0)+(desired-x.gain);touch();refreshResultsUI()}return}if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin'&&Number.isFinite(Number(t.value)))temp.min=Number(t.value);if(t.id==='eqMax'&&Number.isFinite(Number(t.value)))temp.max=Number(t.value);if(t.id==='controlMin'&&Number.isFinite(Number(t.value)))temp.controlMin=Number(t.value);if(t.id==='controlMax'&&Number.isFinite(Number(t.value)))temp.controlMax=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;if($('#freqSummary'))$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='testStart'){const n=Number(t.value);if(Number.isFinite(n))temp.testStart=clamp(n,-99,maxTestStart(temp))}if(t.id==='testFloor'){const n=Number(t.value);if(Number.isFinite(n))temp.testFloor=clamp(n,-100,-36)}if(['customFreqs','eqMin','eqMax','controlMin','controlMax','testStart','testFloor'].includes(t.id))refreshSetupDuration();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){stopTone();floorReached=false;if(playerAudio)playerAudio.pause();if(page==='test')render()}});window.addEventListener('pagehide',()=>{stopTone();if(playerAudio)playerAudio.pause();try{playerSource?.disconnect()}catch(e){}try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}if(playerUrl)URL.revokeObjectURL(playerUrl)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopMicAssist();stopTone();floorReached=false;if(playerAudio)playerAudio.pause();if(page==='test')render()}});window.addEventListener('pagehide',()=>{stopMicAssist();stopTone();if(playerAudio)playerAudio.pause();try{playerSource?.disconnect()}catch(e){}try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}if(playerUrl)URL.revokeObjectURL(playerUrl)});
 if(current)resetBalanceSession(current);
 render();
 })();

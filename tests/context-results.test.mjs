@@ -141,20 +141,22 @@ test('suprathreshold records are sanitized, bounded, and independent of automati
  assert.equal(normalized[999],undefined);
  assert.match(ctx.loudnessEvidenceStatus(normalized[160]),/Repetible/);
  assert.match(ctx.loudnessEvidenceStatus([{...valid,offsetDb:-6},{...valid,offsetDb:6}]),/Inconsistente/);
- assert.match(fs.readFileSync('src/js/05c-loudness.js','utf8'),/NO significa que el EQ deba aumentar/);
+ assert.match(fs.readFileSync('src/js/05c-loudness.js','utf8'),/old independent matching interface/);
  const eq=fs.readFileSync('src/js/04-equalization.js','utf8');
  const recommend=eq.slice(eq.indexOf('function recommend(p)'),eq.indexOf('function balanceMarkup(){'));
  assert.doesNotMatch(recommend,/loudness/i,'Exploratory evidence must never modify EQ automatically');
 });
-test('loudness playback limits digital level and uses an explicit user interaction',()=>{
- const src=fs.readFileSync('src/js/05c-loudness.js','utf8');
- assert.match(src,/LOUDNESS_REFERENCE_DBFS\+LOUDNESS_OFFSET_LIMIT/);
- assert.match(src,/Math.pow\(10,db\/20\)/);
- assert.match(src,/if\(!loudnessListened.has\('reference'\)\|\|!loudnessListened.has\('target'\)\)/);
- const interaction=fs.readFileSync('src/js/06-interactions.js','utf8');
- assert.match(interaction,/if\(btn.dataset.loudness\)/);
+test('one-pass comparison requires an explicit playback gesture and preserves safe digital headroom',()=>{
+ const src=fs.readFileSync('src/js/03-hearing-test.js','utf8');
+ assert.match(src,/async function playInlineMatch\(/);
+ assert.match(src,/const ceiling=Math.min\(-36,getStart\(p\)\)/);
+ assert.match(src,/if\(base===null\|\|base\+bounded>ceiling/);
+ assert.match(src,/function answerInlineMatch\(/);
+ assert.match(src,/if\(!state\|\|!state.listened/);
+ const events=fs.readFileSync('src/js/06-interactions.js','utf8');
+ assert.match(events,/case 'inline-play':await playInlineMatch\(\)/);
+ assert.doesNotMatch(events,/if\(btn.dataset.loudness\)/);
 });
-
 test('cross-evidence marks truncated loudness as inconclusive and preserves data',()=>{
  const source=fs.readFileSync('src/js/05d-evidence.js','utf8'),start=source.indexOf('const EVIDENCE_AUDIT_VERSION='),end=source.indexOf('function evidenceAuditMarkup(',start);
  const c=vm.createContext({Math,Number,Object,Array,median:x=>x[0],key:(f,s)=>f+'|'+s,EQ_ALGORITHM_VERSION:'v2',calibrationContextLabel:()=> 'auto',
@@ -241,7 +243,8 @@ test('EQ positions preserve requested, actual and residual dB with conservative 
 test('documented 3 dB steps persist and map gains to real positions',()=>{
  const normalized=ctx.normalizeCalibrationContext({eqScale:'steps',eqStepDb:'3'},'car');
  assert.equal(normalized.eqStepDb,'3');
- assert.equal(ctx.normalizeCalibrationContext({eqScale:'steps',eqStepDb:'4'},'car').eqStepDb,'unknown');
+ assert.equal(ctx.normalizeCalibrationContext({eqScale:'steps',eqStepDb:'4'},'car').eqStepDb,'4');
+ assert.equal(ctx.normalizeCalibrationContext({eqScale:'steps',eqStepDb:'5'},'car').eqStepDb,'unknown');
  const script=fs.readFileSync('src/js/04-equalization.js','utf8');
  const start=script.indexOf('function physicalEqControl('),end=script.indexOf('function eqResultModel(',start);
  const engine={Math,Number,clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),normalizeCalibrationContext:c=>c};
