@@ -102,7 +102,16 @@ case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
 if(t.id==='loudnessFrequency'&&current){stopTone();loudnessFreq=Number(t.value);loudnessOffsetDb=0;loudnessListened=new Set();loudnessMessage='Nueva frecuencia seleccionada. Compara las dos señales.';refreshLoudnessUI();return}
-if(current&&(t.id==='resultEqScale'||t.id==='resultEqStepDb')){
+if(current&&(t.id==='resultControlMin'||t.id==='resultControlMax')){
+  const value=Number(t.value),field=t.id==='resultControlMin'?'controlMin':'controlMax';
+  if(!Number.isInteger(value)||(field==='controlMin'&&(value>=0||value<-30))||(field==='controlMax'&&(value<=0||value>30))){
+   uiAlert('Introduce un límite físico válido para el control.');render();return;
+  }
+  current[field]=value;transferCompleted.clear();transferBandIndex=0;
+  if(transferOpen)transferStatus='Cambió el rango físico. Revisa nuevamente las posiciones.';
+  touch();render();return;
+ }
+ if(current&&(t.id==='resultEqScale'||t.id==='resultEqStepDb')){
  const f=t.id==='resultEqScale'?'eqScale':'eqStepDb';
  const next={...normalizeCalibrationContext(current.context,current.type),provenance:'captured',[f]:t.value};
  current.context=normalizeCalibrationContext(next,current.type);
@@ -114,7 +123,7 @@ if(t.dataset.context&&temp.context){const f=t.dataset.context;const next={...tem
 if(current&&t.id==='transferFormat'){transferPreset=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';if(transferPreset==='custom'&&!transferCustom)transferCustom=current.bands.join(', ');refreshTransfer();return}
 if(current&&t.id==='transferRange'){transferRange=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(current&&t.id==='transferCustom'){transferCustom=t.value;return}
-if(t.id==='uiLanguage'){if(LOCALES.includes(t.value)){language=t.value;try{localStorage.setItem(LANGUAGE_KEY,language)}catch(e){}localize(document.body)}return}if(t.id==='balanceFrequency'&&current){balanceFreq=Number(t.value);resetBalanceRound();refreshBalanceUI();return}if(t.id==='extraPreset'&&t.value){temp.name=$('#deviceName')?.value||temp.name;setPreset(t.value);return}if(t.id==='resultProfileSelect'){const p=profiles.find(x=>x.id===t.value);if(p){selectedEqFreq=null;setActive(p);nav('results')}return}if(t.id==='eqSlider')return;if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin')temp.min=Number(t.value);if(t.id==='eqMax')temp.max=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='musicFile')handleResultsEvents(t);
+if(t.id==='uiLanguage'){if(LOCALES.includes(t.value)){language=t.value;try{localStorage.setItem(LANGUAGE_KEY,language)}catch(e){}localize(document.body)}return}if(t.id==='balanceFrequency'&&current){balanceFreq=Number(t.value);resetBalanceRound();refreshBalanceUI();return}if(t.id==='extraPreset'&&t.value){temp.name=$('#deviceName')?.value||temp.name;setPreset(t.value);return}if(t.id==='resultProfileSelect'){const p=profiles.find(x=>x.id===t.value);if(p){selectedEqFreq=null;setActive(p);nav('results')}return}if(t.id==='eqSlider')return;if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin')temp.min=Number(t.value);if(t.id==='eqMax')temp.max=Number(t.value);if(t.id==='controlMin')temp.controlMin=Number(t.value);if(t.id==='controlMax')temp.controlMax=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='musicFile')handleResultsEvents(t);
 if(t.id==='importInput'&&t.files?.length){
  const file=t.files[0];
  if(file.size>2*1024*1024){uiAlert('El respaldo supera el límite de seguridad de 2 MB.');t.value='';return}
@@ -133,7 +142,7 @@ if(t.id==='importInput'&&t.files?.length){
 }
 }
 // Ensure user can change tabs without generating sound; pause on backgrounding.
-document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);document.addEventListener('input',e=>{const t=e.target;if(t.id==='eqSlider'&&current){const x=recommend(current).find(q=>q.f===selectedEqFreq);if(x){const desired=clamp(roundTo(Number(t.value),current.step),current.min,current.max);current.manual[x.f]=(Number(current.manual[x.f])||0)+(desired-x.gain);touch();refreshResultsUI()}return}if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin'&&Number.isFinite(Number(t.value)))temp.min=Number(t.value);if(t.id==='eqMax'&&Number.isFinite(Number(t.value)))temp.max=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;if($('#freqSummary'))$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='testStart'){const n=Number(t.value);if(Number.isFinite(n))temp.testStart=clamp(n,-99,-24)}if(t.id==='testFloor'){const n=Number(t.value);if(Number.isFinite(n))temp.testFloor=clamp(n,-100,-36)}if(['customFreqs','eqMin','eqMax','testStart','testFloor'].includes(t.id))refreshSetupDuration();});
+document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);document.addEventListener('input',e=>{const t=e.target;if(t.id==='eqSlider'&&current){const x=recommend(current).find(q=>q.f===selectedEqFreq);if(x){const desired=clamp(roundTo(Number(t.value),current.step),current.min,current.max);current.manual[x.f]=(Number(current.manual[x.f])||0)+(desired-x.gain);touch();refreshResultsUI()}return}if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin'&&Number.isFinite(Number(t.value)))temp.min=Number(t.value);if(t.id==='eqMax'&&Number.isFinite(Number(t.value)))temp.max=Number(t.value);if(t.id==='controlMin'&&Number.isFinite(Number(t.value)))temp.controlMin=Number(t.value);if(t.id==='controlMax'&&Number.isFinite(Number(t.value)))temp.controlMax=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;if($('#freqSummary'))$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='testStart'){const n=Number(t.value);if(Number.isFinite(n))temp.testStart=clamp(n,-99,-24)}if(t.id==='testFloor'){const n=Number(t.value);if(Number.isFinite(n))temp.testFloor=clamp(n,-100,-36)}if(['customFreqs','eqMin','eqMax','controlMin','controlMax','testStart','testFloor'].includes(t.id))refreshSetupDuration();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopTone();floorReached=false;if(playerAudio)playerAudio.pause();if(page==='test')render()}});window.addEventListener('pagehide',()=>{stopTone();if(playerAudio)playerAudio.pause();try{playerSource?.disconnect()}catch(e){}try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}if(playerUrl)URL.revokeObjectURL(playerUrl)});
 if(current)resetBalanceSession(current);
 render();
