@@ -987,7 +987,7 @@ function estimateThresholdContrast(p,data){
   const entry={f:point.f,base:0,contrastDb:null,autoReason:'sin datos suficientes',autoConfidence:'none'};
   if(!enough)return entry;
   if(!Number.isFinite(point.db)||point.derived)return {...entry,autoReason:'frecuencia no medida directamente'};
-  if(!hasBothChannelThresholds(p,point.f))return {...entry,autoReason:'falta un umbral de uno de los oídos: no corregir automáticamente'};
+  if(!hasBothChannelThresholds(p,point.f))return {...entry,autoReason:'faltan umbrales de ambos oídos: no corregir automáticamente'};
   if(point.quality==='mixed')return {...entry,autoReason:'diferencias relevantes entre oídos: sin corrección automática'};
   if(point.quality==='unmeasurable')return {...entry,autoReason:'sin umbral confirmado'};
   const idx=eligible.findIndex(x=>x.f===point.f);
@@ -1010,7 +1010,7 @@ function estimateThresholdContrast(p,data){
   const raw=deviation>=0?Math.min(maxBoost,evidence*.20):-Math.min(maxCut,evidence*.20);
   const base=roundTo(raw,p.step||1);
   const autoReason=base===0?'contraste local insuficiente; sin cambio justificable':
-   verified?'contraste local medido; ajuste experimental limitado':
+   verified?'desviación local; compensación limitada y experimental':
    'estimación de confianza limitada; sugerencia provisional de máximo 1 dB';
   return {f:point.f,base,contrastDb:Number(deviation.toFixed(2)),autoReason,
    autoConfidence:verified?'medium':'low'};
