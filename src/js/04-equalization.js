@@ -316,7 +316,7 @@ function eqResultMarkup(p){
  const physicalMin=p.controlMin??p.min,physicalMax=p.controlMax??p.max;
  const physicalUnit=ctx.eqScale==='steps'?'posiciones':ctx.eqScale==='db'?'dB del control':'unidades sin verificar';
  const nominal=ctx.eqScale==='steps'&&m.verified?' · equivalencia nominal '+(physicalMin*m.ratio)+' a +'+(physicalMax*m.ratio)+' dB (según manual declarado)':'';
- return `<details id="eqCardSection" class="unobtrusive eq-device-settings" ${eqPhysicalOpen?'open':''}><summary>Configurar controles físicos de mi equipo · opcional</summary><div class="inner-detail">
+ return `<details id="eqCardSection" class="unobtrusive eq-device-settings" ><summary>Configurar controles físicos de mi equipo · opcional</summary><div class="inner-detail">
  <p class="compact-note">Los ajustes anteriores son dB sugeridos. Configura una conversión a posiciones solamente si conoces la escala real del equipo.</p>
  <div class="eq-card-config"><label for="resultEqScale">Unidad del control</label>
  <select id="resultEqScale" class="field">${scaleOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqScale===k?'selected':'')+'>'+l+'</option>').join('')}</select>
@@ -328,7 +328,6 @@ function eqResultMarkup(p){
  <p class="tiny muted">Si desconoces la equivalencia, usa únicamente los dB sugeridos y verifica tu equipo antes de mover las posiciones.</p></div></details>`;
 }
 
-let eqPhysicalOpen=false;
 
 /* Landscape EQ image: one column per frequency. The primary value always
    comes from the same physicalEqControl projection as the transfer wizard. */
