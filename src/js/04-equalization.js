@@ -215,7 +215,7 @@ function physicalEqControl(gain,p,context=normalizeCalibrationContext(p.context,
  const ratio=scale==='db'?1:(scale==='steps'&&['1','2'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
  if(!Number.isFinite(ratio))return {position:null,actualGain:null,delta:null,exact:false,ratio:null};
  const magnitude=Math.round(Math.abs(gain)/ratio-1e-9);
- const position=clamp(Math.sign(gain)*magnitude,Math.ceil(p.min),Math.floor(p.max));
+ const position=clamp(magnitude===0?0:Math.sign(gain)*magnitude,Math.ceil(p.min),Math.floor(p.max));
  const actualGain=Number((position*ratio).toFixed(2));
  const delta=Number((actualGain-gain).toFixed(2));
  return {position,actualGain,delta,exact:Math.abs(delta)<.001,ratio};
