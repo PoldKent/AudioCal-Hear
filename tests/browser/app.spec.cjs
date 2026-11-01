@@ -428,7 +428,7 @@ test('digital reference is 0 to −100, playback defaults safely below 0',async(
  await expect(page.locator('#root')).toContainText('0 a −100 dBFS');
  await expect(page.locator('#testStart')).toHaveValue('-36');
  await expect(page.locator('#testFloor')).toHaveValue('-100');
- await expect(page.locator('#testStart')).toHaveAttribute('max','-24');
+ await expect(page.locator('#testStart')).toHaveAttribute('max','0');
  await page.locator('[data-device="car"]').click();
  await page.locator('#deviceName').fill('Escala 0 a -100');
  await page.locator('[data-act="create"]').click();
