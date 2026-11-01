@@ -184,6 +184,37 @@ function loudnessEvidenceStatus(samples){
   'Repetible · descriptivo':'Inconsistente · no interpretar';
 }
 
+
+// Each measured EQ band is visited exactly once in the same test pass.
+// These relative loudness observations are descriptive, not calibrated EQ gains.
+function normalizeInlineLoudness(raw,bands){
+ const out=Object.create(null);
+ if(!raw||typeof raw!=='object'||Array.isArray(raw))return out;
+ for(const [k,v] of Object.entries(raw).slice(0,96)){
+  const parts=/^(\d+(?:\.\d+)?)\|(both|left|right)\|([01])$/.exec(k);
+  if(!parts||!bands.includes(Number(parts[1]))||!v||typeof v!=='object'||Array.isArray(v))continue;
+  const status=['matched','bounded','unavailable','reference'].includes(v.status)?v.status:null;
+  if(!status)continue;
+  const offsetDb=status==='matched'&&Number.isInteger(v.offsetDb)&&Math.abs(v.offsetDb)<=9?v.offsetDb:null;
+  if(status==='matched'&&offsetDb===null)continue;
+  const trials=Array.isArray(v.trials)?v.trials.slice(0,3).filter(t=>t&&
+   ['reference','target','similar','uncertain'].includes(t.answer)&&Number.isInteger(t.offsetDb)&&Math.abs(t.offsetDb)<=9)
+   .map(t=>({answer:t.answer,offsetDb:t.offsetDb})):[];
+  out[k]={status,offsetDb,referenceDbfs:Number.isFinite(v.referenceDbfs)?clamp(v.referenceDbfs,-100,-24):null,
+   trials,method:'in-pass-relative-loudness-v1'};
+ }
+ return out;
+}
+function inlineLoudnessKey(e){return e.f+'|'+e.side+'|'+e.pass}
+function inlineLoudnessPending(p){
+ if(!p?.integratedLoudness)return null;
+ for(const e of plan(p)){
+  if(!recorded(p,e))continue;
+  if(!p.inlineLoudness?.[inlineLoudnessKey(e)])return e;
+ }
+ return null;
+}
+
 const QUICK_LIMIT=6;
 function normalizedProfile(p,importing=false){
  if(!p||typeof p!=='object'||Array.isArray(p)||!Array.isArray(p.bands)||p.bands.length<2||p.bands.length>31)return null;
@@ -240,6 +271,8 @@ function normalizedProfile(p,importing=false){
     p.testBandPlan.slice():legacyQuickBands(bands)
   ):null,
   loudness:normalizeLoudness(p.loudness,bands),
+  integratedLoudness:p.integratedLoudness===true,
+  inlineLoudness:normalizeInlineLoudness(p.inlineLoudness,bands),
   acoustic:Object.fromEntries(bands.filter(f=>{
    const x=p.acoustic?.[f];return x&&typeof x==='object'&&Number.isFinite(x.contrastDb)&&x.contrastDb>=-30&&x.contrastDb<=60&&typeof x.detected==='boolean';
   }).map(f=>[f,{contrastDb:p.acoustic[f].contrastDb,detected:p.acoustic[f].detected,at:safeNumber(p.acoustic[f].at,Date.now(),0,Date.now()+86400000),method:'mic-spectral-presence-unvalidated'}])),
@@ -399,10 +432,10 @@ function resetBalanceSession(p){balanceQueue=suggestedBalanceBands(p);balanceQue
 let temp={name:'',type:'car',preset:'car7',channels:'both',passes:1,testMode:'complete',testStart:TEST_START_DB,testFloor:TEST_END_DB,bands:presets.car7.bands.slice(),min:-6,max:6,controlMin:-6,controlMax:6,step:1,context:presetCalibrationContext('car','car7')};
 const save=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(profiles));localStorage.setItem(STATEKEY,current?.id||'')}catch(e){notice='No se pudo guardar localmente. Puedes exportar tus valores.'}};
 const touch=()=>{if(!current)return;current.updatedAt=Date.now();save()};
-const nav=p=>{if(page==='test'&&p!=='test')stopMicAssist();if(page==='results'&&p!=='results')resetLoudnessSession();if(tone)stopTone();floorReached=false;if(page==='results'&&playerAudio&&p!=='results')playerAudio.pause();page=p;render();window.scrollTo({top:0,behavior:'instant'})};
+const nav=p=>{if(p!=='test')inlineMatch=null;if(page==='test'&&p!=='test')stopMicAssist();if(page==='results'&&p!=='results')resetLoudnessSession();if(tone)stopTone();floorReached=false;if(page==='results'&&playerAudio&&p!=='results')playerAudio.pause();page=p;render();window.scrollTo({top:0,behavior:'instant'})};
 const button=(text,action,cls='btn-ghost',extra='')=>`<button type="button" data-act="${action}" class="btn ${cls}" ${extra}>${text}</button>`;
 function setPreset(id){const preset=presets[id]||presets.custom;temp.preset=id;temp.bands=preset.bands.slice();temp.min=preset.min;temp.max=preset.max;temp.controlMin=preset.controlMin??preset.min;temp.controlMax=preset.controlMax??preset.max;temp.step=preset.step;const eq=presetCalibrationContext(temp.type,id);temp.context={...temp.context,eqScale:eq.eqScale,eqStepDb:eq.eqStepDb};render()}
-function render(){if(page==='test'&&current&&firstMissing(current)<0){stopMicAssist();page='results'}if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
+function render(){if(page==='test'&&current&&firstMissing(current)<0&&!inlineLoudnessPending(current)){stopMicAssist();page='results'}if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
  el.dataset.page=page;
  el.innerHTML=page==='setup'?renderSetup():page==='test'?renderTest():page==='results'?renderResults():renderProfiles();
  if(page==='test'&&tone?.mode==='test')startVisualizer();if(page==='results'&&current){const newPlayer=$('#audioPlayer');if(playerAudio!==newPlayer){try{playerAudio?.pause()}catch(e){}try{playerSource?.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}playerPreamp=null;playerOutput=null;playerSource=null;filters=[];playerAudio=newPlayer;if(playerUrl)playerAudio.src=playerUrl;attachPlayerEvents(playerAudio)}updatePlayerFilters();refreshEqCard()}
