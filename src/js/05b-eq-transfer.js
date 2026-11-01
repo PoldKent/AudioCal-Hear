@@ -10,7 +10,7 @@ function transferBands(p){
 function transferBounds(p){
  if(transferRange!=='profile')return TRANSFER_LIMITS[transferRange]||[p.min,p.max];
  const context=normalizeCalibrationContext(p.context,p.type);
- const ratio=context.eqScale==='steps'&&['1','2'].includes(context.eqStepDb)?Number(context.eqStepDb):1;
+ const ratio=context.eqScale==='steps'&&['1','2','3'].includes(context.eqStepDb)?Number(context.eqStepDb):1;
  return [p.min*ratio,p.max*ratio]; // dB range, not physical positions
 }
 function transferMapping(p){
