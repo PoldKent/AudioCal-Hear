@@ -36,7 +36,7 @@ function trans(input){
 }
 function localize(root=document.body){
  document.documentElement.lang=language==='zh'?'zh-CN':language;
- const title=document.querySelector('title');if(title)title.textContent='AudioCal Hear v1.10.0 · '+(language==='es'?'Calibrador auditivo':({en:'Hearing and EQ assistant',fr:'Assistant auditif et EQ',pt:'Assistente auditivo e EQ',it:'Assistente uditivo ed EQ',de:'Hör- und EQ-Assistent',zh:'听觉与均衡器助手',ja:'聴覚・EQアシスタント'}[language]));
+ const title=document.querySelector('title');if(title)title.textContent='AudioCal Hear V2 Preview · '+(language==='es'?'Calibrador auditivo':({en:'Hearing and EQ assistant',fr:'Assistant auditif et EQ',pt:'Assistente auditivo e EQ',it:'Assistente uditivo ed EQ',de:'Hör- und EQ-Assistent',zh:'听觉与均衡器助手',ja:'聴覚・EQアシスタント'}[language]));
  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
  while((n=walker.nextNode())){
   if(n.parentElement?.closest('script,style,#audiocal-translations,.profile-title,.profile-row-body strong,#resultProfileSelect option,[data-profile-name]'))continue;
@@ -80,7 +80,7 @@ const presets={
  iso31:{name:'ISO · 31 bandas (tercio de octava)',short:'ISO 31',bands:[20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000],min:-12,max:12,step:1,note:'31 bandas profesionales en tercios de octava. El examen completo es más largo.'},
  custom:{name:'Personalizado · frecuencias propias',short:'Personalizado',bands:[63,160,400,1000,2500,6300,16000],min:-12,max:12,step:1,note:'Escribe las frecuencias que aparecen en tu ecualizador.'}
 };
-const el=document.getElementById('root');const STORAGE='audiocal-hear-profiles-v1';const STATEKEY='audiocal-hear-active-v1';
+const el=document.getElementById('root');const STORAGE='audiocal-hear-v2-profiles-preview';const STATEKEY='audiocal-hear-v2-active-preview';
 const $=s=>document.querySelector(s);const fmt=f=>f>=1000?(Number((f/1000).toFixed(3))+' kHz'):(f+' Hz');
 const short=f=>f>=1000?Number((f/1000).toFixed(3))+'k':String(f);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));const roundTo=(x,s)=>Math.round(x/s)*s;
 const median=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b.length%2?b[(b.length-1)/2]:(b[b.length/2-1]+b[b.length/2])/2:null};
@@ -250,7 +250,7 @@ function normalizedProfile(p,importing=false){
   createdAt:safeNumber(p.createdAt,Date.now(),0,Date.now()+86400000),updatedAt:safeNumber(p.updatedAt,Date.now(),0,Date.now()+86400000)
  };
 }
-function readProfiles(){try{const saved=JSON.parse(localStorage.getItem(STORAGE));return Array.isArray(saved)?saved.slice(0,200).map(p=>normalizedProfile(p)).filter(Boolean):[]}catch(e){return[]}}
+function readProfiles(){try{const saved=JSON.parse(localStorage.getItem(STORAGE)||localStorage.getItem('audiocal-hear-profiles-v1'));return Array.isArray(saved)?saved.slice(0,200).map(p=>normalizedProfile(p)).filter(Boolean):[]}catch(e){return[]}}
 let profiles=readProfiles(),currentId='';try{currentId=localStorage.getItem(STATEKEY)||''}catch(e){};
 let current=profiles.find(p=>p.id===currentId)||null;
 // Playback dBFS is not the acoustic sound-pressure level reaching the ear.
