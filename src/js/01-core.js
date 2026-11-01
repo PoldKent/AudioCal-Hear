@@ -188,7 +188,10 @@ function normalizedProfile(p,importing=false){
  // Separate physical positions from digital EQ correction bounds. Legacy presets keep their ranges.
  const controlMin=safeNumber(p.controlMin,p.preset==='car7'?-6:min,-30,-1);
  const controlMax=safeNumber(p.controlMax,p.preset==='car7'?6:max,1,30);
- const testStart=safeNumber(p.testStart,-36,-99,-24),testFloor=safeNumber(p.testFloor,-100,-100,Math.min(-36,testStart-1));
+ const safeType=['car','speaker'].includes(p.type)?p.type:'headphones';
+ // Normalization runs while profiles are loaded, before the playback constants initialize.
+ const testStart=safeNumber(p.testStart,-36,-99,safeType==='headphones'?-24:0),
+  testFloor=safeNumber(p.testFloor,-100,-100,Math.min(-36,testStart-1));
  const id=importing?'p'+Date.now()+Math.random().toString(36).slice(2,8):String(p.id||'').slice(0,100);
  if(!id)return null;
  const measures=Object.create(null),raw=p.measures&&typeof p.measures==='object'&&!Array.isArray(p.measures)?p.measures:{};
@@ -237,10 +240,19 @@ function readProfiles(){try{const saved=JSON.parse(localStorage.getItem(STORAGE)
 let profiles=readProfiles(),currentId='';try{currentId=localStorage.getItem(STATEKEY)||''}catch(e){};
 let current=profiles.find(p=>p.id===currentId)||null;
 // Playback dBFS is not the acoustic sound-pressure level reaching the ear.
-// 0 dBFS is a reference (digital full scale), NEVER an allowed test amplitude.
+// 0 dBFS is digital full scale, not acoustic 0 dB SPL and not a target loudness.
+// Speakers/cars can opt into extended digital range only with staged preflight.
+// Headphones remain capped at -24 dBFS. Defaults remain conservative for all.
 const DIGITAL_REFERENCE_DBFS=0, TEST_START_DB=-36, TEST_END_DB=-100, MAX_SAFE_DB=-24, SECONDS_PER_DB=3;
+function maxTestStart(p){return p?.type==='car'||p?.type==='speaker'?DIGITAL_REFERENCE_DBFS:MAX_SAFE_DB;}
+function needsVolumePreview(p){return !!p&&maxTestStart(p)===0&&getStart(p)>MAX_SAFE_DB;}
+function volumePreviewSteps(p){
+ if(!needsVolumePreview(p))return [];
+ const target=getStart(p);
+ return [...new Set([-36,-24,-12,-6,0,target].filter(x=>x<=target))].sort((a,b)=>a-b);
+}
 const MAX_FIRST=60, MAX_VERIFY=60, MAX_STEPS=20;
-const getStart=p=>clamp(p?.testStart!=null&&Number.isFinite(Number(p.testStart))?Number(p.testStart):TEST_START_DB,TEST_END_DB+1,MAX_SAFE_DB);
+const getStart=p=>clamp(p?.testStart!=null&&Number.isFinite(Number(p.testStart))?Number(p.testStart):TEST_START_DB,TEST_END_DB+1,maxTestStart(p));
 const getFloor=p=>clamp(p?.testFloor!=null&&Number.isFinite(Number(p.testFloor))?Number(p.testFloor):TEST_END_DB,TEST_END_DB,Math.min(-36,getStart(p)-1));
 function legacyQuickBands(bands){
  const sorted=bands.slice().sort((a,b)=>a-b);
@@ -287,6 +299,8 @@ function independentThresholdPair(p,f,side){
 
 let trial=null, introStep=0, ambientStatus='', ambientBusy=false;
 let channelVerified={left:false,right:false},channelCheckPlayed={left:false,right:false};
+let volumePreviewIndex=0,volumePreviewPlayed=false,volumeReady=false;
+function resetVolumePreview(){volumePreviewIndex=0;volumePreviewPlayed=false;volumeReady=false}
 function channelsReady(p){return p?.channels!=='separate'||(channelVerified.left&&channelVerified.right);}
 function resetChannelCheck(){channelVerified={left:false,right:false};channelCheckPlayed={left:false,right:false};}
 function newTrial(entry){

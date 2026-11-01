@@ -161,7 +161,7 @@ test('test scale is 0 to −100 dBFS but never starts at digital full scale',()=
  vm.runInNewContext(source.slice(head,tail).replace('function legacyQuickBands','function legacyQuickBands'),{
   ...c,QUICK_LIMIT:6,TEST_START_DB:-36,TEST_END_DB:-100,MAX_SAFE_DB:-24
  });
- assert.match(html,/Rango disponible|Escala digital de referencia/);
+ assert.match(html,/Escala digital: 0 a −100 dBFS/);
  assert.doesNotMatch(html,/const TEST_START_DB=0/);
 });
 test('quick mode groups adjacent frequency bands; historical schedules stay stable',()=>{
@@ -187,4 +187,27 @@ test('channel answers are blocked before full tone playback',()=>{
  assert.match(code,/!trial\.awaiting\|\|tone\?\.mode==='test'/);
  assert.match(code,/if\(side!=='both'&&!ctx\.createStereoPanner\)/);
  assert.match(code,/!channelsReady\(current\)/);
+});
+
+test('device-aware digital ceilings and staged preview never start at 0 by default',()=>{
+ const begin=source.indexOf('function maxTestStart('),end=source.indexOf('function legacyQuickBands(',begin);
+ assert.ok(begin>=0&&end>begin);
+ const ctx={Math,Number,clamp,DIGITAL_REFERENCE_DBFS:0,MAX_SAFE_DB:-24,TEST_START_DB:-36,TEST_END_DB:-100};
+ vm.runInNewContext(source.slice(begin,end)+'\nthis.getStart=getStart;this.getFloor=getFloor;',ctx);
+ for(const type of ['car','speaker']){
+  assert.equal(ctx.maxTestStart({type}),0);
+  assert.equal(ctx.getStart({type}),-36);
+  const advanced={type,testStart:0,testFloor:-100};
+  assert.equal(ctx.getStart(advanced),0);
+  assert.equal(ctx.getFloor(advanced),-100);
+  assert.equal(ctx.needsVolumePreview(advanced),true);
+  assert.deepEqual(Array.from(ctx.volumePreviewSteps(advanced)),[-36,-24,-12,-6,0]);
+  assert.deepEqual(Array.from(ctx.volumePreviewSteps({type,testStart:-18})),[-36,-24,-18]);
+ }
+ const phones={type:'headphones',testStart:0,testFloor:-100};
+ assert.equal(ctx.maxTestStart(phones),-24);
+ assert.equal(ctx.getStart(phones),-24);
+ assert.equal(ctx.needsVolumePreview(phones),false);
+ assert.deepEqual(Array.from(ctx.volumePreviewSteps(phones)),[]);
+ assert.match(source,/volumePreviewPlayed=false,volumeReady=false/);
 });
