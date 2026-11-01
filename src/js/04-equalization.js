@@ -221,7 +221,8 @@ function thresholdEvidenceLabel(p,f){
    const interval='Oído '+(side==='both'?'ambos':side==='left'?'izquierdo':'derecho')+
     ' · audible '+(Number.isFinite(m.audibleDb)?m.audibleDb+' dBFS':'sin límite')+
     ' / inaudible '+(Number.isFinite(m.inaudibleDb)?m.inaudibleDb+' dBFS':'sin límite');
-   return interval+' · confianza '+(m.confidence||'no clasificada')+
+   const confidenceLabel={high:'alta',medium:'media',low:'baja',bounded:'límite observado'}[m.confidence]||'no clasificada';
+   return interval+' · confianza '+confidenceLabel+
     (m.contradictions?' · '+m.contradictions+' discrepancias':'');
   }).filter(Boolean).join(' | ');
  }).filter(Boolean).join(' | ');
