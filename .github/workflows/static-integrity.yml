@@ -33,6 +33,6 @@ jobs:
           const dictionaries=JSON.parse(json[1]);
           for(const locale of ['en','fr','pt','it','de','zh','ja'])if(!dictionaries[locale])throw Error('Missing locale '+locale);
           new vm.Script(js[0],{filename:'audiocal-embedded.js'});
-          for(const token of ['function answerTone(', 'function playTone(', 'function recommend(', 'function updatePlayerFilters(', 'function normalizedProfile(', 'TEST_END_DB=-84'])if(!js[0].includes(token))throw Error('Missing critical feature: '+token);
+          for(const token of ['function answerTone(', 'function playTone(', 'function recommend(', 'function updatePlayerFilters(', 'function normalizedProfile(', 'TEST_END_DB=-100'])if(!js[0].includes(token))throw Error('Missing critical feature: '+token);
           console.log('AudioCal Hear: HTML wrapper, 8 languages, JS syntax and feature markers OK');
           NODE
