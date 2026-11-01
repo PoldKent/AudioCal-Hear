@@ -256,3 +256,17 @@ test('documented 3 dB steps persist and map gains to real positions',()=>{
  assert.equal(engine.physicalEqControl(-3,p).exact,true);
  assert.equal(engine.physicalEqControl(3,{...p,context:{eqScale:'steps',eqStepDb:'unknown'}}).position,null);
 });
+
+test('AF-02 result refresh wires original trace, live EQ counts and export safety',()=>{
+ const eq=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const start=eq.indexOf('function refreshResultsUI('),end=eq.indexOf('function eqMark(',start);
+ const refresh=eq.slice(start,end);
+ assert.match(eq,/data-trace-final="\$\{x.f\}"/);
+ assert.match(eq,/id="eqChangeCount"/);
+ assert.match(refresh,/traceFinal\.textContent=eqMark\(b\)\+' dB'/);
+ assert.match(refresh,/headerCount\.textContent=count\+' cambios'/);
+ assert.match(refresh,/transferCompleted\.clear\(\)/);
+ assert.match(refresh,/refreshEqCard\(\)/);
+ assert.doesNotMatch(refresh,/current\.measures\s*=/,'Refreshing EQ must never rewrite raw hearing measurements');
+ assert.match(eq,/notice\.textContent=m\.warning/);
+});

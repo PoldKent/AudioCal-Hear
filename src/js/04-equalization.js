@@ -114,18 +114,31 @@ function updateSelectedEditor(){if(!current||page!=='results')return;const r=rec
  if(slider){slider.value=String(x.gain);slider.setAttribute('aria-label',`Ganancia de ${fmt(x.f)} en decibelios`)}
  $('#eqEditor')?.querySelectorAll('[data-adjust]').forEach(b=>b.dataset.adjust=String(x.f));localize(document.body);
 }
+// Every editable recommendation is rendered from the same fresh recommend() result.
+// The raw measurement graph and interpretation remain deliberately immutable.
+let lastRenderedEqSignature=null;
 function refreshResultsUI(){
  if(!current||page!=='results')return;
  const r=recommend(current);let count=0;
+ const signature=current.id+'|'+r.map(b=>b.f+':'+b.gain).join('|');
+ if(lastRenderedEqSignature!==null&&lastRenderedEqSignature!==signature){
+  transferCompleted.clear();
+  if(transferOpen)transferStatus='Los valores de EQ cambiaron. Revisa nuevamente las bandas antes de marcarlas como aplicadas.';
+ }
+ lastRenderedEqSignature=signature;
  for(const b of r){
   if(b.gain!==0)count++;
   const band=document.querySelector(`[data-eq-band="${b.f}"]`);
   if(band){band.setAttribute('aria-label',`Editar ${fmt(b.f)}, ${(b.gain>0?'+':'')+b.gain} decibelios`);const value=band.querySelector('.eqval'),fill=band.querySelector('.eqfill');if(value)value.textContent=(b.gain>0?'+':'')+b.gain;
    if(fill){const span=Math.max(1,current.max-current.min),center=100*current.max/span,y=100*(current.max-b.gain)/span;fill.style.top=Math.min(center,y)+'%';fill.style.height=Math.max(2,Math.abs(center-y))+'%'}}
   const val=document.querySelector(`[data-eq-value="${b.f}"]`);if(val)val.innerHTML=(b.gain>0?'+':'')+b.gain+' <small style="display:inline;color:var(--muted)">dB</small>';
+  const traceFinal=document.querySelector(`[data-trace-final="${b.f}"]`);
+  if(traceFinal)traceFinal.textContent=eqMark(b)+' dB';
  }
  updateSelectedEditor();
  const countEl=document.querySelector('.stat-grid .stat:nth-child(3) strong');if(countEl)countEl.textContent=count;
+ const headerCount=$('#eqChangeCount');if(headerCount)headerCount.textContent=count+' cambios';
+ const copyStatus=$('#copyStatus');if(copyStatus)copyStatus.textContent='';
  const pref=document.querySelector('#prefRound');if(pref)pref.innerHTML=preferenceMarkup();
  updatePlayerFilters(preferencePreview?previewTaste():null);refreshTransfer();refreshEqCard();localize(document.body);
 }
@@ -192,7 +205,7 @@ function renderCalibrationTrace(p,r){
    'I: '+formatDb(rawFrequencyThreshold(p,x.f,'left'))+'; D: '+formatDb(rawFrequencyThreshold(p,x.f,'right')):
    formatDb(rawFrequencyThreshold(p,x.f,'both'));
   const gain=(Number(x.gain)||0),automatic=(Number(x.base)||0);
-  return `<tr><th scope="row">${fmt(x.f)}</th><td>${raw}</td><td>${thresholdStatus(x)}<span class="tiny muted" style="display:block">${esc(x.autoReason||'')}</span></td><td>${automatic>=0?'+':''}${Number(automatic.toFixed(2))} dB</td><td><strong>${gain>=0?'+':''}${gain} dB</strong></td></tr>`;
+  return `<tr><th scope="row">${fmt(x.f)}</th><td>${raw}</td><td>${thresholdStatus(x)}<span class="tiny muted" style="display:block">${esc(x.autoReason||'')}</span></td><td>${automatic>=0?'+':''}${Number(automatic.toFixed(2))} dB</td><td><strong data-trace-final="${x.f}">${gain>=0?'+':''}${gain} dB</strong></td></tr>`;
  }).join('');
  return `<section id="tracePanel" class="trace-panel" aria-label="Comparación transparente de la calibración">
  <header class="trace-heading"><h2>Resultados del test · antes y después</h2><p class="compact-note">${incomplete}</p></header>
@@ -301,7 +314,12 @@ function paintEqResult(canvas,p){
  c.fillText(warnings,40,foot+28);
  return true;
 }
-function refreshEqCard(){if(page!=='results'||!current)return;const canvas=$('#eqCardCanvas');if(canvas)paintEqResult(canvas,current)}
+function refreshEqCard(){if(page!=='results'||!current)return;
+ const canvas=$('#eqCardCanvas');if(canvas)paintEqResult(canvas,current);
+ const notice=$('#eqCardNotice');if(notice){const m=eqResultModel(current);
+  notice.textContent=m.warning;notice.classList.toggle('eq-card-warning',!m.verified);
+ }
+}
 function eqControlText(p){
  const m=eqResultModel(p);
  return 'AudioCal Hear · '+m.name+'\n'+m.context+'\n'+m.warning+'\n'+m.rows.map(r=>
@@ -323,10 +341,11 @@ function saveEqCardPng(p){
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
  const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),usable=r.filter(x=>x.db!==null&&!x.derived).length,derived=r.filter(x=>x.derived).length,required=Math.max(3,Math.ceil(p.bands.length*.6));
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
+ lastRenderedEqSignature=p.id+'|'+r.map(b=>b.f+':'+b.gain).join('|');
  const reliable=usable>=required;
  const status=reliable?'Contrastes locales experimentales (v2) + ajustes personales.':'Cobertura insuficiente: corrección automática neutra; ajustes personales separados.';
  return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">AUDIOCAL · INFORME DE FRECUENCIAS</p><h1>Medición y <em>ajuste.</em></h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
- <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${p.bands.length} bandas · <span style="color:var(--cyan)">${esc(presets[p.preset]?.short||'Personalizado')}</span></h2><span class="tag">${r.filter(x=>x.gain!==0).length} cambios</span></div>
+ <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${p.bands.length} bandas · <span style="color:var(--cyan)">${esc(presets[p.preset]?.short||'Personalizado')}</span></h2><span class="tag" id="eqChangeCount">${r.filter(x=>x.gain!==0).length} cambios</span></div>
  <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral · <span>${esc(status)}</span></p>
  ${usable<p.bands.length?`<div class="soft warning"><strong>⚠ ${p.bands.length-usable} frecuencias sin umbral</strong><p class="small">Puedes repetir solo las que faltan. No aumentes el volumen para escucharlas.</p>${button('↺ Repetir pendientes','retrymissing','btn-alt full')}</div>`:''}
  ${renderCalibrationTrace(p,r)}

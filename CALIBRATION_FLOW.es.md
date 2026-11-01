@@ -94,3 +94,12 @@ La implementación de los lotes 0–1 **no cambia** `recommend()`, los tonos ni 
 - Las nuevas segundas pasadas se etiquetan como `adaptive-v20-independent`; las confirmaciones históricas `adaptive-v18-explicit` se conservan intactas, pero **nunca** se cuentan como búsqueda independiente.
 - `gather()` no otorga confianza alta por dos valores heredados iguales; la auditoría muestra las confirmaciones históricas con su limitación y excluye sus valores del recuento de repetibilidad.
 - Una prueba completada sigue siendo una prueba digital en dBFS; este cambio no implica medir dB SPL ni validar un EQ acústico.
+
+
+## Corrección AF-02 — sincronización de resultados
+
+- Cualquier ajuste manual o preferencia confirmada recalcula las ganancias una sola vez por actualización y actualiza barras, editor, lista detallada, contador, columna «EQ final» de la tabla comparativa y el PNG desde `recommend()`.
+- La curva de medición original y la interpretación automática no se regeneran porque los ajustes personales no las modifican; una prueba de regresión exige que la gráfica y los umbrales permanezcan idénticos.
+- El reproductor conserva el elemento de audio y la reproducción; solo se actualizan sus filtros. Los botones de copia y TXT calculan las ganancias actuales cuando se usan.
+- Cualquier modificación del resultado invalida las casillas previamente marcadas como transferidas: se requiere revisar las posiciones ajustadas antes de considerarlas aplicadas.
+- Se restaura en la tarjeta la advertencia técnica correspondiente tras cualquier cambio, evitando dejar un mensaje de «copiado» cuando los valores ya son distintos.
