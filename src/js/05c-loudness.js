@@ -1,6 +1,7 @@
 
 /* Optional loudness matching: raw relative comparisons only; never modifies recommend(). */
 let loudnessFreq=null,loudnessOffsetDb=0,loudnessListened=new Set(),loudnessMessage='';
+function resetLoudnessSession(){stopTone();loudnessFreq=null;loudnessOffsetDb=0;loudnessListened=new Set();loudnessMessage=''}
 function loudnessEligibleBands(p){
  return p.bands.filter(f=>f>=100&&f<=10000&&Math.abs(Math.log2(f/1000))>.08);
 }
@@ -49,6 +50,7 @@ function refreshLoudnessUI(){
 async function playLoudnessSample(which){
  if(!current||page!=='results')return;
  const f=loudnessSelectedBand(current);if(f===null)return;
+ const profileId=current.id;
  const frequency=which==='reference'?1000:f;
  const db=LOUDNESS_REFERENCE_DBFS+(which==='target'?loudnessOffsetDb:0);
  if(db>LOUDNESS_REFERENCE_DBFS+LOUDNESS_OFFSET_LIMIT)return;
@@ -56,6 +58,7 @@ async function playLoudnessSample(which){
   stopTone();
   if(playerAudio)playerAudio.pause();
   const ctx=await ensureAudio();
+  if(!current||current.id!==profileId||page!=='results'||loudnessSelectedBand(current)!==f)return;
   if(frequency>=ctx.sampleRate/2){loudnessMessage='Frecuencia fuera del rango reproducible en este equipo.';refreshLoudnessUI();return}
   const oscillator=ctx.createOscillator(),gain=ctx.createGain();
   oscillator.type='sine';oscillator.frequency.value=frequency;

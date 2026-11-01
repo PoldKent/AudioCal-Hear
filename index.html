@@ -538,7 +538,7 @@ function resetBalanceSession(p){balanceQueue=suggestedBalanceBands(p);balanceQue
 let temp={name:'',type:'car',preset:'car7',channels:'both',passes:1,testMode:'quick',testStart:TEST_START_DB,testFloor:TEST_END_DB,bands:presets.car7.bands.slice(),min:-6,max:6,step:1,context:defaultCalibrationContext('car')};
 const save=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(profiles));localStorage.setItem(STATEKEY,current?.id||'')}catch(e){notice='No se pudo guardar localmente. Puedes exportar tus valores.'}};
 const touch=()=>{if(!current)return;current.updatedAt=Date.now();save()};
-const nav=p=>{if(tone)stopTone();floorReached=false;if(page==='results'&&playerAudio&&p!=='results')playerAudio.pause();page=p;render();window.scrollTo({top:0,behavior:'instant'})};
+const nav=p=>{if(page==='results'&&p!=='results')resetLoudnessSession();if(tone)stopTone();floorReached=false;if(page==='results'&&playerAudio&&p!=='results')playerAudio.pause();page=p;render();window.scrollTo({top:0,behavior:'instant'})};
 const button=(text,action,cls='btn-ghost',extra='')=>`<button type="button" data-act="${action}" class="btn ${cls}" ${extra}>${text}</button>`;
 function setPreset(id){temp.preset=id;temp.bands=(presets[id]||presets.custom).bands.slice();temp.min=presets[id].min;temp.max=presets[id].max;temp.step=presets[id].step;render()}
 function render(){if(page==='test'&&current&&firstMissing(current)<0)page='results';if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
@@ -753,7 +753,7 @@ async function checkAmbient(){
 function parseBands(s){const arr=s.split(/[,;\s]+/).filter(Boolean).map(v=>Number(v));if(arr.length<2||arr.length>31||arr.some(x=>!Number.isFinite(x)||x<20||x>20000)||new Set(arr).size!==arr.length||arr.some((x,i)=>i&&x<=arr[i-1]))return null;return arr}
 function createProfile(){const name=$('#deviceName')?.value.trim()||'Mi equipo '+new Date().toLocaleDateString('es');const min=Number($('#eqMin')?.value),max=Number($('#eqMax')?.value);if(!Number.isFinite(min)||!Number.isFinite(max)||min>=0||max<=0||min<-30||max>30){uiAlert('Introduce límites de dB válidos: mínimo negativo y máximo positivo (hasta 30 dB).');return}
  let bands=temp.preset==='custom'?parseBands($('#customFreqs')?.value||''):temp.bands.slice();if(!bands){uiAlert('Revisa las frecuencias personalizadas: entre 2 y 31 valores, orden ascendente, de 20 a 20.000 Hz.');return}
- if(temp.testStart<=temp.testFloor){uiAlert('El nivel inicial debe ser mayor que el mínimo en dBFS.');return}if(temp.testStart>-30&&!uiConfirm('Nivel inicial cercano a −24 dBFS. Puede ser demasiado intenso. Usa volumen bajo y cómodo, nunca máximo. ¿Confirmas esta configuración?'))return;temp.name=name;temp.min=min;temp.max=max;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},loudness:{},context:normalizeCalibrationContext(temp.context,temp.type),manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetBalanceSession(p);introStep=0;trial=null;nav('test')}
+ if(temp.testStart<=temp.testFloor){uiAlert('El nivel inicial debe ser mayor que el mínimo en dBFS.');return}if(temp.testStart>-30&&!uiConfirm('Nivel inicial cercano a −24 dBFS. Puede ser demasiado intenso. Usa volumen bajo y cómodo, nunca máximo. ¿Confirmas esta configuración?'))return;temp.name=name;temp.min=min;temp.max=max;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},loudness:{},context:normalizeCalibrationContext(temp.context,temp.type),manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetLoudnessSession();resetBalanceSession(p);introStep=0;trial=null;nav('test')}
 function gather(p){
  const collect=f=>{let samples=[];for(const side of p.channels==='separate'?['left','right']:['both']){const arr=p.measures[key(f,side)]||[];const valid=arr.filter(r=>r&&r.db!==null&&Number.isFinite(r.db)).map(r=>r.db);if(valid.length){samples.push({db:median(valid),quality:Math.max(...valid)-Math.min(...valid)<=6&&valid.length>=2?'good':'low',side})}}if(!samples.length)return {f,db:null,quality:'unmeasurable'};const values=samples.map(s=>s.db),spread=Math.max(...values)-Math.min(...values);return {f,db:median(values),quality:spread>9?'mixed':samples.every(s=>s.quality==='good')?'good':'low'}};
  const allMeasured=[...new Set(Object.keys(p.measures).map(k=>Number(k.split('|')[0])).filter(Number.isFinite))].map(collect).filter(x=>x.db!==null).sort((a,b)=>a.f-b.f);
@@ -1100,7 +1100,7 @@ ${remaining.length?`<div class="setup-title"><h2>Otros perfiles</h2><span class=
 <div style="margin:20px 0 9px">${button('＋ Nuevo perfil de audio','setup','btn-alt full')}</div>
 <details class="unobtrusive"><summary>Respaldo de perfiles <span class="tiny muted">Importar / exportar</span></summary><div class="inner-detail"><p class="tiny muted">Se guardan en este navegador. Exporta una copia antes de borrar datos o cambiar de teléfono.</p><div class="row wrap">${button('↓ Exportar todo','exportall','btn-alt grow')}${button('↑ Importar JSON','import','btn-ghost grow')}</div><input id="importInput" class="hide" type="file" accept=".json,application/json"></div></details>
 <details class="unobtrusive"><summary>Ecualizadores compatibles <span class="tiny muted">${Object.keys(presets).length} formatos</span></summary><div class="inner-detail"><p class="tiny muted">Los de tus fotos mantienen sus frecuencias originales.</p>${Object.entries(presets).filter(([id])=>id!=='custom').map(([id,p])=>`<div class="small" style="margin:7px 0"><strong>${esc(p.short)}</strong><div class="tiny muted">${esc(p.bands.map(short).join(' · '))}</div></div>`).join('')}</div></details>`}
-function setActive(p){introStep=3;trial=null;selectedEqFreq=null;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();resetBalanceSession(p);stopTone();if(playerAudio)playerAudio.pause();current=p;currentId=p.id;awaitNext=false;floorReached=false;sampleNote='';save();eqBypass=false;nav(firstMissing(p)<0?'results':'test')}
+function setActive(p){introStep=3;trial=null;selectedEqFreq=null;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();resetBalanceSession(p);stopTone();if(playerAudio)playerAudio.pause();current=p;currentId=p.id;awaitNext=false;floorReached=false;sampleNote='';resetLoudnessSession();save();eqBypass=false;nav(firstMissing(p)<0?'results':'test')}
 function exportDownload(name,text,mime){const blob=new Blob([text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)}
 const cleanName=s=>s.replace(/[^a-z0-9-_]/gi,'_').slice(0,48);
 function resultText(p){const r=recommend(p);return `AudioCal Hear · ${p.name}\n${trans('Frecuencias:')} ${p.bands.length} ${trans('bandas')}\n${trans('Resultado perceptivo estimado; revisar mediante escucha.')}\n\n`+r.map(x=>`${fmt(x.f).padEnd(11)} ${x.gain>=0?'+':''}${x.gain} dB${x.derived?' ('+trans('estimado')+')':x.db===null?' ('+trans('sin medición')+')':''}`).join('\n')+'\n\n'+trans('No constituye audiometría ni medición acústica.')+'\n'}
@@ -1260,6 +1260,7 @@ function refreshTransfer(){const target=$('#transferPanel');if(!target)return;ta
 
 /* Optional loudness matching: raw relative comparisons only; never modifies recommend(). */
 let loudnessFreq=null,loudnessOffsetDb=0,loudnessListened=new Set(),loudnessMessage='';
+function resetLoudnessSession(){stopTone();loudnessFreq=null;loudnessOffsetDb=0;loudnessListened=new Set();loudnessMessage=''}
 function loudnessEligibleBands(p){
  return p.bands.filter(f=>f>=100&&f<=10000&&Math.abs(Math.log2(f/1000))>.08);
 }
@@ -1308,6 +1309,7 @@ function refreshLoudnessUI(){
 async function playLoudnessSample(which){
  if(!current||page!=='results')return;
  const f=loudnessSelectedBand(current);if(f===null)return;
+ const profileId=current.id;
  const frequency=which==='reference'?1000:f;
  const db=LOUDNESS_REFERENCE_DBFS+(which==='target'?loudnessOffsetDb:0);
  if(db>LOUDNESS_REFERENCE_DBFS+LOUDNESS_OFFSET_LIMIT)return;
@@ -1315,6 +1317,7 @@ async function playLoudnessSample(which){
   stopTone();
   if(playerAudio)playerAudio.pause();
   const ctx=await ensureAudio();
+  if(!current||current.id!==profileId||page!=='results'||loudnessSelectedBand(current)!==f)return;
   if(frequency>=ctx.sampleRate/2){loudnessMessage='Frecuencia fuera del rango reproducible en este equipo.';refreshLoudnessUI();return}
   const oscillator=ctx.createOscillator(),gain=ctx.createGain();
   oscillator.type='sine';oscillator.frequency.value=frequency;
