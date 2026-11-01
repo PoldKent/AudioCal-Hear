@@ -195,3 +195,21 @@ select option{background:#fff;color:#172033}
   .nav{border-color:#e4e9f1;box-shadow:0 9px 40px rgba(24,49,80,.08)}
 }
 @media (prefers-reduced-motion:reduce){.choice{transition:none}}
+
+
+/* Lote 1: evidence-first results; dBFS, interpretation and EQ are visibly separate. */
+.trace-panel{margin:15px 0 18px;padding:14px;border:1px solid #dbe6f2;border-radius:18px;background:#f9fbff}
+.trace-heading h2{margin:0 0 5px;font-size:18px}
+.trace-part{background:#fff;border:1px solid #e7edf5;border-radius:14px;margin-top:11px;padding:13px}
+.trace-part h3{font-size:15px;margin:0 0 7px}
+.trace-part p{overflow-wrap:anywhere}
+.trace-plot{max-width:100%;border-radius:12px;background:#fafdff;border:1px solid #e6edf6;padding:9px;overflow:hidden}
+.trace-plot svg{height:auto;max-width:100%;display:block}
+.trace-table-scroll{max-width:100%;overflow-x:auto;border:1px solid #e6ebf2;border-radius:10px;margin:9px 0}
+.trace-table{width:100%;min-width:610px;border-collapse:collapse;font-size:12px;line-height:1.4;text-align:left}
+.trace-table th,.trace-table td{padding:10px 9px;border-bottom:1px solid #e7ecf3;vertical-align:top;color:#29384c}
+.trace-table thead th{color:#546478;background:#f5f8fd;white-space:nowrap;font-weight:760}
+.trace-table tbody th{white-space:nowrap;color:#244f99;font-weight:750}
+.trace-table tbody tr:last-child th,.trace-table tbody tr:last-child td{border-bottom:0}
+.trace-table td:last-child strong{color:#205cc7;white-space:nowrap}
+@media(max-width:430px){.trace-panel{padding:9px}.trace-part{padding:9px}.trace-heading h2{font-size:16px}}

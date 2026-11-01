@@ -40,3 +40,12 @@ test('generated app includes contextual setup and retains existing audio logic',
  for(const str of ['data-context=','context:normalizeCalibrationContext(temp.context,temp.type)','function nextTrialLevel(','function transferMapping('])
   assert.ok(html.includes(str),str);
 });
+
+test('transparent result distinguishes raw measurements from calculated EQ',()=>{
+ const script=fs.readFileSync('src/js/04-equalization.js','utf8');
+ assert.match(script,/function rawFrequencyThreshold\(/);
+ assert.match(script,/x\.kind==='heard'/);
+ assert.match(script,/function renderCalibrationTrace\(/);
+ assert.match(script,/Corrección automática frente al ajuste final/);
+ assert.match(script,/NO se ha verificado la conversión dB\/paso/);
+});

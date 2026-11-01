@@ -187,3 +187,36 @@ test('YouTube Music iPhone shows external hardware fallback, not false automatic
   await expect(page.locator('[data-act="transfer-open"]')).toBeVisible();
   await noOverflow(page);
 });
+
+test('context is saved and raw threshold/automatic EQ remain visibly distinct', async ({page}) => {
+  await page.locator('[data-device="car"]').click();
+  await page.locator('#context-seat').selectOption('passenger');
+  await page.locator('#context-windows').selectOption('open');
+  await page.locator('#context-eqScale').selectOption('steps');
+  await page.locator('#deviceName').fill('Auto contexto QA');
+  await page.locator('[data-act="create"]').click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+  expect(saved.context.seat).toBe('passenger');
+  expect(saved.context.windows).toBe('open');
+  expect(saved.context.eqScale).toBe('steps');
+  await page.locator('[data-nav="results"]').click();
+  await expect(page.locator('#tracePanel')).toBeVisible();
+  await expect(page.locator('#tracePanel')).toContainText('Medición original sin modificar');
+  await expect(page.locator('#tracePanel')).toContainText('Corrección automática frente al ajuste final');
+  await expect(page.locator('#tracePanel .trace-table tbody tr')).toHaveCount(7);
+  await expect(page.locator('#tracePanel')).toContainText('NO se ha verificado');
+  await noOverflow(page);
+});
+test('in-ear parameters persist and do not claim an acoustic measurement', async ({page}) => {
+  await page.locator('[data-device="headphones"]').click();
+  await page.locator('#context-subtype').selectOption('inear');
+  await page.locator('#context-seal').selectOption('poor');
+  await page.locator('#deviceName').fill('In ear QA');
+  await page.locator('[data-act="create"]').click();
+  await page.locator('[data-nav="results"]').click();
+  await expect(page.locator('#tracePanel')).toContainText('sellado no comprobado');
+  await page.reload();
+  await page.locator('[data-nav="results"]').click();
+  await expect(page.locator('#tracePanel')).toContainText('In-ear');
+  await noOverflow(page);
+});

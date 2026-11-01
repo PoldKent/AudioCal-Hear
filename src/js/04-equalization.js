@@ -111,16 +111,73 @@ function renderListeningGraph(p){
  const labels=p.bands.map((f,i)=>`<text x="${30+i*480/Math.max(1,p.bands.length-1)}" y="220" text-anchor="middle" fill="#8ba9b9" font-size="10">${short(f)}</text>`).join('');
  return `<details class="unobtrusive"><summary>Comparar oído izquierdo y derecho · umbrales digitales</summary><div class="inner-detail"><div class="row wrap small"><span style="color:${colors[0]}">● Izquierdo</span> <span style="color:${colors[1]}">● Derecho</span></div><svg viewBox="0 0 540 240" width="100%" role="img" aria-label="Umbrales medidos por oído, con espacios sin datos"><path d="M30 20 V190 H510" fill="none" stroke="#496477"/>${segments}${dots}${labels}</svg><p class="tiny muted">Se dibujan solo frecuencias realmente medidas. No son dB SPL, ni audiometría clínica, ni una curva de ganancia EQ.</p></div></details>`;
 }
+function rawFrequencyThreshold(p,f,side){
+ const a=p.measures?.[f+'|'+side]||[];
+ const valid=a.filter(x=>x&&x.kind==='heard'&&Number.isFinite(x.db)).map(x=>x.db);
+ return valid.length?median(valid):null;
+}
+
+function thresholdStatus(point){
+ if(point.db===null)return 'Sin umbral confirmado';
+ if(point.derived)return 'Interpolación; no medido aquí';
+ if(point.quality==='good')return 'Repetible en dos pasadas';
+ if(point.quality==='mixed')return 'Diferencias entre oídos';
+ return 'Medición limitada; revisar';
+}
+
+function renderCalibrationTrace(p,r){
+ const finished=firstMissing(p)<0;
+ const sides=p.channels==='separate'?['left','right']:['both'];
+ const colors={left:'#2671db',right:'#b06bdb',both:'#2671db'};
+ const minHz=Math.min(...p.bands),maxHz=Math.max(...p.bands);
+ const xpos=f=>56+548*(Math.log(f/minHz)/Math.max(1e-8,Math.log(maxHz/minHz)));
+ const ypos=db=>35+(-24-clamp(db,-84,-24))*2.15;
+ const axisLevels=[-24,-44,-64,-84].map(n=>`<line x1="53" y1="${ypos(n)}" x2="615" y2="${ypos(n)}" stroke="#dfe5ed" stroke-dasharray="3 5"/><text x="47" y="${ypos(n)+3}" text-anchor="end" font-size="11" fill="#6e7d8e">${n}</text>`).join('');
+ const series=sides.map(side=>{
+  const points=p.bands.map(f=>{const db=rawFrequencyThreshold(p,f,side);return db===null?null:{f,db,x:xpos(f),y:ypos(db)}}),
+   segments=points.slice(1).map((v,i)=>v&&points[i]?`<line x1="${points[i].x}" y1="${points[i].y}" x2="${v.x}" y2="${v.y}" stroke="${colors[side]}" stroke-width="2.5"/>`:'').join(''),
+   dots=points.filter(Boolean).map(v=>`<circle cx="${v.x}" cy="${v.y}" r="4" fill="${colors[side]}"><title>${side==='both'?'Ambos':side==='left'?'Izquierdo':'Derecho'} · ${fmt(v.f)} · ${v.db} dBFS</title></circle>`).join('');
+  return segments+dots;
+ }).join('');
+ const labels=p.bands.map((f,i)=>i%(p.bands.length>15?3:1)===0?`<text x="${xpos(f)}" y="207" text-anchor="middle" font-size="10" fill="#63738b">${short(f)}</text>`:'').join('');
+ const legend=sides.map(side=>`<span style="color:${colors[side]};font-weight:700">${side==='both'?'● Ambos':side==='left'?'● Izquierdo':'● Derecho'}</span>`).join(' · ');
+ const formatDb=db=>db===null?'—':db+' dBFS';
+ const totalDirect=r.filter(x=>x.db!==null&&!x.derived).length;
+ const absent=r.filter(x=>x.db===null).length;
+ const incomplete=finished?'Prueba registrada: todos los pasos previstos están completos.':'Prueba todavía en curso: puedes revisar lo disponible, pero el resultado no es definitivo.';
+ const c=normalizeCalibrationContext(p.context,p.type);
+ const unit=c.eqScale==='db'?'El equipo indica dB, aunque la forma y anchura de sus filtros pueden diferir.':
+  c.eqScale==='steps'?'El equipo indica posiciones, no dB confirmados: NO se ha verificado la conversión dB/paso.':'La unidad real del equipo no se ha confirmado: NO se presupone una equivalencia entre dB y niveles.';
+ const rows=r.map(x=>{
+  const raw=p.channels==='separate'?
+   'I: '+formatDb(rawFrequencyThreshold(p,x.f,'left'))+'; D: '+formatDb(rawFrequencyThreshold(p,x.f,'right')):
+   formatDb(rawFrequencyThreshold(p,x.f,'both'));
+  const gain=(Number(x.gain)||0),automatic=(Number(x.base)||0);
+  return `<tr><th scope="row">${fmt(x.f)}</th><td>${raw}</td><td>${thresholdStatus(x)}</td><td>${automatic>=0?'+':''}${Number(automatic.toFixed(2))} dB</td><td><strong>${gain>=0?'+':''}${gain} dB</strong></td></tr>`;
+ }).join('');
+ return `<section id="tracePanel" class="trace-panel" aria-label="Comparación transparente de la calibración">
+ <header class="trace-heading"><h2>Resultados del test · antes y después</h2><p class="compact-note">${incomplete}</p></header>
+ <div class="trace-part"><h3>1 · Medición original sin modificar</h3><p class="small muted">Umbrales digitales registrados al escuchar tonos con este equipo; un valor más negativo indica que el tono se detectó a menor amplitud digital. No son dB SPL ni ganancia EQ.</p>
+ <div class="trace-plot"><div class="tiny muted">Umbral medido (dBFS) · eje horizontal en Hz</div><svg viewBox="0 0 630 225" width="100%" role="img" aria-label="Gráfica de umbrales digitales originales por frecuencia, sin interpolación">${axisLevels}${series}${labels}<text x="55" y="223" font-size="10" fill="#63738b">Hz · escala logarítmica</text></svg><div class="tiny">${legend}</div></div></div>
+ <div class="trace-part"><h3>2 · Interpretación y fiabilidad</h3><p class="small">${totalDirect} de ${p.bands.length} bandas con umbral directo; ${absent} sin umbral. Las frecuencias estimadas están identificadas en la tabla y no aparecen como puntos medidos en la gráfica.</p>
+ <p class="compact-note"><strong>Contexto:</strong> ${esc(calibrationContextLabel(p))}</p>
+ <p class="compact-note">${esc(calibrationContextCaution(p))}</p></div>
+ <div class="trace-part"><h3>3 · Corrección automática frente al ajuste final</h3><p class="small muted">La columna automática muestra exclusivamente el cálculo actual basado en la tendencia de umbrales. La columna final incluye ajustes manuales y preferencias de música, si existen. Se muestran separadamente de los dBFS originales.</p>
+ <div class="trace-table-scroll"><table class="trace-table"><thead><tr><th scope="col">Banda</th><th scope="col">Dato original</th><th scope="col">Interpretación</th><th scope="col">Automático</th><th scope="col">EQ final</th></tr></thead><tbody>${rows}</tbody></table></div>
+ <p class="compact-note"><strong>Escala del ecualizador:</strong> ${esc(unit)} Los números de EQ son ganancias estimadas de procesamiento, no posiciones físicas verificadas del control.</p>
+ <p class="tiny muted">Método de corrección actual: tendencia de umbrales v1.9.1, experimental. Mostrar esta comparación no valida todavía la fórmula de compensación.</p></div></section>`;
+}
+
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
  const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),usable=r.filter(x=>x.db!==null&&!x.derived).length,derived=r.filter(x=>x.derived).length,required=Math.max(3,Math.ceil(p.bands.length*.6));
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
  const reliable=usable>=required;
- const status=reliable?'Compensación auditiva estimada + tus preferencias.':'Compensación automática en espera · sigue disponible el ajuste manual.';
- return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">SMART EQ · TU SONIDO</p><h1>Escucha tu <em>ajuste.</em></h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
+ const status=reliable?'Propuesta experimental visible junto a los umbrales originales.':'Cálculo automático sin cobertura suficiente · revisión pendiente.';
+ return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">AUDIOCAL · INFORME DE FRECUENCIAS</p><h1>Medición y <em>ajuste.</em></h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
  <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${p.bands.length} bandas · <span style="color:var(--cyan)">${esc(presets[p.preset]?.short||'Personalizado')}</span></h2><span class="tag">${r.filter(x=>x.gain!==0).length} cambios</span></div>
  <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral · <span>${esc(status)}</span></p>
  ${usable<p.bands.length?`<div class="soft warning"><strong>⚠ ${p.bands.length-usable} frecuencias sin umbral</strong><p class="small">Puedes repetir solo las que faltan. No aumentes el volumen para escucharlas.</p>${button('↺ Repetir pendientes','retrymissing','btn-alt full')}</div>`:''}
- ${renderListeningGraph(p)}
+ ${renderCalibrationTrace(p,r)}
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
  <div class="eq-util">${button('⎘ Copiar todos','copy','btn-alt')}${button('↓ TXT','downloadtxt','btn-ghost')}${button('↺ Reiniciar cambios','clearmanual','btn-ghost')}</div>
