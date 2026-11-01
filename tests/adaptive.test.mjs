@@ -99,7 +99,7 @@ test('eight localization options, without remote runtime scripts', () => {
 });
 
 test('critical protections and original hardware presets remain present', () => {
-  for (const text of ["const STORAGE='audiocal-hear-profiles-v1'",'TEST_END_DB=-84','MAX_SAFE_DB=-24',"case 'endheard'","case 'enduncertain'",'function normalizedProfile(']) assert.ok(html.includes(text),text);
+  for (const text of ["const STORAGE='audiocal-hear-profiles-v1'",'TEST_END_DB=-100','MAX_SAFE_DB=-24',"case 'endheard'","case 'enduncertain'",'function normalizedProfile(']) assert.ok(html.includes(text),text);
   assert.ok(html.includes("pan.pan.value=side==='left'?-1:side==='right'?1:0"));
 });
 
@@ -152,4 +152,14 @@ test('translation cannot replace a shorter word inside another word',()=>{
  vm.runInNewContext(source.slice(start,end),context);
  assert.equal(context.trans('Registros históricos no independientes'),'Registros históricos no independientes');
  assert.equal(context.trans('3 pendientes'),'3 remaining');
+});
+
+test('digital full-scale reference is not the playback start, and -100 floor can be observed',()=>{
+ assert.match(source,/TEST_START_DB=-36, TEST_END_DB=-100, MAX_SAFE_DB=-24/);
+ assert.match(source,/function minimumAutoCoverage\(p\)/);
+ const t=trial(),p={testStart:-36,testFloor:-100};
+ let status='next';
+ for(let i=0;i<8&&status==='next';i++)status=next(t,true,p);
+ assert.equal(status,'stillheard');
+ assert.equal(t.level,-100);
 });
