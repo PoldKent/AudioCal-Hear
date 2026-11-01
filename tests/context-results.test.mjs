@@ -193,3 +193,16 @@ test('older confirmations do not count as independent evidence',()=>{
  assert.match(audit.rows[0].threshold.status,/histórica/);
  assert.match(audit.rows[0].auto.status,/histórica/);
 });
+
+test('incomplete L/R coverage cannot receive high confidence from a single ear',()=>{
+ const js=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const end=js.indexOf('const EQ_ALGORITHM_VERSION=');
+ const c=vm.createContext({Math,Number,Object,median:x=>x.slice().sort((a,b)=>a-b)[Math.floor((x.length-1)/2)],
+  key:(f,s)=>f+'|'+s,independentThresholdPair:(p,f,s)=>p.measures[f+'|'+s]?.[1]?.method==='adaptive-v20-independent'});
+ vm.runInContext(js.slice(0,end),c);
+ const samples=[{kind:'heard',db:-49,method:'adaptive-v20-search'},{kind:'heard',db:-50,method:'adaptive-v20-independent'}];
+ const p={bands:[400,1000],channels:'separate',testMode:'complete',measures:{'400|left':samples}};
+ assert.equal(c.gather(p)[0].quality,'low','one ear cannot justify combined confidence');
+ p.measures['400|right']=[{kind:'heard',db:-50,method:'adaptive-v20-search'},{kind:'heard',db:-51,method:'adaptive-v20-independent'}];
+ assert.equal(c.gather(p)[0].quality,'good');
+});
