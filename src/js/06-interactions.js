@@ -37,13 +37,21 @@ switch(a){
 case 'setup':case 'test':case 'results':case 'profiles':nav(a);break;
 case 'create':createProfile();break;
 case 'check':await playTone(true);break;
+case 'checkleft':if(current?.channels==='separate')await playTone(true,'left');break;
+case 'checkright':if(current?.channels==='separate')await playTone(true,'right');break;
+case 'confirmleft':if(channelCheckPlayed.left){channelVerified.left=true;render()}break;
+case 'confirmright':if(channelCheckPlayed.right){channelVerified.right=true;render()}break;
 case 'stopaudio':stopTone();if(trial)trial.awaiting=false;floorReached=false;if(playerAudio)playerAudio.pause();render();break;
 case 'resume':nav(firstMissing(current)<0?'results':'test');break;
 case 'play':await playTone(false);break;
 case 'answerYes':answerTone(true);break;
 case 'answerNo':answerTone(false);break;
 case 'introBack':introStep=Math.max(0,introStep-1);render();break;
-case 'introNext':introStep=Math.min(3,introStep+1);render();break;
+case 'introNext':
+ if(current?.channels==='separate'&&introStep===0&&!channelsReady(current)){
+  uiAlert('Escucha y confirma por separado los canales izquierdo y derecho antes de continuar.');break;
+ }
+ introStep=Math.min(3,introStep+1);render();break;
 case 'ambient':await checkAmbient();break;
 case 'endheard':if(current&&floorReached){logMeasure('stillheard')}break;
 case 'enduncertain':if(current&&floorReached)logMeasure('unconfirmed');break;
@@ -55,7 +63,7 @@ case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'
  }break;
  case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
 case 'retry':awaitNext=false;floorReached=false;trial=null;sampleNote='';stopTone();render();break;
-case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.manual={};awaitNext=false;floorReached=false;trial=null;introStep=3;sampleNote='';touch();render()}break;
+case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.manual={};awaitNext=false;floorReached=false;trial=null;resetChannelCheck();introStep=current.channels==='separate'?0:3;sampleNote='';touch();render()}break;
 case 'transfer-open':transferOpen=true;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();break;
 case 'transfer-close':transferOpen=false;refreshTransfer();break;
 case 'transfer-next':if(!current)return;if(transferStep===1&&!transferMapping(current)){transferStatus='Revisa las frecuencias reales del ecualizador.';refreshTransfer();break}
@@ -75,7 +83,18 @@ case 'clearmanual':if(current){current.manual={};touch();refreshResultsUI()}brea
 case 'balance-next':if(current){balanceQueueIndex=(balanceQueueIndex+1)%balanceQueue.length;balanceFreq=balanceQueue[balanceQueueIndex];resetBalanceRound();refreshBalanceUI()}break;
 case 'balance-repeat':if(current){resetBalanceRound();refreshBalanceUI()}break;
 case 'restartprefs':preferenceStage=0;preferencePreview=null;preferenceListened=new Set();refreshResultsUI();break;
-case 'retrymissing':if(current){const points=gather(current).filter(x=>x.db===null).map(x=>x.f);const sides=current.channels==='separate'?['left','right']:['both'];for(const f of points)for(const side of sides)delete current.measures[key(f,side)];if(points.length){touch();awaitNext=false;nav('test')}else uiAlert('No quedan frecuencias sin umbral.')}break;
+case 'retrymissing':if(current){
+ const incomplete=plan(current).filter(e=>{
+  const sample=current.measures?.[key(e.f,e.side)]?.[e.pass];
+  return !sample||sample.kind!=='heard'||!Number.isFinite(sample.db);
+ });
+ // Preserve other confirmed frequency/side pairs; reset all passes only for a failing pair.
+ const failedPairs=[...new Set(incomplete.map(e=>key(e.f,e.side)))];
+ for(const pair of failedPairs)delete current.measures[pair];
+ if(failedPairs.length){
+  stopTone();trial=null;awaitNext=false;floorReached=false;introStep=current.channels==='separate'&&!channelsReady(current)?0:3;touch();nav('test');
+ }else uiAlert('Todos los umbrales programados ya están confirmados.');
+}break;
 case 'format':changeEqFormat();break;
 case 'bypass':eqBypass=!eqBypass;balancePreview=null;updatePlayerFilters(preferencePreview?previewTaste():null);btn.textContent=eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ';break;
 case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({app:'AudioCal Hear',version:1,profiles},null,2),'application/json');break;
@@ -114,7 +133,7 @@ if(t.id==='importInput'&&t.files?.length){
 }
 }
 // Ensure user can change tabs without generating sound; pause on backgrounding.
-document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);document.addEventListener('input',e=>{const t=e.target;if(t.id==='eqSlider'&&current){const x=recommend(current).find(q=>q.f===selectedEqFreq);if(x){const desired=clamp(roundTo(Number(t.value),current.step),current.min,current.max);current.manual[x.f]=(Number(current.manual[x.f])||0)+(desired-x.gain);touch();refreshResultsUI()}return}if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin'&&Number.isFinite(Number(t.value)))temp.min=Number(t.value);if(t.id==='eqMax'&&Number.isFinite(Number(t.value)))temp.max=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;if($('#freqSummary'))$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='testStart'){const n=Number(t.value);if(Number.isFinite(n))temp.testStart=clamp(n,-84,-24)}if(t.id==='testFloor'){const n=Number(t.value);if(Number.isFinite(n))temp.testFloor=clamp(n,-84,-36)}if(['customFreqs','eqMin','eqMax','testStart','testFloor'].includes(t.id))refreshSetupDuration();});
+document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);document.addEventListener('input',e=>{const t=e.target;if(t.id==='eqSlider'&&current){const x=recommend(current).find(q=>q.f===selectedEqFreq);if(x){const desired=clamp(roundTo(Number(t.value),current.step),current.min,current.max);current.manual[x.f]=(Number(current.manual[x.f])||0)+(desired-x.gain);touch();refreshResultsUI()}return}if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin'&&Number.isFinite(Number(t.value)))temp.min=Number(t.value);if(t.id==='eqMax'&&Number.isFinite(Number(t.value)))temp.max=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;if($('#freqSummary'))$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='testStart'){const n=Number(t.value);if(Number.isFinite(n))temp.testStart=clamp(n,-99,-24)}if(t.id==='testFloor'){const n=Number(t.value);if(Number.isFinite(n))temp.testFloor=clamp(n,-100,-36)}if(['customFreqs','eqMin','eqMax','testStart','testFloor'].includes(t.id))refreshSetupDuration();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopTone();floorReached=false;if(playerAudio)playerAudio.pause();if(page==='test')render()}});window.addEventListener('pagehide',()=>{stopTone();if(playerAudio)playerAudio.pause();try{playerSource?.disconnect()}catch(e){}try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}if(playerUrl)URL.revokeObjectURL(playerUrl)});
 if(current)resetBalanceSession(current);
 render();

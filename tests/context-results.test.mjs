@@ -67,7 +67,8 @@ test('local correction v2 does not invent EQ from isolated or unmeasured tones',
   clamp:(x,lo,hi)=>Math.max(lo,Math.min(x,hi)),
   normalizeCalibrationContext:()=>({windows:'closed',engine:'off',subtype:'overear',seal:'unknown'}),
   contextAutoBlockReason:(p,f,c)=>p.type==='car'&&(c.windows==='open'||c.engine==='on')?'ruido variable del vehículo; no corregir automáticamente':null,
-  cleanTaste:()=>({}),tasteGain:()=>0,balanceGain:()=>0
+  cleanTaste:()=>({}),tasteGain:()=>0,balanceGain:()=>0,
+  autoCoverageMinimum:p=>Math.max(4,Math.ceil(p.bands.length*.55))
  });
  vm.runInContext(script.slice(start,end),ctx);
  const p={bands:measured.map(x=>x.f),min:-6,max:6,step:1,type:'car'};
@@ -271,6 +272,30 @@ test('AF-02 result refresh wires original trace, live EQ counts and export safet
  assert.match(eq,/notice\.textContent=m\.warning/);
 });
 
+test('automatic EQ requires both ears for each contributing frequency',()=>{
+ const script=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const begin=script.indexOf('function hasBothChannelThresholds('),end=script.indexOf('function recommend(',begin);
+ assert.ok(begin>0&&end>begin);
+ const frequencies=[64,160,400,1000,2500,6250,15625];
+ const points=frequencies.map((f,i)=>({f,db:i===2?-30:-50,quality:'low'}));
+ const profile={bands:frequencies,channels:'separate',type:'headphones',
+  measures:Object.fromEntries(frequencies.flatMap(f=>{
+   const pairs=[[f+'|left',[{kind:'heard',db:-50}]]];
+   if(f!==400)pairs.push([f+'|right',[{kind:'heard',db:-50}]]);
+   return pairs;
+  }))};
+ const model={Math,Number,roundTo:(v,n)=>Math.round(v/n)*n,
+  normalizeCalibrationContext:()=>({}),contextAutoBlockReason:()=>null,
+  key:(f,side)=>f+'|'+side,autoCoverageMinimum:p=>Math.max(4,Math.ceil(p.bands.length*.55))};
+ vm.runInNewContext(script.slice(begin,end),model);
+ assert.equal(model.hasBothChannelThresholds(profile,400),false);
+ assert.equal(model.hasBothChannelThresholds(profile,160),true);
+ const result=model.estimateThresholdContrast(profile,points);
+ assert.equal(result[2].base,0);
+ assert.match(result[2].autoReason,/faltan umbrales/);
+ const coverage=model.thresholdCoverage(profile,points);
+ assert.equal(coverage.measured.length,6);
+});
 test('landscape PNG layout orders bands left to right, with physical and estimated units kept separate',()=>{
  const src=fs.readFileSync('src/js/04-equalization.js','utf8');
  const a=src.indexOf('function eqPngLayout('),b=src.indexOf('function paintEqResult(',a);

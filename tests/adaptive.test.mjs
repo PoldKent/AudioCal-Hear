@@ -19,7 +19,7 @@ vm.runInNewContext(source.slice(begin, end), sandbox);
 const next = sandbox.nextTrialLevel;
 
 const trial = () => ({phase:'coarse', level:-36, heard:null, missed:null, verifyIndex:0, done:0});
-const profile = {testStart:-36, testFloor:-84};
+const profile = {testStart:-36, testFloor:-100};
 
 test('adaptive search confirms a 1 dB threshold without guessing', () => {
   const t = trial();
@@ -43,7 +43,7 @@ test('a tone heard all the way down to the digital floor stays an observation', 
     if (result !== 'next') break;
   }
   assert.equal(result, 'stillheard');
-  assert.equal(t.level, -84);
+  assert.equal(t.level, -100);
 });
 
 test('inaudible first tone has no measured threshold', () => {
@@ -99,7 +99,7 @@ test('eight localization options, without remote runtime scripts', () => {
 });
 
 test('critical protections and original hardware presets remain present', () => {
-  for (const text of ["const STORAGE='audiocal-hear-profiles-v1'",'TEST_END_DB=-84','MAX_SAFE_DB=-24',"case 'endheard'","case 'enduncertain'",'function normalizedProfile(']) assert.ok(html.includes(text),text);
+  for (const text of ["const STORAGE='audiocal-hear-profiles-v1'",'TEST_END_DB=-100','MAX_SAFE_DB=-24',"case 'endheard'","case 'enduncertain'",'function normalizedProfile(']) assert.ok(html.includes(text),text);
   assert.ok(html.includes("pan.pan.value=side==='left'?-1:side==='right'?1:0"));
 });
 
@@ -126,7 +126,7 @@ test('second pass is a completely new search without using the first threshold',
  assert.equal(second.missed,null);
  assert.equal(second.history.length,0);
  let status='next',loops=0;
- const p={testStart:-36,testFloor:-84};
+ const p={testStart:-36,testFloor:-100};
  while(status==='next'&&loops++<25)status=next(second,second.level>=-52,p);
  assert.equal(status,'measured');
  assert.equal(second.heard,-52,'second pass must not copy -50 from the first');
@@ -152,4 +152,39 @@ test('translation cannot replace a shorter word inside another word',()=>{
  vm.runInNewContext(source.slice(start,end),context);
  assert.equal(context.trans('Registros históricos no independientes'),'Registros históricos no independientes');
  assert.equal(context.trans('3 pendientes'),'3 remaining');
+});
+
+test('test scale is 0 to −100 dBFS but never starts at digital full scale',()=>{
+ assert.match(source,/DIGITAL_REFERENCE_DBFS=0, TEST_START_DB=-36, TEST_END_DB=-100, MAX_SAFE_DB=-24/);
+ const head=source.indexOf('const getStart='),tail=source.indexOf('const INDEPENDENT_PASS_METHOD=',head);
+ const c={clamp,Math,Number};
+ vm.runInNewContext(source.slice(head,tail).replace('function legacyQuickBands','function legacyQuickBands'),{
+  ...c,QUICK_LIMIT:6,TEST_START_DB:-36,TEST_END_DB:-100,MAX_SAFE_DB:-24
+ });
+ assert.match(html,/Rango disponible|Escala digital de referencia/);
+ assert.doesNotMatch(html,/const TEST_START_DB=0/);
+});
+test('quick mode groups adjacent frequency bands; historical schedules stay stable',()=>{
+ const begin=source.indexOf('function legacyQuickBands(');
+ const end=source.indexOf('const INDEPENDENT_PASS_METHOD=',begin);
+ const c={QUICK_LIMIT:6,Math,Number};
+ vm.runInNewContext(source.slice(begin,end),c);
+ const car={bands:[64,160,400,1000,2500,6250,15625],testMode:'quick'};
+ const selected=Array.from(c.testBands(car));
+ assert.deepEqual(selected,[64,160,400,1000,2500,6250]);
+ const headphone={bands:[30,60,120,250,500,1000,2000,4000,8000,16000],testMode:'quick'};
+ const h=Array.from(c.testBands(headphone));
+ assert.ok(h.slice(1,-1).every((f,i)=>f/h[i]<=3.5&&h[i+2]/f<=3.5));
+ const legacy=Array.from(c.legacyQuickBands(car.bands));
+ assert.deepEqual(Array.from(c.testBands({...car,testBandPlan:legacy})),legacy);
+ const fifteen={bands:[25,40,63,100,160,250,400,630,1000,1600,2500,4000,6300,10000,16000],testMode:'quick'};
+ assert.equal(c.quickAutoFeasibility(fifteen).coverage,false);
+ const five={bands:[60,250,1000,4000,16000],testMode:'complete'};
+ assert.equal(c.quickAutoFeasibility(five).structural,0);
+});
+test('channel answers are blocked before full tone playback',()=>{
+ const code=fs.readFileSync('src/js/03-hearing-test.js','utf8');
+ assert.match(code,/!trial\.awaiting\|\|tone\?\.mode==='test'/);
+ assert.match(code,/if\(side!=='both'&&!ctx\.createStereoPanner\)/);
+ assert.match(code,/!channelsReady\(current\)/);
 });

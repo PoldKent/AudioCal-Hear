@@ -13,6 +13,14 @@ async function newProfile(page, name = 'Auriculares QA') {
   await expect(page.locator('#root')).toHaveAttribute('data-page', 'test');
 }
 async function passPreparation(page) {
+  if(await page.locator('[data-act="checkleft"]').count()){
+    await page.locator('[data-act="checkleft"]').click();
+    await expect(page.locator('[data-act="confirmleft"]')).toBeEnabled();
+    await page.locator('[data-act="confirmleft"]').click();
+    await page.locator('[data-act="checkright"]').click();
+    await expect(page.locator('[data-act="confirmright"]')).toBeEnabled();
+    await page.locator('[data-act="confirmright"]').click();
+  }
   for (let i = 0; i < 3; i++) {
     await page.locator('[data-act="introNext"]').click();
   }
@@ -70,7 +78,7 @@ test('profile creation and local persistence survive reload', async ({ page }) =
   expect(records[0].preset).toBe('photo10');
   expect(records[0].channels).toBe('separate');
   expect(records[0].testStart).toBe(-36);
-  expect(records[0].testFloor).toBe(-84);
+  expect(records[0].testFloor).toBe(-100);
   await noOverflow(page);
 });
 
@@ -130,6 +138,7 @@ test('optional microphone is not requested by default', async ({ page }) => {
 });
 
 test('a contradictory answer is rechecked instead of becoming an uncertain result', async ({ page }) => {
+  test.setTimeout(110000);
   await newProfile(page);
   await passPreparation(page);
   const reply = async heard => {
@@ -415,6 +424,30 @@ test('AF-02: physical EQ scale changes invalidate checked transfer bands',async(
  await noOverflow(page);
 });
 
+test('digital reference is 0 to −100, playback defaults safely below 0',async({page})=>{
+ await expect(page.locator('#root')).toContainText('0 a −100 dBFS');
+ await expect(page.locator('#testStart')).toHaveValue('-36');
+ await expect(page.locator('#testFloor')).toHaveValue('-100');
+ await expect(page.locator('#testStart')).toHaveAttribute('max','-24');
+ await page.locator('[data-device="car"]').click();
+ await page.locator('#deviceName').fill('Escala 0 a -100');
+ await page.locator('[data-act="create"]').click();
+ const p=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(p.testStart).toBe(-36);
+ expect(p.testFloor).toBe(-100);
+});
+test('separate-ear test requires subjective left/right checks before playing',async({page})=>{
+ await newProfile(page,'Lados confirmados');
+ await page.locator('[data-act="introNext"]').click();
+ await expect(page.locator('#root')).toContainText('Comprobar izquierda y derecha');
+ await expect(page.locator('[data-act="confirmleft"]')).toBeDisabled();
+ await page.locator('[data-act="checkleft"]').click();
+ await page.locator('[data-act="confirmleft"]').click();
+ await page.locator('[data-act="checkright"]').click();
+ await page.locator('[data-act="confirmright"]').click();
+ await passPreparation(page);
+ await expect(page.locator('#levelText')).toContainText('-36 dBFS');
+});
 test('PNG horizontal EQ exports a landscape image with frequency columns for 7 and 10 bands',async({page})=>{
  for(const [device,count] of [['car',7],['headphones',10]]){
   await page.locator('[data-device="'+device+'"]').click();
