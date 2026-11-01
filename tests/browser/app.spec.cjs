@@ -301,6 +301,7 @@ test('historical second pass is not represented as independent repetition',async
  });
  await page.reload();
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
  await expect(page.locator('#evidenceAudit')).toContainText('Confirmación histórica');
  await expect(page.locator('#evidenceAudit')).toContainText('Registros históricos no independientes: 1');
  await expect(page.locator('#tracePanel')).toContainText('no búsqueda independiente');

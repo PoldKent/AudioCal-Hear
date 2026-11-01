@@ -145,3 +145,11 @@ test('independent evidence requires explicit new method, legacy records are not 
  assert.equal(c.independentThresholdPair(p,400,'both'),true);
  assert.equal(c.independentThresholdPair(p,600,'both'),false);
 });
+
+test('translation cannot replace a shorter word inside another word',()=>{
+ const start=source.indexOf('function trans('),end=source.indexOf('function localize(',start);
+ const context={language:'en',TEXTS:{en:{pendientes:'remaining'}},FRAGMENTS:{en:['pendientes']},String,Object,RegExp};
+ vm.runInNewContext(source.slice(start,end),context);
+ assert.equal(context.trans('Registros históricos no independientes'),'Registros históricos no independientes');
+ assert.equal(context.trans('3 pendientes'),'3 remaining');
+});

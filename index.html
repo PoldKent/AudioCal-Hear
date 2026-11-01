@@ -285,7 +285,14 @@ function trans(input){
  let result=s;
  // First translate complete known phrases (before individual words).
  const fragments=FRAGMENTS[language];
- for(const fragment of fragments){if(result.includes(fragment))result=result.split(fragment).join(table[fragment]);}
+ const isLetter=c=>Boolean(c)&&/\\p{L}/u.test(c);
+ for(const fragment of fragments){
+  if(!result.includes(fragment))continue;
+  const leftIsLetter=/^\\p{L}/u.test(fragment),rightIsLetter=/\\p{L}$/u.test(fragment);
+  result=result.replaceAll(fragment,(matched,pos,full)=>
+   (leftIsLetter&&isLetter(full[pos-1]))||(rightIsLetter&&isLetter(full[pos+fragment.length]))
+    ?matched:table[fragment]);
+ }
  const tokens=['pruebas pendientes','prueba pendiente','frecuencias sin umbral','ambos canales juntos','según tus respuestas','seleccionado','pendientes','bandas','frecuencias','pruebas','prueba','pasadas','pasada','muestras','cambios','completado','frecuencia','Repetición','AMBOS CANALES','Mi equipo','Auto 7','Auriculares 10','Estándar 7','Opciones para'];
  for(const sp of tokens){const value=table[sp];if(!value)continue;
   const regex=new RegExp('(?<![\\p{L}])'+sp+'(?![\\p{L}])','giu');
