@@ -190,7 +190,7 @@ function loudnessEvidenceStatus(samples){
 function normalizeInlineLoudness(raw,bands){
  const out=Object.create(null);
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return out;
- for(const [k,v] of Object.entries(raw).slice(0,96)){
+ for(const [k,v] of Object.entries(raw).slice(0,128)){
   const parts=/^(\d+(?:\.\d+)?)\|(both|left|right)\|([01])$/.exec(k);
   if(!parts||!bands.includes(Number(parts[1]))||!v||typeof v!=='object'||Array.isArray(v))continue;
   const status=['matched','bounded','unavailable','reference'].includes(v.status)?v.status:null;
