@@ -688,7 +688,7 @@ function renderContextFields(){
  const scale=contextSelect('eqScale','¿Qué unidad muestran los controles del EQ?',
   [['unknown','No estoy seguro'],['steps','Posiciones / niveles (sin dB)'],['db','Decibelios (dB)']],c.eqScale)+
   (c.eqScale==='steps'?contextSelect('eqStepDb','Equivalencia por paso según manual del equipo',
-  [['unknown','Sin comprobar: no convertir'],['1','1 dB / paso (según manual)'],['2','2 dB / paso (según manual)'],['3','3 dB / paso (según manual)']],c.eqStepDb):'');
+  [['unknown','Sin comprobar: no convertir'],['1','1 dB / paso (según manual)'],['2','2 dB / paso (según manual)'],['3','3 dB / paso (según manual)'],['4','4 dB / paso (según manual)']],c.eqStepDb):'');
  const unit=c.eqScale==='steps'?'posiciones':c.eqScale==='db'?'dB del control':'unidades por confirmar';
  const physical='<div class="grid2"><div><label for="controlMin">Mínimo del control ('+unit+')</label><input class="field" id="controlMin" type="number" min="-30" max="-1" step="1" value="'+temp.controlMin+'"></div>'+
   '<div><label for="controlMax">Máximo del control ('+unit+')</label><input class="field" id="controlMax" type="number" min="1" max="30" step="1" value="'+temp.controlMax+'"></div></div>'+
@@ -1314,7 +1314,7 @@ function eqResultMarkup(p){
  const m=eqResultModel(p);
  const ctx=normalizeCalibrationContext(p.context,p.type);
  const scaleOptions=[['unknown','Unidad sin verificar'],['db','Controles en dB'],['steps','Controles por posiciones']];
- const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (según manual)'],['2','2 dB por paso (según manual)'],['3','3 dB por paso (según manual)']];
+ const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (según manual)'],['2','2 dB por paso (según manual)'],['3','3 dB por paso (según manual)'],['4','4 dB por paso (según manual)']];
  const physicalMin=p.controlMin??p.min,physicalMax=p.controlMax??p.max;
  const physicalUnit=ctx.eqScale==='steps'?'posiciones':ctx.eqScale==='db'?'dB del control':'unidades sin verificar';
  const nominal=ctx.eqScale==='steps'&&m.verified?' · equivalencia nominal '+(physicalMin*m.ratio)+' a +'+(physicalMax*m.ratio)+' dB (según manual declarado)':'';
