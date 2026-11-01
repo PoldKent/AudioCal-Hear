@@ -10,16 +10,56 @@ function gather(p){
  return {f,db,quality:'interpolated',derived:true};
  });
 }
-function recommend(p){const data=gather(p),measured=data.filter(x=>x.db!==null&&!x.derived);if(measured.length<Math.max(3,Math.ceil(p.bands.length*.6)))return data.map(x=>({...x,base:0,gain:clamp(roundTo((Number(p.manual?.[x.f])||0)+tasteGain(x.f,cleanTaste(p))+balanceGain(p,x.f),p.step),p.min,p.max)}));
- const xs=measured.map(x=>Math.log2(x.f/1000)),ys=measured.map(x=>x.db);let minx=Math.min(...xs),maxx=Math.max(...xs);let z=xs.map(x=>2*(x-minx)/(maxx-minx||1)-1);
- // Low-order regression captures broad frequency-dependent perception instead of flattening normal hearing sensitivity.
- const deg=Math.min(2,measured.length-2);const N=deg+1;let a=Array.from({length:N},(_,i)=>Array.from({length:N+1},(_,j)=>j===N?ys.reduce((s,y,k)=>s+y*z[k]**i,0):z.reduce((s,v)=>s+v**(i+j),0)));
- for(let i=0;i<N;i++){let pi=i;for(let j=i+1;j<N;j++)if(Math.abs(a[j][i])>Math.abs(a[pi][i]))pi=j;[a[i],a[pi]]=[a[pi],a[i]];let pivot=a[i][i];if(Math.abs(pivot)<1e-7)continue;for(let k=i;k<=N;k++)a[i][k]/=pivot;for(let j=0;j<N;j++)if(j!==i){let c=a[j][i];for(let k=i;k<=N;k++)a[j][k]-=c*a[i][k]}}
- const coeff=a.map(row=>row[N]);const known=measured.map((x,i)=>({f:x.f,db:x.db,z:z[i]}));
- return data.map((point,i)=>{let base=0;if(point.db!==null){const zn=2*(Math.log2(point.f/1000)-minx)/(maxx-minx||1)-1;const trend=coeff.reduce((s,c,j)=>s+c*zn**j,0);const diff=point.db-trend;let boost=diff>0?diff*.35:diff*.46;const edge=(i===0||i===data.length-1);base=clamp(boost,edge?-1.5:-4,edge?1.5:3);if(point.quality==='low'||point.quality==='mixed')base*=.65; if(point.quality==='interpolated')base*=.5; if(point.quality==='unmeasurable')base=0;
- // A smooth shelf of broad perceived deficits is intentionally NOT boosted automatically.
- }else base=0;const manual=Number(p.manual?.[point.f])||0;const taste=tasteGain(point.f,cleanTaste(p));const gain=clamp(roundTo(base+manual+taste+balanceGain(p,point.f),p.step),p.min,p.max);
- return {...point,base,gain}})}
+// v2: Local threshold contrasts are an exploratory cue, NOT calibrated EQ.
+// Digital detection levels are neither ear SPL nor normal equal-loudness targets.
+// Never apply measured threshold differences directly as equalizer gains.
+const EQ_ALGORITHM_VERSION='local-contrast-v2-experimental';
+function estimateThresholdContrast(p,data){
+ const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived&&x.quality!=='mixed'&&x.quality!=='unmeasurable');
+ const enough=measured.length>=Math.max(4,Math.ceil(p.bands.length*.55));
+ const context=normalizeCalibrationContext(p.context,p.type);
+ return data.map((point,i)=>{
+  const entry={f:point.f,base:0,contrastDb:null,autoReason:'sin datos suficientes',autoConfidence:'none'};
+  if(!enough)return entry;
+  if(!Number.isFinite(point.db)||point.derived)return {...entry,autoReason:'frecuencia no medida directamente'};
+  if(point.quality==='mixed')return {...entry,autoReason:'respuesta diferente entre oídos'};
+  if(point.quality==='unmeasurable')return {...entry,autoReason:'sin umbral confirmado'};
+  const idx=measured.findIndex(x=>x.f===point.f);
+  if(idx<=0||idx===measured.length-1)return {...entry,autoReason:'banda extrema: no extrapolar'};
+  const lo=measured[idx-1],hi=measured[idx+1];
+  if(point.f/lo.f>3.5||hi.f/point.f>3.5)return {...entry,autoReason:'bandas vecinas demasiado separadas'};
+  if(p.type==='car'&&(context.windows==='open'||context.engine==='on'))
+   return {...entry,autoReason:'ruido variable del vehículo; no corregir automáticamente'};
+  if(p.type==='headphones'&&context.subtype==='inear'&&context.seal!=='good'&&point.f<250)
+   return {...entry,autoReason:'sellado in-ear no verificado; no compensar graves'};
+  // Predict the local digital threshold from adjacent measured frequencies, not
+  // from a population audiogram, a global quadratic or an acoustic room model.
+  const ratio=Math.log(point.f/lo.f)/Math.log(hi.f/lo.f);
+  const expected=lo.db+(hi.db-lo.db)*ratio;
+  const deviation=point.db-expected;
+  const uncertainty=3; // exploratory dead-zone in digital dB (not a clinical tolerance)
+  const evidence=Math.max(0,Math.abs(deviation)-uncertainty);
+  // Limit one-pass results to +/-1 EQ dB, verified two-pass to +/-2 dB;
+  // auto/speaker playback additionally limits boosts to +1 dB.
+  const verified=point.quality==='good'&&lo.quality==='good'&&hi.quality==='good';
+  const maxBoost=p.type==='car'||p.type==='speaker'?1:verified?2:1;
+  const maxCut=verified?2:1;
+  let base=deviation>=0?Math.min(maxBoost,evidence*.20): -Math.min(maxCut,evidence*.20);
+  base=roundTo(base,p.step||1);
+  return {f:point.f,base,contrastDb:Number(deviation.toFixed(2)),
+   autoReason:Math.abs(deviation)<=uncertainty?'sin contraste local significativo':base===0?'contraste insuficiente para cambiar 1 paso':'desviación local; compensación limitada y experimental',
+   autoConfidence:verified?'medium':'low'};
+ });
+}
+function recommend(p){
+ const data=gather(p), estimates=estimateThresholdContrast(p,data);
+ return data.map((point,i)=>{
+  const automatic=estimates[i],manual=Number(p.manual?.[point.f])||0,
+   taste=tasteGain(point.f,cleanTaste(p)),balance=balanceGain(p,point.f);
+  const gain=clamp(roundTo(automatic.base+manual+taste+balance,p.step||1),p.min,p.max);
+  return {...point,...automatic,gain,algorithmVersion:EQ_ALGORITHM_VERSION};
+ });
+}
 function balanceMarkup(){
  if(!current)return '';
  const p=current;
@@ -153,7 +193,7 @@ function renderCalibrationTrace(p,r){
    'I: '+formatDb(rawFrequencyThreshold(p,x.f,'left'))+'; D: '+formatDb(rawFrequencyThreshold(p,x.f,'right')):
    formatDb(rawFrequencyThreshold(p,x.f,'both'));
   const gain=(Number(x.gain)||0),automatic=(Number(x.base)||0);
-  return `<tr><th scope="row">${fmt(x.f)}</th><td>${raw}</td><td>${thresholdStatus(x)}</td><td>${automatic>=0?'+':''}${Number(automatic.toFixed(2))} dB</td><td><strong>${gain>=0?'+':''}${gain} dB</strong></td></tr>`;
+  return `<tr><th scope="row">${fmt(x.f)}</th><td>${raw}</td><td>${thresholdStatus(x)}<span class="tiny muted" style="display:block">${esc(x.autoReason||'')}</span></td><td>${automatic>=0?'+':''}${Number(automatic.toFixed(2))} dB</td><td><strong>${gain>=0?'+':''}${gain} dB</strong></td></tr>`;
  }).join('');
  return `<section id="tracePanel" class="trace-panel" aria-label="Comparación transparente de la calibración">
  <header class="trace-heading"><h2>Resultados del test · antes y después</h2><p class="compact-note">${incomplete}</p></header>
@@ -162,17 +202,17 @@ function renderCalibrationTrace(p,r){
  <div class="trace-part"><h3>2 · Interpretación y fiabilidad</h3><p class="small">${totalDirect} de ${p.bands.length} bandas con umbral directo; ${absent} sin umbral. Las frecuencias estimadas están identificadas en la tabla y no aparecen como puntos medidos en la gráfica.</p>
  <p class="compact-note"><strong>Contexto:</strong> ${esc(calibrationContextLabel(p))}</p>
  <p class="compact-note">${esc(calibrationContextCaution(p))}</p></div>
- <div class="trace-part"><h3>3 · Corrección automática frente al ajuste final</h3><p class="small muted">La columna automática muestra exclusivamente el cálculo actual basado en la tendencia de umbrales. La columna final incluye ajustes manuales y preferencias de música, si existen. Se muestran separadamente de los dBFS originales.</p>
+ <div class="trace-part"><h3>3 · Corrección automática frente al ajuste final</h3><p class="small muted">Automático: contrastes locales entre frecuencias realmente medidas, con margen de incertidumbre y límites conservadores. No equivale a audiometría ni corrige acústicamente un recinto. EQ final: incorpora ajustes manuales y preferencias si los realizaste; nunca cambia los datos medidos.</p>
  <div class="trace-table-scroll"><table class="trace-table"><thead><tr><th scope="col">Banda</th><th scope="col">Dato original</th><th scope="col">Interpretación</th><th scope="col">Automático</th><th scope="col">EQ final</th></tr></thead><tbody>${rows}</tbody></table></div>
  <p class="compact-note"><strong>Escala del ecualizador:</strong> ${esc(unit)} Los números de EQ son ganancias estimadas de procesamiento, no posiciones físicas verificadas del control.</p>
- <p class="tiny muted">Método de corrección actual: tendencia de umbrales v1.9.1, experimental. Mostrar esta comparación no valida todavía la fórmula de compensación.</p></div></section>`;
+ <p class="tiny muted">Método de corrección: contrastes locales v2, experimental; conserva las medidas originales. Las curvas normales de igual sonoridad no pueden aplicarse directamente a este test digital sin calibración acústica. Una corrección neutral puede ser el único resultado justificable.</p></div></section>`;
 }
 
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
  const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),usable=r.filter(x=>x.db!==null&&!x.derived).length,derived=r.filter(x=>x.derived).length,required=Math.max(3,Math.ceil(p.bands.length*.6));
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
  const reliable=usable>=required;
- const status=reliable?'Propuesta experimental visible junto a los umbrales originales.':'Cálculo automático sin cobertura suficiente · revisión pendiente.';
+ const status=reliable?'Contrastes locales experimentales (v2) + ajustes personales.':'Cobertura insuficiente: corrección automática neutra; ajustes personales separados.';
  return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">AUDIOCAL · INFORME DE FRECUENCIAS</p><h1>Medición y <em>ajuste.</em></h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
  <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${p.bands.length} bandas · <span style="color:var(--cyan)">${esc(presets[p.preset]?.short||'Personalizado')}</span></h2><span class="tag">${r.filter(x=>x.gain!==0).length} cambios</span></div>
  <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral · <span>${esc(status)}</span></p>
