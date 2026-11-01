@@ -236,3 +236,23 @@ test('EQ positions preserve requested, actual and residual dB with conservative 
  assert.equal(obj.physicalEqControl(5,limited).position,1);
  assert.equal(obj.physicalEqControl(5,limited).delta,-3);
 });
+
+test('documented 3 dB steps persist and map gains to real positions',()=>{
+ const normalized=ctx.normalizeCalibrationContext({eqScale:'steps',eqStepDb:'3'},'car');
+ assert.equal(normalized.eqStepDb,'3');
+ assert.equal(ctx.normalizeCalibrationContext({eqScale:'steps',eqStepDb:'4'},'car').eqStepDb,'unknown');
+ const script=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const start=script.indexOf('function physicalEqControl('),end=script.indexOf('function eqResultModel(',start);
+ const engine={Math,Number,clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),normalizeCalibrationContext:c=>c};
+ vm.runInNewContext(script.slice(start,end),engine);
+ const p={min:-6,max:6,type:'car',context:normalized};
+ const requested=[0,1,2,3,4,5,6,-1,-2,-3,-4,-5,-6];
+ const positions=requested.map(g=>engine.physicalEqControl(g,p).position);
+ assert.deepEqual(positions,[0,0,1,1,1,2,2,0,-1,-1,-1,-2,-2]);
+ assert.equal(engine.physicalEqControl(4,p).actualGain,3);
+ assert.equal(engine.physicalEqControl(4,p).delta,-1);
+ assert.equal(engine.physicalEqControl(5,p).actualGain,6);
+ assert.equal(engine.physicalEqControl(5,p).delta,1);
+ assert.equal(engine.physicalEqControl(-3,p).exact,true);
+ assert.equal(engine.physicalEqControl(3,{...p,context:{eqScale:'steps',eqStepDb:'unknown'}}).position,null);
+});
