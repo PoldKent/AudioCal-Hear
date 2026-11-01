@@ -51,7 +51,8 @@ test('20 recorded single-pass low-confidence thresholds count as 10 measured EQ 
 test('missing a channel removes automatic eligibility without erasing its measured threshold',()=>{
  const p=makeProfile();delete p.measures['2000|right'];
  const coverage=sandbox.thresholdCoverage(p,sandbox.gather(p));
- assert.equal(coverage.measured.length,10);
+ assert.equal(coverage.observed.length,10);
+ assert.equal(coverage.measured.length,9);
  assert.equal(coverage.complete.length,9);
  assert.equal(coverage.eligible.length,9);
  const rec=sandbox.recommend(p),band=rec.find(b=>b.f===2000);
