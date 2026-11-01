@@ -215,11 +215,8 @@ select option{background:#fff;color:#172033}
 @media(max-width:430px){.trace-panel{padding:9px}.trace-part{padding:9px}.trace-heading h2{font-size:16px}}
 
 /* Calibrated control-card preview: a local, offline canvas exported as PNG. */
-.eq-card-section{border:1px solid #dce6f2;border-radius:17px;background:#fff;padding:14px;margin:15px 0}
-.eq-card-section h2{font-size:19px;margin:0 0 7px;color:#223756}
 .eq-card-config{display:grid;gap:7px;margin:13px 0;padding:12px;border-radius:12px;background:#f6f9ff}
 .eq-card-config label{font-size:13px;font-weight:650;color:#39516f}
-.eq-card-canvas{width:100%;height:auto;border:1px solid #e2eaf4;border-radius:10px;display:block;background:#fff}
 .eq-card-alert{padding:10px 12px;background:#eff7ff;border-radius:10px;color:#2d5c91;font-size:12px;margin:10px 0}
 .eq-card-alert.eq-card-warning{background:#fff6ec;color:#80501f}
 .eq-card-actions{margin-top:12px}
@@ -242,3 +239,10 @@ select option{background:#fff;color:#172033}
 .evidence-metrics span{font-size:11px;color:#66778b;display:block;overflow-wrap:break-word}
 .evidence-audit .trace-table small{color:#708094}
 @media(max-width:440px){.evidence-audit{padding:8px}.evidence-metrics strong{font-size:17px}}
+
+/* Single EQ surface: export generates a PNG on demand; details stay optional. */
+.eq-main-card{min-width:0}.eq-main-card .eq-stage{margin-top:12px}
+.eq-main-card>.unobtrusive{margin-top:12px}.eq-device-settings>.inner-detail,.test-records>.inner-detail{padding-top:10px}
+.optional-tool{min-width:0}.optional-tool>summary,.test-records>summary,.eq-device-settings>summary{font-weight:750;color:#253e69}
+.results-side>.optional-tool{margin:12px 0}.listening-tool .inner-detail{min-width:0}.listening-tool .tonal-balance{margin-top:14px}
+.eq-card-config{padding:10px;margin:9px 0}.eq-card-config .field{min-width:0}.eq-card-actions .btn{flex:1 1 180px}
