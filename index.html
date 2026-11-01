@@ -242,6 +242,15 @@ select option{background:#fff;color:#172033}
 .loudness-offset button{min-width:48px;min-height:43px;border:1px solid #c8d9ef;border-radius:10px;background:#fff;color:#245bc1;font-size:23px}
 .loudness-offset strong{font-size:14px;text-align:center}
 @media(max-width:430px){.loudness-offset strong{font-size:12px}}
+
+.evidence-audit{margin:14px 0;padding:13px;border:1px solid #dce6f2;border-radius:16px;background:#fff}
+.evidence-audit h2{font-size:18px;margin:0 0 7px}
+.evidence-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.evidence-metrics>div{min-width:0;padding:10px 5px;text-align:center;border-radius:10px;background:#f5f8ff}
+.evidence-metrics strong{font-size:21px;display:block;color:#2758a2}
+.evidence-metrics span{font-size:11px;color:#66778b;display:block;overflow-wrap:break-word}
+.evidence-audit .trace-table small{color:#708094}
+@media(max-width:440px){.evidence-audit{padding:8px}.evidence-metrics strong{font-size:17px}}
 </style>
 </head>
 <body>
@@ -1076,6 +1085,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral · <span>${esc(status)}</span></p>
  ${usable<p.bands.length?`<div class="soft warning"><strong>⚠ ${p.bands.length-usable} frecuencias sin umbral</strong><p class="small">Puedes repetir solo las que faltan. No aumentes el volumen para escucharlas.</p>${button('↺ Repetir pendientes','retrymissing','btn-alt full')}</div>`:''}
  ${renderCalibrationTrace(p,r)}
+ ${evidenceAuditMarkup(p)}
  ${eqResultMarkup(p)}
  <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>🔎 Igualación de sonoridad · prueba complementaria opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
@@ -1364,6 +1374,91 @@ function loudnessAction(action){
  refreshLoudnessUI();
 }
 
+/* Audits repeatability only. No equal-loudness-to-EQ conversion. */
+const EVIDENCE_AUDIT_VERSION='evidence-audit-v1';
+function evidenceReport(p){
+ const eligible=loudnessEligibleBands(p),auto=recommend(p);
+ const half=pass=>{
+  const measures=Object.create(null);
+  for(const [k,a] of Object.entries(p.measures||{}))
+   if(Array.isArray(a)&&a[pass])measures[k]=[a[pass]];
+  return recommend({...p,measures,passes:1});
+ };
+ const split=p.passes===2?[half(0),half(1)]:null;
+ const rows=p.bands.map((f,i)=>{
+  const sides=p.channels==='separate'?['left','right']:['both'];
+  const trials=sides.map(s=>{
+   const a=p.measures?.[key(f,s)]||[];
+   return [0,1].map(n=>a[n]?.kind==='heard'&&Number.isFinite(a[n].db)?a[n].db:null);
+  });
+  const first=trials.map(x=>x[0]).filter(Number.isFinite),second=trials.map(x=>x[1]).filter(Number.isFinite);
+  const paired=p.passes===2&&trials.every(x=>x.every(Number.isFinite));
+  const earsDiffer=first.length===2&&Math.abs(first[0]-first[1])>9;
+  const repeated=paired&&!earsDiffer&&trials.every(x=>Math.abs(x[0]-x[1])<=6)&&
+   (second.length<2||Math.abs(second[0]-second[1])<=9);
+  const raw=Array.isArray(p.loudness?.[f])?p.loudness[f]:[];
+  const offsets=raw.slice(0,2).filter(x=>Number.isInteger(x?.offsetDb)&&Math.abs(x.offsetDb)<=6).map(x=>x.offsetDb);
+  const ceiling=offsets.some(x=>Math.abs(x)===6);
+  const matchStable=offsets.length===2&&!ceiling&&Math.abs(offsets[0]-offsets[1])<=2;
+  const thresholdStatus=earsDiffer?'Oídos distintos':repeated?'Repetible':
+   paired?'Revisar variación':first.length?'Sin segunda pasada':'Sin umbral';
+  const matchStatus=offsets.length<2?offsets.length?'Repetir':'Sin comparación':
+   ceiling?'Límite del test':matchStable?'Repetible':'Inconsistente';
+  const a=paired?split[0][i].base:null,b=paired?split[1][i].base:null;
+  const autoStable=Boolean(repeated&&a!==null&&a*b>0);
+  const autoStatus=a===null?'Sin dos pasadas':!repeated?'No reproducible':
+   a===0&&b===0?'Ambos neutros':autoStable?'Dirección repetida':'Cálculos distintos';
+  return {f,threshold:{first:first.length?median(first):null,second:second.length?median(second):null,
+    paired,repeated,status:thresholdStatus},
+   loudness:{offsets,eligible:eligible.includes(f),stable:matchStable,status:matchStatus},
+   auto:{gain:auto[i].base,stable:autoStable,status:autoStatus}};
+ });
+ const count={threshold:rows.filter(x=>x.threshold.repeated).length,
+  thresholdPairs:rows.filter(x=>x.threshold.paired).length,
+  matching:rows.filter(x=>x.loudness.stable).length,
+  matchingPairs:rows.filter(x=>x.loudness.offsets.length===2).length,
+  automatic:rows.filter(x=>x.auto.stable).length,
+  active:rows.filter(x=>x.auto.gain!==0).length};
+ return {version:EVIDENCE_AUDIT_VERSION,algorithm:EQ_ALGORITHM_VERSION,context:calibrationContextLabel(p),rows,count};
+}
+function evidenceAuditMarkup(p){
+ const report=evidenceReport(p),n=report.count;
+ const shown=v=>v===null?'—':v+' dBFS';
+ const rows=report.rows.map(x=>{
+  const t=x.threshold,l=x.loudness,a=x.auto;
+  const offsets=l.offsets.length?l.offsets.map(v=>(v>0?'+':'')+v).join(' / ')+' dBFS':'—';
+  return '<tr><th scope="row">'+fmt(x.f)+'</th><td>'+shown(t.first)+' / '+shown(t.second)+
+   '<small style="display:block">'+esc(t.status)+'</small></td><td>'+offsets+
+   '<small style="display:block">'+esc(l.status)+'</small></td><td>'+
+   (a.gain>0?'+':'')+a.gain+' dB<small style="display:block">'+esc(a.status)+'</small></td></tr>';
+ }).join('');
+ return '<section id="evidenceAudit" class="evidence-audit">'+
+ '<h2>Validar la estabilidad de los resultados</h2>'+
+ '<p class="small muted">Comparación independiente. No modifica la medición ni la corrección automática.</p>'+
+ '<div class="evidence-metrics"><div><strong>'+n.threshold+'/'+p.bands.length+'</strong><span>Umbrales repetibles</span></div>'+
+ '<div><strong>'+n.matching+'/'+loudnessEligibleBands(p).length+'</strong><span>Sonoridad repetible</span></div>'+
+ '<div><strong>'+n.automatic+'/'+n.active+'</strong><span>Dirección del EQ repetida</span></div></div>'+
+ '<p class="compact-note">'+(p.passes===2?'Umbrales con dos pasadas: '+n.thresholdPairs+'.':
+ 'Para evaluar repetibilidad del test original, realiza dos pasadas.')+
+ ' Comparaciones dobles de sonoridad: '+n.matchingPairs+'.</p>'+
+ '<div class="trace-table-scroll"><table class="trace-table"><thead><tr><th>Frecuencia</th>'+
+ '<th>Umbral pasada 1 / 2</th><th>Sonoridad comparación 1 / 2</th>'+
+ '<th>EQ automático · estabilidad</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+ '<p class="tiny muted">Repetibilidad no demuestra precisión acústica ni preferencia musical. Los dBFS no son dB SPL ni ganancias del EQ. Los límites ±6 dBFS de la comparación se marcan como no concluyentes.</p>'+
+ button('↓ Exportar evidencia CSV','download-audit','btn-alt full')+'</section>';
+}
+function evidenceCsv(p){
+ const r=evidenceReport(p),q=x=>'"'+String(x??'').replace(/"/g,'""')+'"';
+ const lines=[['AudioCal Hear','Evidencia experimental, no calibración acústica'],
+  ['Algoritmo',r.algorithm],['Informe',r.version],['Perfil',p.name],['Contexto',r.context],
+  ['Frecuencia Hz','Umbral pasada 1 dBFS','Umbral pasada 2 dBFS','Estado umbral',
+   'Sonoridad comparación 1 dBFS relativo','Sonoridad comparación 2 dBFS relativo',
+   'Estado sonoridad','EQ automático dB','Estado EQ']];
+ for(const x of r.rows)lines.push([x.f,x.threshold.first,x.threshold.second,x.threshold.status,
+  x.loudness.offsets[0]??'',x.loudness.offsets[1]??'',x.loudness.status,x.auto.gain,x.auto.status]);
+ return '\uFEFF'+lines.map(row=>row.map(q).join(',')).join('\r\n')+'\r\n';
+}
+
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
 if(btn.dataset.loudness){loudnessAction(btn.dataset.loudness);return}
@@ -1434,6 +1529,7 @@ case 'transfer-copy':if(current){const ok=await copyText(transferCopy(current));
 case 'copy':{let ok=await copyText(resultText(current));$('#copyStatus').textContent=ok?'Valores copiados al portapapeles.':'No se pudo copiar. Usa Descargar TXT.';break}
 case 'downloadpng':if(current&&!saveEqCardPng(current))uiAlert('No se pudo generar el PNG.');break;
 case 'copycontrols':if(current){const ok=await copyText(eqControlText(current));const el=$('#eqCardNotice');if(el)el.textContent=ok?'Instrucciones copiadas al portapapeles.':'No se pudieron copiar los valores.'}break;
+case 'download-audit':if(current)exportDownload('AudioCal_Auditoria_'+cleanName(current.name)+'.csv',evidenceCsv(current),'text/csv;charset=utf-8');break;
 case 'downloadtxt':exportDownload('AudioCal_'+cleanName(current.name)+'.txt',resultText(current),'text/plain;charset=utf-8');break;
 case 'clearmanual':if(current){current.manual={};touch();refreshResultsUI()}break;
 case 'balance-next':if(current){balanceQueueIndex=(balanceQueueIndex+1)%balanceQueue.length;balanceFreq=balanceQueue[balanceQueueIndex];resetBalanceRound();refreshBalanceUI()}break;

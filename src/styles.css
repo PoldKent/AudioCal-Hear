@@ -233,3 +233,12 @@ select option{background:#fff;color:#172033}
 .loudness-offset button{min-width:48px;min-height:43px;border:1px solid #c8d9ef;border-radius:10px;background:#fff;color:#245bc1;font-size:23px}
 .loudness-offset strong{font-size:14px;text-align:center}
 @media(max-width:430px){.loudness-offset strong{font-size:12px}}
+
+.evidence-audit{margin:14px 0;padding:13px;border:1px solid #dce6f2;border-radius:16px;background:#fff}
+.evidence-audit h2{font-size:18px;margin:0 0 7px}
+.evidence-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.evidence-metrics>div{min-width:0;padding:10px 5px;text-align:center;border-radius:10px;background:#f5f8ff}
+.evidence-metrics strong{font-size:21px;display:block;color:#2758a2}
+.evidence-metrics span{font-size:11px;color:#66778b;display:block;overflow-wrap:break-word}
+.evidence-audit .trace-table small{color:#708094}
+@media(max-width:440px){.evidence-audit{padding:8px}.evidence-metrics strong{font-size:17px}}
