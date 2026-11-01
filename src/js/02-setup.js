@@ -1,4 +1,33 @@
 
+
+function contextSelect(field,label,options,value){
+ return '<div><label for="context-'+field+'">'+label+'</label><select class="field" id="context-'+field+'" data-context="'+field+'">'+
+  options.map(([v,t])=>'<option value="'+v+'" '+(value===v?'selected':'')+'>'+t+'</option>').join('')+'</select></div>';
+}
+function renderContextFields(){
+ const c=temp.context||defaultCalibrationContext(temp.type);
+ const scale=contextSelect('eqScale','¿Qué unidad muestran los controles del EQ?',
+  [['unknown','No estoy seguro'],['steps','Posiciones / niveles (sin dB)'],['db','Decibelios (dB)']],c.eqScale);
+ let specific='';
+ if(temp.type==='car'){
+  specific=contextSelect('seat','Asiento de escucha',[['driver','Conductor'],['passenger','Copiloto'],['rear','Fila trasera']],c.seat)+
+   contextSelect('windows','Ventanas',[['closed','Cerradas'],['open','Abiertas']],c.windows)+
+   contextSelect('engine','Motor',[['off','Apagado'],['on','Encendido']],c.engine)+
+   contextSelect('connection','Fuente de audio',[['bluetooth','Bluetooth'],['cable','Cable'],['other','Otra']],c.connection);
+ }else if(temp.type==='headphones'){
+  specific=contextSelect('subtype','Tipo de auricular',[['overear','Headset / over-ear'],['inear','In-ear'],['onear','On-ear']],c.subtype)+
+   contextSelect('anc','Cancelación activa de ruido',[['unknown','No sé'],['on','Activada'],['off','Desactivada'],['none','No tiene']],c.anc)+
+   contextSelect('seal','Colocación / sellado',[['unknown','Sin comprobar'],['good','Comprobado / correcto'],['poor','No ajusta bien']],c.seal)+
+   contextSelect('connection','Conexión',[['bluetooth','Bluetooth'],['cable','Cable'],['other','Otra']],c.connection);
+ }else{
+  specific=contextSelect('room','Dónde están los parlantes',[['living','Sala'],['desk','Escritorio'],['studio','Estudio'],['other','Otro']],c.room)+
+   contextSelect('position','Posición de escucha',[['main','Punto principal'],['near','Cerca de los parlantes'],['far','Lejos de los parlantes']],c.position)+
+   contextSelect('placement','Ubicación',[['unknown','Sin comprobar'],['nearwall','Cerca de pared'],['free','Alejados de paredes']],c.placement);
+ }
+ return '<section class="context-config"><div class="setup-title"><h2>01B · Tu entorno de escucha</h2><span class="tiny muted">Guarda las condiciones</span></div>'+
+  '<div class="grid2">'+specific+scale+'</div><p class="compact-note">Estos datos identifican cuándo es válida la prueba; no añaden correcciones acústicas inventadas. Si la escala de EQ no está confirmada, no asumiremos cuántos dB equivale un nivel.</p></section>';
+}
+
 function renderSetup(){const showCustom=temp.preset==='custom',p=current;const duration=timeRange({...temp,measures:{}},0);
 return `<section class="hero"><p class="eyebrow">CONFIGURAR · NUEVA CALIBRACIÓN</p><h1>Tu sonido,<br><em>a tu manera.</em></h1><p class="subtle">Elige tu equipo, cómo quieres escucharlo y comienza. Nada de formularios interminables.</p></section>
 ${p?`<div class="inline-hero"><div class="row" style="justify-content:space-between"><div><span class="tag">PERFIL ACTUAL</span><strong data-profile-name="true" style="display:block;margin-top:7px">${esc(p.name)}</strong><span class="tiny muted">${doneCount(p)}/${plan(p).length} pruebas · ${esc(presets[p.preset]?.short||'Personalizado')}</span></div>${button('Ver ajustes ↗','results','btn-alt')}</div></div>`:''}
@@ -7,6 +36,7 @@ ${p?`<div class="inline-hero"><div class="row" style="justify-content:space-betw
 <button type="button" data-device="car" class="device-tile ${temp.type==='car'?'selected':''}"><span class="tile-icon">🚗</span><strong>Mi auto</strong></button>
 <button type="button" data-device="headphones" class="device-tile ${temp.type==='headphones'?'selected':''}"><span class="tile-icon">🎧</span><strong>Auriculares</strong></button>
 <button type="button" data-device="speaker" class="device-tile ${temp.type==='speaker'?'selected':''}"><span class="tile-icon">🔊</span><strong>Parlantes</strong></button></div>
+${renderContextFields()}
 <div class="setup-title"><h2>02 · Elige tu ecualizador</h2><span class="tiny muted">${esc(presets[temp.preset]?.short||'')} seleccionado</span></div>
 <div class="preset-grid"><button type="button" data-preset="car7" class="preset-tile ${temp.preset==='car7'?'selected':''}"><strong>🚗 7 bandas</strong><small>64 · 160 · 400 · 1K · 2.5K · 6.25K · 15.625K</small></button><button type="button" data-preset="photo10" class="preset-tile ${temp.preset==='photo10'?'selected':''}"><strong>🎧 10 bandas</strong><small>30 · 60 · 120 · 250 · 500 · 1K · 2K · 4K · 8K · 16K</small></button></div>
 <details class="unobtrusive" id="moreFormats" ${!['car7','photo10'].includes(temp.preset)?'open':''}><summary>Más ecualizadores y frecuencias <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><label for="extraPreset">Otros formatos estándar</label><select id="extraPreset" class="field"><option value="">Seleccionar formato…</option>${['iso7','iso10','five','iso15','iso31','custom'].map(id=>`<option value="${id}" ${temp.preset===id?'selected':''}>${esc(presets[id].name)}</option>`).join('')}</select>
