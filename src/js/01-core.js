@@ -205,8 +205,13 @@ function normalizedProfile(p,importing=false){
    if(!v||typeof v!=='object'||Array.isArray(v))return null;
    const validKind=['heard','unheard','stillheard','timeout','skipped','unconfirmed'].includes(v.kind)?v.kind:'timeout';
    const db=validKind==='heard'&&Number.isFinite(v.db)&&v.db>=-110&&v.db<=0?v.db:null;
+    const confidence=['high','medium','low','bounded'].includes(v.confidence)?v.confidence:null;
+    const audibleDb=Number.isFinite(v.audibleDb)&&v.audibleDb>=-110&&v.audibleDb<=0?v.audibleDb:null;
+    const inaudibleDb=Number.isFinite(v.inaudibleDb)&&v.inaudibleDb>=-110&&v.inaudibleDb<=0?v.inaudibleDb:null;
+    const uncertaintyDb=Number.isFinite(v.uncertaintyDb)&&v.uncertaintyDb>=0&&v.uncertaintyDb<=110?v.uncertaintyDb:null;
+    const contradictions=Number.isInteger(v.contradictions)?clamp(v.contradictions,0,20):0;
    const history=Array.isArray(v.history)?v.history.slice(0,20).filter(x=>x&&Number.isFinite(x.db)&&x.db>=-110&&x.db<=0&&typeof x.heard==='boolean').map(x=>({db:x.db,heard:x.heard})):[];
-   return {kind:validKind,db,elapsedS:safeNumber(v.elapsedS,0,0,180),lastAudibleDb:validKind==='stillheard'?safeNumber(v.lastAudibleDb,testFloor,-110,0):null,at:safeNumber(v.at,Date.now(),0,Date.now()+86400000),method:String(v.method||'imported').slice(0,40),history};
+   return {kind:validKind,db,elapsedS:safeNumber(v.elapsedS,0,0,180),lastAudibleDb:validKind==='stillheard'?safeNumber(v.lastAudibleDb,testFloor,-110,0):null,at:safeNumber(v.at,Date.now(),0,Date.now()+86400000),method:String(v.method||'imported').slice(0,40),confidence,audibleDb,inaudibleDb,uncertaintyDb,contradictions,history};
   });
   if(checked.some(Boolean))measures[k]=checked;
  }
