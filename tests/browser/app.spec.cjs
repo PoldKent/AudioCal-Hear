@@ -489,6 +489,10 @@ test('car and speakers can opt into 0 dBFS only with staged manual volume verifi
  page.once('dialog',d=>d.accept());
  await page.locator('[data-act="introNext"]').click();
  await expect(page.locator('[data-act="previewlevel"]')).toBeVisible();
+ await page.locator('[data-act="previewlevel"]').click();
+ await expect(page.locator('[data-act="confirmlevel"]')).toBeEnabled();
+ await page.locator('[data-act="confirmlevel"]').click();
+ await expect(page.locator('[data-act="previewlevel"]')).toContainText('−24 dBFS');
  await page.reload();
  await page.locator('[data-nav="test"]').click();
  await page.locator('[data-act="introNext"]').click();
