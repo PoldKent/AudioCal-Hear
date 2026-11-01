@@ -11,6 +11,7 @@ const MODULES = [
   'src/js/04-equalization.js',
   'src/js/05-audio-player.js',
   'src/js/05b-eq-transfer.js',
+  'src/js/05c-loudness.js',
   'src/js/06-interactions.js'
 ];
 

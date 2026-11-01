@@ -1,6 +1,7 @@
 
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
+if(btn.dataset.loudness){loudnessAction(btn.dataset.loudness);return}
 if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.context=defaultCalibrationContext(type);temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;render();return}
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(btn.dataset.transferOs&&current){transferOS=btn.dataset.transferOs;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();return}
@@ -54,7 +55,7 @@ case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'
  }break;
  case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
 case 'retry':awaitNext=false;floorReached=false;trial=null;sampleNote='';stopTone();render();break;
-case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.manual={};awaitNext=false;floorReached=false;trial=null;introStep=3;sampleNote='';touch();render()}break;
+case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.manual={};awaitNext=false;floorReached=false;trial=null;introStep=3;sampleNote='';touch();render()}break;
 case 'transfer-open':transferOpen=true;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();break;
 case 'transfer-close':transferOpen=false;refreshTransfer();break;
 case 'transfer-next':if(!current)return;if(transferStep===1&&!transferMapping(current)){transferStatus='Revisa las frecuencias reales del ecualizador.';refreshTransfer();break}
@@ -80,6 +81,7 @@ case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({ap
 case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
+if(t.id==='loudnessFrequency'&&current){stopTone();loudnessFreq=Number(t.value);loudnessOffsetDb=0;loudnessListened=new Set();loudnessMessage='Nueva frecuencia seleccionada. Compara las dos señales.';refreshLoudnessUI();return}
 if(current&&(t.id==='resultEqScale'||t.id==='resultEqStepDb')){
  const f=t.id==='resultEqScale'?'eqScale':'eqStepDb';
  const next={...normalizeCalibrationContext(current.context,current.type),provenance:'captured',[f]:t.value};

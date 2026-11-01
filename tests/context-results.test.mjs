@@ -125,3 +125,30 @@ test('PNG export is integrated into source and monolithic app',()=>{
  assert.match(src,/toDataURL\('image\/png'\)/);
  assert.match(src,/SIN CONVERSIÓN VALIDADA/);
 });
+
+test('suprathreshold records are sanitized, bounded, and independent of automatic EQ',()=>{
+ const core=fs.readFileSync('src/js/01-core.js','utf8'),start=core.indexOf('const LOUDNESS_REFERENCE_DBFS='),end=core.indexOf('function normalizedProfile(',start);
+ assert.ok(start>=0&&end>start);
+ const ctx=vm.createContext({Number,Math,Object,Date,Array,clamp:(v,a,b)=>Math.max(a,Math.min(b,v))});
+ vm.runInContext(core.slice(start,end),ctx);
+ const valid={offsetDb:2,referenceDbfs:-48,method:'relative-tone-match-v1',at:100};
+ const raw={160:[valid,{...valid,offsetDb:3}],400:[{...valid,offsetDb:200}],999:[valid]};
+ const normalized=ctx.normalizeLoudness(raw,[160,400,1000]);
+ assert.equal(normalized[160].length,2);
+ assert.equal(normalized[400],undefined);
+ assert.equal(normalized[999],undefined);
+ assert.match(ctx.loudnessEvidenceStatus(normalized[160]),/Repetible/);
+ assert.match(ctx.loudnessEvidenceStatus([{...valid,offsetDb:-6},{...valid,offsetDb:6}]),/Inconsistente/);
+ assert.match(fs.readFileSync('src/js/05c-loudness.js','utf8'),/NO significa que el EQ deba aumentar/);
+ const eq=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const recommend=eq.slice(eq.indexOf('function recommend(p)'),eq.indexOf('function balanceMarkup(){'));
+ assert.doesNotMatch(recommend,/loudness/i,'Exploratory evidence must never modify EQ automatically');
+});
+test('loudness playback limits digital level and uses an explicit user interaction',()=>{
+ const src=fs.readFileSync('src/js/05c-loudness.js','utf8');
+ assert.match(src,/LOUDNESS_REFERENCE_DBFS\+LOUDNESS_OFFSET_LIMIT/);
+ assert.match(src,/Math.pow\(10,db\/20\)/);
+ assert.match(src,/if\(!loudnessListened.has\('reference'\)\|\|!loudnessListened.has\('target'\)\)/);
+ const interaction=fs.readFileSync('src/js/06-interactions.js','utf8');
+ assert.match(interaction,/if\(btn.dataset.loudness\)/);
+});
