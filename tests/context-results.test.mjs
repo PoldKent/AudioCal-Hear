@@ -304,6 +304,6 @@ test('PNG uses a common zero line and one column per band, not a vertical list',
  assert.match(plot,/c\.moveTo\(chartLeft-13,y\)/);
  assert.match(plot,/Math\.min\(layout\.zeroY,y\)/);
  assert.match(plot,/CONTROLES PARA APLICAR/);
- assert.match(plot,/SIN ESCALA VERIFICADA/);
+ assert.match(plot,/SIN CONVERSIÓN VALIDADA/);
  assert.doesNotMatch(plot,/const y=345\+i\*61/);
 });
