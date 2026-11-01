@@ -55,7 +55,8 @@ test('integrated relative loudness is part of each frequency trial, not a duplic
  assert.match(hearing,/function answerInlineMatch\(/);
  assert.match(hearing,/function inlineRecord\(/);
  assert.match(hearing,/integratedLoudness:true,inlineLoudness:\{\}/);
- assert.match(eq,/Sonoridad: parecida con/);
+ assert.match(eq,/parecida con/);
+ assert.match(eq,/Sonoridad: /);
  assert.doesNotMatch(eq, /id="loudnessPanel"/);
 });
 test('one-pass loudness observations are bounded, preserve exact source and remain independent of EQ',()=>{
@@ -72,4 +73,14 @@ test('one-pass loudness observations are bounded, preserve exact source and rema
  assert.equal(normalized['400|both|0'],undefined);
  assert.equal(normalized['2500|left|0'].status,'bounded');
  assert.doesNotMatch(eq.slice(eq.indexOf('function recommend('),eq.indexOf('function balanceMarkup(')),/inlineLoudness/);
+});
+
+test('frequency matching has a bounded number of answers and keeps the separate result panel removed',()=>{
+ assert.match(hearing,/state\.tries\.length>=3/);
+ assert.match(hearing,/if\(state\.tries\.length>=3\)\{inlineRecord\('bounded'\)/);
+ assert.match(hearing,/if\(answer==='similar'\)\{inlineRecord\('matched'\)/);
+ assert.match(hearing,/if\(base===null\|\|base\+bounded>ceiling/);
+ assert.match(hearing,/let inlineMatch=null;/);
+ assert.match(eq,/const loudSides=p\.channels==='separate'/);
+ assert.doesNotMatch(eq,/id="loudnessPanel"/);
 });
