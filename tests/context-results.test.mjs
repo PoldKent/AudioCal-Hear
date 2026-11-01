@@ -56,7 +56,6 @@ test('local correction v2 does not invent EQ from isolated or unmeasured tones',
  const start=script.indexOf("const EQ_ALGORITHM_VERSION=");
  const end=script.indexOf('function balanceMarkup(){',start);
  assert.ok(start>=0&&end>start);
- const vm=require('node:vm');
  const measured=[
   {f:64,db:-48,quality:'low'}, {f:160,db:-49,quality:'low'},
   {f:400,db:-28,quality:'low'}, {f:1000,db:-50,quality:'low'},
