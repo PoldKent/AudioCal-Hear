@@ -161,7 +161,7 @@ test('test scale is 0 to −100 dBFS but never starts at digital full scale',()=
  vm.runInNewContext(source.slice(head,tail).replace('function legacyQuickBands','function legacyQuickBands'),{
   ...c,QUICK_LIMIT:6,TEST_START_DB:-36,TEST_END_DB:-100,MAX_SAFE_DB:-24
  });
- assert.match(html,/Rango disponible|Escala digital de referencia/);
+ assert.match(html,/Escala digital: 0 a −100 dBFS/);
  assert.doesNotMatch(html,/const TEST_START_DB=0/);
 });
 test('quick mode groups adjacent frequency bands; historical schedules stay stable',()=>{
