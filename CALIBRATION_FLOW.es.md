@@ -78,3 +78,11 @@ La implementación de los lotes 0–1 **no cambia** `recommend()`, los tonos ni 
 - Conservar los dos registros por frecuencia y por perfil en un campo `loudness` validado al importar y recargar.
 - **Sin aplicar ajustes automáticos de EQ por esta medición**: los contornos ISO 226:2023 son mediciones acústicas bajo condiciones de campo libre, no un objetivo de curva para auriculares o vehículos sin calibrar. Primero validar el método y la interpretación.
 - La música A/B y el micrófono no son necesarios para obtener el resultado principal ni el PNG.
+
+
+## Lote 2C — Auditoría de reproducibilidad
+
+- Informe visible y exportación CSV: umbrales en dBFS por pasada, dos igualaciones relativas y EQ automático en dB.
+- Las igualaciones que tocan ±6 dBFS se marcan inconcluyentes aunque coincidan; los umbrales se consideran repetibles con dos pasadas y un margen exploratorio ≤6 dBFS.
+- Con dos pasadas, se calcula el EQ experimental por pasada separada para evaluar si coincide la **dirección** de una corrección. No es validación acústica.
+- No se modifican los resultados, preferencias, datos originales ni PNG. Repetibilidad no equivale a ecualización musical óptima.

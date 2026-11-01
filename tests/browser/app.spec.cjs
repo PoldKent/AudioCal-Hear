@@ -269,3 +269,21 @@ test('optional loudness matching saves two relative responses without changing E
  await expect(page.locator('#loudnessInner')).toContainText('Repetible');
  await noOverflow(page);
 });
+
+test('cross-evidence CSV exports with units and leaves EQ untouched',async({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await page.locator('#deviceName').fill('Auto audit QA');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#evidenceAudit')).toBeVisible();
+ const gains=await page.locator('.eqband .eqval').allTextContents();
+ const event=page.waitForEvent('download');
+ await page.locator('[data-act="download-audit"]').click();
+ const file=await event;
+ expect(file.suggestedFilename()).toMatch(/Auditoria_.*\.csv$/);
+ const text=fs.readFileSync(await file.path(),'utf8');
+ expect(text).toContain('Sonoridad comparación 1 dBFS relativo');
+ expect(text).toContain('local-contrast-v2-experimental');
+ expect(await page.locator('.eqband .eqval').allTextContents()).toEqual(gains);
+ await noOverflow(page);
+});

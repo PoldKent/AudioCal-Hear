@@ -152,3 +152,25 @@ test('loudness playback limits digital level and uses an explicit user interacti
  const interaction=fs.readFileSync('src/js/06-interactions.js','utf8');
  assert.match(interaction,/if\(btn.dataset.loudness\)/);
 });
+
+test('cross-evidence marks truncated loudness as inconclusive and preserves data',()=>{
+ const source=fs.readFileSync('src/js/05d-evidence.js','utf8'),start=source.indexOf('const EVIDENCE_AUDIT_VERSION='),end=source.indexOf('function evidenceAuditMarkup(',start);
+ const c=vm.createContext({Math,Number,Object,Array,median:x=>x[0],key:(f,s)=>f+'|'+s,EQ_ALGORITHM_VERSION:'v2',calibrationContextLabel:()=> 'auto',
+  loudnessEligibleBands:p=>p.bands.filter(x=>x>=100&&x<=10000&&x!==1000),
+  recommend:p=>p.bands.map(f=>({f,base:f===400?1:0}))});
+ vm.runInContext(source.slice(start,end),c);
+ const p={name:'QA',bands:[64,160,400,1000,2500,6250,15625],channels:'both',passes:2,
+  measures:Object.fromEntries([64,160,400,1000,2500,6250,15625].map(f=>[f+'|both',[{kind:'heard',db:-48},{kind:'heard',db:-47}]])),
+  loudness:{160:[{offsetDb:3},{offsetDb:4}],400:[{offsetDb:6},{offsetDb:6}],2500:[{offsetDb:-5},{offsetDb:4}]}};
+ const before=JSON.stringify(p),a=c.evidenceReport(p);
+ assert.equal(a.count.threshold,7);
+ assert.equal(a.count.matching,1);
+ assert.equal(a.count.matchingPairs,3);
+ assert.equal(a.rows.find(x=>x.f===400).loudness.status,'Límite del test');
+ assert.equal(JSON.stringify(p),before);
+ p.passes=1;assert.equal(c.evidenceReport(p).count.thresholdPairs,0);
+});
+test('CSV export explicitly distinguishes dBFS from dB of EQ',()=>{
+ const html=fs.readFileSync('index.html','utf8');
+ for(const s of ['evidenceAuditMarkup(p)','function evidenceCsv(', "case 'download-audit'",'Sonoridad comparación 1 dBFS relativo'])assert.ok(html.includes(s),s);
+});
