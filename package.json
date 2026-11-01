@@ -1,6 +1,6 @@
 {
   "name": "audiocal-hear",
-  "version": "1.9.1",
+  "version": "2.0.0-preview.1",
   "private": true,
   "license": "UNLICENSED",
   "description": "Proprietary standalone hearing and EQ web application",
