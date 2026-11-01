@@ -351,6 +351,7 @@ test('AF-02: changing a band keeps original measurements and synchronizes every 
  await page.locator('[data-device="car"]').click();
  await page.locator('#deviceName').fill('AF02 sincronización');
  await page.locator('[data-act="create"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
  const freq=1000;
  const originalGraph=await page.locator('#tracePanel .trace-plot svg').innerHTML();
@@ -386,6 +387,7 @@ test('AF-02: transfer confirmation is invalidated after changing applied EQ valu
  await page.locator('[data-device="car"]').click();
  await page.locator('#deviceName').fill('AF02 transferencia');
  await page.locator('[data-act="create"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
  await page.locator('[data-act="transfer-open"]').click();
  await page.locator('[data-act="transfer-next"]').click();
@@ -401,6 +403,7 @@ test('AF-02: physical EQ scale changes invalidate checked transfer bands',async(
  await page.locator('[data-device="car"]').click();
  await page.locator('#deviceName').fill('AF02 rango');
  await page.locator('[data-act="create"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
  await page.locator('[data-act="transfer-open"]').click();
  await page.locator('[data-act="transfer-next"]').click();
