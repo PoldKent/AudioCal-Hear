@@ -193,7 +193,7 @@ test('device-aware digital ceilings and staged preview never start at 0 by defau
  const begin=source.indexOf('function maxTestStart('),end=source.indexOf('function legacyQuickBands(',begin);
  assert.ok(begin>=0&&end>begin);
  const ctx={Math,Number,clamp,DIGITAL_REFERENCE_DBFS:0,MAX_SAFE_DB:-24,TEST_START_DB:-36,TEST_END_DB:-100};
- vm.runInNewContext(source.slice(begin,end),ctx);
+ vm.runInNewContext(source.slice(begin,end)+'\nthis.getStart=getStart;this.getFloor=getFloor;',ctx);
  for(const type of ['car','speaker']){
   assert.equal(ctx.maxTestStart({type}),0);
   assert.equal(ctx.getStart({type}),-36);
