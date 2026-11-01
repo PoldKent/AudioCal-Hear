@@ -6,13 +6,13 @@ import vm from 'node:vm';
 const script = fs.readFileSync('src/js/05b-eq-transfer.js', 'utf8');
 const boundary = script.indexOf('function transferMarkup()');
 assert.ok(boundary > 1000, 'Expected pure transfer functions before the UI renderer');
-const profile = {name:'QA EQ',type:'headphones',min:-20,max:20,bands:[100,400,1000,10000]};
+const profile = {name:'QA EQ',type:'headphones',min:-20,max:20,bands:[100,400,1000,10000],context:{eqScale:'db',eqStepDb:'unknown'}};
 const suggestions = [
  {f:100,gain:-4},{f:400,gain:0},{f:1000,gain:4},{f:10000,gain:12}
 ];
 const presets = {car7:{bands:[64,160,400,1000,2500,6250,15625]},photo10:{bands:[30,60,120,250,500,1000,2000,4000,8000,16000]}};
 const context = vm.createContext({
- Math,Number,presets,recommend:()=>suggestions,
+ Math,Number,presets,recommend:()=>suggestions,normalizeCalibrationContext:c=>c,
  clamp:(n,min,max)=>Math.max(min,Math.min(max,n)),
  parseBands:text=>{
    const arr=text.split(/[,;\s]+/).filter(Boolean).map(Number);
@@ -20,6 +20,8 @@ const context = vm.createContext({
  },
  fmt:f=>f+' Hz'
 });
+const eq=fs.readFileSync('src/js/04-equalization.js','utf8');
+vm.runInContext(eq.slice(eq.indexOf('function physicalEqControl('),eq.indexOf('function eqResultModel(')),context);
 vm.runInContext(script.slice(0,boundary),context);
 
 test('same physical equalizer preserves exact user gains',()=>{
@@ -65,4 +67,20 @@ test('Spotify paths and YouTube Music fallback do not promise automatic audio ch
  assert.match(context.transferNotice(profile),/Spotify Connect/);
  vm.runInContext('transferTarget="youtube";transferOS="ios"',context);
  assert.match(context.transferPath(profile).join(' '),/no ofrece un ecualizador manual universal/);
+});
+
+test('device transfer uses physical positions and shows gain residuals, not just dB labels',()=>{
+ vm.runInContext('transferTarget="device";transferPreset="profile";transferRange="profile"',context);
+ const car={...profile,type:'car',min:-6,max:6,context:{eqScale:'steps',eqStepDb:'2'}};
+ const item={f:1000,gain:3,kind:'exact',limited:false};
+ assert.match(context.transferInstruction(car,item),/control en \+1 posiciones/);
+ assert.match(context.transferLabel(item,car),/real \+2 dB/);
+ assert.match(context.transferLabel(item,car),/diferencia -1 dB/);
+ const negative={...item,gain:-3};
+ assert.match(context.transferLabel(negative,car),/real -2 dB/);
+ const unknown={...car,context:{eqScale:'steps',eqStepDb:'unknown'}};
+ assert.match(context.transferInstruction(unknown,item),/No mover el control/);
+ assert.match(context.transferLabel(item,unknown),/sin conversión/);
+ vm.runInContext('transferPreset="custom";transferCustom="100, 400, 1000"',context);
+ assert.match(context.transferInstruction(car,item),/No convertir a posiciones/);
 });
