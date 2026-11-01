@@ -261,3 +261,18 @@ select option{background:#fff;color:#172033}
 .eq-main-card{min-width:0}.starter-inline{margin:12px 0;padding:12px;background:#f6f9ff;border:1px solid #dce7f7;border-radius:13px}.starter-inline p{margin:5px 0 9px}.starter-inline strong{color:#214d99}
 .eq-device-settings{margin-top:12px}.eq-device-settings>.inner-detail{padding-top:8px}.eq-card-config{padding:10px;margin:8px 0}.eq-card-config .field{min-width:0}
 .optional-tool>summary,.eq-device-settings>summary{font-weight:750;color:#253e69}.optional-tool .inner-detail{min-width:0}.eq-card-actions>.btn{flex:1 1 180px}
+
+/* Optional pre-test sweep: one compact step, no extra calibration wizard. */
+.sweep-panel{margin:14px 0;padding:13px;background:#f7faff;border-color:#dce7f7;min-width:0}
+.sweep-panel>strong{display:block;color:#204c8c;font-size:14px}
+.sweep-panel .sweep-choices{margin:9px 0}
+.sweep-panel .sweep-choices>.btn{font-size:12px;min-height:43px;padding:8px}
+.sweep-mic-option{display:flex;align-items:center;gap:9px;font-weight:600;margin:12px 0;color:#304766}
+.sweep-mic-option input{height:17px;width:17px;flex:0 0 auto}
+.sweep-live{margin:12px 0;padding:12px;border:1px solid #d7e6fa;background:white;border-radius:13px}
+.sweep-live #sweepCurrentHz{font-variant-numeric:tabular-nums;font-size:21px}
+.sweep-live .grid2{margin:12px 0;gap:8px}
+.sweep-live .grid2 button{min-height:52px}
+.sweep-saved{border-top:1px solid #dbe5f4;margin-top:12px;padding-top:10px}
+.sweep-saved p{margin:7px 0}
+@media(max-width:420px){.sweep-panel{padding:10px}.sweep-live{padding:9px}.sweep-panel .sweep-choices .btn{padding:8px 4px;font-size:11px}}

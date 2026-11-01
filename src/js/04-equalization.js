@@ -540,6 +540,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  ${eqResultMarkup(p)}
  <details class="unobtrusive" id="technicalResults"><summary>Mediciones del test y fiabilidad · opcional</summary><div class="inner-detail">
  ${renderCalibrationTrace(p,r)}
+ ${sweepSummaryMarkup(p)}
  ${evidenceAuditMarkup(p)}
  <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>Igualación de sonoridad · experimento opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
  ${usable<p.bands.length?`<p class="small muted">${p.bands.length-usable} bandas no tienen ambos umbrales. El test ya conservó los límites observados. Solo repite voluntariamente si quieres mejorar la evidencia. ${button('↺ Repetir bandas sin umbral','retrymissing','btn-ghost')}</p>`:''}

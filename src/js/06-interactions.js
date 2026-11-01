@@ -1,6 +1,9 @@
 
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
+if(btn.dataset.sweepSide){if(!sweepSession){sweepSide=btn.dataset.sweepSide;render()}return}
+if(btn.dataset.sweepRange){if(!sweepSession){sweepRange=btn.dataset.sweepRange;render()}return}
+if(btn.dataset.sweepResponse){sweepLogResponse(btn.dataset.sweepResponse==='yes');return}
 if(btn.dataset.loudness){loudnessAction(btn.dataset.loudness);return}
 if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.context=defaultCalibrationContext(type);temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;temp.testStart=Math.min(temp.testStart,maxTestStart(temp));render();return}
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
@@ -50,7 +53,7 @@ case 'introBack':stopTone();introStep=0;render();break;
 case 'introNext':
  if(current?.channels==='separate'&&!channelsReady(current)){uiAlert('Comprueba y confirma los dos canales antes de comenzar.');break}
  if(needsVolumePreview(current)&&!volumeReady){uiAlert('Completa las referencias graduales antes de comenzar.');break}
- introStep=3;render();break;
+ stopTone();introStep=3;render();break;
 case 'previewlevel':if(current&&introStep===0&&needsVolumePreview(current)){
  volumePreviewPlayed=false;const level=volumePreviewSteps(current)[volumePreviewIndex];
  if(Number.isFinite(level))await playTone(true,'both',level);
@@ -61,6 +64,8 @@ case 'confirmlevel':if(current&&introStep===0&&volumePreviewPlayed&&tone?.mode!=
  render();
 }break;
 case 'ambient':await checkAmbient();break;
+case 'sweep-start':await startSweep();break;
+case 'sweep-finish':finishSweep();break;
 case 'endheard':if(current&&floorReached){logMeasure('stillheard')}break;
 case 'enduncertain':if(current&&floorReached)logMeasure('unconfirmed');break;
 case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'){
@@ -128,6 +133,7 @@ case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({ap
 case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
+if(t.id==='sweepMicChoice'){sweepMicEnabled=!!t.checked;return}
 if(t.id==='loudnessFrequency'&&current){stopTone();loudnessFreq=Number(t.value);loudnessOffsetDb=0;loudnessListened=new Set();loudnessMessage='Nueva frecuencia seleccionada. Compara las dos señales.';refreshLoudnessUI();return}
 if(current&&(t.id==='resultControlMin'||t.id==='resultControlMax')){
   const value=Number(t.value),field=t.id==='resultControlMin'?'controlMin':'controlMax';

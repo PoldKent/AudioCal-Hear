@@ -221,12 +221,26 @@ function normalizedProfile(p,importing=false){
   for(const f of bands){const v=value[f];if(typeof v==='number'&&Number.isFinite(v))output[f]=clamp(v,minValue,maxValue)}
   return output;
  };
+
+ // Preflight observations are exploratory and never merged into pure-tone measurements.
+ const sweepRecords=Object.create(null),sweeps=p.sweepRecords&&typeof p.sweepRecords==='object'&&!Array.isArray(p.sweepRecords)?p.sweepRecords:{};
+ for(const side of ['both','left','right']){
+  const item=sweeps[side];
+  if(!item||typeof item!=='object'||Array.isArray(item)||item.method!=='fixed-digital-level-preflight-v1')continue;
+  const minHz=safeNumber(item.minHz,125,20,20000),maxHz=safeNumber(item.maxHz,8000,minHz,20000);
+  const events=Array.isArray(item.events)?item.events.slice(0,60).filter(x=>x&&Number.isFinite(x.hz)&&x.hz>=minHz&&x.hz<=maxHz&&typeof x.heard==='boolean').map(x=>({hz:Math.round(x.hz),heard:x.heard})):[];
+  const micUsed=item.micUsed===true;
+  const mic=micUsed&&Array.isArray(item.mic)?item.mic.slice(0,100).filter(x=>x&&Number.isFinite(x.hz)&&x.hz>=minHz&&x.hz<=maxHz&&Number.isFinite(x.relativeDb)).map(x=>({hz:Math.round(x.hz),relativeDb:clamp(Math.round(x.relativeDb),-60,60),detected:x.detected===true})):[];
+  sweepRecords[side]={method:'fixed-digital-level-preflight-v1',minHz,maxHz,
+   levelDbfs:safeNumber(item.levelDbfs,-42,-100,-24),durationS:safeNumber(item.durationS,0,0,22),
+   at:safeNumber(item.at,Date.now(),0,Date.now()+86400000),events,micUsed,mic};
+ }
  const taste=p.taste&&typeof p.taste==='object'&&!Array.isArray(p.taste)?p.taste:{};
  return {
   id,name:String(p.name||'Mi equipo').slice(0,70),type:['car','headphones','speaker'].includes(p.type)?p.type:'headphones',
   preset:Object.hasOwn(presets,p.preset)?p.preset:'custom',bands,min,max,controlMin,controlMax,step:1,
   channels:p.channels==='separate'?'separate':'both',passes:p.passes===2?2:1,
-  testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,
+  testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,sweepRecords,
   // Freeze historical quick sampling so existing observations are never silently reassigned.
   testBandPlan:p.testMode==='quick'?(
    Array.isArray(p.testBandPlan)&&p.testBandPlan.length>0&&p.testBandPlan.length<=QUICK_LIMIT&&
