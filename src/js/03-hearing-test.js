@@ -77,7 +77,7 @@ function renderIntro(){
 let inlineMatch=null;
 function inlineMatchFor(entry){
  const id=inlineLoudnessKey(entry);
- if(!inlineMatch||inlineMatch.id!==id)inlineMatch={id,entry,offsetDb:0,tries:[],listened:false,message:''};
+ if(!inlineMatch||inlineMatch.id!==id||inlineMatch.profileId!==current?.id)inlineMatch={id,profileId:current?.id,entry,offsetDb:0,tries:[],listened:false,message:''};
  return inlineMatch;
 }
 function inlineMatchBase(p,entry){
@@ -151,7 +151,7 @@ function inlineRecord(status){
  const state=inlineMatchFor(e),base=inlineMatchBase(p,e);
  if(!p.inlineLoudness||typeof p.inlineLoudness!=='object')p.inlineLoudness={};
  p.inlineLoudness[state.id]={status,offsetDb:status==='matched'?state.offsetDb:null,
-  referenceDbfs:base,trials:state.tries.slice(),method:'in-pass-relative-loudness-v1'};
+  referenceDbfs:base,trials:state.tries.slice(),at:Date.now(),method:'in-pass-relative-loudness-v1'};
  inlineMatch=null;stopTone();touch();render();
 }
 function answerInlineMatch(answer){
@@ -175,7 +175,7 @@ function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea
  const p=current,items=plan(p),total=items.length,missing=firstMissing(p);
  const pending=inlineLoudnessPending(p);
  if(pending){
-  if(pending.f===1000){p.inlineLoudness[inlineLoudnessKey(pending)]={status:'reference',offsetDb:null,referenceDbfs:null,trials:[],method:'in-pass-relative-loudness-v1'};touch();return renderTest()}
+  if(pending.f===1000){p.inlineLoudness[inlineLoudnessKey(pending)]={status:'reference',offsetDb:null,referenceDbfs:null,trials:[],method:'in-pass-relative-loudness-v1',at:Date.now()};touch();return renderTest()}
   return renderInlineMatch(p,pending,total);
  }
  if(missing<0)return `<div class="card center"><h2>✓ Búsquedas realizadas</h2><p>Se registraron ${total} búsquedas (no necesariamente ${total} umbrales confirmados) para <strong data-profile-name="true">${esc(p.name)}</strong>. Si no se encontró el umbral, no se inventa ninguna medida.</p>${button('Ver ajustes recomendados','results','btn-primary full')}${button('Repetir examen desde cero','resettest','btn-ghost full')}</div>`;
@@ -284,7 +284,7 @@ function logMeasure(kind){
  if(current.integratedLoudness&&!current.inlineLoudness?.[inlineLoudnessKey(e)]){
   const observation=current.measures[k][e.pass];
   const status=e.f===1000?'reference':(observation.kind==='heard'||observation.kind==='stillheard')?null:'unavailable';
-  if(status){if(!current.inlineLoudness)current.inlineLoudness={};current.inlineLoudness[inlineLoudnessKey(e)]={status,offsetDb:null,referenceDbfs:null,trials:[],method:'in-pass-relative-loudness-v1'}}
+  if(status){if(!current.inlineLoudness)current.inlineLoudness={};current.inlineLoudness[inlineLoudnessKey(e)]={status,offsetDb:null,referenceDbfs:null,trials:[],method:'in-pass-relative-loudness-v1',at:Date.now()}}
  }
  touch();render();
 }
