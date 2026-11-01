@@ -465,8 +465,9 @@ function renderFrequencySummary(p,rows){
  return `<section class="soft" id="hearFrequencyReport"><h3>Tu percepción por frecuencia y cómo ajustar el EQ</h3><p class="small muted">dBFS indica el umbral digital observado en este equipo, no capacidad auditiva clínica ni ganancia recomendada. Una banda sin evidencia suficiente puede permanecer en 0.</p><div style="overflow-x:auto"><table><thead><tr><th>Frecuencia</th><th>Escucha</th><th>Confianza</th><th>Ajuste sugerido</th></tr></thead><tbody>${rows.map(r=>{
  const physical=physicalEqControl(r.gain,p,context);
  const obs=r.db===null?'No confirmado':(pair(r.f)||r.db+' dBFS');
- const unit=physical.position===null?'Sin conversión fiable':physical.position+(context.eqScale==='db'?' dB':' pasos');
- return `<tr><th scope="row">${fmt(r.f)}</th><td>${esc(obs)}</td><td>${confidence(r)}</td><td><strong>${r.gain>0?'+':''}${r.gain} dB</strong><small style="display:block">${unit}</small></td></tr>`;
+ const mic=p.type==='headphones'?'':(p.acoustic?.[r.f]?.detected?' · mic: tono observado':p.acoustic?.[r.f]?' · mic: inconcluso':'');
+ const unit=physical.position===null?'Sin conversión fiable':(physical.position>0?'+':'')+physical.position+(context.eqScale==='db'?' dB':' pasos');
+ return `<tr><th scope="row">${fmt(r.f)}</th><td>${esc(obs)}<small style="display:block">${mic}</small></td><td>${confidence(r)}</td><td><strong>${r.gain>0?'+':''}${r.gain} dB</strong><small style="display:block">${unit}</small></td></tr>`;
  }).join('')}</tbody></table></div><p class="tiny muted">Si la equivalencia de pasos es desconocida, no se inventan posiciones físicas. El test no demuestra que una frecuencia audible necesite recortarse.</p></section>`;
 }
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
