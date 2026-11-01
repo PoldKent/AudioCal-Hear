@@ -84,3 +84,31 @@ test('frequency matching has a bounded number of answers and keeps the separate 
  assert.match(eq,/const loudSides=p\.channels==='separate'/);
  assert.doesNotMatch(eq,/id="loudnessPanel"/);
 });
+
+test('real in-pass state machine records a match and advances without another sweep',()=>{
+ const startCore=core.indexOf('function normalizeInlineLoudness('),endCore=core.indexOf('const QUICK_LIMIT=',startCore);
+ const startHear=hearing.indexOf('let inlineMatch=null;'),endHear=hearing.indexOf('function renderTest(){',startHear);
+ assert.ok(startCore>=0&&endCore>startCore&&startHear>=0&&endHear>startHear);
+ const entries=[{f:160,side:'both',pass:0},{f:400,side:'both',pass:0}];
+ const p={id:'integration-test',testStart:-36,integratedLoudness:true,entries,measures:{'160|both':[{kind:'heard',db:-55}]},inlineLoudness:{}};
+ const source='let tone=null;\n'+core.slice(startCore,endCore)+hearing.slice(startHear,endHear)+`
+  const e=inlineLoudnessPending(current);
+  if(!e||e.f!==160)throw Error('Unexpected pending frequency');
+  const html=renderInlineMatch(current,e,2);
+  if(!html.includes('¿Cuál suena más fuerte?'))throw Error('Missing integrated stage');
+  inlineMatch.listened=true;
+  answerInlineMatch('reference');
+  if(inlineMatch.offsetDb!==3||inlineMatch.tries.length!==1)throw Error('Not adaptively changing');
+  inlineMatch.listened=true;
+  answerInlineMatch('similar');
+  if(current.inlineLoudness['160|both|0']?.offsetDb!==3)throw Error('Not persisted');
+  if(inlineLoudnessPending(current)!==null)throw Error('Reprocessing old frequency');
+  return current.inlineLoudness['160|both|0'];
+ `;
+ const f=new Function('current','page','clamp','plan','recorded','fmt','getStart','key','button','esc','stopTone','touch','render','doneCount',source);
+ const result=f(p,'test',(v,a,b)=>Math.max(a,Math.min(b,v)),q=>q.entries,(q,e)=>Boolean(q.measures[e.f+'|'+e.side]?.[e.pass]),v=>v+' Hz',q=>q.testStart,
+  (freq,side)=>freq+'|'+side,(txt,act)=>'<button data-act="'+act+'">'+txt+'</button>',x=>x,()=>{},()=>{},()=>{},()=>1);
+ assert.equal(result.status,'matched');
+ assert.equal(result.trials.length,2);
+ assert.equal(p.measures['160|both'][0].db,-55);
+});
