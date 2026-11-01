@@ -10,7 +10,7 @@ function transferBands(p){
 function transferBounds(p){
  if(transferRange!=='profile')return TRANSFER_LIMITS[transferRange]||[p.min,p.max];
  const context=normalizeCalibrationContext(p.context,p.type);
- const ratio=context.eqScale==='db'?1:context.eqScale==='steps'&&['1','2','3'].includes(context.eqStepDb)?Number(context.eqStepDb):null;
+ const ratio=context.eqScale==='db'?1:context.eqScale==='steps'&&['1','2','3','4'].includes(context.eqStepDb)?Number(context.eqStepDb):null;
  if(ratio===null)return [p.min,p.max]; // Do not convert unverified positions.
  return [(p.controlMin??p.min)*ratio,(p.controlMax??p.max)*ratio]; // Physical EQ bounds expressed as dB.
 }
