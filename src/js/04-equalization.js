@@ -228,7 +228,7 @@ function renderCalibrationTrace(p,r){
  <p class="compact-note">${esc(calibrationContextCaution(p))}</p><p class="compact-note"><strong>Efecto real sobre el algoritmo:</strong> ${esc(calibrationContextEqExplanation(p))}</p></div>
  <div class="trace-part"><h3>3 · Corrección automática frente al ajuste final</h3><p class="small muted">Automático: contrastes locales entre frecuencias realmente medidas, con margen de incertidumbre y límites conservadores. No equivale a audiometría ni corrige acústicamente un recinto. EQ final: incorpora ajustes manuales y preferencias si los realizaste; nunca cambia los datos medidos.</p>
  <div class="trace-table-scroll"><table class="trace-table"><thead><tr><th scope="col">Banda</th><th scope="col">Dato original</th><th scope="col">Interpretación</th><th scope="col">Automático</th><th scope="col">EQ final</th></tr></thead><tbody>${rows}</tbody></table></div>
- <p class="compact-note"><strong>Escala del ecualizador:</strong> ${esc(unit)} Los números de EQ son ganancias estimadas de procesamiento, no posiciones físicas verificadas del control.</p>
+ <p class="compact-note"><strong>Escala del ecualizador:</strong> ${esc(unit)} Límites de corrección Hear: ${p.min} a +${p.max} dB. Recorrido físico: ${p.controlMin??p.min} a +${p.controlMax??p.max} ${c.eqScale==='steps'?'posiciones':c.eqScale==='db'?'dB del control':'unidades sin verificar'}. Los números de EQ son ganancias estimadas de procesamiento, no posiciones físicas verificadas del control.</p>
  <p class="tiny muted">Método de corrección: contrastes locales v2, experimental; conserva las medidas originales. Las curvas normales de igual sonoridad no pueden aplicarse directamente a este test digital sin calibración acústica. Una corrección neutral puede ser el único resultado justificable.</p></div></section>`;
 }
 
@@ -240,7 +240,9 @@ function physicalEqControl(gain,p,context=normalizeCalibrationContext(p.context,
  const ratio=scale==='db'?1:(scale==='steps'&&['1','2','3'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
  if(!Number.isFinite(ratio))return {position:null,actualGain:null,delta:null,exact:false,ratio:null};
  const magnitude=Math.round(Math.abs(gain)/ratio-1e-9);
- const position=clamp(magnitude===0?0:Math.sign(gain)*magnitude,Math.ceil(p.min),Math.floor(p.max));
+ const physicalMin=Number.isFinite(p.controlMin)?p.controlMin:p.min;
+  const physicalMax=Number.isFinite(p.controlMax)?p.controlMax:p.max;
+  const position=clamp(magnitude===0?0:Math.sign(gain)*magnitude,Math.ceil(physicalMin),Math.floor(physicalMax));
  const actualGain=Number((position*ratio).toFixed(2));
  const delta=Number((actualGain-gain).toFixed(2));
  return {position,actualGain,delta,exact:Math.abs(delta)<.001,ratio};
@@ -261,20 +263,24 @@ function eqResultModel(p){
   warning:(!complete?'Prueba incompleta: ajustes provisionales. ':'')+
    (!verified?'Equivalencia del control desconocida: no calcular posiciones.':
    'Conversión de acuerdo con escala y dB/paso declarados por usuario (Hear no lo verifica). ')+
-   'Los dB efectivos pueden ser diferentes de la sugerencia tras el redondeo.'};
+   'Los dB efectivos pueden ser diferentes de la sugerencia tras el redondeo. '+'Límites digitales '+p.min+' a +'+p.max+' dB; recorrido físico '+(p.controlMin??p.min)+' a +'+(p.controlMax??p.max)+' '+(scale==='steps'?'posiciones':scale==='db'?'dB del control':'unidades desconocidas')+'.'};
 }
 function eqResultMarkup(p){
  const m=eqResultModel(p);
  const ctx=normalizeCalibrationContext(p.context,p.type);
  const scaleOptions=[['unknown','Unidad sin verificar'],['db','Controles en dB'],['steps','Controles por posiciones']];
  const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (según manual)'],['2','2 dB por paso (según manual)'],['3','3 dB por paso (según manual)']];
+ const physicalMin=p.controlMin??p.min,physicalMax=p.controlMax??p.max;
+ const physicalUnit=ctx.eqScale==='steps'?'posiciones':ctx.eqScale==='db'?'dB del control':'unidades sin verificar';
+ const nominal=ctx.eqScale==='steps'&&m.verified?' · equivalencia nominal '+(physicalMin*m.ratio)+' a +'+(physicalMax*m.ratio)+' dB (según manual declarado)':'';
  return `<section id="eqCardSection" class="eq-card-section" aria-label="Imagen descargable del ecualizador">
  <h2>Mi ecualizador · resultado para aplicar</h2>
  <p class="compact-note">${esc(m.context)} · ${p.bands.length} bandas. ${m.complete?'Test completado':'Test pendiente de completar'}.</p>
  <div class="eq-card-config"><label for="resultEqScale">Unidad real del ecualizador</label>
  <select id="resultEqScale" class="field">${scaleOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqScale===k?'selected':'')+'>'+l+'</option>').join('')}</select>
  ${ctx.eqScale==='steps'?'<label for="resultEqStepDb">Equivalencia documentada del control</label><select id="resultEqStepDb" class="field">'+stepOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqStepDb===k?'selected':'')+'>'+l+'</option>').join('')+'</select>':''}
- <p class="tiny muted">Los pasos y los dB no son la misma unidad. Indica una equivalencia solo si está documentada para tu modelo. El rango de auto −6 a +6 describe posiciones, no dB.</p></div>
+ <div class="grid2"><div><label for="resultControlMin">Mínimo físico (${physicalUnit})</label><input class="field" id="resultControlMin" type="number" min="-30" max="-1" step="1" value="${physicalMin}"></div><div><label for="resultControlMax">Máximo físico (${physicalUnit})</label><input class="field" id="resultControlMax" type="number" min="1" max="30" step="1" value="${physicalMax}"></div></div>
+ <p class="tiny muted">Rango físico del equipo: ${physicalMin} a +${physicalMax} ${physicalUnit}${nominal}. Límites independientes de corrección recomendada: ${p.min} a +${p.max} dB. Los pasos y los dB no son la misma unidad; verifica el manual de tu modelo.</p></div>
  <p class="eq-card-alert ${m.verified?'':'eq-card-warning'}" id="eqCardNotice">${esc(m.warning)}</p>
  <canvas id="eqCardCanvas" class="eq-card-canvas" width="${eqPngLayout(p,m).width}" height="782" role="img" aria-label="Ecualizador horizontal, frecuencias de izquierda a derecha y barras verticales sobre cero"></canvas>
  <div class="row wrap eq-card-actions">${button('↓ Guardar imagen PNG','downloadpng','btn-primary grow')}${button('⎘ Copiar controles','copycontrols','btn-alt grow')}</div>
@@ -290,7 +296,7 @@ function eqPngLayout(p,m=eqResultModel(p)){
  const plotTop=265,zeroY=370,plotBottom=475;
  const gap=(right-left)/Math.max(1,count);
  const output=m.rows.map(r=>m.verified?r.position:r.gain);
- const absoluteMax=Math.max(3,...output.map(v=>Math.abs(v||0)));
+ const absoluteMax=Math.max(3,...output.map(v=>Math.abs(v||0)),...(m.verified?[Math.abs(p.controlMin??p.min),Math.abs(p.controlMax??p.max)]:[]));
  const extent=Math.ceil(absoluteMax);
  const marks=[-extent,-Math.round(extent/2),0,Math.round(extent/2),extent];
  const x=i=>left+(i+.5)*gap;
