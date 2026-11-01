@@ -180,8 +180,9 @@ function normalizedProfile(p,importing=false){
  const safeNumber=(v,otherwise,min,max)=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?clamp(Number(v),min,max):otherwise;
  const min=safeNumber(p.min,-12,-30,-1),max=safeNumber(p.max,12,1,30);
  const safeType=['car','speaker'].includes(p.type)?p.type:'headphones';
- const testStart=safeNumber(p.testStart,TEST_START_DB,TEST_END_DB+1,safeType==='headphones'?MAX_SAFE_DB:DIGITAL_REFERENCE_DBFS),
-  testFloor=safeNumber(p.testFloor,TEST_END_DB,TEST_END_DB,Math.min(-36,testStart-1));
+ // Normalization runs while profiles are loaded, before the playback constants initialize.
+ const testStart=safeNumber(p.testStart,-36,-99,safeType==='headphones'?-24:0),
+  testFloor=safeNumber(p.testFloor,-100,-100,Math.min(-36,testStart-1));
  const id=importing?'p'+Date.now()+Math.random().toString(36).slice(2,8):String(p.id||'').slice(0,100);
  if(!id)return null;
  const measures=Object.create(null),raw=p.measures&&typeof p.measures==='object'&&!Array.isArray(p.measures)?p.measures:{};
