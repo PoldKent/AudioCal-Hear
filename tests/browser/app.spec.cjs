@@ -354,11 +354,11 @@ test('AF-02: changing a band keeps original measurements and synchronizes every 
  await page.locator('[data-nav="results"]').click();
  const freq=1000;
  const originalGraph=await page.locator('#tracePanel .trace-plot svg').innerHTML();
- const originalAuto=await page.locator('#tracePanel tbody tr').filter({has:page.getByRole('rowheader',{name:'1 kHz'})}).locator('td').nth(3).innerText();
+ const originalAuto=await page.locator('#tracePanel tbody tr').filter({has:page.getByRole('rowheader',{name:'1 kHz'})}).locator('td').nth(2).innerText();
  const pngBefore=await page.locator('#eqCardCanvas').evaluate(c=>c.toDataURL('image/png'));
  await page.evaluate(()=>window.__audioPlayerBefore=document.getElementById('audioPlayer'));
  await page.locator('[data-eq-select="1000"]').click();
- await page.locator('#eqSlider').fill('3');
+ await page.locator('#eqSlider').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}));});
  await expect(page.locator('[data-trace-final="1000"]')).toHaveText('+3 dB');
  await expect(page.locator('[data-eq-band="1000"] .eqval')).toHaveText('+3');
  await expect(page.locator('[data-eq-value="1000"]')).toContainText('+3');
@@ -368,7 +368,7 @@ test('AF-02: changing a band keeps original measurements and synchronizes every 
  const pngAfter=await page.locator('#eqCardCanvas').evaluate(c=>c.toDataURL('image/png'));
  expect(pngAfter).not.toBe(pngBefore);
  expect(await page.locator('#tracePanel .trace-plot svg').innerHTML()).toBe(originalGraph);
- expect(await page.locator('#tracePanel tbody tr').filter({has:page.getByRole('rowheader',{name:'1 kHz'})}).locator('td').nth(3).innerText()).toBe(originalAuto);
+ expect(await page.locator('#tracePanel tbody tr').filter({has:page.getByRole('rowheader',{name:'1 kHz'})}).locator('td').nth(2).innerText()).toBe(originalAuto);
  expect(await page.evaluate(()=>document.getElementById('audioPlayer')===window.__audioPlayerBefore)).toBe(true);
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(saved.manual['1000']).toBe(3);
@@ -392,7 +392,22 @@ test('AF-02: transfer confirmation is invalidated after changing applied EQ valu
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-mark"]').click();
  await page.locator('[data-eq-select="1000"]').click();
- await page.locator('#eqSlider').fill('2');
+ await page.locator('#eqSlider').evaluate(el=>{el.value='2';el.dispatchEvent(new Event('input',{bubbles:true}));});
  await expect(page.locator('#transferStatus')).toContainText('Los valores de EQ cambiaron');
+ await noOverflow(page);
+});
+
+test('AF-02: physical EQ scale changes invalidate checked transfer bands',async({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await page.locator('#deviceName').fill('AF02 rango');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('[data-nav="results"]').click();
+ await page.locator('[data-act="transfer-open"]').click();
+ await page.locator('[data-act="transfer-next"]').click();
+ await page.locator('[data-act="transfer-next"]').click();
+ await page.locator('[data-act="transfer-mark"]').click();
+ await page.locator('#resultEqScale').selectOption('steps');
+ await expect(page.locator('#transferStatus')).toContainText('Cambió la escala');
+ await expect(page.locator('#resultEqStepDb')).toHaveValue('unknown');
  await noOverflow(page);
 });

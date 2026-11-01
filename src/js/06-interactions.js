@@ -86,7 +86,10 @@ if(t.id==='loudnessFrequency'&&current){stopTone();loudnessFreq=Number(t.value);
 if(current&&(t.id==='resultEqScale'||t.id==='resultEqStepDb')){
  const f=t.id==='resultEqScale'?'eqScale':'eqStepDb';
  const next={...normalizeCalibrationContext(current.context,current.type),provenance:'captured',[f]:t.value};
- current.context=normalizeCalibrationContext(next,current.type);touch();render();return;
+ current.context=normalizeCalibrationContext(next,current.type);
+ transferCompleted.clear();transferBandIndex=0;
+ if(transferOpen)transferStatus='Cambió la escala del equipo. Revisa nuevamente las posiciones de los controles.';
+ touch();render();return;
 }
 if(t.dataset.context&&temp.context){const f=t.dataset.context;const next={...temp.context,[f]:t.value};temp.context=normalizeCalibrationContext(next,temp.type);if(f==='subtype'||f==='eqScale'){temp.name=$('#deviceName')?.value||temp.name;render()}return}
 if(current&&t.id==='transferFormat'){transferPreset=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';if(transferPreset==='custom'&&!transferCustom)transferCustom=current.bands.join(', ');refreshTransfer();return}
