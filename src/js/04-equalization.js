@@ -296,7 +296,7 @@ function eqPngLayout(p,m=eqResultModel(p)){
  const plotTop=265,zeroY=370,plotBottom=475;
  const gap=(right-left)/Math.max(1,count);
  const output=m.rows.map(r=>m.verified?r.position:r.gain);
- const absoluteMax=Math.max(3,...output.map(v=>Math.abs(v||0)),...(m.verified?[Math.abs(p.controlMin??p.min),Math.abs(p.controlMax??p.max)]:[]));
+ const absoluteMax=Math.max(3,...output.map(v=>Math.abs(v||0)),...(m.verified?[Math.abs(p.controlMin??p.min??0),Math.abs(p.controlMax??p.max??0)]:[]));
  const extent=Math.ceil(absoluteMax);
  const marks=[-extent,-Math.round(extent/2),0,Math.round(extent/2),extent];
  const x=i=>left+(i+.5)*gap;
