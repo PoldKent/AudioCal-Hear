@@ -154,6 +154,7 @@ test('contradictions yield a saved low-confidence estimate and advance without r
  await expect(page.locator('#levelText')).toContainText('-36 dBFS');
  await expect(page.locator('#root')).not.toContainText('Resultado guardado');
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
  await expect(page.locator('#tracePanel')).toContainText('confianza baja');
 });
 
