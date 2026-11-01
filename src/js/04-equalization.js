@@ -466,8 +466,10 @@ function renderFrequencySummary(p,rows){
  const physical=physicalEqControl(r.gain,p,context);
  const obs=r.db===null?'No confirmado':(pair(r.f)||r.db+' dBFS');
  const mic=p.type==='headphones'?'':(p.acoustic?.[r.f]?.detected?' · mic: tono observado':p.acoustic?.[r.f]?' · mic: inconcluso':'');
+ const loud=p.inlineLoudness?.[r.f+'|'+(p.channels==='separate'?'left':'both')+'|0'];
+ const loudLabel=loud?.status==='matched'?'Sonoridad: similar con '+(loud.offsetDb>0?'+':'')+loud.offsetDb+' dBFS relativo':loud?.status==='bounded'?'Sonoridad: diferencia sin igualación confirmada':loud?.status==='reference'?'Sonoridad: frecuencia de referencia':loud?.status==='unavailable'?'Sonoridad: no concluyente':'Sonoridad: sin medir';
  const unit=physical.position===null?'Sin conversión fiable':(physical.position>0?'+':'')+physical.position+(context.eqScale==='db'?' dB':' pasos');
- return `<tr><th scope="row">${fmt(r.f)}</th><td>${esc(obs)}<small style="display:block">${mic}</small></td><td>${confidence(r)}</td><td><strong>${r.gain>0?'+':''}${r.gain} dB</strong><small style="display:block">${unit}</small></td></tr>`;
+ return `<tr><th scope="row">${fmt(r.f)}</th><td>${esc(obs)}<small style="display:block">${mic}</small><small style="display:block">${esc(loudLabel)}</small></td><td>${confidence(r)}</td><td><strong>${r.gain>0?'+':''}${r.gain} dB</strong><small style="display:block">${unit}</small></td></tr>`;
  }).join('')}</tbody></table></div><p class="tiny muted">Si la equivalencia de pasos es desconocida, no se inventan posiciones físicas. El test no demuestra que una frecuencia audible necesite recortarse.</p></section>`;
 }
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
@@ -483,7 +485,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  ${renderFrequencySummary(p,r)}
  ${eqResultMarkup(p)}
  <details class="unobtrusive" id="hearDiagnosticDetails"><summary>Ver gráfica original, incertidumbre y auditoría · opcional</summary><div class="inner-detail">${renderCalibrationTrace(p,r)} ${evidenceAuditMarkup(p)}</div></details>
- <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>🔎 Igualación de sonoridad · prueba complementaria opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
+
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
  <div class="eq-util">${button('⎘ Copiar todos','copy','btn-alt')}${button('↓ TXT','downloadtxt','btn-ghost')}${button('↺ Reiniciar cambios','clearmanual','btn-ghost')}</div>
