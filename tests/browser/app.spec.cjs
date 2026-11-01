@@ -491,6 +491,8 @@ test('car and speakers can opt into 0 dBFS only with staged manual volume verifi
  await expect(page.locator('[data-act="previewlevel"]')).toBeVisible();
  await page.reload();
  await page.locator('[data-nav="test"]').click();
+ await page.locator('[data-act="introNext"]').click();
+ await page.locator('[data-act="introNext"]').click();
  await expect(page.locator('[data-act="previewlevel"]')).toBeVisible();
  await page.locator('[data-nav="setup"]').click();
  await page.locator('[data-device="speaker"]').click();
