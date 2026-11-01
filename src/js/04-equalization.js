@@ -276,7 +276,7 @@ function renderCalibrationTrace(p,r){
 // Round exact half-steps toward zero to avoid unintended extra boost/cut.
 function physicalEqControl(gain,p,context=normalizeCalibrationContext(p.context,p.type)){
  const scale=context.eqScale;
- const ratio=scale==='db'?1:(scale==='steps'&&['1','2','3'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
+ const ratio=scale==='db'?1:(scale==='steps'&&['1','2','3','4'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
  if(!Number.isFinite(ratio))return {position:null,actualGain:null,delta:null,exact:false,ratio:null};
  const magnitude=Math.round(Math.abs(gain)/ratio-1e-9);
  const physicalMin=Number.isFinite(p.controlMin)?p.controlMin:p.min;
@@ -456,6 +456,19 @@ function saveEqCardPng(p){
  return true;
 }
 
+function renderFrequencySummary(p,rows){
+ const context=normalizeCalibrationContext(p.context,p.type);
+ const pair=(f)=>p.channels==='separate'?['left','right'].map(side=>{
+  const a=p.measures?.[key(f,side)]||[];const item=a.find(v=>v?.kind==='heard'&&Number.isFinite(v.db));return side==='left'?'I '+(item?.db??'—'):'D '+(item?.db??'—');
+ }).join(' / '):null;
+ const confidence=(q)=>q.quality==='good'?'Alta':q.quality==='low'?'Orientativa':q.quality==='mixed'?'Diferente entre oídos':q.derived?'Interpolada':'Limitada';
+ return `<section class="soft" id="hearFrequencyReport"><h3>Tu percepción por frecuencia y cómo ajustar el EQ</h3><p class="small muted">dBFS indica el umbral digital observado en este equipo, no capacidad auditiva clínica ni ganancia recomendada. Una banda sin evidencia suficiente puede permanecer en 0.</p><div style="overflow-x:auto"><table><thead><tr><th>Frecuencia</th><th>Escucha</th><th>Confianza</th><th>Ajuste sugerido</th></tr></thead><tbody>${rows.map(r=>{
+ const physical=physicalEqControl(r.gain,p,context);
+ const obs=r.db===null?'No confirmado':(pair(r.f)||r.db+' dBFS');
+ const unit=physical.position===null?'Sin conversión fiable':physical.position+(context.eqScale==='db'?' dB':' pasos');
+ return `<tr><th scope="row">${fmt(r.f)}</th><td>${esc(obs)}</td><td>${confidence(r)}</td><td><strong>${r.gain>0?'+':''}${r.gain} dB</strong><small style="display:block">${unit}</small></td></tr>`;
+ }).join('')}</tbody></table></div><p class="tiny muted">Si la equivalencia de pasos es desconocida, no se inventan posiciones físicas. El test no demuestra que una frecuencia audible necesite recortarse.</p></section>`;
+}
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
  const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),coverage=thresholdCoverage(p,gather(p)),usable=coverage.measured.length,derived=r.filter(x=>x.derived).length,required=coverage.required;
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
@@ -466,6 +479,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${p.bands.length} bandas · <span style="color:var(--cyan)">${esc(presets[p.preset]?.short||'Personalizado')}</span></h2><span class="tag" id="eqChangeCount">${r.filter(x=>x.gain!==0).length} cambios</span></div>
  <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral · <span>${esc(status)}</span></p>
  ${usable<p.bands.length?`<div class="soft warning"><strong>⚠ ${p.bands.length-usable} frecuencias sin umbral</strong><p class="small">Puedes repetir solo las que faltan. No aumentes el volumen para escucharlas.</p>${button('↺ Repetir umbrales no confirmados','retrymissing','btn-alt full')}</div>`:''}
+ ${renderFrequencySummary(p,r)}
  ${renderCalibrationTrace(p,r)}
  ${eqResultMarkup(p)}
  ${evidenceAuditMarkup(p)}
@@ -476,9 +490,9 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <details class="unobtrusive"><summary>Valores exactos y opciones avanzadas</summary><div class="inner-detail"><div class="result-list">${r.map(x=>`<div class="result-item"><div><strong>${fmt(x.f)}</strong><small>${selectedBandInfo(x)}</small></div><div class="itemcontrols"><button type="button" data-adjust="${x.f}" data-delta="-1" aria-label="Reducir ${fmt(x.f)}">−</button><button type="button" data-adjust="${x.f}" data-delta="1" aria-label="Aumentar ${fmt(x.f)}">+</button></div><strong class="value" data-eq-value="${x.f}">${eqMark(x)} <small style="display:inline;color:var(--muted)">dB</small></strong></div>`).join('')}</div><div style="margin-top:10px">${button('Cambiar formato de EQ','format','btn-ghost full')}</div><p class="tiny muted">Los valores se guardan por perfil. Debes introducirlos manualmente en tu equipo.</p></div></details>
  <details class="unobtrusive"><summary>Detalles de la calibración <span class="tiny muted">${progress}/${total} muestras</span></summary><div class="inner-detail"><div class="stat-grid"><div class="stat"><strong>${progress}/${total}</strong><small>MUESTRAS</small></div><div class="stat"><strong>${usable}</strong><small>UMBRALES</small></div><div class="stat"><strong>${r.filter(x=>x.gain!==0).length}</strong><small>CAMBIOS</small></div></div><p class="small">${reliable?'Compensación exploratoria calculable a partir de los umbrales válidos.':coverage.enough&&coverage.candidates===0?'Hay cobertura, pero las bandas medidas no tienen vecinos cercanos para una corrección automática segura.':`Solo ${usable} bandas elegibles de ${p.bands.length}. Necesitas al menos ${required} para evaluar una corrección automática.`} ${derived?`${derived} banda(s) interpolada(s).`:''} Esta no es una audiometría ni una calibración acústica.</p></div></details>
  <p id="copyStatus" class="status" role="status"></p></section>
- <div class="results-side"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🎵 Escuchar la diferencia</h2><span class="tag">A / B</span></div><p class="compact-note">Carga una canción y alterna entre tu EQ y el sonido original. Solo cambia lo que reproduce esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button></section>
+ <div class="results-side"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🎵 Comparar música A/B · opcional</h2><span class="tag">A / B</span></div><p class="compact-note">Carga una canción y alterna entre tu EQ y el sonido original. Solo cambia lo que reproduce esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button></section>
  <section class="card transfer-card"><div id="transferPanel">${transferMarkup()}</div></section>
- <section class="card balance-card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🎛️ Equilibrio tonal inteligente</h2><span class="tag">NUEVO · v1.7</span></div><p class="compact-note">Una prueba opcional en dos comparaciones por frecuencia. Puede recomendar subir o bajar dB; seguir escuchando el pitido no provoca recortes automáticos.</p><div id="balanceTrainer">${balanceMarkup()}</div></section>
+ <section class="card balance-card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🎛️ Afinar a mi gusto · opcional</h2><span class="tag">NUEVO · v1.7</span></div><p class="compact-note">Una prueba opcional en dos comparaciones por frecuencia. Puede recomendar subir o bajar dB; seguir escuchando el pitido no provoca recortes automáticos.</p><div id="balanceTrainer">${balanceMarkup()}</div></section>
  <details class="unobtrusive"><summary>🎧 Personalizar graves, voces y brillo <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="compact-note">Con la canción reproduciéndose, escucha A y B durante varios segundos y elige qué suena mejor. Mantén el volumen fijo.</p><div id="prefRound">${preferenceMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>Seguridad y límites de precisión</summary><div class="inner-detail"><p class="compact-note">Los niveles dBFS de la prueba no miden la presión sonora en el oído. Evita subir niveles para buscar tonos inaudibles y reduce los ajustes si aparece distorsión o molestia. Si ambos oídos comparten ecualización, no se corrigen por separado.</p></div></details></div></div></div>`}
 function deviceIcon(p){return p.type==='car'?'🚗':p.type==='headphones'?'🎧':'🔊'}
