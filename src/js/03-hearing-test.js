@@ -65,7 +65,7 @@ async function playTone(check=false,checkSide='both',previewDb=null){
   const isPreview=check&&Number.isFinite(previewDb);
   if(isPreview){
    const steps=volumePreviewSteps(current);
-   if(page!=='test'||introStep!==2||volumeReady||steps[volumePreviewIndex]!==previewDb){uiAlert('La referencia avanzada debe reproducirse en orden y de forma manual.');return}
+   if(page!=='test'||introStep!==0||volumeReady||steps[volumePreviewIndex]!==previewDb){uiAlert('La referencia avanzada debe reproducirse en orden y de forma manual.');return}
   }
   if(!check&&needsVolumePreview(current)&&!volumeReady){uiAlert('Completa primero la comprobación progresiva de volumen.');return}
   const db=isPreview?previewDb:check?-42:trial.level;
@@ -84,7 +84,7 @@ async function playTone(check=false,checkSide='both',previewDb=null){
   osc.start(now);osc.stop(now+len+.025);
   osc.onended=()=>{
    try{osc.disconnect();if(pan)pan.disconnect();gain.disconnect()}catch(e){}
-   if(isPreview&&tone?.osc===osc){tone=null;volumePreviewPlayed=true;if(page==='test'&&introStep===2)render()}
+   if(isPreview&&tone?.osc===osc){tone=null;volumePreviewPlayed=true;if(page==='test'&&introStep===0)render()}
   };
   tone={mode:isPreview?'preview':check?'check':'test',osc,gain,pan,start:now,levels:[db]};
   if(check){if(side==='left'||side==='right')channelCheckPlayed[side]=true;
