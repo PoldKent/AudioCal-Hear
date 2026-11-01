@@ -523,7 +523,7 @@ function starterEqMarkup(p,r){
    (proposal.tooCoarse?'El control físico avanza en pasos de 2–3 dB y los contrastes digitales no justifican saltos de ese tamaño: deja las posiciones en 0 y afina escuchando música.':'Tus mediciones no permiten defender un cambio automático. Punto de partida seguro: controles a 0, y afina escuchando tu música.'))+'</p>'+
   '<div class="starter-bands" aria-label="Valores propuestos por frecuencia">'+values+'</div>'+
   (hasProposal?
-   '<p class="tiny muted">Estos valores de ±1 dB son una hipótesis basada en diferencias locales de detección digital; NO miden ni corrigen la respuesta acústica del auricular, oído o automóvil. Las bandas extremas y datos incompletos no generan refuerzos. Confirma con música a volumen cómodo.</p>'+
+   '<p class="tiny muted">Estos valores de ±1 dB son una hipótesis basada en diferencias locales de detección digital; NO miden ni corrigen la respuesta acústica del auricular, oído o automóvil. Las bandas extremas y datos incompletos no generan refuerzos. Confirma con música a volumen cómodo.</p>':
    '<p class="tiny muted">Los umbrales dBFS no pueden transformarse directamente en un ecualizador óptimo. No vamos a inventar refuerzos grandes en las frecuencias que no oyes.</p>')+
   '<div class="row wrap starter-actions">'+
   (hasProposal?button(applied?'✓ Propuesta aplicada':'Aplicar punto de partida','starter-apply','btn-primary grow',applied?'disabled':''):'')+
