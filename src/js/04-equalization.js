@@ -40,44 +40,48 @@ function hasBothChannelThresholds(p,f){
 }
 // This function is shared by the algorithm and result labels.
 function thresholdCoverage(p,data){
- const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived&&x.quality!=='mixed'&&x.quality!=='unmeasurable'&&x.quality!=='uncertain'&&hasBothChannelThresholds(p,x.f));
+ const observed=data.filter(x=>Number.isFinite(x.db)&&!x.derived);
+ const measured=observed.filter(x=>hasBothChannelThresholds(p,x.f));
+ const complete=measured;
+ const eligible=complete.filter(x=>x.quality!=='mixed');
  const required=autoCoverageMinimum(p);
- const candidates=measured.slice(1,-1).filter((x,i)=>x.f/measured[i].f<=3.5&&measured[i+2].f/x.f<=3.5).length;
- return {measured,required,enough:measured.length>=required,candidates};
+ const candidates=eligible.slice(1,-1).filter((x,i)=>x.f/eligible[i].f<=3.5&&eligible[i+2].f/x.f<=3.5).length;
+ const lowConfidence=complete.filter(x=>['uncertain','low','legacy'].includes(x.quality)).length;
+ return {observed,measured,complete,eligible,required,enough:eligible.length>=required,candidates,lowConfidence};
 }
 function estimateThresholdContrast(p,data){
- const {measured,enough}=thresholdCoverage(p,data);
+ const {eligible,enough}=thresholdCoverage(p,data);
  const context=normalizeCalibrationContext(p.context,p.type);
- return data.map((point,i)=>{
+ return data.map(point=>{
   const entry={f:point.f,base:0,contrastDb:null,autoReason:'sin datos suficientes',autoConfidence:'none'};
   if(!enough)return entry;
   if(!Number.isFinite(point.db)||point.derived)return {...entry,autoReason:'frecuencia no medida directamente'};
-  if(!hasBothChannelThresholds(p,point.f))return {...entry,autoReason:'faltan umbrales de uno de los oídos: no corregir automáticamente'};
-  if(point.quality==='mixed')return {...entry,autoReason:'respuesta diferente entre oídos'};
-  if(point.quality==='uncertain')return {...entry,autoReason:'umbral estimado con confianza baja: no aplicar EQ automático'};
+  if(!hasBothChannelThresholds(p,point.f))return {...entry,autoReason:'faltan umbrales de ambos oídos: no corregir automáticamente'};
+  if(point.quality==='mixed')return {...entry,autoReason:'diferencias relevantes entre oídos: sin corrección automática'};
   if(point.quality==='unmeasurable')return {...entry,autoReason:'sin umbral confirmado'};
-  const idx=measured.findIndex(x=>x.f===point.f);
-  if(idx<=0||idx===measured.length-1)return {...entry,autoReason:'banda extrema: no extrapolar'};
-  const lo=measured[idx-1],hi=measured[idx+1];
+  const idx=eligible.findIndex(x=>x.f===point.f);
+  if(idx<=0||idx===eligible.length-1)return {...entry,autoReason:'banda extrema: no extrapolar'};
+  const lo=eligible[idx-1],hi=eligible[idx+1];
   if(point.f/lo.f>3.5||hi.f/point.f>3.5)return {...entry,autoReason:'bandas vecinas demasiado separadas'};
   const blockReason=contextAutoBlockReason(p,point.f,context);
   if(blockReason)return {...entry,autoReason:blockReason};
-  // Predict the local digital threshold from adjacent measured frequencies, not
-  // from a population audiogram, a global quadratic or an acoustic room model.
+  // Compare digital detection thresholds locally; do not equate dBFS with dB SPL.
   const ratio=Math.log(point.f/lo.f)/Math.log(hi.f/lo.f);
   const expected=lo.db+(hi.db-lo.db)*ratio;
   const deviation=point.db-expected;
-  const uncertainty=3; // exploratory dead-zone in digital dB (not a clinical tolerance)
+  const verified=[point,lo,hi].every(x=>x.quality==='good');
+  // Inferred/low-confidence thresholds are still real observations, but
+  // have a larger dead zone and a strict +/-1 dB tentative EQ limit.
+  const uncertainty=verified?3:6;
   const evidence=Math.max(0,Math.abs(deviation)-uncertainty);
-  // Limit one-pass results to +/-1 EQ dB, verified two-pass to +/-2 dB;
-  // auto/speaker playback additionally limits boosts to +1 dB.
-  const verified=point.quality==='good'&&lo.quality==='good'&&hi.quality==='good';
   const maxBoost=p.type==='car'||p.type==='speaker'?1:verified?2:1;
   const maxCut=verified?2:1;
-  let base=deviation>=0?Math.min(maxBoost,evidence*.20): -Math.min(maxCut,evidence*.20);
-  base=roundTo(base,p.step||1);
-  return {f:point.f,base,contrastDb:Number(deviation.toFixed(2)),
-   autoReason:Math.abs(deviation)<=uncertainty?'sin contraste local significativo':base===0?'contraste insuficiente para cambiar 1 paso':'desviación local; compensación limitada y experimental',
+  const raw=deviation>=0?Math.min(maxBoost,evidence*.20):-Math.min(maxCut,evidence*.20);
+  const base=roundTo(raw,p.step||1);
+  const autoReason=base===0?'contraste local insuficiente; sin cambio justificable':
+   verified?'desviación local; compensación limitada y experimental':
+   'estimación de confianza limitada; sugerencia provisional de máximo 1 dB';
+  return {f:point.f,base,contrastDb:Number(deviation.toFixed(2)),autoReason,
    autoConfidence:verified?'medium':'low'};
  });
 }
