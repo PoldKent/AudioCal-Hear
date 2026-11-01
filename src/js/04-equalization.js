@@ -456,29 +456,109 @@ function saveEqCardPng(p){
  return true;
 }
 
+// Optional, user-triggered starting hypothesis. Never rewrite the measured data
+// or represent digital detection thresholds as calibrated frequency response.
+function starterEqProposal(p){
+ const raw=gather(p);
+ const rows=p.bands.map(f=>({f,gain:0,reason:'Sin contraste local utilizable'}));
+ // Do not imply that a sub-2 dB digital hypothesis can be applied as a whole 2–3 dB hardware step.
+ const tooCoarse=p.context?.eqScale==='steps'&&['2','3'].includes(p.context?.eqStepDb);
+ if(tooCoarse)return {rows,changes:0,tooCoarse:true};
+ const usable=f=>{
+  const record=raw.find(x=>x.f===f);
+  if(!record||!Number.isFinite(record.db)||record.derived||record.quality==='mixed'||record.quality==='unmeasurable')return false;
+  const sides=p.channels==='separate'?['left','right']:['both'];
+  const values=sides.map(side=>(p.measures?.[key(f,side)]||[]).filter(x=>x?.kind==='heard'&&Number.isFinite(x.db)).map(x=>x.db)).filter(x=>x.length);
+  if(values.length!==sides.length)return false;
+  if(values.length===2&&Math.abs(median(values[0])-median(values[1]))>8)return false;
+  return true;
+ };
+ const suggestions=[];
+ for(let i=1;i<raw.length-1;i++){
+  const a=raw[i-1],b=raw[i],c=raw[i+1];
+  if(b.f<100||b.f>10000||![a,b,c].every(x=>usable(x.f)))continue;
+  if(b.f/a.f>3.5||c.f/b.f>3.5)continue;
+  // Outlying end bands often reflect the transducer or room, not the listener.
+  if(Math.abs(a.db-b.db)>24||Math.abs(c.db-b.db)>24)continue;
+  const expected=a.db+(c.db-a.db)*Math.log(b.f/a.f)/Math.log(c.f/a.f);
+  const contrast=b.db-expected;
+  if(Math.abs(contrast)<4)continue;
+  suggestions.push({i,contrast,gain:Math.sign(contrast),f:b.f});
+ }
+ suggestions.sort((a,b)=>Math.abs(b.contrast)-Math.abs(a.contrast));
+ // At most three small changes, never an inferred high-frequency rescue boost.
+ for(const x of suggestions.slice(0,3)){
+  rows[x.i].gain=x.gain;
+  rows[x.i].reason='Contraste digital local '+(x.contrast>0?'+':'')+x.contrast.toFixed(1)+' dBFS; prueba auditiva, no calibración acústica';
+ }
+ return {rows,changes:rows.filter(x=>x.gain!==0).length};
+}
+function starterEqCopy(p){
+ const proposal=starterEqProposal(p);
+ const c=normalizeCalibrationContext(p.context,p.type);
+ return 'Hear · PROPUESTA EXPERIMENTAL (NO CALIBRADA) · '+p.name+'\n'+
+  'Basada en contrastes de los umbrales digitales. Verifica escuchando música; no compensa una audiometría.\n'+
+  proposal.rows.map(x=>{
+   const ctrl=physicalEqControl(x.gain,p,c);
+   return fmt(x.f)+' · '+(x.gain>=0?'+':'')+x.gain+' dB sugeridos'+
+    (ctrl.position===null?' · sin conversión física documentada':
+    ' · control '+(ctrl.position>=0?'+':'')+ctrl.position+' '+(c.eqScale==='steps'?'pasos':'dB del control'));
+  }).join('\n');
+}
+function starterEqMarkup(p,r){
+ const proposal=starterEqProposal(p),hasProposal=proposal.changes>0;
+ const values=proposal.rows.map(x=>{
+  const ctrl=physicalEqControl(x.gain,p);
+  const physical=ctrl.position===null?'—':(ctrl.position>=0?'+':'')+ctrl.position;
+  return '<div class="starter-band"><strong>'+short(x.f)+'</strong><span class="'+(x.gain?'starter-adjust':'')+'">'+(x.gain>=0?'+':'')+x.gain+' dB</span>'+
+   '<small>'+(ctrl.position===null?'Unidad física sin verificar':physical+' '+(normalizeCalibrationContext(p.context,p.type).eqScale==='steps'?'pasos':'control'))+'</small></div>';
+ }).join('');
+ const applied=hasProposal&&proposal.rows.every((v,i)=>r[i]?.gain===v.gain);
+ const completed=firstMissing(p)<0;
+ return '<section class="card starter-card" id="starterGuide" aria-label="Recomendación práctica para el ecualizador">'+
+  '<span class="tiny muted">TU RESULTADO · '+p.bands.length+' BANDAS</span>'+
+  '<h2>Qué poner en tu ecualizador</h2>'+
+  '<p class="small">'+(hasProposal?
+   'Punto de partida <strong>experimental</strong>: '+proposal.changes+' ajustes pequeños sugeridos. No se aplican hasta que los elijas.':
+   (proposal.tooCoarse?'El control físico avanza en pasos de 2–3 dB y los contrastes digitales no justifican saltos de ese tamaño: deja las posiciones en 0 y afina escuchando música.':'Tus mediciones no permiten defender un cambio automático. Punto de partida seguro: controles a 0, y afina escuchando tu música.'))+'</p>'+
+  '<div class="starter-bands" aria-label="Valores propuestos por frecuencia">'+values+'</div>'+
+  (hasProposal?
+   '<p class="tiny muted">Estos valores de ±1 dB son una hipótesis basada en diferencias locales de detección digital; NO miden ni corrigen la respuesta acústica del auricular, oído o automóvil. Las bandas extremas y datos incompletos no generan refuerzos. Confirma con música a volumen cómodo.</p>':
+   '<p class="tiny muted">Los umbrales dBFS no pueden transformarse directamente en un ecualizador óptimo. No vamos a inventar refuerzos grandes en las frecuencias que no oyes.</p>')+
+  '<div class="row wrap starter-actions">'+
+  (hasProposal?button(applied?'✓ Propuesta aplicada':'Aplicar punto de partida','starter-apply','btn-primary grow',applied?'disabled':''):'')+
+  button('Copiar valores sugeridos','starter-copy',hasProposal?'btn-alt grow':'btn-primary grow')+
+  '</div><p class="tiny muted" id="starterStatus" role="status">'+(hasProposal&&!applied?'Tu EQ actual no cambia hasta pulsar «Aplicar».':'')+'</p>'+
+  (completed?'<p class="tiny muted">Prueba completada. No necesitas volver a medir para usar o revisar estos valores.</p>':'<p class="tiny muted">Puedes continuar el test cuando quieras. Estas sugerencias son provisionales.</p>')+
+  '</section>';
+}
+
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
  const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),coverage=thresholdCoverage(p,gather(p)),usable=coverage.measured.length,derived=r.filter(x=>x.derived).length,required=coverage.required;
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
  lastRenderedEqSignature=p.id+'|'+r.map(b=>b.f+':'+b.gain).join('|');
  const reliable=coverage.enough&&coverage.candidates>0;
  const status=!coverage.enough?'Cobertura insuficiente para EQ automático; ajustes personales separados.':coverage.candidates===0?'Sin bandas vecinas elegibles para EQ automático: salida neutra, sin inventar corrección.':'Contrastes locales experimentales (v2) + ajustes personales.';
- return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">AUDIOCAL · INFORME DE FRECUENCIAS</p><h1>Medición y <em>ajuste.</em></h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
- <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${p.bands.length} bandas · <span style="color:var(--cyan)">${esc(presets[p.preset]?.short||'Personalizado')}</span></h2><span class="tag" id="eqChangeCount">${r.filter(x=>x.gain!==0).length} cambios</span></div>
- <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral · <span>${esc(status)}</span></p>
- ${usable<p.bands.length?`<div class="soft warning"><strong>⚠ ${p.bands.length-usable} frecuencias sin umbral</strong><p class="small">Puedes repetir solo las que faltan. No aumentes el volumen para escucharlas.</p>${button('↺ Repetir umbrales no confirmados','retrymissing','btn-alt full')}</div>`:''}
- ${renderCalibrationTrace(p,r)}
- ${eqResultMarkup(p)}
- ${evidenceAuditMarkup(p)}
- <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>🔎 Igualación de sonoridad · prueba complementaria opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
+ return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">AUDIOCAL · AJUSTES PARA TU EQUIPO</p><h1>Tu ecualizador, <em>sin complicaciones.</em></h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
+ ${starterEqMarkup(p,r)}
+ <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Tu ecualizador actual · ${p.bands.length} bandas</h2><span class="tag" id="eqChangeCount">${r.filter(x=>x.gain!==0).length} cambios</span></div>
+ <p class="small muted">Puedes mover cualquier banda manualmente. Estos controles reflejan los valores que llevas aplicados en Hear; los cambios se guardan en tu perfil.</p>
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
  <div class="eq-util">${button('⎘ Copiar todos','copy','btn-alt')}${button('↓ TXT','downloadtxt','btn-ghost')}${button('↺ Reiniciar cambios','clearmanual','btn-ghost')}</div>
+ <details class="unobtrusive" id="technicalResults"><summary>Ver mediciones originales, precisión y exportar PNG · opcional</summary><div class="inner-detail">
+ ${renderCalibrationTrace(p,r)}
+ ${eqResultMarkup(p)}
+ ${evidenceAuditMarkup(p)}
+ <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>Igualación de sonoridad · experimento opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
+ ${usable<p.bands.length?`<p class="small muted">${p.bands.length-usable} bandas no tienen ambos umbrales. El test ya conservó los límites observados. Solo repite voluntariamente si quieres mejorar la evidencia. ${button('↺ Repetir bandas sin umbral','retrymissing','btn-ghost')}</p>`:''}
+ </div></details>
  <details class="unobtrusive"><summary>Valores exactos y opciones avanzadas</summary><div class="inner-detail"><div class="result-list">${r.map(x=>`<div class="result-item"><div><strong>${fmt(x.f)}</strong><small>${selectedBandInfo(x)}</small></div><div class="itemcontrols"><button type="button" data-adjust="${x.f}" data-delta="-1" aria-label="Reducir ${fmt(x.f)}">−</button><button type="button" data-adjust="${x.f}" data-delta="1" aria-label="Aumentar ${fmt(x.f)}">+</button></div><strong class="value" data-eq-value="${x.f}">${eqMark(x)} <small style="display:inline;color:var(--muted)">dB</small></strong></div>`).join('')}</div><div style="margin-top:10px">${button('Cambiar formato de EQ','format','btn-ghost full')}</div><p class="tiny muted">Los valores se guardan por perfil. Debes introducirlos manualmente en tu equipo.</p></div></details>
  <details class="unobtrusive"><summary>Detalles de la calibración <span class="tiny muted">${progress}/${total} muestras</span></summary><div class="inner-detail"><div class="stat-grid"><div class="stat"><strong>${progress}/${total}</strong><small>MUESTRAS</small></div><div class="stat"><strong>${usable}</strong><small>UMBRALES</small></div><div class="stat"><strong>${r.filter(x=>x.gain!==0).length}</strong><small>CAMBIOS</small></div></div><p class="small">${reliable?'Compensación exploratoria calculable a partir de los umbrales válidos.':coverage.enough&&coverage.candidates===0?'Hay cobertura, pero las bandas medidas no tienen vecinos cercanos para una corrección automática segura.':`Solo ${usable} bandas elegibles de ${p.bands.length}. Necesitas al menos ${required} para evaluar una corrección automática.`} ${derived?`${derived} banda(s) interpolada(s).`:''} Esta no es una audiometría ni una calibración acústica.</p></div></details>
  <p id="copyStatus" class="status" role="status"></p></section>
- <div class="results-side"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🎵 Escuchar la diferencia</h2><span class="tag">A / B</span></div><p class="compact-note">Carga una canción y alterna entre tu EQ y el sonido original. Solo cambia lo que reproduce esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button></section>
+ <div class="results-side"><details class="unobtrusive music-options" id="musicComparison"><summary>🎵 Comparar con música · opcional</summary><div class="inner-detail"><p class="compact-note">Escucha tu EQ frente al original con una canción propia. La comparación es opcional y solo afecta al sonido de esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button></div></details>
  <section class="card transfer-card"><div id="transferPanel">${transferMarkup()}</div></section>
- <section class="card balance-card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🎛️ Equilibrio tonal inteligente</h2><span class="tag">NUEVO · v1.7</span></div><p class="compact-note">Una prueba opcional en dos comparaciones por frecuencia. Puede recomendar subir o bajar dB; seguir escuchando el pitido no provoca recortes automáticos.</p><div id="balanceTrainer">${balanceMarkup()}</div></section>
+ <details class="unobtrusive balance-card" id="toneBalance"><summary>🎛️ Afinar bandas escuchando música · opcional</summary><div class="inner-detail"><p class="compact-note">Puedes confirmar qué suena mejor con comparaciones de una canción. Estos cambios son opcionales y no alteran las mediciones auditivas.</p><div id="balanceTrainer">${balanceMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>🎧 Personalizar graves, voces y brillo <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="compact-note">Con la canción reproduciéndose, escucha A y B durante varios segundos y elige qué suena mejor. Mantén el volumen fijo.</p><div id="prefRound">${preferenceMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>Seguridad y límites de precisión</summary><div class="inner-detail"><p class="compact-note">Los niveles dBFS de la prueba no miden la presión sonora en el oído. Evita subir niveles para buscar tonos inaudibles y reduce los ajustes si aparece distorsión o molestia. Si ambos oídos comparten ecualización, no se corrigen por separado.</p></div></details></div></div></div>`}
 function deviceIcon(p){return p.type==='car'?'🚗':p.type==='headphones'?'🎧':'🔊'}

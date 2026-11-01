@@ -82,6 +82,25 @@ case 'transfer-nextband':if(current){const bands=transferMapping(current)||[];if
 case 'transfer-mark':if(current){const bands=transferMapping(current)||[];const f=bands[transferBandIndex]?.f;if(f!==undefined){if(transferCompleted.has(f))transferCompleted.delete(f);else transferCompleted.add(f);refreshTransfer()}}break;
 case 'transfer-applyfreq':if(current){transferCustom=$('#transferCustom')?.value||transferCustom;transferStatus=transferMapping(current)?'Bandas registradas. Los valores aproximados se identificarán.':'Revisa las frecuencias: de 2 a 31 valores únicos en orden ascendente.';transferBandIndex=0;transferCompleted=new Set();refreshTransfer()}break;
 case 'transfer-copy':if(current){const ok=await copyText(transferCopy(current));transferStatus=ok?'Lista copiada. Debes introducirla manualmente.':'No se pudo copiar la lista.';refreshTransfer()}break;
+case 'starter-apply':if(current){
+ const proposal=starterEqProposal(current),actual=recommend(current);
+ if(proposal.changes){
+  const hasPrevious=actual.some(x=>x.gain!==0);
+  if(hasPrevious&&!uiConfirm('Usar esta propuesta reemplazará los valores actuales del EQ. Las respuestas del examen se conservarán. ¿Continuar?'))break;
+  for(const [i,item] of proposal.rows.entries()){
+   const target=clamp(item.gain,current.min,current.max);
+   current.manual[item.f]=(Number(current.manual[item.f])||0)+target-actual[i].gain;
+  }
+  transferCompleted.clear();lastRenderedEqSignature=null;
+  if(transferOpen)transferStatus='Cambió el EQ; revisa los controles físicos antes de aplicarlos.';
+  touch();render();
+ }break;
+}
+case 'starter-copy':if(current){
+ const ok=await copyText(starterEqCopy(current));
+ const el=$('#starterStatus');if(el)el.textContent=ok?'Valores sugeridos copiados. Verifica los controles físicos antes de aplicarlos.':'No se pudo copiar; puedes consultar la tabla superior.';
+ break;
+}
 case 'copy':{let ok=await copyText(resultText(current));$('#copyStatus').textContent=ok?'Valores copiados al portapapeles.':'No se pudo copiar. Usa Descargar TXT.';break}
 case 'downloadpng':if(current&&!saveEqCardPng(current))uiAlert('No se pudo generar el PNG.');break;
 case 'copycontrols':if(current){const ok=await copyText(eqControlText(current));const el=$('#eqCardNotice');if(el)el.textContent=ok?'Instrucciones copiadas al portapapeles.':'No se pudieron copiar los valores.'}break;

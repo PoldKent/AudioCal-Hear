@@ -346,3 +346,40 @@ test('physical control bounds are separate from the conservative EQ gain budget'
  assert.equal(engine.physicalEqControl(15,{...p,controlMax:2}).position,2);
  assert.match(script,/roundTo\(automatic\.base\+manual\+taste\+balance,p\.step\|\|1\),p\.min,p\.max/);
 });
+
+
+test('an uncalibrated 10-band test can suggest small, optional starting adjustments without exaggerating outliers',()=>{
+ const source=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const a=source.indexOf('function starterEqProposal('),b=source.indexOf('function starterEqCopy(',a);
+ assert.ok(a>=0&&b>a);
+ const freqs=[30,60,120,250,500,1000,2000,4000,8000,16000];
+ const values=[-36.25,-60,-70,-72,-84,-96,-90,-96,-91.5,-26];
+ const p={bands:freqs,channels:'separate',measures:{}};
+ for(let i=0;i<freqs.length;i++){
+  p.measures[freqs[i]+'|left']=[{kind:'heard',db:values[i],confidence:'low'}];
+  p.measures[freqs[i]+'|right']=i===6?[]:[{kind:'heard',db:values[i],confidence:'low'}];
+ }
+ const ctx={gather:()=>freqs.map((f,i)=>({f,db:values[i],quality:'uncertain'})),
+  key:(f,side)=>f+'|'+side,median:a=>a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)],Math,Number};
+ vm.runInNewContext(source.slice(a,b),ctx);
+ const result=ctx.starterEqProposal(p);
+ assert.equal(result.rows.length,10);
+ assert.equal(result.rows.find(x=>x.f===120).gain,-1);
+ assert.equal(result.rows.find(x=>x.f===250).gain,1);
+ assert.equal(result.rows.find(x=>x.f===16000).gain,0);
+ assert.equal(result.rows.find(x=>x.f===2000).gain,0,'missing other ear should not drive recommendation');
+ assert.ok(result.changes<=3);
+ const unavailable={...p,measures:{}};
+ assert.equal(ctx.starterEqProposal(unavailable).changes,0);
+});
+test('results foreground actionable EQ and keep original evidence accessible but collapsed',()=>{
+ const js=fs.readFileSync('src/js/04-equalization.js','utf8');
+ assert.match(js,/id="starterGuide"/);
+ assert.match(js,/Qué poner en tu ecualizador/);
+ assert.match(js,/id="technicalResults"/);
+ assert.match(js,/starter-apply/);
+ assert.match(js,/starter-copy/);
+ assert.match(js,/renderCalibrationTrace\(p,r\)/);
+ assert.match(js,/eqResultMarkup\(p\)/);
+ assert.match(js,/evidenceAuditMarkup\(p\)/);
+});
