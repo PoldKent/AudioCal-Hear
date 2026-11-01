@@ -36,44 +36,48 @@ function renderContextFields(){
   '<p class="compact-note">El entorno no genera ganancias acústicas en dB. Los dB/paso deben provenir del manual; Hear no comprueba su exactitud. Sin equivalencia no se calculan posiciones físicas.</p></section>';
 }
 
-function renderSetup(){const showCustom=temp.preset==='custom',p=current;const duration=timeRange({...temp,measures:{}},0);
- const feasibility=quickAutoFeasibility(temp);
- const quickWarning=temp.testMode==='quick'&&(!feasibility.coverage||feasibility.structural===0);
- const allBands=temp.bands.slice().sort((a,b)=>a-b);
- const fullCandidates=allBands.slice(1,-1).filter((f,i)=>f/allBands[i]<=3.5&&allBands[i+2]/f<=3.5).length;
-return `<section class="hero"><p class="eyebrow">CONFIGURAR · NUEVA CALIBRACIÓN</p><h1>Tu sonido,<br><em>a tu manera.</em></h1><p class="subtle">Elige tu equipo, cómo quieres escucharlo y comienza. Nada de formularios interminables.</p></section>
-${p?`<div class="inline-hero"><div class="row" style="justify-content:space-between"><div><span class="tag">PERFIL ACTUAL</span><strong data-profile-name="true" style="display:block;margin-top:7px">${esc(p.name)}</strong><span class="tiny muted">${doneCount(p)}/${plan(p).length} pruebas · ${esc(presets[p.preset]?.short||'Personalizado')}</span></div>${button('Ver ajustes ↗','results','btn-alt')}</div></div>`:''}
-<section class="card"><div class="setup-title"><h2>01 · ¿Dónde escucharás?</h2><span class="tiny muted">Selecciona uno</span></div>
-<div class="selection-grid">
-<button type="button" data-device="car" class="device-tile ${temp.type==='car'?'selected':''}"><span class="tile-icon">🚗</span><strong>Mi auto</strong></button>
-<button type="button" data-device="headphones" class="device-tile ${temp.type==='headphones'?'selected':''}"><span class="tile-icon">🎧</span><strong>Auriculares</strong></button>
-<button type="button" data-device="speaker" class="device-tile ${temp.type==='speaker'?'selected':''}"><span class="tile-icon">🔊</span><strong>Parlantes</strong></button></div>
-${renderContextFields()}
-<div class="setup-title"><h2>02 · Elige tu ecualizador</h2><span class="tiny muted">${esc(presets[temp.preset]?.short||'')} seleccionado</span></div>
-<div class="preset-grid"><button type="button" data-preset="car7" class="preset-tile ${temp.preset==='car7'?'selected':''}"><strong>🚗 7 bandas</strong><small>64 · 160 · 400 · 1K · 2.5K · 6.25K · 15.625K</small></button><button type="button" data-preset="photo10" class="preset-tile ${temp.preset==='photo10'?'selected':''}"><strong>🎧 10 bandas</strong><small>30 · 60 · 120 · 250 · 500 · 1K · 2K · 4K · 8K · 16K</small></button></div>
-<details class="unobtrusive" id="moreFormats" ${!['car7','photo10'].includes(temp.preset)?'open':''}><summary>Más ecualizadores y frecuencias <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><label for="extraPreset">Otros formatos estándar</label><select id="extraPreset" class="field"><option value="">Seleccionar formato…</option>${['iso7','iso10','five','iso15','iso31','custom'].map(id=>`<option value="${id}" ${temp.preset===id?'selected':''}>${esc(presets[id].name)}</option>`).join('')}</select>
-<div class="soft"><div class="small muted">Frecuencias del formato elegido</div><div id="freqSummary" class="small" style="margin-top:5px">${esc(temp.bands.map(short).join(' · '))}</div><p class="tiny">${esc(presets[temp.preset]?.note||'')}</p></div>
-<div id="customSettings" class="${showCustom?'':'hide'}"><label for="customFreqs">Tus frecuencias (Hz, separadas por comas)</label><input id="customFreqs" class="field" value="${esc(temp.bands.join(', '))}" placeholder="63, 160, 400, 1000, 2500"><p class="tiny muted">De 2 a 31 bandas, entre 20 y 20.000 Hz.</p></div></div></details>
-<div class="setup-title"><h2>03 · Elige la experiencia</h2></div>
-<p class="tiny muted">Canales de escucha</p><div class="mini-options"><button type="button" data-channels="both" class="choice ${temp.channels==='both'?'selected':''}"><strong>🔊 Juntos</strong><span>Más rápido · ambos canales</span></button><button type="button" data-channels="separate" class="choice ${temp.channels==='separate'?'selected':''}"><strong>🎧 Por oído</strong><span>Izquierdo y derecho</span></button></div>
-<p class="soft info small">Examen completo: se medirán las ${temp.bands.length} bandas del ecualizador, una búsqueda adaptativa por frecuencia y sin repeticiones obligatorias.</p>
-${fullCandidates===0?'<p class="soft warning small">Las bandas de este ecualizador están demasiado separadas para una corrección automática fiable; se conservarán las mediciones.</p>':''}
-<details class="unobtrusive"><summary>Validación avanzada · opcional</summary><div class="inner-detail">
-<p class="small muted">La calibración normal cubre todas las bandas con una pasada. Una segunda búsqueda independiente permite comparar la repetibilidad, pero requiere más tiempo.</p>
-<div class="mini-options"><button type="button" data-passes="1" class="choice ${temp.passes===1?'selected':''}"><strong>Una pasada</strong><span>Recomendado</span></button><button type="button" data-passes="2" class="choice ${temp.passes===2?'selected':''}"><strong>Dos pasadas independientes</strong><span>Validación opcional</span></button></div>
-</div></details>
-<div class="setup-summary" role="status" aria-live="polite"><div class="summary-line"><div><span class="tiny muted">TIEMPO ORIENTATIVO</span><span class="summary-time" id="setupTime">${approxTimeRange(duration)}</span></div><span class="tag" id="setupTrials">${duration.trials} pruebas</span></div><div class="tiny muted" id="setupMaximum">Máximo de tonos: ${timeLabel(duration.max)}</div><details><summary class="tiny" style="cursor:pointer;color:#9de5f5">Cómo se calcula el tiempo</summary><div id="durationEstimate">${durationNotice({...temp,measures:{}},0,false)}</div></details></div>
-<label for="deviceName">¿Cómo llamarás a este perfil?</label><input class="field" id="deviceName" maxlength="70" placeholder="Ej.: Mis Soundcore, Auto, Parlantes de sala" value="${esc(temp.name)}">
-<details class="unobtrusive"><summary>Rango de prueba y opciones avanzadas <span class="tiny muted">Opcional</span></summary><div class="inner-detail">
-<p class="small muted">Escala digital: 0 a −100 dBFS. El nivel 0 dBFS es amplitud digital máxima; no mide presión sonora ni equivale a 0 dB SPL. El inicio predeterminado es −36 dBFS para todos los equipos.</p>
-<div class="grid2"><div><label for="testStart">Nivel inicial (dBFS)</label><input class="field" id="testStart" type="number" min="-99" max="${maxTestStart(temp)}" step="1" value="${temp.testStart}"></div><div><label for="testFloor">Nivel mínimo (dBFS)</label><input class="field" id="testFloor" type="number" min="-100" max="-36" step="1" value="${temp.testFloor}"></div></div>
-${temp.type==='headphones'?'<p class="small muted">Auriculares: inicio máximo −24 dBFS. La amplificación física puede resultar peligrosa incluso con señales digitales atenuadas.</p>':
-'<div class="soft warning small"><strong>Auto y parlantes · rango avanzado hasta 0 dBFS:</strong> seleccionarlo no certifica que sea seguro ni necesario para calibrar. El ajuste del volumen físico seguirá siendo manual. Antes del test tendrás que escuchar progresivamente señales de referencia y confirmar cada nivel. Empieza con el amplificador muy bajo, detén la prueba si hay distorsión o molestia y, en un automóvil, permanece estacionado.</div>'}
-<p class="small muted">Mantén fijo el volumen físico durante toda la búsqueda de umbrales. Si no oyes un tono al nivel mínimo, no aumentes el volumen para perseguirlo. Cerca de −100 dBFS el ruido del sistema puede ocultarlo.</p></div></details>
-<details class="unobtrusive"><summary>Rango de ganancia y opciones avanzadas <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="small muted">Estos límites afectan a la ganancia digital sugerida por Hear; no son el número de posiciones que tiene tu equipo ni amplían los ajustes automáticos conservadores.</p><div class="grid2"><div><label for="eqMin">Corrección mínima (dB)</label><input class="field" id="eqMin" type="number" min="-30" max="-1" step="1" value="${temp.min}"></div><div><label for="eqMax">Corrección máxima (dB)</label><input class="field" id="eqMax" type="number" min="1" max="30" step="1" value="${temp.max}"></div></div>${temp.preset==='car7'?'<p class="small muted">El recorrido físico del auto de referencia es −6 a +6 pasos; con 3 dB/paso declarados, equivaldría nominalmente a −18 a +18 dB. Los límites de corrección de arriba son independientes.</p>':''}</div></details>
-<details class="unobtrusive"><summary>Comprobar sonido y recomendaciones de seguridad</summary><div class="inner-detail"><p class="compact-note">Conecta el Bluetooth desde el teléfono. Elige un volumen bajo y cómodo, sin subirlo durante las pruebas. Haz la prueba en silencio; en el vehículo, siempre estacionado. <strong>Nunca uses el volumen máximo.</strong></p><div class="row wrap">${button('▶ Probar tono','check','btn-alt grow')}${button('■ Detener','stopaudio','btn-ghost grow')}</div></div></details>
-${button('Comenzar mi calibración →','create','btn-primary full bigbutton')}
-<p class="tiny center muted">Los perfiles se guardan localmente. Se distinguen bandas medidas y estimadas.</p></section>`}
+function renderSetup(){
+ const p=current,mode=temp.context?.eqScale||'unknown',value=temp.context?.eqStepDb||'unknown';
+ const quickFormats=['car7','photo10','five','iso10'];
+ const options=Object.entries(presets).filter(([id])=>!quickFormats.includes(id));
+ const duration=timeRange({...temp,measures:{}},0);
+ const showCustom=temp.preset==='custom';
+ return `<section class="hero"><p class="eyebrow">HEAR · NUEVA CALIBRACIÓN</p><h1>Escucha, mide<br><em>y ajusta.</em></h1><p class="subtle">Tu test de frecuencias y un ecualizador que puedas aplicar. Solo necesitamos conocer tu equipo.</p></section>
+ ${p?`<div class="inline-hero"><div class="row" style="justify-content:space-between"><div><strong data-profile-name="true">${esc(p.name)}</strong><p class="small muted">${doneCount(p)}/${plan(p).length} frecuencias evaluadas</p></div>${button('Ver mi resultado','results','btn-alt')}</div></div>`:''}
+ <section class="card" id="simpleSetup">
+ <div class="setup-title"><h2>1 · ¿Dónde escucharás?</h2></div>
+ <div class="selection-grid">
+ <button type="button" data-device="car" class="device-tile ${temp.type==='car'?'selected':''}"><span class="tile-icon">🚗</span><strong>Auto</strong></button>
+ <button type="button" data-device="headphones" class="device-tile ${temp.type==='headphones'?'selected':''}"><span class="tile-icon">🎧</span><strong>Auriculares</strong></button>
+ <button type="button" data-device="speaker" class="device-tile ${temp.type==='speaker'?'selected':''}"><span class="tile-icon">🔊</span><strong>Parlantes</strong></button></div>
+ <div class="setup-title"><h2>2 · ¿Qué ecualizador tiene?</h2><span class="tiny muted">Confirma sus frecuencias</span></div>
+ <div class="preset-grid">${quickFormats.map(id=>`<button type="button" data-preset="${id}" class="preset-tile ${temp.preset===id?'selected':''}"><strong>${esc(presets[id].short)}</strong><small>${presets[id].bands.map(short).join(' · ')}</small></button>`).join('')}</div>
+ <details class="unobtrusive" id="moreFormats" ${quickFormats.includes(temp.preset)?'':'open'}><summary>Más ecualizadores (2–31 bandas) y frecuencias propias</summary><div class="inner-detail"><label for="extraPreset">Elige el formato que ves en tu dispositivo</label><select class="field" id="extraPreset"><option value="">Elegir otro formato…</option>${options.map(([id,o])=>`<option value="${id}" ${id===temp.preset?'selected':''}>${esc(o.name)}</option>`).join('')}</select></div></details>
+ <div id="customSettings" class="${showCustom?'':'hide'}"><label for="customFreqs">Frecuencias de tu ecualizador (Hz)</label><input id="customFreqs" class="field" value="${esc(temp.bands.join(', '))}" placeholder="63, 160, 400, 1000, 2500"><p class="small muted" id="freqSummary">${esc(temp.bands.map(short).join(' · '))}</p></div>
+ <p class="small muted">Los formatos genéricos son ejemplos: verifica que sus frecuencias coincidan con las de tu dispositivo.</p>
+ <div class="setup-title"><h2>3 · ¿Cómo se mueven sus controles?</h2></div>
+ <div class="mini-options">
+ <button type="button" data-eq-unit="db" class="choice ${mode==='db'?'selected':''}"><strong>dB</strong><span>Indican decibelios</span></button>
+ <button type="button" data-eq-unit="steps" class="choice ${mode==='steps'?'selected':''}"><strong>Pasos</strong><span>Ej.: −6 a +6</span></button>
+ <button type="button" data-eq-unit="unknown" class="choice ${mode==='unknown'?'selected':''}"><strong>No sé</strong><span>Conservar sin conversión</span></button></div>
+ ${mode==='steps'?`<div class="soft"><p class="small"><strong>¿Cuántos dB representa cada paso?</strong> Si no lo indica tu equipo, deja «No sé».</p><div class="mini-options">${['unknown','1','2','3','4'].map(v=>`<button type="button" data-eq-step="${v}" class="choice ${value===v?'selected':''}"><strong>${v==='unknown'?'No sé':v+' dB'}</strong></button>`).join('')}</div><p class="tiny muted">La equivalencia se toma del manual del equipo; Hear no la adivina.</p></div>`:''}
+ <label for="deviceName">Nombre del perfil (opcional)</label><input class="field" id="deviceName" maxlength="70" placeholder="Mi auto, mis auriculares…" value="${esc(temp.name)}">
+ <div class="setup-summary" role="status"><div class="summary-line"><div><span class="tiny muted">TEST COMPLETO DE FRECUENCIAS</span><span class="summary-time" id="setupTime">${approxTimeRange(duration)}</span></div><span class="tag" id="setupTrials">${duration.trials} pruebas</span></div><div class="tiny muted" id="setupMaximum">Máximo de tonos: ${timeLabel(duration.max)}</div></div>
+ <details class="unobtrusive" id="technicalSettings"><summary>Opciones técnicas y límites del ecualizador · opcional</summary><div class="inner-detail">
+ <p class="small muted">El test completo cubre todas las bandas y conserva cada respuesta. Repeticiones y parámetros técnicos no son necesarios para empezar.</p>
+ <div class="grid2"><div><label for="controlMin">Mínimo del control</label><input class="field" id="controlMin" type="number" min="-30" max="-1" value="${temp.controlMin}"></div><div><label for="controlMax">Máximo del control</label><input class="field" id="controlMax" type="number" min="1" max="30" value="${temp.controlMax}"></div></div>
+ <div class="grid2"><div><label for="eqMin">Límite digital inferior (dB)</label><input class="field" id="eqMin" type="number" min="-30" max="-1" value="${temp.min}"></div><div><label for="eqMax">Límite digital superior (dB)</label><input class="field" id="eqMax" type="number" min="1" max="30" value="${temp.max}"></div></div>
+ <div class="grid2"><div><label for="testStart">Nivel digital inicial (dBFS)</label><input class="field" id="testStart" type="number" min="-99" max="${maxTestStart(temp)}" value="${temp.testStart}"></div><div><label for="testFloor">Nivel digital final (dBFS)</label><input class="field" id="testFloor" type="number" min="-100" max="-36" value="${temp.testFloor}"></div></div>
+ <p class="small muted">−36 dBFS es el inicio normal; auto y parlantes admiten hasta 0 dBFS solo con comprobación progresiva. dBFS no mide el volumen físico en tu oído.</p>
+ <div class="mini-options"><button type="button" data-channels="both" class="choice ${temp.channels==='both'?'selected':''}">Ambos canales</button><button type="button" data-channels="separate" class="choice ${temp.channels==='separate'?'selected':''}">Izquierdo / derecho</button></div>
+ <div class="mini-options"><button type="button" data-testmode="complete" class="choice ${temp.testMode==='complete'?'selected':''}">Todas las bandas</button><button type="button" data-testmode="quick" class="choice ${temp.testMode==='quick'?'selected':''}">Muestra abreviada</button></div>
+ <div class="mini-options"><button type="button" data-passes="1" class="choice ${temp.passes===1?'selected':''}">Una pasada</button><button type="button" data-passes="2" class="choice ${temp.passes===2?'selected':''}">Dos pasadas</button></div>
+ <p class="small muted">La conversión a posiciones no se mostrará como verificada si desconocemos los dB por paso. Se guardan las frecuencias y respuestas originales.</p>
+ </div></details>
+ ${button('Comenzar mi test de frecuencias →','create','btn-primary full bigbutton')}
+ <p class="tiny center muted">Conservamos las mediciones por banda, su confianza y tu ecualizador original.</p>
+ </section>`;
+}
 function plan(p){let bands=testBands(p).sort((a,b)=>Math.abs(Math.log2(a/1000))-Math.abs(Math.log2(b/1000)));let sides=p.channels==='separate'?['left','right']:['both'];return Array.from({length:p.passes},(_,pass)=>bands.flatMap(f=>sides.map(side=>({f,side,pass})))).flat();}
 
 // Estimates are bounded by the new adaptive scheduler; no fixed threshold is promised.
