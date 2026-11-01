@@ -46,24 +46,18 @@ case 'resume':nav(firstMissing(current)<0?'results':'test');break;
 case 'play':await playTone(false);break;
 case 'answerYes':answerTone(true);break;
 case 'answerNo':answerTone(false);break;
-case 'introBack':stopTone();introStep=Math.max(0,introStep-1);render();break;
+case 'introBack':stopTone();introStep=0;render();break;
 case 'introNext':
- if(current?.channels==='separate'&&introStep===0&&!channelsReady(current)){
-  uiAlert('Escucha y confirma por separado los canales izquierdo y derecho antes de continuar.');break;
- }
- if(introStep===2&&needsVolumePreview(current)&&!volumeReady){
-  uiAlert('Escucha y confirma progresivamente todas las referencias antes de comenzar.');break;
- }
- introStep=Math.min(3,introStep+1);render();break;
-case 'previewlevel':if(current&&introStep===2&&needsVolumePreview(current)){
+ if(current?.channels==='separate'&&!channelsReady(current)){uiAlert('Comprueba y confirma los dos canales antes de comenzar.');break}
+ if(needsVolumePreview(current)&&!volumeReady){uiAlert('Completa las referencias graduales antes de comenzar.');break}
+ introStep=3;render();break;
+case 'previewlevel':if(current&&introStep===0&&needsVolumePreview(current)){
  volumePreviewPlayed=false;const level=volumePreviewSteps(current)[volumePreviewIndex];
  if(Number.isFinite(level))await playTone(true,'both',level);
 }break;
-case 'confirmlevel':if(current&&introStep===2&&volumePreviewPlayed&&tone?.mode!=='preview'){
- const steps=volumePreviewSteps(current);
- volumePreviewPlayed=false;
- if(volumePreviewIndex+1>=steps.length)volumeReady=true;
- else volumePreviewIndex++;
+case 'confirmlevel':if(current&&introStep===0&&volumePreviewPlayed&&tone?.mode!=='preview'){
+ const steps=volumePreviewSteps(current);volumePreviewPlayed=false;
+ if(volumePreviewIndex+1>=steps.length)volumeReady=true;else volumePreviewIndex++;
  render();
 }break;
 case 'ambient':await checkAmbient();break;
@@ -77,7 +71,7 @@ case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'
  }break;
  case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
 case 'retry':awaitNext=false;floorReached=false;trial=null;sampleNote='';stopTone();render();break;
-case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.manual={};awaitNext=false;floorReached=false;trial=null;resetChannelCheck();resetVolumePreview();introStep=current.channels==='separate'?0:needsVolumePreview(current)?2:3;sampleNote='';touch();render()}break;
+case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.manual={};awaitNext=false;floorReached=false;trial=null;resetChannelCheck();resetVolumePreview();introStep=0;sampleNote='';touch();render()}break;
 case 'transfer-open':transferOpen=true;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();break;
 case 'transfer-close':transferOpen=false;refreshTransfer();break;
 case 'transfer-next':if(!current)return;if(transferStep===1&&!transferMapping(current)){transferStatus='Revisa las frecuencias reales del ecualizador.';refreshTransfer();break}
