@@ -14,14 +14,25 @@ function gather(p){
 // Digital detection levels are neither ear SPL nor normal equal-loudness targets.
 // Never apply measured threshold differences directly as equalizer gains.
 const EQ_ALGORITHM_VERSION='local-contrast-v2-experimental';
+function hasBothChannelThresholds(p,f){
+ if(p.channels!=='separate')return true;
+ return ['left','right'].every(side=>(p.measures?.[key(f,side)]||[]).some(m=>m?.kind==='heard'&&Number.isFinite(m.db)));
+}
+// This function is shared by the algorithm and result labels.
+function thresholdCoverage(p,data){
+ const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived&&x.quality!=='mixed'&&x.quality!=='unmeasurable'&&hasBothChannelThresholds(p,x.f));
+ const required=autoCoverageMinimum(p);
+ const candidates=measured.slice(1,-1).filter((x,i)=>x.f/measured[i].f<=3.5&&measured[i+2].f/x.f<=3.5).length;
+ return {measured,required,enough:measured.length>=required,candidates};
+}
 function estimateThresholdContrast(p,data){
- const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived&&x.quality!=='mixed'&&x.quality!=='unmeasurable');
- const enough=measured.length>=Math.max(4,Math.ceil(p.bands.length*.55));
+ const {measured,enough}=thresholdCoverage(p,data);
  const context=normalizeCalibrationContext(p.context,p.type);
  return data.map((point,i)=>{
   const entry={f:point.f,base:0,contrastDb:null,autoReason:'sin datos suficientes',autoConfidence:'none'};
   if(!enough)return entry;
   if(!Number.isFinite(point.db)||point.derived)return {...entry,autoReason:'frecuencia no medida directamente'};
+  if(!hasBothChannelThresholds(p,point.f))return {...entry,autoReason:'faltan umbrales de uno de los oídos: no corregir automáticamente'};
   if(point.quality==='mixed')return {...entry,autoReason:'respuesta diferente entre oídos'};
   if(point.quality==='unmeasurable')return {...entry,autoReason:'sin umbral confirmado'};
   const idx=measured.findIndex(x=>x.f===point.f);
@@ -183,8 +194,8 @@ function renderCalibrationTrace(p,r){
  const colors={left:'#2671db',right:'#b06bdb',both:'#2671db'};
  const minHz=Math.min(...p.bands),maxHz=Math.max(...p.bands);
  const xpos=f=>56+548*(Math.log(f/minHz)/Math.max(1e-8,Math.log(maxHz/minHz)));
- const ypos=db=>35+(-24-clamp(db,-84,-24))*2.15;
- const axisLevels=[-24,-44,-64,-84].map(n=>`<line x1="53" y1="${ypos(n)}" x2="615" y2="${ypos(n)}" stroke="#dfe5ed" stroke-dasharray="3 5"/><text x="47" y="${ypos(n)+3}" text-anchor="end" font-size="11" fill="#6e7d8e">${n}</text>`).join('');
+ const ypos=db=>18+(0-clamp(db,-100,0))*1.76;
+ const axisLevels=[0,-20,-40,-60,-80,-100].map(n=>`<line x1="53" y1="${ypos(n)}" x2="615" y2="${ypos(n)}" stroke="#dfe5ed" stroke-dasharray="3 5"/><text x="47" y="${ypos(n)+3}" text-anchor="end" font-size="11" fill="#6e7d8e">${n}</text>`).join('');
  const series=sides.map(side=>{
   const points=p.bands.map(f=>{const db=rawFrequencyThreshold(p,f,side);return db===null?null:{f,db,x:xpos(f),y:ypos(db)}}),
    segments=points.slice(1).map((v,i)=>v&&points[i]?`<line x1="${points[i].x}" y1="${points[i].y}" x2="${v.x}" y2="${v.y}" stroke="${colors[side]}" stroke-width="2.5"/>`:'').join(''),
@@ -196,7 +207,8 @@ function renderCalibrationTrace(p,r){
  const formatDb=db=>db===null?'—':db+' dBFS';
  const totalDirect=r.filter(x=>x.db!==null&&!x.derived).length;
  const absent=r.filter(x=>x.db===null).length;
- const incomplete=finished?'Prueba registrada: todos los pasos previstos están completos.':'Prueba todavía en curso: puedes revisar lo disponible, pero el resultado no es definitivo.';
+ const tasks=plan(p),confirmed=tasks.filter(e=>p.measures?.[key(e.f,e.side)]?.[e.pass]?.kind==='heard'&&Number.isFinite(p.measures[key(e.f,e.side)][e.pass].db)).length;
+ const incomplete=finished?'Búsquedas registradas: '+tasks.length+'/'+tasks.length+'. Umbrales confirmados: '+confirmed+'/'+tasks.length+'.':'Prueba en curso: '+confirmed+' umbrales confirmados de '+tasks.length+' búsquedas programadas.';
  const c=normalizeCalibrationContext(p.context,p.type);
  const unit=c.eqScale==='db'?'El equipo indica dB, aunque la forma y anchura de sus filtros pueden diferir.':
   c.eqScale==='steps'?(c.eqStepDb==='unknown'?'El equipo indica posiciones sin conversión dB/paso.':'La equivalencia dB/paso fue declarada según manual y no está verificada por Hear.'):'La unidad real del equipo no se ha confirmado: NO se presupone una equivalencia entre dB y niveles.';
@@ -339,11 +351,11 @@ function saveEqCardPng(p){
 }
 
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
- const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),usable=r.filter(x=>x.db!==null&&!x.derived).length,derived=r.filter(x=>x.derived).length,required=Math.max(3,Math.ceil(p.bands.length*.6));
+ const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),coverage=thresholdCoverage(p,gather(p)),usable=coverage.measured.length,derived=r.filter(x=>x.derived).length,required=coverage.required;
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
  lastRenderedEqSignature=p.id+'|'+r.map(b=>b.f+':'+b.gain).join('|');
- const reliable=usable>=required;
- const status=reliable?'Contrastes locales experimentales (v2) + ajustes personales.':'Cobertura insuficiente: corrección automática neutra; ajustes personales separados.';
+ const reliable=coverage.enough&&coverage.candidates>0;
+ const status=!coverage.enough?'Cobertura insuficiente para EQ automático; ajustes personales separados.':coverage.candidates===0?'Sin bandas vecinas elegibles para EQ automático: salida neutra, sin inventar corrección.':'Contrastes locales experimentales (v2) + ajustes personales.';
  return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">AUDIOCAL · INFORME DE FRECUENCIAS</p><h1>Medición y <em>ajuste.</em></h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
  <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${p.bands.length} bandas · <span style="color:var(--cyan)">${esc(presets[p.preset]?.short||'Personalizado')}</span></h2><span class="tag" id="eqChangeCount">${r.filter(x=>x.gain!==0).length} cambios</span></div>
  <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral · <span>${esc(status)}</span></p>
@@ -375,12 +387,12 @@ ${remaining.length?`<div class="setup-title"><h2>Otros perfiles</h2><span class=
 <details class="unobtrusive"><summary>Respaldo de perfiles <span class="tiny muted">Importar / exportar</span></summary><div class="inner-detail"><p class="tiny muted">Se guardan en este navegador. Exporta una copia antes de borrar datos o cambiar de teléfono.</p><div class="row wrap">${button('↓ Exportar todo','exportall','btn-alt grow')}${button('↑ Importar JSON','import','btn-ghost grow')}</div><input id="importInput" class="hide" type="file" accept=".json,application/json"></div></details>
 <details class="unobtrusive"><summary>Ecualizadores compatibles <span class="tiny muted">${Object.keys(presets).length} formatos</span></summary><div class="inner-detail"><p class="tiny muted">Los de tus fotos mantienen sus frecuencias originales.</p>${Object.entries(presets).filter(([id])=>id!=='custom').map(([id,p])=>`<div class="small" style="margin:7px 0"><strong>${esc(p.short)}</strong><div class="tiny muted">${esc(p.bands.map(short).join(' · '))}</div></div>`).join('')}</div></details>`}
 function setActive(p){if(current?.id!==p.id){transferCompleted.clear();transferBandIndex=0;transferStep=0;transferStatus='';lastRenderedEqSignature=null}
- introStep=3;trial=null;selectedEqFreq=null;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();resetBalanceSession(p);stopTone();if(playerAudio)playerAudio.pause();current=p;currentId=p.id;awaitNext=false;floorReached=false;sampleNote='';resetLoudnessSession();save();eqBypass=false;nav(firstMissing(p)<0?'results':'test')}
+ resetChannelCheck();introStep=p.channels==='separate'?0:3;trial=null;selectedEqFreq=null;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();resetBalanceSession(p);stopTone();if(playerAudio)playerAudio.pause();current=p;currentId=p.id;awaitNext=false;floorReached=false;sampleNote='';resetLoudnessSession();save();eqBypass=false;nav(firstMissing(p)<0?'results':'test')}
 function exportDownload(name,text,mime){const blob=new Blob([text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)}
 const cleanName=s=>s.replace(/[^a-z0-9-_]/gi,'_').slice(0,48);
 function resultText(p){const r=recommend(p);return `AudioCal Hear · ${p.name}\n${trans('Frecuencias:')} ${p.bands.length} ${trans('bandas')}\n${trans('Resultado perceptivo estimado; revisar mediante escucha.')}\n\n`+r.map(x=>`${fmt(x.f).padEnd(11)} ${x.gain>=0?'+':''}${x.gain} dB${x.derived?' ('+trans('estimado')+')':x.db===null?' ('+trans('sin medición')+')':''}`).join('\n')+'\n\n'+trans('No constituye audiometría ni medición acústica.')+'\n'}
 async function copyText(txt){try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(txt);return true}}catch(e){}try{const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.top='-1000px';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();return ok}catch(e){return false}}
 function changeEqFormat(){if(!current)return;const ids=Object.keys(presets);const old=current.preset;const options=ids.map((id,i)=>`${i+1}. ${presets[id].name}`).join('\n');const response=uiPrompt('Elige un número de formato para ESTE perfil. Se conservarán los umbrales medidos y se interpolarán solo las frecuencias cercanas a las medidas.\n'+options,String(ids.indexOf(old)+1));if(response===null)return;const id=ids[Number(response)-1];if(!id){uiAlert('Opción inválida');return}if(id==='custom'){uiAlert('Para crear un formato personalizado usa Configurar → nueva calibración.');return}if(id!==old){current.preset=id;current.bands=presets[id].bands.slice();current.min=presets[id].min;current.max=presets[id].max; // Keep collected measurements; do not falsely mark new bands as measured.
- current.formatFrom=old;transferCompleted.clear();transferBandIndex=0;
+ current.formatFrom=old;current.testBandPlan=current.testMode==='quick'?testBands({...current,testBandPlan:null}):null;transferCompleted.clear();transferBandIndex=0;
  if(transferOpen)transferStatus='Cambió el formato de EQ. Revisa todas las posiciones.';
  touch();render();uiAlert('Formato cambiado. Solo las frecuencias que ya probaste cuentan como medidas. Para una recomendación fiable en las nuevas bandas, completa el examen que aparece en Prueba. No reutilices el perfil con otro dispositivo Bluetooth.')}}
