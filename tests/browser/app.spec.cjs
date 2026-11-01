@@ -649,3 +649,53 @@ test('single equalizer keeps one visible chart and exposes categorized optional 
  await expect(page.locator('#resultEqStepDb')).toBeVisible();
  await noOverflow(page);
 });
+
+
+test('preflight sweep records the perceived range without replacing adaptive thresholds',async({page})=>{
+ await page.locator('[data-device="speaker"]').click();
+ await page.locator('#deviceName').fill('Parlantes con barrido');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
+ await expect(page.locator('#preSweepPanel')).toBeVisible();
+ await expect(page.locator('#sweepMicChoice')).not.toBeChecked();
+ await page.locator('[data-sweep-range="wide"]').click();
+ await page.locator('[data-act="sweep-start"]').click();
+ await expect(page.locator('#sweepCurrentHz')).toBeVisible();
+ await page.locator('[data-sweep-response="yes"]').click();
+ await page.waitForTimeout(350);
+ await page.locator('[data-sweep-response="no"]').click();
+ await page.locator('[data-act="sweep-finish"]').click();
+ await expect(page.locator('.sweep-saved')).toContainText('Zona declarada audible');
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(Object.keys(saved.measures)).toHaveLength(0);
+ expect(saved.sweepRecords.both.method).toBe('fixed-digital-level-preflight-v1');
+ expect(saved.sweepRecords.both.events).toHaveLength(2);
+ expect(saved.sweepRecords.both.maxHz).toBeLessThanOrEqual(16000);
+ await page.reload();
+ await page.locator('[data-nav="test"]').click();
+ await expect(page.locator('.sweep-saved')).toContainText('Zona declarada audible');
+ await page.locator('[data-act="introNext"]').click();
+ await expect(page.locator('#levelText')).toBeVisible();
+ await noOverflow(page);
+});
+test('headphone preflight requires left/right confirmation and never requests a microphone',async({page})=>{
+ await page.locator('[data-device="headphones"]').click();
+ await page.locator('#deviceName').fill('Audición por oído');
+ await page.locator('[data-act="create"]').click();
+ await expect(page.locator('#sweepMicChoice')).toHaveCount(0);
+ await page.locator('[data-act="sweep-start"]').click();
+ await expect(page.locator('#sweepNotice')).toContainText('Comprueba y confirma');
+ await page.locator('[data-act="checkleft"]').click();
+ await page.locator('[data-act="confirmleft"]').click();
+ await page.locator('[data-act="checkright"]').click();
+ await page.locator('[data-act="confirmright"]').click();
+ await page.locator('[data-sweep-side="right"]').click();
+ await page.locator('[data-act="sweep-start"]').click();
+ await expect(page.locator('#sweepCurrentHz')).toBeVisible();
+ await page.locator('[data-sweep-response="yes"]').click();
+ await page.locator('[data-act="sweep-finish"]').click();
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(saved.sweepRecords.right.events).toHaveLength(1);
+ expect(Object.keys(saved.measures)).toHaveLength(0);
+ await noOverflow(page);
+});
