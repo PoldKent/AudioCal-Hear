@@ -123,3 +123,11 @@ La implementación de los lotes 0–1 **no cambia** `recommend()`, los tonos ni 
 - Calibración nueva completa por defecto en todas las bandas, una pasada. Una segunda pasada independiente es opcional para validación; los perfiles históricos conservan su programación.
 - Después de cada frecuencia se guarda y avanza sin pantalla intermedia; el siguiente tono requiere pulsar Reproducir.
 - La prueba auditiva digital no mide dB SPL clínicos ni calibración acústica del vehículo.
+
+## Lote 5 — resultados accionables sin prometer mediciones acústicas (v1.11.0)
+
+- La primera sección del resultado muestra una hipótesis de partida por banda, en dB y en unidades físicas cuando existe una conversión documentada. El usuario debe aplicarla expresamente; no cambia los umbrales ni aplica ganancia a otros dispositivos.
+- Para los casos con contraste digital local utilizable, la hipótesis experimental se limita a un máximo de tres bandas interiores y a ±1 dB por banda, con ambos oídos disponibles en perfiles estéreo y sin extrapolar extremos anómalos. Este método NO garantiza mejoría auditiva ni calibración EQ.
+- Cuando el control físico solo cambia de 2 o 3 dB por paso, no se convierte un ajuste digital de 1 dB en un salto completo. Se propone cero posiciones y afinación opcional con música.
+- Las mediciones crudas, auditorías, PNG y la validación A/B permanecen disponibles pero se pliegan en secciones opcionales, reduciendo la repetición visual.
+- El punto de partida resultante es una preferencia experimental revisable, no una corrección derivada de SPL, audiometría ni una predicción universal.
