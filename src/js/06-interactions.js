@@ -117,7 +117,7 @@ if(current&&(t.id==='resultControlMin'||t.id==='resultControlMax')){
   }
   current[field]=value;transferCompleted.clear();transferBandIndex=0;
   if(transferOpen)transferStatus='Cambió el rango físico. Revisa nuevamente las posiciones.';
-  touch();render();return;
+  eqPhysicalOpen=true;touch();render();return;
  }
  if(current&&(t.id==='resultEqScale'||t.id==='resultEqStepDb')){
  const f=t.id==='resultEqScale'?'eqScale':'eqStepDb';
@@ -125,7 +125,7 @@ if(current&&(t.id==='resultControlMin'||t.id==='resultControlMax')){
  current.context=normalizeCalibrationContext(next,current.type);
  transferCompleted.clear();transferBandIndex=0;
  if(transferOpen)transferStatus='Cambió la escala del equipo. Revisa nuevamente las posiciones de los controles.';
- touch();render();return;
+ eqPhysicalOpen=true;touch();render();return;
 }
 if(t.dataset.context&&temp.context){const f=t.dataset.context;const next={...temp.context,[f]:t.value};temp.context=normalizeCalibrationContext(next,temp.type);if(f==='subtype'||f==='eqScale'){temp.name=$('#deviceName')?.value||temp.name;render()}return}
 if(current&&t.id==='transferFormat'){transferPreset=t.value;transferBandIndex=0;transferCompleted=new Set();transferStatus='';if(transferPreset==='custom'&&!transferCustom)transferCustom=current.bands.join(', ');refreshTransfer();return}
@@ -150,7 +150,8 @@ if(t.id==='importInput'&&t.files?.length){
 }
 }
 // Ensure user can change tabs without generating sound; pause on backgrounding.
-document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);document.addEventListener('input',e=>{const t=e.target;if(t.id==='eqSlider'&&current){const x=recommend(current).find(q=>q.f===selectedEqFreq);if(x){const desired=clamp(roundTo(Number(t.value),current.step),current.min,current.max);current.manual[x.f]=(Number(current.manual[x.f])||0)+(desired-x.gain);touch();refreshResultsUI()}return}if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin'&&Number.isFinite(Number(t.value)))temp.min=Number(t.value);if(t.id==='eqMax'&&Number.isFinite(Number(t.value)))temp.max=Number(t.value);if(t.id==='controlMin'&&Number.isFinite(Number(t.value)))temp.controlMin=Number(t.value);if(t.id==='controlMax'&&Number.isFinite(Number(t.value)))temp.controlMax=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;if($('#freqSummary'))$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='testStart'){const n=Number(t.value);if(Number.isFinite(n))temp.testStart=clamp(n,-99,maxTestStart(temp))}if(t.id==='testFloor'){const n=Number(t.value);if(Number.isFinite(n))temp.testFloor=clamp(n,-100,-36)}if(['customFreqs','eqMin','eqMax','controlMin','controlMax','testStart','testFloor'].includes(t.id))refreshSetupDuration();});
+document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);
+document.addEventListener('toggle',e=>{if(e.target?.id==='eqCardSection')eqPhysicalOpen=e.target.open},true);document.addEventListener('input',e=>{const t=e.target;if(t.id==='eqSlider'&&current){const x=recommend(current).find(q=>q.f===selectedEqFreq);if(x){const desired=clamp(roundTo(Number(t.value),current.step),current.min,current.max);current.manual[x.f]=(Number(current.manual[x.f])||0)+(desired-x.gain);touch();refreshResultsUI()}return}if(t.id==='deviceName')temp.name=t.value;if(t.id==='eqMin'&&Number.isFinite(Number(t.value)))temp.min=Number(t.value);if(t.id==='eqMax'&&Number.isFinite(Number(t.value)))temp.max=Number(t.value);if(t.id==='controlMin'&&Number.isFinite(Number(t.value)))temp.controlMin=Number(t.value);if(t.id==='controlMax'&&Number.isFinite(Number(t.value)))temp.controlMax=Number(t.value);if(t.id==='customFreqs'){const f=parseBands(t.value);if(f){temp.bands=f;if($('#freqSummary'))$('#freqSummary').textContent=f.map(short).join(' · ')}}if(t.id==='testStart'){const n=Number(t.value);if(Number.isFinite(n))temp.testStart=clamp(n,-99,maxTestStart(temp))}if(t.id==='testFloor'){const n=Number(t.value);if(Number.isFinite(n))temp.testFloor=clamp(n,-100,-36)}if(['customFreqs','eqMin','eqMax','controlMin','controlMax','testStart','testFloor'].includes(t.id))refreshSetupDuration();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopTone();floorReached=false;if(playerAudio)playerAudio.pause();if(page==='test')render()}});window.addEventListener('pagehide',()=>{stopTone();if(playerAudio)playerAudio.pause();try{playerSource?.disconnect()}catch(e){}try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}if(playerUrl)URL.revokeObjectURL(playerUrl)});
 if(current)resetBalanceSession(current);
 render();
