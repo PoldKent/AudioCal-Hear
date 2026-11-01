@@ -98,7 +98,8 @@ test('EQ editor updates saved profile and JSON export is valid', async ({ page }
   await newProfile(page);
   await page.locator('[data-nav="results"]').click();
   await expect(page.locator('#root')).toHaveAttribute('data-page','results');
-  await expect(page.locator('#audioPlayer')).toBeVisible();
+  await expect(page.locator('#audioPlayer')).toHaveCount(1);
+   await expect(page.locator('#hearMusicOptions')).toBeVisible();
   await page.locator('[data-eq-select]').first().click();
   const slider = page.locator('#eqSlider');
   await expect(slider).toBeVisible();
