@@ -270,6 +270,21 @@ select option{background:#fff;color:#172033}
 .eq-main-card{min-width:0}.starter-inline{margin:12px 0;padding:12px;background:#f6f9ff;border:1px solid #dce7f7;border-radius:13px}.starter-inline p{margin:5px 0 9px}.starter-inline strong{color:#214d99}
 .eq-device-settings{margin-top:12px}.eq-device-settings>.inner-detail{padding-top:8px}.eq-card-config{padding:10px;margin:8px 0}.eq-card-config .field{min-width:0}
 .optional-tool>summary,.eq-device-settings>summary{font-weight:750;color:#253e69}.optional-tool .inner-detail{min-width:0}.eq-card-actions>.btn{flex:1 1 180px}
+
+/* Optional pre-test sweep: one compact step, no extra calibration wizard. */
+.sweep-panel{margin:14px 0;padding:13px;background:#f7faff;border-color:#dce7f7;min-width:0}
+.sweep-panel>strong{display:block;color:#204c8c;font-size:14px}
+.sweep-panel .sweep-choices{margin:9px 0}
+.sweep-panel .sweep-choices>.btn{font-size:12px;min-height:43px;padding:8px}
+.sweep-mic-option{display:flex;align-items:center;gap:9px;font-weight:600;margin:12px 0;color:#304766}
+.sweep-mic-option input{height:17px;width:17px;flex:0 0 auto}
+.sweep-live{margin:12px 0;padding:12px;border:1px solid #d7e6fa;background:white;border-radius:13px}
+.sweep-live #sweepCurrentHz{font-variant-numeric:tabular-nums;font-size:21px}
+.sweep-live .grid2{margin:12px 0;gap:8px}
+.sweep-live .grid2 button{min-height:52px}
+.sweep-saved{border-top:1px solid #dbe5f4;margin-top:12px;padding-top:10px}
+.sweep-saved p{margin:7px 0}
+@media(max-width:420px){.sweep-panel{padding:10px}.sweep-live{padding:9px}.sweep-panel .sweep-choices .btn{padding:8px 4px;font-size:11px}}
 </style>
 </head>
 <body>
@@ -509,12 +524,26 @@ function normalizedProfile(p,importing=false){
   for(const f of bands){const v=value[f];if(typeof v==='number'&&Number.isFinite(v))output[f]=clamp(v,minValue,maxValue)}
   return output;
  };
+
+ // Preflight observations are exploratory and never merged into pure-tone measurements.
+ const sweepRecords=Object.create(null),sweeps=p.sweepRecords&&typeof p.sweepRecords==='object'&&!Array.isArray(p.sweepRecords)?p.sweepRecords:{};
+ for(const side of ['both','left','right']){
+  const item=sweeps[side];
+  if(!item||typeof item!=='object'||Array.isArray(item)||item.method!=='fixed-digital-level-preflight-v1')continue;
+  const minHz=safeNumber(item.minHz,125,20,20000),maxHz=safeNumber(item.maxHz,8000,minHz,20000);
+  const events=Array.isArray(item.events)?item.events.slice(0,60).filter(x=>x&&Number.isFinite(x.hz)&&x.hz>=minHz&&x.hz<=maxHz&&typeof x.heard==='boolean').map(x=>({hz:Math.round(x.hz),heard:x.heard})):[];
+  const micUsed=item.micUsed===true;
+  const mic=micUsed&&Array.isArray(item.mic)?item.mic.slice(0,100).filter(x=>x&&Number.isFinite(x.hz)&&x.hz>=minHz&&x.hz<=maxHz&&Number.isFinite(x.relativeDb)).map(x=>({hz:Math.round(x.hz),relativeDb:clamp(Math.round(x.relativeDb),-60,60),detected:x.detected===true})):[];
+  sweepRecords[side]={method:'fixed-digital-level-preflight-v1',minHz,maxHz,
+   levelDbfs:safeNumber(item.levelDbfs,-42,-100,-24),durationS:safeNumber(item.durationS,0,0,22),
+   at:safeNumber(item.at,Date.now(),0,Date.now()+86400000),events,micUsed,mic};
+ }
  const taste=p.taste&&typeof p.taste==='object'&&!Array.isArray(p.taste)?p.taste:{};
  return {
   id,name:String(p.name||'Mi equipo').slice(0,70),type:['car','headphones','speaker'].includes(p.type)?p.type:'headphones',
   preset:Object.hasOwn(presets,p.preset)?p.preset:'custom',bands,min,max,controlMin,controlMax,step:1,
   channels:p.channels==='separate'?'separate':'both',passes:p.passes===2?2:1,
-  testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,
+  testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,sweepRecords,
   // Freeze historical quick sampling so existing observations are never silently reassigned.
   testBandPlan:p.testMode==='quick'?(
    Array.isArray(p.testBandPlan)&&p.testBandPlan.length>0&&p.testBandPlan.length<=QUICK_LIMIT&&
@@ -806,6 +835,7 @@ function renderIntro(){
  ${channelSection}
  ${needsPreview?`<div class="soft info"><strong>Comprobación gradual de nivel avanzado</strong><p class="small">Escucha cada referencia con el amplificador inicialmente bajo y confirma únicamente si fue cómoda y sin distorsión. Este control es necesario cuando solicitas niveles digitales altos para auto o parlantes.</p><p class="small">${volumeReady?'Referencias completadas':('Referencia '+(volumePreviewIndex+1)+' / '+previewSteps.length+': '+previewLevel+' dBFS')}</p>${volumeReady?'':button('▶ Reproducir referencia','previewlevel','btn-alt full')}${volumeReady?'':button('Confirmar nivel cómodo →','confirmlevel','btn-ghost full',volumePreviewPlayed?'':'disabled')}</div>`:
  `<div class="row wrap">${button('▶ Escuchar tono de referencia','check','btn-alt grow')}${button('■ Detener','stopaudio','btn-ghost grow')}</div>`}
+ ${sweepPanelMarkup(p)}
  <details class="unobtrusive"><summary>Comprobación ambiental con micrófono · opcional</summary><div class="inner-detail"><p class="small muted">${ambientStatus||'Puedes continuar sin micrófono; la prueba no requiere permisos ni mide dB SPL calibrados.'}</p>${button(ambientBusy?'Analizando…':'Comprobar ruido relativo','ambient','btn-alt full',ambientBusy?'disabled':'')}</div></details>
  ${button('Comenzar examen completo →','introNext','btn-primary full bigbutton')}
  </section>`;
@@ -844,7 +874,7 @@ function startVisualizer(){
  };frame=requestAnimationFrame(update);
 }
 async function ensureAudio(){if(!audioCtx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error('Web Audio no está disponible. Usa Chrome o Safari actualizado.');audioCtx=new AC()}if(audioCtx.state!=='running')await audioCtx.resume();return audioCtx}
-function stopTone(){if(frame){cancelAnimationFrame(frame);frame=null}if(!tone)return;const t=tone;tone=null;try{if(audioCtx){t.gain.gain.cancelScheduledValues(audioCtx.currentTime);t.gain.gain.setTargetAtTime(.00000001,audioCtx.currentTime,.012)}t.osc.stop((audioCtx?.currentTime||0)+.05)}catch(e){try{t.osc.stop()}catch(e2){}}}
+function stopTone(){if(frame){cancelAnimationFrame(frame);frame=null}if(!tone)return;const t=tone;tone=null;if(t.mode==='sweep')sweepRelease();try{if(audioCtx){t.gain.gain.cancelScheduledValues(audioCtx.currentTime);t.gain.gain.setTargetAtTime(.00000001,audioCtx.currentTime,.012)}t.osc.stop((audioCtx?.currentTime||0)+.05)}catch(e){try{t.osc.stop()}catch(e2){}}}
 async function playTone(check=false,checkSide='both',previewDb=null){
  try{
   const originalProfile=current,originalPage=page,originalIntro=introStep;
@@ -948,7 +978,190 @@ function createProfile(){const name=$('#deviceName')?.value.trim()||'Mi equipo '
  if(temp.testStart<=temp.testFloor){uiAlert('El nivel inicial debe ser mayor que el mínimo en dBFS.');return}
  if(temp.testStart>maxTestStart(temp)){uiAlert('El nivel inicial supera el límite del tipo de dispositivo.');return}
  if(temp.testStart>MAX_SAFE_DB&&!uiConfirm('Rango digital avanzado: '+temp.testStart+' dBFS puede sonar muy fuerte o distorsionar. Empieza con el volumen físico muy bajo y completa la comprobación gradual. ¿Deseas habilitarlo para este equipo?'))return;
- if(temp.testStart>=-30&&temp.testStart<=MAX_SAFE_DB&&!uiConfirm('Nivel digital alto ('+temp.testStart+' dBFS). Puede ser excesivo. No uses el máximo volumen físico. ¿Continuar?'))return;temp.name=name;temp.min=min;temp.max=max;temp.controlMin=controlMin;temp.controlMax=controlMax;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,controlMin,controlMax,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testBandPlan:temp.testMode==='quick'?testBands(temp):null,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},loudness:{},context:normalizeCalibrationContext(temp.context,temp.type),manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetLoudnessSession();resetBalanceSession(p);resetChannelCheck();resetVolumePreview();introStep=0;trial=null;nav('test')}
+ if(temp.testStart>=-30&&temp.testStart<=MAX_SAFE_DB&&!uiConfirm('Nivel digital alto ('+temp.testStart+' dBFS). Puede ser excesivo. No uses el máximo volumen físico. ¿Continuar?'))return;temp.name=name;temp.min=min;temp.max=max;temp.controlMin=controlMin;temp.controlMax=controlMax;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,controlMin,controlMax,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testBandPlan:temp.testMode==='quick'?testBands(temp):null,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},sweepRecords:{},loudness:{},context:normalizeCalibrationContext(temp.context,temp.type),manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetLoudnessSession();resetBalanceSession(p);resetChannelCheck();resetVolumePreview();introStep=0;trial=null;nav('test')}
+// Optional pre-test sweep. Observations never become hearing thresholds or EQ gains.
+const SWEEP_DURATION_S=22;
+const SWEEP_METHOD='fixed-digital-level-preflight-v1';
+let sweepSide='both',sweepRange='standard',sweepMicEnabled=false,sweepStarting=false;
+let sweepSession=null,sweepFrame=null,sweepNotice='';
+function sweepBounds(wide=false){
+ return wide?{min:40,max:16000}:{min:125,max:8000};
+}
+function sweepHz(min,max,t){return min*Math.pow(max/min,clamp(t,0,1))}
+function sweepAssessment(record){
+ const events=Array.isArray(record?.events)?record.events:[];
+ if(!events.length)return {known:false,first:null,last:null,segments:[]};
+ const segments=[];
+ for(let i=0;i<events.length;i++){
+  const event=events[i],end=i+1<events.length?events[i+1].hz:record.maxHz;
+  if(event.heard&&Number.isFinite(event.hz)&&Number.isFinite(end)&&end>=event.hz){
+   segments.push({from:event.hz,to:end});
+  }
+ }
+ return {known:true,first:segments.length?Math.min(...segments.map(x=>x.from)):null,
+  last:segments.length?Math.max(...segments.map(x=>x.to)):null,segments};
+}
+function sweepRecordSummary(record){
+ const status=sweepAssessment(record);
+ if(!status.known)return 'Sin respuestas: resultado inconcluso.';
+ if(status.first===null)return 'No se indicaron zonas audibles al nivel utilizado. No implica pérdida de audición ni fallo del equipo.';
+ const found=record.mic?.filter(x=>x.detected)||[];
+ const microphone=record.micUsed?
+   (found.length?' · Micrófono: '+found.length+' muestras con señal superior al ruido de referencia, no calibradas.':' · Micrófono: sin evidencia suficiente de captación; no demuestra ausencia de sonido.'):'';
+ return 'Zona declarada audible aprox.: '+Math.round(status.first)+'–'+Math.round(status.last)+' Hz. '+status.segments.length+' tramo(s).'+microphone;
+}
+
+function sweepSummaryMarkup(p){
+ const records=Object.entries(p.sweepRecords||{}).filter(([side,record])=>['both','left','right'].includes(side)&&record?.method===SWEEP_METHOD);
+ if(!records.length)return '';
+ return '<details class="unobtrusive" id="preSweepResults"><summary>Barrido previo · alcance observado del sistema</summary><div class="inner-detail">'+
+  records.map(([side,record])=>'<p class="small"><strong>'+(side==='left'?'Oído izquierdo':side==='right'?'Oído derecho':'Ambos canales')+'</strong> · '+esc(sweepRecordSummary(record))+'</p>').join('')+
+  '<p class="tiny muted">El rango indicado procede de respuestas subjetivas a un tono digital constante. La respuesta del micrófono, cuando existe, está afectada por su sensibilidad, la sala, ruido y procesamiento del dispositivo. Ninguno mide aisladamente la capacidad del equipo o del oído; no son umbrales clínicos ni se usan para modificar el EQ.</p></div></details>';
+}
+
+function sweepPanelMarkup(p){
+ const selected=p.channels==='separate'?(sweepSide==='right'?'right':'left'):'both';
+ const saved=Object.entries(p.sweepRecords||{}).filter(([side,v])=>['both','left','right'].includes(side)&&v&&Array.isArray(v.events));
+ const bounds=sweepBounds(sweepRange==='wide');
+ const isRunning=!!sweepSession&&sweepSession.profile===p;
+ return `<section class="soft sweep-panel" id="preSweepPanel">
+ <strong>Exploración previa de frecuencias · opcional</strong>
+ <p class="compact-note">Barrido continuo con nivel digital constante y bajo. Identifica dónde dices escuchar el conjunto oído + equipo + ambiente, no la capacidad de cada uno por separado. La prueba de umbrales posterior sigue siendo necesaria.</p>
+ ${p.channels==='separate'?'<div class="row wrap">'+['left','right'].map(side=>'<button type="button" class="btn '+(selected===side?'btn-alt':'btn-ghost')+' grow" data-sweep-side="'+side+'" '+(isRunning?'disabled':'')+'>'+(side==='left'?'Oído izquierdo':'Oído derecho')+'</button>').join('')+'</div>':''}
+ <div class="row wrap sweep-choices">
+  <button type="button" class="btn ${sweepRange==='standard'?'btn-alt':'btn-ghost'} grow" data-sweep-range="standard" ${isRunning?'disabled':''}>125–8.000 Hz</button>
+  <button type="button" class="btn ${sweepRange==='wide'?'btn-alt':'btn-ghost'} grow" data-sweep-range="wide" ${isRunning?'disabled':''}>40–16.000 Hz · ampliado</button>
+ </div>
+ ${p.type==='headphones'?'':`<label class="sweep-mic-option"><input type="checkbox" id="sweepMicChoice" ${sweepMicEnabled?'checked':''} ${isRunning?'disabled':''}> Comparar también con micrófono (opcional; no calibrado)</label>`}
+ <p class="tiny muted">Duración: 22 s · nivel: ${Math.min(-42,getStart(p))} dBFS · rango ${bounds.min}–${bounds.max} Hz. Comienza con volumen físico bajo, cómodo y constante. No uses máximo ni persigas frecuencias inaudibles. En auto, estacionado.</p>
+ ${isRunning?`<div class="sweep-live"><p class="center"><strong id="sweepCurrentHz">${Math.round(sweepSession.frequency)} Hz</strong> · <span id="sweepElapsed">0 s</span></p><div class="progress"><div id="sweepProgress" style="width:0%"></div></div><p id="sweepResponse" class="compact-note">Indica cuándo lo escuchas y cuándo dejas de escucharlo.</p><div class="grid2"><button type="button" class="btn btn-alt" data-sweep-response="yes">✓ Lo escucho</button><button type="button" class="btn btn-ghost" data-sweep-response="no">✕ No lo escucho</button></div>${button('■ Detener y conservar observaciones','sweep-finish','btn-ghost full')}</div>`:
+ button(sweepStarting?'Preparando…':'▶ Iniciar barrido previo','sweep-start','btn-alt full',sweepStarting?'disabled':'')}
+ ${sweepNotice?'<p class="compact-note" id="sweepNotice" role="status">'+esc(sweepNotice)+'</p>':''}
+ ${saved.length?'<div class="sweep-saved"><strong>Observaciones previas guardadas</strong>'+saved.map(([side,r])=>'<p class="small"><b>'+(side==='left'?'Izquierdo':side==='right'?'Derecho':'Ambos')+'</b> · '+esc(sweepRecordSummary(r))+'</p>').join('')+'<p class="tiny muted">Estos registros NO se utilizan para calcular el EQ automático ni sustituyen el test adaptativo.</p></div>':''}
+ </section>`;
+}
+function sweepRelease(){
+ if(sweepFrame!==null){cancelAnimationFrame(sweepFrame);sweepFrame=null}
+ const session=sweepSession;sweepSession=null;
+ if(session?.mic){
+  try{session.mic.source.disconnect()}catch(e){}
+  try{session.mic.analyser.disconnect()}catch(e){}
+  try{session.mic.stream.getTracks().forEach(x=>x.stop())}catch(e){}
+ }
+}
+function sweepLogResponse(heard){
+ const run=sweepSession;
+ if(!run||tone?.mode!=='sweep'||!Number.isFinite(run.frequency))return;
+ if(run.events.at(-1)?.heard===heard)return;
+ run.events.push({hz:Math.round(run.frequency),heard:!!heard});
+ const el=$('#sweepResponse');if(el)el.textContent=heard?'Registrado: lo escucho. Marca cuando deje de oírse.':'Registrado: no lo escucho. Marca si vuelve a oírse.';
+}
+function sweepMicSample(run,freq){
+ const mic=run.mic;if(!mic)return;
+ const a=mic.analyser,d=mic.data;a.getFloatFrequencyData(d);
+ const idx=Math.round(freq*a.fftSize/run.ctx.sampleRate);
+ if(idx<2||idx>=d.length-2)return;
+ const value=Math.max(d[idx-1],d[idx],d[idx+1]);
+ const baseline=Math.max(mic.baseline[idx-1],mic.baseline[idx],mic.baseline[idx+1]);
+ if(!Number.isFinite(value)||!Number.isFinite(baseline))return;
+ const delta=clamp(value-baseline,-60,60);
+ run.micSamples.push({hz:Math.round(freq),relativeDb:Math.round(delta),detected:value>-85&&delta>=8});
+}
+function sweepTick(){
+ const run=sweepSession;if(!run||page!=='test'||tone?.mode!=='sweep'){sweepFrame=null;return}
+ const elapsed=clamp(run.ctx.currentTime-run.start,0,SWEEP_DURATION_S);
+ run.frequency=sweepHz(run.min,run.max,elapsed/SWEEP_DURATION_S);
+ const h=$('#sweepCurrentHz'),e=$('#sweepElapsed'),bar=$('#sweepProgress');
+ if(h)h.textContent=Math.round(run.frequency)+' Hz';
+ if(e)e.textContent=elapsed.toFixed(1)+' s';
+ if(bar)bar.style.width=Math.round(elapsed/SWEEP_DURATION_S*100)+'%';
+ if(elapsed>=SWEEP_DURATION_S){finishSweep();return}
+ if(run.mic&&elapsed-run.lastMicAt>=.24){run.lastMicAt=elapsed;sweepMicSample(run,run.frequency)}
+ sweepFrame=requestAnimationFrame(sweepTick);
+}
+function finishSweep(){
+ const run=sweepSession;if(!run)return;
+ const elapsed=clamp(run.ctx.currentTime-run.start,0,SWEEP_DURATION_S);
+ const record={
+  method:SWEEP_METHOD,minHz:run.min,maxHz:Math.round(sweepHz(run.min,run.max,elapsed/SWEEP_DURATION_S)),
+  levelDbfs:run.db,durationS:Number(elapsed.toFixed(1)),at:Date.now(),
+  events:run.events.slice(0,60),micUsed:!!run.mic,mic:run.micSamples.slice(0,100)
+ };
+ if(tone?.mode==='sweep')stopTone();else sweepRelease();
+ // A sweep has no minimum evidentiary value unless the user explicitly responds.
+ if(current===run.profile&&page==='test'){
+  current.sweepRecords=current.sweepRecords||{};
+  current.sweepRecords[run.side]=record;touch();
+  sweepNotice=record.events.length?'Barrido guardado: orientativo, no son umbrales.':'Barrido guardado sin respuestas, por lo que no permite concluir un rango.';
+  render();
+ }
+}
+async function startSweep(){
+ if(!current||page!=='test'||introStep!==0||sweepStarting||sweepSession)return;
+ const p=current,side=p.channels==='separate'?(sweepSide==='right'?'right':'left'):'both';
+ if(p.channels==='separate'&&!channelsReady(p)){sweepNotice='Comprueba y confirma antes los canales izquierdo y derecho.';render();return}
+ if(needsVolumePreview(p)&&!volumeReady){sweepNotice='Confirma primero las referencias de volumen avanzadas.';render();return}
+ const limits=sweepBounds(sweepRange==='wide'),db=Math.min(-42,getStart(p));
+ sweepStarting=true;sweepNotice='';render();
+ let stream=null,mic=null;
+ try{
+  stopTone();if(playerAudio)playerAudio.pause();
+  const ctx=await ensureAudio();
+  if(current!==p||page!=='test'||introStep!==0)return;
+  const nyquist=ctx.sampleRate/2;
+  const high=Math.min(limits.max,Math.floor(nyquist*.84));
+  if(high<=limits.min)throw Error('Frecuencia de muestreo insuficiente.');
+  if(sweepMicEnabled&&p.type!=='headphones'){
+   try{
+    if(!navigator.mediaDevices?.getUserMedia)throw Error('No disponible');
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    if(current!==p||page!=='test'||introStep!==0)return;
+    const source=ctx.createMediaStreamSource(stream),analyser=ctx.createAnalyser();
+    analyser.fftSize=4096;source.connect(analyser);
+    const data=new Float32Array(analyser.frequencyBinCount);
+    const baseline=new Float32Array(data.length);
+    let count=0;
+    for(let i=0;i<4;i++){
+     analyser.getFloatFrequencyData(data);
+     for(let j=0;j<data.length;j++)baseline[j]+=Number.isFinite(data[j])?data[j]:-120;
+     count++;
+     await new Promise(ok=>setTimeout(ok,80));
+    }
+    for(let j=0;j<baseline.length;j++)baseline[j]/=count;
+    mic={stream,source,analyser,data,baseline};
+   }catch(e){
+    stream?.getTracks().forEach(t=>t.stop());stream=null;mic=null;
+    sweepNotice='Micrófono no disponible. El barrido continuará solo con tus respuestas.';
+   }
+  }
+  if(current!==p||page!=='test'||introStep!==0)return;
+  const osc=ctx.createOscillator(),gain=ctx.createGain();
+  const pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
+  if(side!=='both'&&!pan)throw Error('El navegador no permite separar los canales.');
+  osc.type='sine';
+  const now=ctx.currentTime+.08,amp=Math.pow(10,db/20);
+  osc.frequency.setValueAtTime(limits.min,now);
+  osc.frequency.exponentialRampToValueAtTime(high,now+SWEEP_DURATION_S);
+  if(pan){pan.pan.value=side==='left'?-1:side==='right'?1:0;osc.connect(pan);pan.connect(gain)}else osc.connect(gain);
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(.00000001,now-.01);
+  gain.gain.linearRampToValueAtTime(amp,now+.15);
+  gain.gain.setValueAtTime(amp,now+SWEEP_DURATION_S-.18);
+  gain.gain.linearRampToValueAtTime(.00000001,now+SWEEP_DURATION_S);
+  sweepSession={profile:p,side,min:limits.min,max:high,start:now,ctx,db,events:[],
+    frequency:limits.min,mic,micSamples:[],lastMicAt:-1};
+  tone={mode:'sweep',osc,gain,pan,start:now};
+  osc.onended=()=>{try{osc.disconnect();pan?.disconnect();gain.disconnect()}catch(e){}if(sweepSession?.profile===p)finishSweep()};
+  osc.start(now);osc.stop(now+SWEEP_DURATION_S+.03);
+  render();sweepFrame=requestAnimationFrame(sweepTick);
+  stream=null;
+ }catch(e){sweepNotice='No se pudo realizar el barrido: '+e.message;render()}
+ finally{
+  if(stream)stream.getTracks().forEach(x=>x.stop());
+  sweepStarting=false;
+ }
+}
+
 function gather(p){
  const collect=f=>{
   let samples=[];
@@ -1490,6 +1703,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  ${eqResultMarkup(p)}
  <details class="unobtrusive" id="technicalResults"><summary>Mediciones del test y fiabilidad · opcional</summary><div class="inner-detail">
  ${renderCalibrationTrace(p,r)}
+ ${sweepSummaryMarkup(p)}
  ${evidenceAuditMarkup(p)}
  <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>Igualación de sonoridad · experimento opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
  ${usable<p.bands.length?`<p class="small muted">${p.bands.length-usable} bandas no tienen ambos umbrales. El test ya conservó los límites observados. Solo repite voluntariamente si quieres mejorar la evidencia. ${button('↺ Repetir bandas sin umbral','retrymissing','btn-ghost')}</p>`:''}
@@ -1899,6 +2113,9 @@ function evidenceCsv(p){
 
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
+if(btn.dataset.sweepSide){if(!sweepSession){sweepSide=btn.dataset.sweepSide;render()}return}
+if(btn.dataset.sweepRange){if(!sweepSession){sweepRange=btn.dataset.sweepRange;render()}return}
+if(btn.dataset.sweepResponse){sweepLogResponse(btn.dataset.sweepResponse==='yes');return}
 if(btn.dataset.loudness){loudnessAction(btn.dataset.loudness);return}
 if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.context=defaultCalibrationContext(type);temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;temp.testStart=Math.min(temp.testStart,maxTestStart(temp));render();return}
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
@@ -1959,6 +2176,8 @@ case 'confirmlevel':if(current&&introStep===0&&volumePreviewPlayed&&tone?.mode!=
  render();
 }break;
 case 'ambient':await checkAmbient();break;
+case 'sweep-start':await startSweep();break;
+case 'sweep-finish':finishSweep();break;
 case 'endheard':if(current&&floorReached){logMeasure('stillheard')}break;
 case 'enduncertain':if(current&&floorReached)logMeasure('unconfirmed');break;
 case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'){
@@ -2026,6 +2245,7 @@ case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({ap
 case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
+if(t.id==='sweepMicChoice'){sweepMicEnabled=!!t.checked;return}
 if(t.id==='loudnessFrequency'&&current){stopTone();loudnessFreq=Number(t.value);loudnessOffsetDb=0;loudnessListened=new Set();loudnessMessage='Nueva frecuencia seleccionada. Compara las dos señales.';refreshLoudnessUI();return}
 if(current&&(t.id==='resultControlMin'||t.id==='resultControlMax')){
   const value=Number(t.value),field=t.id==='resultControlMin'?'controlMin':'controlMax';
