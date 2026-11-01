@@ -177,7 +177,8 @@ test('Spotify transfer guide keeps local audio upload and adapts to custom bands
   await page.locator('[data-nav="results"]').click();
   await expect(page.locator('#musicFile')).toBeAttached();
   await page.locator('#eqEditor [data-delta="1"]').click();
-  await page.locator('[data-act="transfer-open"]').click();
+  await page.locator('.transfer-card > summary').click();
+ await page.locator('[data-act="transfer-open"]').click();
   await page.locator('[data-transfer-target="spotify"]').click();
   await expect(page.locator('#transferPanel')).toContainText('Spotify Connect');
   await page.locator('[data-act="transfer-next"]').click();
@@ -198,7 +199,8 @@ test('YouTube Music iPhone shows external hardware fallback, not false automatic
   await newProfile(page, 'Auriculares YT');
   await page.locator('#uiLanguage').selectOption('es');
   await page.locator('[data-nav="results"]').click();
-  await page.locator('[data-act="transfer-open"]').click();
+  await page.locator('.transfer-card > summary').click();
+ await page.locator('[data-act="transfer-open"]').click();
   await page.locator('[data-transfer-target="youtube"]').click();
   await page.locator('[data-transfer-os="ios"]').click();
   await expect(page.locator('#transferPanel')).toContainText('no ofrece un ecualizador manual universal');
@@ -225,6 +227,7 @@ test('context is saved and raw threshold/automatic EQ remain visibly distinct', 
   expect(saved.context.windows).toBe('open');
   expect(saved.context.eqScale).toBe('steps');
   await page.locator('[data-nav="results"]').click();
+  await page.locator('#testRecords > summary').click();
   await expect(page.locator('#tracePanel')).toBeVisible();
   await expect(page.locator('#tracePanel')).toContainText('Medición original sin modificar');
   await expect(page.locator('#tracePanel')).toContainText('Corrección automática frente al ajuste final');
@@ -252,7 +255,9 @@ test('EQ PNG card marks unknown units, then exports positions using a user-decla
  await page.locator('#deviceName').fill('Auto PNG QA');
  await page.locator('[data-act="create"]').click();
  await page.locator('[data-nav="results"]').click();
- await expect(page.locator('#eqCardCanvas')).toBeVisible();
+ await expect(page.locator('#eqCardCanvas')).toHaveCount(0);
+ await expect(page.getByRole('heading',{name:/Tu ecualizador/})).toHaveCount(1);
+ await page.locator('#eqCardSection > summary').click();
  await expect(page.locator('#eqCardNotice')).toContainText('desconocida');
  await page.locator('#resultEqScale').selectOption('steps');
  await expect(page.locator('#resultEqStepDb')).toHaveValue('unknown');
@@ -273,7 +278,8 @@ test('optional loudness matching saves two relative responses without changing E
  await page.locator('[data-nav="results"]').click();
  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  const eqBefore=await page.locator('.eqband .eqval').allTextContents();
- await page.locator('#loudnessPanel summary').click();
+ await page.locator('#testRecords > summary').click();
+ await page.locator('#loudnessPanel > summary').click();
  await expect(page.locator('#loudnessFrequency')).toBeVisible();
  await page.locator('[data-loudness="record"]').click();
  await expect(page.locator('#loudnessStatus')).toContainText('Escucha primero ambas');
@@ -291,7 +297,8 @@ test('optional loudness matching saves two relative responses without changing E
  expect(await page.locator('.eqband .eqval').allTextContents()).toEqual(eqBefore);
  await page.reload();
  await page.locator('[data-nav="results"]').click();
- await page.locator('#loudnessPanel summary').click();
+ await page.locator('#testRecords > summary').click();
+ await page.locator('#loudnessPanel > summary').click();
  await expect(page.locator('#loudnessInner')).toContainText('Repetible');
  await noOverflow(page);
 });
@@ -301,6 +308,7 @@ test('cross-evidence CSV exports with units and leaves EQ untouched',async({page
  await page.locator('#deviceName').fill('Auto audit QA');
  await page.locator('[data-act="create"]').click();
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#testRecords > summary').click();
  await expect(page.locator('#evidenceAudit')).toBeVisible();
  const gains=await page.locator('.eqband .eqval').allTextContents();
  const event=page.waitForEvent('download');
@@ -363,6 +371,7 @@ test('3 dB per step is selectable, saved and retained in the result EQ guide',as
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(saved.context.eqStepDb).toBe('3');
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#eqCardSection > summary').click();
  await expect(page.locator('#resultEqScale')).toHaveValue('steps');
  await expect(page.locator('#resultEqStepDb')).toHaveValue('3');
  await page.locator('#resultEqStepDb').selectOption('2');
@@ -382,19 +391,24 @@ test('AF-02: changing a band keeps original measurements and synchronizes every 
  await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
  const freq=1000;
+ await page.locator('#testRecords > summary').click();
  const originalGraph=await page.locator('#tracePanel .trace-plot svg').innerHTML();
  const originalAuto=await page.locator('#tracePanel tbody tr').filter({has:page.getByRole('rowheader',{name:'1 kHz'})}).locator('td').nth(2).innerText();
- const pngBefore=await page.locator('#eqCardCanvas').evaluate(c=>c.toDataURL('image/png'));
+ const beforeDownload=page.waitForEvent('download');
+ await page.locator('[data-act="downloadpng"]').click();
+ const pngBefore=fs.readFileSync(await (await beforeDownload).path());
  await page.evaluate(()=>window.__audioPlayerBefore=document.getElementById('audioPlayer'));
  await page.locator('[data-eq-select="1000"]').click();
  await page.locator('#eqSlider').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}));});
  await expect(page.locator('[data-trace-final="1000"]')).toHaveText('+3 dB');
  await expect(page.locator('[data-eq-band="1000"] .eqval')).toHaveText('+3');
- await expect(page.locator('[data-eq-value="1000"]')).toContainText('+3');
+ await expect(page.locator('#eqSlider')).toHaveValue('3');
  await expect(page.locator('#eqSelectedValue')).toHaveText('+3 dB');
  await expect(page.locator('#eqChangeCount')).toHaveText('1 cambios');
- await expect(page.locator('.stat-grid .stat:nth-child(3) strong')).toHaveText('1');
- const pngAfter=await page.locator('#eqCardCanvas').evaluate(c=>c.toDataURL('image/png'));
+
+ const afterDownload=page.waitForEvent('download');
+ await page.locator('[data-act="downloadpng"]').click();
+ const pngAfter=fs.readFileSync(await (await afterDownload).path());
  expect(pngAfter).not.toBe(pngBefore);
  expect(await page.locator('#tracePanel .trace-plot svg').innerHTML()).toBe(originalGraph);
  expect(await page.locator('#tracePanel tbody tr').filter({has:page.getByRole('rowheader',{name:'1 kHz'})}).locator('td').nth(2).innerText()).toBe(originalAuto);
@@ -402,6 +416,7 @@ test('AF-02: changing a band keeps original measurements and synchronizes every 
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(saved.manual['1000']).toBe(3);
  const txtEvent=page.waitForEvent('download');
+ await page.locator('.eq-more-options > summary').click();
  await page.locator('[data-act="downloadtxt"]').click();
  const txt=await txtEvent;
  const contents=fs.readFileSync(await txt.path(),'utf8');
@@ -417,6 +432,7 @@ test('AF-02: transfer confirmation is invalidated after changing applied EQ valu
  await page.locator('[data-act="create"]').click();
  await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
+ await page.locator('.transfer-card > summary').click();
  await page.locator('[data-act="transfer-open"]').click();
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-next"]').click();
@@ -434,10 +450,12 @@ test('AF-02: physical EQ scale changes invalidate checked transfer bands',async(
  await page.locator('[data-act="create"]').click();
  await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
+ await page.locator('.transfer-card > summary').click();
  await page.locator('[data-act="transfer-open"]').click();
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-mark"]').click();
+ await page.locator('#eqCardSection > summary').click();
  await page.locator('#resultEqScale').selectOption('db');
  await page.locator('#resultEqScale').selectOption('steps');
  await expect(page.locator('#transferStatus')).toContainText('Cambió la escala');
@@ -474,18 +492,16 @@ test('PNG horizontal EQ exports a landscape image with frequency columns for 7 a
   await page.locator('#deviceName').fill('Horizontal EQ '+count);
   await page.locator('[data-act="create"]').click();
   await page.locator('[data-nav="results"]').click();
-  const canvas=page.locator('#eqCardCanvas');
-  const dims=await canvas.evaluate(c=>({w:c.width,h:c.height,signature:c.toDataURL('image/png').slice(0,30)}));
-  expect(dims.w).toBeGreaterThan(dims.h);
-  expect(dims.h).toBe(782);
-  expect(dims.signature).toContain('data:image/png;base64,');
-  await expect(canvas).toHaveAttribute('aria-label',/Ecualizador horizontal/);
+
+   await expect(page.locator('#eqCardCanvas')).toHaveCount(0);
+   await expect(page.getByRole('heading',{name:/Tu ecualizador/})).toHaveCount(1);
   const download=page.waitForEvent('download');
   await page.locator('[data-act="downloadpng"]').click();
   const png=await download;
   const file=fs.readFileSync(await png.path());
   expect(file.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
   expect(file.readUInt32BE(16)).toBeGreaterThan(file.readUInt32BE(20));
+   expect(file.readUInt32BE(20)).toBe(782);
   await noOverflow(page);
   await page.locator('[data-nav="setup"]').click();
  }
@@ -560,4 +576,24 @@ test('headphones cannot inherit the car full-scale setting',async({page})=>{
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(saved.type).toBe('headphones');
  expect(saved.testStart).toBe(-24);
+});
+
+test('single EQ groups controls, measurements and listening without duplicate graphs',async({page})=>{
+ await newProfile(page,'Mi EQ unificado');
+ await page.locator('[data-nav="results"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
+ await expect(page.getByRole('heading',{name:/Tu ecualizador/})).toHaveCount(1);
+ await expect(page.getByRole('heading',{name:/Mi ecualizador · resultado para aplicar/})).toHaveCount(0);
+ await expect(page.locator('#eqCardCanvas')).toHaveCount(0);
+ await expect(page.locator('[data-eq-band]')).toHaveCount(10);
+ await expect(page.locator('#eqCardSection')).not.toHaveAttribute('open','');
+ await expect(page.locator('#testRecords')).not.toHaveAttribute('open','');
+ await page.locator('#eqCardSection > summary').click();
+ await page.locator('#resultEqScale').selectOption('steps');
+ await expect(page.locator('#eqCardSection')).toHaveAttribute('open','');
+ await expect(page.locator('#resultEqStepDb')).toBeVisible();
+ await page.locator('#resultEqStepDb').selectOption('2');
+ await expect(page.locator('#eqCardSection')).toHaveAttribute('open','');
+ await expect(page.locator('#resultEqStepDb')).toHaveValue('2');
+ await noOverflow(page);
 });
