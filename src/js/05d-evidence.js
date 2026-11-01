@@ -61,7 +61,7 @@ function evidenceAuditMarkup(p){
  const rows=report.rows.map(x=>{
   const t=x.threshold,l=x.loudness,a=x.auto;
   const inline=x.inline.status?x.inline.status+' · '+x.inline.offsets.map(v=>v===null?'—':(v>=0?'+':'')+v+' dBFS').join(' / '):null;
-  const offsets=l.offsets.length?l.offsets.map(v=>(v>0?'+':'')+v).join(' / ')+' dBFS':'—';
+  const offsets=x.inline.status?(x.inline.offsets.map(v=>v===null?'—':(v>=0?'+':'')+v+' dBFS').join(' / ')||'—'):(l.offsets.length?l.offsets.map(v=>(v>0?'+':'')+v).join(' / ')+' dBFS':'—');
   return '<tr><th scope="row">'+fmt(x.f)+'</th><td>'+shown(t.first)+' / '+shown(t.second)+
    '<small style="display:block">'+esc(t.status)+'</small></td><td>'+offsets+
    '<small style="display:block">'+esc(inline||l.status)+'</small></td><td>'+
@@ -77,7 +77,7 @@ function evidenceAuditMarkup(p){
  'Para evaluar repetibilidad del test original, realiza dos búsquedas independientes.')+
  ' Registros históricos no independientes: '+n.historical+'. Comparaciones de sonoridad en la misma pasada: '+n.integrated+'. Doble comparación histórica: '+n.matchingPairs+'.</p>'+
  '<div class="trace-table-scroll"><table class="trace-table"><thead><tr><th>Frecuencia</th>'+
- '<th>Umbral pasada 1 / 2</th><th>Sonoridad comparación 1 / 2</th>'+
+ '<th>Umbral pasada 1 / 2</th><th>'+(p.integratedLoudness?'Sonoridad en esta pasada':'Sonoridad comparación 1 / 2')+'</th>'+
  '<th>EQ automático · estabilidad</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
  '<p class="tiny muted">Repetibilidad no demuestra precisión acústica ni preferencia musical. Los dBFS no son dB SPL ni ganancias del EQ. Los límites ±6 dBFS de la comparación se marcan como no concluyentes.</p>'+
  button('↓ Exportar evidencia CSV','download-audit','btn-alt full')+'</section>';
