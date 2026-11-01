@@ -212,43 +212,33 @@ test('YouTube Music iPhone shows external hardware fallback, not false automatic
   await noOverflow(page);
 });
 
-test('context is saved and raw threshold/automatic EQ remain visibly distinct', async ({page}) => {
-  await page.locator('[data-device="car"]').click();
-  await page.locator('#context-seat').selectOption('passenger');
-  await page.locator('#context-windows').selectOption('open');
-  await page.locator('#context-eqScale').selectOption('steps');
-  await page.locator('#context-eqStepDb').selectOption('unknown');
-  await page.locator('#deviceName').fill('Auto contexto QA');
-  await page.locator('[data-act="create"]').click();
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
-  expect(saved.context.seat).toBe('passenger');
-  expect(saved.context.windows).toBe('open');
-  expect(saved.context.eqScale).toBe('steps');
-  await page.locator('[data-nav="results"]').click();
-  await expect(page.locator('#tracePanel')).toBeVisible();
-  await expect(page.locator('#tracePanel')).toContainText('Medición original sin modificar');
-  await expect(page.locator('#tracePanel')).toContainText('Corrección automática frente al ajuste final');
-  await expect(page.locator('#tracePanel .trace-table tbody tr')).toHaveCount(7);
-  await expect(page.locator('#tracePanel')).toContainText('sin conversión dB/paso');
-  await noOverflow(page);
+test('user-first setup saves necessary EQ context and reports original thresholds', async ({page}) => {
+ await page.locator('[data-device="car"]').click();
+ await page.locator('[data-eq-step="unknown"]').click();
+ await page.locator('#deviceName').fill('Auto EQ sin conversión');
+ await page.locator('[data-act="create"]').click();
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(saved.context.eqScale).toBe('steps');
+ expect(saved.context.eqStepDb).toBe('unknown');
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#hearFrequencyReport tbody tr')).toHaveCount(7);
+ await expect(page.locator('#hearFrequencyReport')).toContainText('Sin conversión fiable');
+ await expect(page.locator('#tracePanel')).toContainText('Medición original sin modificar');
+ await noOverflow(page);
 });
-test('in-ear parameters persist and do not claim an acoustic measurement', async ({page}) => {
-  await page.locator('[data-device="headphones"]').click();
-  await page.locator('#context-subtype').selectOption('inear');
-  await page.locator('#context-seal').selectOption('poor');
-  await page.locator('#deviceName').fill('In ear QA');
-  await page.locator('[data-act="create"]').click();
-  await page.locator('[data-nav="results"]').click();
-  await expect(page.locator('#tracePanel')).toContainText('sellado no comprobado');
-  await page.reload();
-  await page.locator('[data-nav="results"]').click();
-  await expect(page.locator('#tracePanel')).toContainText('In-ear');
-  await noOverflow(page);
+test('headphones keep the independent-ear test without an invalid microphone claim',async({page})=>{
+ await page.locator('[data-device="headphones"]').click();
+ await page.locator('#deviceName').fill('Auriculares normales');
+ await page.locator('[data-act="create"]').click();
+ await expect(page.locator('#root')).toContainText('En auriculares usamos tus oídos');
+ await expect(page.locator('[data-act="mic-assist"]')).toHaveCount(0);
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#hearFrequencyReport tbody tr')).toHaveCount(10);
+ await noOverflow(page);
 });
-
 test('EQ PNG card marks unknown units, then exports positions using a user-declared 2 dB step', async ({page})=>{
  await page.locator('[data-device="car"]').click();
- await page.locator('#context-eqStepDb').selectOption('unknown');
+ await page.locator('[data-eq-step="unknown"]').click();
  await page.locator('#deviceName').fill('Auto PNG QA');
  await page.locator('[data-act="create"]').click();
  await page.locator('[data-nav="results"]').click();
@@ -354,10 +344,10 @@ test('verify mode starts a fresh search for the second pass',async({page})=>{
 
 test('3 dB per step is selectable, saved and retained in the result EQ guide',async({page})=>{
  await page.locator('[data-device="car"]').click();
- await page.locator('#context-eqScale').selectOption('steps');
- await expect(page.locator('#context-eqStepDb option')).toHaveCount(4);
- await page.locator('#context-eqStepDb').selectOption('3');
- await expect(page.locator('#context-eqStepDb')).toHaveValue('3');
+ await page.locator('[data-eq-unit="steps"]').click();
+ await expect(page.locator('[data-eq-step]')).toHaveCount(5);
+ await page.locator('[data-eq-step="3"]').click();
+ await expect(page.locator('[data-eq-step="3"]')).toHaveClass(/selected/);
  await page.locator('#deviceName').fill('Auto 3 dB por paso');
  await page.locator('[data-act="create"]').click();
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
@@ -429,7 +419,7 @@ test('AF-02: transfer confirmation is invalidated after changing applied EQ valu
 
 test('AF-02: physical EQ scale changes invalidate checked transfer bands',async({page})=>{
  await page.locator('[data-device="car"]').click();
- await page.locator('#context-eqStepDb').selectOption('unknown');
+ await page.locator('[data-eq-step="unknown"]').click();
  await page.locator('#deviceName').fill('AF02 rango');
  await page.locator('[data-act="create"]').click();
  await page.locator('#uiLanguage').selectOption('es');
@@ -493,12 +483,13 @@ test('PNG horizontal EQ exports a landscape image with frequency columns for 7 a
 
 test('physical car control limits are independent of recommended digital gain limits',async({page})=>{
  await page.locator('[data-device="car"]').click();
- await expect(page.locator('#context-eqScale')).toHaveValue('steps');
- await expect(page.locator('#context-eqStepDb')).toHaveValue('3');
+ await expect(page.locator('[data-eq-unit="steps"]')).toHaveClass(/selected/);
+ await expect(page.locator('[data-eq-step="3"]')).toHaveClass(/selected/);
  await expect(page.locator('#controlMin')).toHaveValue('-6');
  await expect(page.locator('#controlMax')).toHaveValue('6');
  await expect(page.locator('#eqMin')).toHaveValue('-6');
  await expect(page.locator('#eqMax')).toHaveValue('6');
+ await page.locator('#technicalSettings summary').click();
  await page.locator('#controlMin').fill('-4');
  await page.locator('#controlMax').fill('5');
  await page.locator('#deviceName').fill('Auto límites independientes');
