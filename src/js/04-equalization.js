@@ -1,6 +1,6 @@
 
 function gather(p){
- const collect=f=>{let samples=[];for(const side of p.channels==='separate'?['left','right']:['both']){const arr=p.measures[key(f,side)]||[];const valid=arr.filter(r=>r&&r.db!==null&&Number.isFinite(r.db)).map(r=>r.db);if(valid.length){samples.push({db:median(valid),quality:Math.max(...valid)-Math.min(...valid)<=6&&valid.length>=2?'good':'low',side})}}if(!samples.length)return {f,db:null,quality:'unmeasurable'};const values=samples.map(s=>s.db),spread=Math.max(...values)-Math.min(...values);return {f,db:median(values),quality:spread>9?'mixed':samples.every(s=>s.quality==='good')?'good':'low'}};
+ const collect=f=>{let samples=[];for(const side of p.channels==='separate'?['left','right']:['both']){const arr=p.measures[key(f,side)]||[];const valid=arr.filter(r=>r&&r.db!==null&&Number.isFinite(r.db)).map(r=>r.db);if(valid.length){samples.push({db:median(valid),quality:valid.length>=2&&!independentThresholdPair(p,f,side)?'legacy':valid.length>=2&&Math.max(...valid)-Math.min(...valid)<=6?'good':'low',side})}}if(!samples.length)return {f,db:null,quality:'unmeasurable'};const values=samples.map(s=>s.db),spread=Math.max(...values)-Math.min(...values);return {f,db:median(values),quality:spread>9?'mixed':samples.some(s=>s.quality==='legacy')?'legacy':samples.every(s=>s.quality==='good')?'good':'low'}};
  const allMeasured=[...new Set(Object.keys(p.measures).map(k=>Number(k.split('|')[0])).filter(Number.isFinite))].map(collect).filter(x=>x.db!==null).sort((a,b)=>a.f-b.f);
  return p.bands.map(f=>{let direct=collect(f);if(direct.db!==null||(p.testMode!=='quick'&&!p.formatFrom))return direct;
  const lo=allMeasured.filter(x=>x.f<f).pop(),hi=allMeasured.find(x=>x.f>f);
@@ -160,7 +160,8 @@ function rawFrequencyThreshold(p,f,side){
 function thresholdStatus(point){
  if(point.db===null)return 'Sin umbral confirmado';
  if(point.derived)return 'Interpolación; no medido aquí';
- if(point.quality==='good')return 'Repetible en dos pasadas';
+ if(point.quality==='good')return 'Repetible en dos búsquedas independientes';
+ if(point.quality==='legacy')return 'Segunda pasada histórica: confirmación, no búsqueda independiente';
  if(point.quality==='mixed')return 'Diferencias entre oídos';
  return 'Medición limitada; revisar';
 }

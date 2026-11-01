@@ -195,7 +195,7 @@ let profiles=readProfiles(),currentId='';try{currentId=localStorage.getItem(STAT
 let current=profiles.find(p=>p.id===currentId)||null;
 // Playback dBFS is not the acoustic sound-pressure level reaching the ear.
 const TEST_START_DB=-36, TEST_END_DB=-84, MAX_SAFE_DB=-24, SECONDS_PER_DB=3;
-const MAX_FIRST=60, MAX_VERIFY=18, MAX_STEPS=20;
+const MAX_FIRST=60, MAX_VERIFY=60, MAX_STEPS=20;
 const getStart=p=>clamp(p?.testStart!=null&&Number.isFinite(Number(p.testStart))?Number(p.testStart):TEST_START_DB,TEST_END_DB,MAX_SAFE_DB);
 const getFloor=p=>clamp(p?.testFloor!=null&&Number.isFinite(Number(p.testFloor))?Number(p.testFloor):TEST_END_DB,TEST_END_DB,Math.min(-36,getStart(p)-1));
 const QUICK_LIMIT=6;
@@ -207,15 +207,25 @@ function testBands(p){
  for(let i=0;i<n;i++){const idx=Math.round(i*(bands.length-1)/(n-1));if(!chosen.includes(bands[idx]))chosen.push(bands[idx]);}
  return chosen;
 }
+
+/* Independent search provenance: historical second-pass confirmations remain
+   preserved, but never count as independent threshold measurements. */
+const INDEPENDENT_PASS_METHOD='adaptive-v20-independent';
+function independentThresholdPair(p,f,side){
+ const a=p?.measures?.[key(f,side)]||[];
+ return p?.passes===2&&a.length>=2&&a[0]?.kind==='heard'&&
+  Number.isFinite(a[0].db)&&a[1]?.kind==='heard'&&
+  Number.isFinite(a[1].db)&&a[1].method===INDEPENDENT_PASS_METHOD;
+}
+
 let trial=null, introStep=0, ambientStatus='', ambientBusy=false;
 function newTrial(entry){
- const first=current?.measures?.[key(entry.f,entry.side)]?.[0]?.db;
- const prev=Number.isFinite(first)?clamp(first,getFloor(current)+1,getStart(current)):null;
+ // Both passes start without any threshold borrowed from earlier measurements.
+ // The second run is a new adaptive search, not a confirmation of pass 1.
  return {id:key(entry.f,entry.side)+'-'+entry.pass,
-  level:entry.pass===1&&prev!==null?prev:getStart(current),
-  phase:entry.pass===1?'verify':'coarse',heard:entry.pass===1?prev:null,
-  missed:entry.pass===1&&prev!==null?prev-1:null,verifyIndex:0,done:0,
-  awaiting:false,highConsent:false,history:[],lastTone:null};
+  level:getStart(current),phase:'coarse',heard:null,missed:null,
+  verifyIndex:0,done:0,awaiting:false,highConsent:false,
+  history:[],lastTone:null};
 }
 function boundaryVotes(t,level){
  let yes=0,no=0;

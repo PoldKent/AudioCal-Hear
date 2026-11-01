@@ -287,3 +287,38 @@ test('cross-evidence CSV exports with units and leaves EQ untouched',async({page
  expect(await page.locator('.eqband .eqval').allTextContents()).toEqual(gains);
  await noOverflow(page);
 });
+
+test('historical second pass is not represented as independent repetition',async({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await page.locator('[data-passes="2"]').click();
+ await page.locator('#deviceName').fill('Perfil antiguo');
+ await page.locator('[data-act="create"]').click();
+ await page.evaluate(()=>{
+   const list=JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'));
+   list[0].measures['64|both']=[{kind:'heard',db:-50,method:'adaptive-v18-explicit'},
+       {kind:'heard',db:-50,method:'adaptive-v18-explicit'}];
+   localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify(list));
+ });
+ await page.reload();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#evidenceAudit')).toContainText('Confirmación histórica');
+ await expect(page.locator('#evidenceAudit')).toContainText('Registros históricos no independientes: 1');
+ await expect(page.locator('#tracePanel')).toContainText('no búsqueda independiente');
+ await noOverflow(page);
+});
+test('verify mode starts a fresh search for the second pass',async({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await page.locator('[data-passes="2"]').click();
+ await page.locator('#deviceName').fill('Dos búsquedas independientes');
+ await page.locator('[data-act="create"]').click();
+ await page.evaluate(()=>{
+   const list=JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'));
+   for(const f of list[0].bands)list[0].measures[f+'|both']=[{kind:'heard',db:-50,method:'adaptive-v20-search'}];
+   localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify(list));
+ });
+ await page.reload();
+ await page.locator('[data-nav="test"]').click();
+ for(let i=0;i<3;i++)await page.locator('[data-act="introNext"]').click();
+ await expect(page.locator('#levelText')).toContainText('-36 dBFS');
+ await expect(page.locator('#root')).toContainText('Búsqueda independiente 2/2');
+});
