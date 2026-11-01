@@ -1204,7 +1204,10 @@ function transferBands(p){
  return presets[transferPreset]?.bands?.slice()||null;
 }
 function transferBounds(p){
- return transferRange==='profile'?[p.min,p.max]:(TRANSFER_LIMITS[transferRange]||[p.min,p.max]);
+ if(transferRange!=='profile')return TRANSFER_LIMITS[transferRange]||[p.min,p.max];
+ const context=normalizeCalibrationContext(p.context,p.type);
+ const ratio=context.eqScale==='steps'&&['1','2'].includes(context.eqStepDb)?Number(context.eqStepDb):1;
+ return [p.min*ratio,p.max*ratio]; // dB range, not physical positions
 }
 function transferMapping(p){
  const bands=transferBands(p);if(!bands)return null;
@@ -1242,13 +1245,38 @@ function transferNotice(p){
  if(transferTarget==='youtube')return 'La disponibilidad del ecualizador de YouTube Music varía por plataforma y dispositivo. AudioCal no puede modificar directamente su reproducción.';
  return p.type==='car'?'Ajusta el sonido solamente con el automóvil estacionado.':'El ecualizador de cada fabricante puede tener bandas y límites distintos.';
 }
-function transferLabel(entry){
+function transferLabel(entry,p=current){
  if(entry.kind==='unavailable')return 'Sin equivalente fiable · no modificar';
- return (entry.gain>0?'+':'')+entry.gain+' dB'+(entry.kind==='estimated'?' · aproximado':'')+(entry.limited?' · limitado al EQ':'');
+ const base=(entry.gain>0?'+':'')+entry.gain+' dB'+(entry.kind==='estimated'?' · aproximado':'')+(entry.limited?' · limitado al EQ':'');
+ if(transferTarget!=='device')return base;
+ const context=normalizeCalibrationContext(p.context,p.type);
+ if(transferPreset==='profile'&&transferRange==='profile'&&entry.kind==='exact'){
+  const physical=physicalEqControl(entry.gain,p,context);
+  if(physical.position===null)return base+' · sin conversión a control: verificar escala';
+  const signed=v=>(v>0?'+':'')+v;
+  return 'Control '+signed(physical.position)+' '+(context.eqScale==='db'?'dB':'posiciones')+
+   ' · solicitado '+base+' · real '+signed(physical.actualGain)+' dB'+
+   (physical.exact?'':' · diferencia '+signed(physical.delta)+' dB');
+ }
+ return base+' · sin equivalencia de posiciones del destino';
+}
+function transferInstruction(p,item){
+ if(item.gain===null)return 'No modificar esta banda';
+ if(transferTarget==='device'){
+  const context=normalizeCalibrationContext(p.context,p.type);
+  if(transferPreset==='profile'&&transferRange==='profile'&&item.kind==='exact'){
+   const physical=physicalEqControl(item.gain,p,context);
+   if(physical.position===null)return 'No mover el control hasta confirmar su unidad y dB por paso';
+   return 'Pon el control en '+(physical.position>0?'+':'')+physical.position+
+    (context.eqScale==='db'?' dB':' posiciones')+' (ganancia '+(physical.actualGain>0?'+':'')+physical.actualGain+' dB según escala declarada)';
+  }
+  if(context.eqScale!=='db')return 'No convertir a posiciones: confirma la escala del EQ de destino';
+ }
+ return item.gain>0?'Súbela '+item.gain+' dB':item.gain<0?'Bájala '+Math.abs(item.gain)+' dB':'Déjala en 0 dB';
 }
 function transferCopy(p){
  const list=transferMapping(p);
- return 'AudioCal Hear · '+p.name+'\nDestino: '+(transferTarget==='spotify'?'Spotify':transferTarget==='youtube'?'YouTube Music / EQ del dispositivo':'Ecualizador del dispositivo')+'\n'+(list||[]).map(x=>fmt(x.f)+' → '+transferLabel(x)).join('\n')+'\n\nAplica manualmente; revisa las frecuencias y el rango de tu equipo. No actives dos ecualizadores simultáneos.\n';
+ return 'AudioCal Hear · '+p.name+'\nDestino: '+(transferTarget==='spotify'?'Spotify':transferTarget==='youtube'?'YouTube Music / EQ del dispositivo':'Ecualizador del dispositivo')+'\n'+(list||[]).map(x=>fmt(x.f)+' → '+transferLabel(x,p)).join('\n')+'\n\nAplica manualmente; revisa las frecuencias y el rango de tu equipo. No actives dos ecualizadores simultáneos.\n';
 }
 function transferMarkup(){
  if(!current)return '';
@@ -1265,16 +1293,16 @@ function transferMarkup(){
   const formatOptions=[['profile','Las bandas de mi perfil'],['car7','Auto · 7 bandas'],['photo10','Auriculares · 10 bandas'],['iso7','Estándar · 7 bandas'],['iso10','Estándar · 10 bandas'],['five','Estándar · 5 bandas'],['iso15','15 bandas'],['iso31','31 bandas'],['custom','Escribir otras frecuencias']];
   content='<p class="compact-note">Mira el ecualizador de destino: ¿qué frecuencias muestra? No asumas que Spotify o YouTube Music tienen las mismas bandas que AudioCal.</p><label for="transferFormat">Frecuencias del ecualizador de destino</label><select class="field" id="transferFormat">'+formatOptions.map(([v,l])=>'<option value="'+v+'" '+(transferPreset===v?'selected':'')+'>'+esc(l)+'</option>').join('')+'</select>'+
   (transferPreset==='custom'?'<label for="transferCustom">Frecuencias reales (Hz, en orden)</label><input id="transferCustom" class="field" value="'+esc(transferCustom)+'" placeholder="60, 150, 400, 1000, 2400, 15000">'+button('Comprobar estas bandas','transfer-applyfreq','btn-alt full'):'')+
-  '<label for="transferRange">Límite de ganancia visible en ese ecualizador</label><select id="transferRange" class="field">'+[['profile','El del perfil ('+p.min+' a +'+p.max+' dB)'],['six','−6 a +6 dB'],['twelve','−12 a +12 dB'],['twenty','−20 a +20 dB']].map(([v,l])=>'<option value="'+v+'" '+(transferRange===v?'selected':'')+'>'+esc(l)+'</option>').join('')+'</select>'+
-  '<p class="tiny muted">Si el equipo no indica dB o usa otra escala, estos valores son solo una referencia visual, no una equivalencia exacta.</p>'+
+  '<label for="transferRange">Límite de ganancia visible en ese ecualizador</label><select id="transferRange" class="field">'+[['profile','El del perfil ('+p.min+' a +'+p.max+' '+(normalizeCalibrationContext(p.context,p.type).eqScale==='steps'?'posiciones':normalizeCalibrationContext(p.context,p.type).eqScale==='db'?'dB':'unidades no verificadas')+')'],['six','−6 a +6 dB'],['twelve','−12 a +12 dB'],['twenty','−20 a +20 dB']].map(([v,l])=>'<option value="'+v+'" '+(transferRange===v?'selected':'')+'>'+esc(l)+'</option>').join('')+'</select>'+
+  '<p class="tiny muted">Las posiciones del dispositivo solo se calculan para las bandas y el rango del perfil con equivalencia dB/paso documentada. En otro ecualizador no se presume esa equivalencia.</p>'+
   (list?'<p class="small muted">'+list.length+' bandas de destino · '+list.filter(x=>x.kind==='estimated').length+' aproximadas · '+list.filter(x=>x.kind==='unavailable').length+' sin equivalencia fiable</p>':'<p class="soft warning small">Introduce entre 2 y 31 frecuencias válidas, ascendentes, de 20 a 20.000 Hz.</p>');
  }else if(transferStep===2){
   if(!list)content='<p class="soft warning">Primero introduce frecuencias válidas.</p>';
   else{
    const item=list[transferBandIndex],inProgress=transferCompleted.has(item.f);
-   const movement=item.gain===null?'No modificar esta banda':item.gain>0?'Súbela '+item.gain+' dB':item.gain<0?'Bájala '+Math.abs(item.gain)+' dB':'Déjala en 0 dB';
+   const movement=transferInstruction(p,item);
    content='<p class="small muted">Banda '+(transferBandIndex+1)+' de '+count+' · '+transferCompleted.size+' revisadas</p>'+
-   '<div class="transfer-current"><div class="tiny muted">FRECUENCIA</div><div class="transfer-freq">'+esc(fmt(item.f))+'</div><div class="transfer-instruction">'+esc(movement)+'</div><p class="tiny muted">'+esc(transferLabel(item))+'</p></div>'+
+   '<div class="transfer-current"><div class="tiny muted">FRECUENCIA</div><div class="transfer-freq">'+esc(fmt(item.f))+'</div><div class="transfer-instruction">'+esc(movement)+'</div><p class="tiny muted">'+esc(transferLabel(item,p))+'</p></div>'+
    '<div class="row wrap">'+button(inProgress?'✓ Revisada':'✓ Ya ajusté esta banda','transfer-mark','btn-alt grow')+button('Siguiente banda →','transfer-nextband','btn-primary grow')+'</div>'+
    '<details class="unobtrusive"><summary>Ver la lista completa de ajustes</summary><div class="inner-detail">'+transferTable(list)+'</div></details>';
   }
@@ -1294,7 +1322,7 @@ function transferMarkup(){
  '<p id="transferStatus" role="status" class="tiny muted">'+esc(transferStatus)+'</p></div>';
 }
 function transferTable(list){
- return '<div class="transfer-table">'+list.map(x=>'<div class="transfer-line"><strong>'+esc(fmt(x.f))+'</strong><span>'+esc(transferLabel(x))+'</span></div>').join('')+'</div>';
+ return '<div class="transfer-table">'+list.map(x=>'<div class="transfer-line"><strong>'+esc(fmt(x.f))+'</strong><span>'+esc(transferLabel(x,current))+'</span></div>').join('')+'</div>';
 }
 function refreshTransfer(){const target=$('#transferPanel');if(!target)return;target.innerHTML=transferMarkup();localize(target)}
 
