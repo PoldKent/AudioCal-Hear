@@ -47,3 +47,29 @@ test('result directly lists each hearing band and actionable or unverified EQ po
  assert.match(eq,/Sin conversión fiable/);
  assert.match(eq,/r\.db===null\?'No confirmado'/);
 });
+
+test('integrated relative loudness is part of each frequency trial, not a duplicate results form',()=>{
+ assert.match(core,/function inlineLoudnessPending\(/);
+ assert.match(core,/integratedLoudness:p\.integratedLoudness===true/);
+ assert.match(hearing,/function playInlineMatch\(/);
+ assert.match(hearing,/function answerInlineMatch\(/);
+ assert.match(hearing,/function inlineRecord\(/);
+ assert.match(hearing,/integratedLoudness:true,inlineLoudness:\{\}/);
+ assert.match(eq,/Sonoridad: similar con/);
+ assert.doesNotMatch(eq, /id="loudnessPanel"/);
+});
+test('one-pass loudness observations are bounded, preserve exact source and remain independent of EQ',()=>{
+ const begin=core.indexOf('function normalizeInlineLoudness('),end=core.indexOf('const QUICK_LIMIT=',begin);
+ const context={Object,Number,Math,Array,Date,clamp:(v,a,b)=>Math.max(a,Math.min(b,v))};
+ vm.runInNewContext(core.slice(begin,end),context);
+ const raw={'160|both|0':{status:'matched',offsetDb:3,referenceDbfs:-42,trials:[{answer:'similar',offsetDb:3}],method:'arbitrary'},
+  '160|wrong|0':{status:'matched',offsetDb:5},
+  '400|both|0':{status:'matched',offsetDb:999},
+  '2500|left|0':{status:'bounded',offsetDb:null,referenceDbfs:-48,trials:[{answer:'target',offsetDb:-3}]}};
+ const normalized=context.normalizeInlineLoudness(raw,[160,400,2500]);
+ assert.equal(normalized['160|both|0'].offsetDb,3);
+ assert.equal(normalized['160|wrong|0'],undefined);
+ assert.equal(normalized['400|both|0'],undefined);
+ assert.equal(normalized['2500|left|0'].status,'bounded');
+ assert.doesNotMatch(eq.slice(eq.indexOf('function recommend('),eq.indexOf('function balanceMarkup(')),/inlineLoudness/);
+});
