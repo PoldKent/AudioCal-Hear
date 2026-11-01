@@ -178,7 +178,7 @@ function normalizedProfile(p,importing=false){
  if(bands.some(f=>!Number.isFinite(f)||f<20||f>20000)||new Set(bands).size!==bands.length||bands.some((f,i)=>i&&f<=bands[i-1]))return null;
  const safeNumber=(v,otherwise,min,max)=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?clamp(Number(v),min,max):otherwise;
  const min=safeNumber(p.min,-12,-30,-1),max=safeNumber(p.max,12,1,30);
- const testStart=safeNumber(p.testStart,-36,-84,-24),testFloor=safeNumber(p.testFloor,-84,-84,Math.min(-36,testStart-1));
+ const testStart=safeNumber(p.testStart,-36,-100,-24),testFloor=safeNumber(p.testFloor,-100,-100,Math.min(-36,testStart-1));
  const id=importing?'p'+Date.now()+Math.random().toString(36).slice(2,8):String(p.id||'').slice(0,100);
  if(!id)return null;
  const measures=Object.create(null),raw=p.measures&&typeof p.measures==='object'&&!Array.isArray(p.measures)?p.measures:{};
@@ -209,6 +209,12 @@ function normalizedProfile(p,importing=false){
   preset:Object.hasOwn(presets,p.preset)?p.preset:'custom',bands,min,max,step:1,
   channels:p.channels==='separate'?'separate':'both',passes:p.passes===2?2:1,
   testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,
+  // Freeze historical quick sampling so existing observations are never silently reassigned.
+  testBandPlan:p.testMode==='quick'?(
+   Array.isArray(p.testBandPlan)&&p.testBandPlan.length>0&&p.testBandPlan.length<=QUICK_LIMIT&&
+   p.testBandPlan.every(f=>bands.includes(f))?
+    p.testBandPlan.slice():legacyQuickBands(bands)
+  ):null,
   loudness:normalizeLoudness(p.loudness,bands),
   manual:finiteMap(p.manual,-30,30),balance:finiteMap(p.balance,-6,3),balanceProof:Object.fromEntries(bands.map(f=>[f,(Array.isArray(p.balanceProof?.[f])?p.balanceProof[f]:[]).slice(-10).filter(x=>x&&Number.isFinite(x.change)&&Math.abs(x.change)<=3).map(x=>({at:safeNumber(x.at,Date.now(),0,Date.now()+86400000),choices:Array.isArray(x.choices)?x.choices.slice(0,2).filter(q=>[-1,0,1].includes(q)):[],change:x.change,method:'music-ab-two-rounds'}))])),
   taste:{bass:safeNumber(taste.bass,0,-3,3),voices:safeNumber(taste.voices,0,-3,3),air:safeNumber(taste.air,0,-3,3)},
@@ -221,18 +227,43 @@ function readProfiles(){try{const saved=JSON.parse(localStorage.getItem(STORAGE)
 let profiles=readProfiles(),currentId='';try{currentId=localStorage.getItem(STATEKEY)||''}catch(e){};
 let current=profiles.find(p=>p.id===currentId)||null;
 // Playback dBFS is not the acoustic sound-pressure level reaching the ear.
-const TEST_START_DB=-36, TEST_END_DB=-84, MAX_SAFE_DB=-24, SECONDS_PER_DB=3;
+// 0 dBFS is a reference (digital full scale), NEVER an allowed test amplitude.
+const DIGITAL_REFERENCE_DBFS=0, TEST_START_DB=-36, TEST_END_DB=-100, MAX_SAFE_DB=-24, SECONDS_PER_DB=3;
 const MAX_FIRST=60, MAX_VERIFY=60, MAX_STEPS=20;
 const getStart=p=>clamp(p?.testStart!=null&&Number.isFinite(Number(p.testStart))?Number(p.testStart):TEST_START_DB,TEST_END_DB,MAX_SAFE_DB);
 const getFloor=p=>clamp(p?.testFloor!=null&&Number.isFinite(Number(p.testFloor))?Number(p.testFloor):TEST_END_DB,TEST_END_DB,Math.min(-36,getStart(p)-1));
 const QUICK_LIMIT=6;
+function legacyQuickBands(bands){
+ const sorted=bands.slice().sort((a,b)=>a-b);
+ if(sorted.length<=QUICK_LIMIT)return sorted;
+ const result=[];
+ for(let i=0;i<QUICK_LIMIT;i++){
+  const f=sorted[Math.round(i*(sorted.length-1)/(QUICK_LIMIT-1))];
+  if(!result.includes(f))result.push(f);
+ }
+ return result;
+}
 function testBands(p){
  const bands=p.bands.slice().sort((a,b)=>a-b);
  if(p.testMode!=='quick'||bands.length<=QUICK_LIMIT)return bands;
- const n=QUICK_LIMIT;
- const chosen=[];
- for(let i=0;i<n;i++){const idx=Math.round(i*(bands.length-1)/(n-1));if(!chosen.includes(bands[idx]))chosen.push(bands[idx]);}
- return chosen;
+ if(Array.isArray(p.testBandPlan)&&p.testBandPlan.length<=QUICK_LIMIT&&p.testBandPlan.length>0&&p.testBandPlan.every(f=>bands.includes(f)))
+  return p.testBandPlan.slice().sort((a,b)=>a-b);
+ // Choose a contiguous group of nearby frequencies, rather than six widely
+ // scattered tones that cannot ever pass the EQ algorithm's local-gap limits.
+ let best=null,score=-Infinity;
+ for(let i=0;i<=bands.length-QUICK_LIMIT;i++){
+  const group=bands.slice(i,i+QUICK_LIMIT);
+  const neighbors=group.slice(1,-1).filter((f,k)=>f/group[k]<=3.5&&group[k+2]/f<=3.5).length;
+  const middle=Math.sqrt(group[2]*group[3]);
+  const value=neighbors*100-Math.abs(Math.log2(middle/1000));
+  if(value>score){score=value;best=group;}
+ }
+ return best;
+}
+function autoCoverageMinimum(p){return Math.max(4,Math.ceil(p.bands.length*.55));}
+function quickAutoFeasibility(p){
+ const selected=testBands(p),structural=selected.slice(1,-1).filter((f,i)=>f/selected[i]<=3.5&&selected[i+2]/f<=3.5).length;
+ return {selected,structural,coverage: selected.length>=autoCoverageMinimum(p)};
 }
 
 /* Independent search provenance: historical second-pass confirmations remain
@@ -246,6 +277,9 @@ function independentThresholdPair(p,f,side){
 }
 
 let trial=null, introStep=0, ambientStatus='', ambientBusy=false;
+let channelVerified={left:false,right:false},channelCheckPlayed={left:false,right:false};
+function channelsReady(p){return p?.channels!=='separate'||(channelVerified.left&&channelVerified.right);}
+function resetChannelCheck(){channelVerified={left:false,right:false};channelCheckPlayed={left:false,right:false};}
 function newTrial(entry){
  // Both passes start without any threshold borrowed from earlier measurements.
  // The second run is a new adaptive search, not a confirmation of pass 1.
