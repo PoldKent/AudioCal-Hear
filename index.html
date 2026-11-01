@@ -470,7 +470,7 @@ function normalizeInlineLoudness(raw,bands){
    ['reference','target','similar','uncertain'].includes(t.answer)&&Number.isInteger(t.offsetDb)&&Math.abs(t.offsetDb)<=9)
    .map(t=>({answer:t.answer,offsetDb:t.offsetDb})):[];
   out[k]={status,offsetDb,referenceDbfs:Number.isFinite(v.referenceDbfs)?clamp(v.referenceDbfs,-100,-24):null,
-   trials,method:'in-pass-relative-loudness-v1'};
+   trials,at:Number.isFinite(v.at)?clamp(v.at,0,Date.now()+86400000):Date.now(),method:'in-pass-relative-loudness-v1'};
  }
  return out;
 }
@@ -901,7 +901,7 @@ function renderIntro(){
 let inlineMatch=null;
 function inlineMatchFor(entry){
  const id=inlineLoudnessKey(entry);
- if(!inlineMatch||inlineMatch.id!==id)inlineMatch={id,entry,offsetDb:0,tries:[],listened:false,message:''};
+ if(!inlineMatch||inlineMatch.id!==id||inlineMatch.profileId!==current?.id)inlineMatch={id,profileId:current?.id,entry,offsetDb:0,tries:[],listened:false,message:''};
  return inlineMatch;
 }
 function inlineMatchBase(p,entry){
@@ -975,7 +975,7 @@ function inlineRecord(status){
  const state=inlineMatchFor(e),base=inlineMatchBase(p,e);
  if(!p.inlineLoudness||typeof p.inlineLoudness!=='object')p.inlineLoudness={};
  p.inlineLoudness[state.id]={status,offsetDb:status==='matched'?state.offsetDb:null,
-  referenceDbfs:base,trials:state.tries.slice(),method:'in-pass-relative-loudness-v1'};
+  referenceDbfs:base,trials:state.tries.slice(),at:Date.now(),method:'in-pass-relative-loudness-v1'};
  inlineMatch=null;stopTone();touch();render();
 }
 function answerInlineMatch(answer){
@@ -999,7 +999,7 @@ function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea
  const p=current,items=plan(p),total=items.length,missing=firstMissing(p);
  const pending=inlineLoudnessPending(p);
  if(pending){
-  if(pending.f===1000){p.inlineLoudness[inlineLoudnessKey(pending)]={status:'reference',offsetDb:null,referenceDbfs:null,trials:[],method:'in-pass-relative-loudness-v1'};touch();return renderTest()}
+  if(pending.f===1000){p.inlineLoudness[inlineLoudnessKey(pending)]={status:'reference',offsetDb:null,referenceDbfs:null,trials:[],method:'in-pass-relative-loudness-v1',at:Date.now()};touch();return renderTest()}
   return renderInlineMatch(p,pending,total);
  }
  if(missing<0)return `<div class="card center"><h2>✓ Búsquedas realizadas</h2><p>Se registraron ${total} búsquedas (no necesariamente ${total} umbrales confirmados) para <strong data-profile-name="true">${esc(p.name)}</strong>. Si no se encontró el umbral, no se inventa ninguna medida.</p>${button('Ver ajustes recomendados','results','btn-primary full')}${button('Repetir examen desde cero','resettest','btn-ghost full')}</div>`;
@@ -1108,7 +1108,7 @@ function logMeasure(kind){
  if(current.integratedLoudness&&!current.inlineLoudness?.[inlineLoudnessKey(e)]){
   const observation=current.measures[k][e.pass];
   const status=e.f===1000?'reference':(observation.kind==='heard'||observation.kind==='stillheard')?null:'unavailable';
-  if(status){if(!current.inlineLoudness)current.inlineLoudness={};current.inlineLoudness[inlineLoudnessKey(e)]={status,offsetDb:null,referenceDbfs:null,trials:[],method:'in-pass-relative-loudness-v1'}}
+  if(status){if(!current.inlineLoudness)current.inlineLoudness={};current.inlineLoudness[inlineLoudnessKey(e)]={status,offsetDb:null,referenceDbfs:null,trials:[],method:'in-pass-relative-loudness-v1',at:Date.now()}}
  }
  touch();render();
 }
@@ -1613,8 +1613,12 @@ function renderFrequencySummary(p,rows){
  const physical=physicalEqControl(r.gain,p,context);
  const obs=r.db===null?'No confirmado':(pair(r.f)||r.db+' dBFS');
  const mic=p.type==='headphones'?'':(p.acoustic?.[r.f]?.detected?' · mic: tono observado':p.acoustic?.[r.f]?' · mic: inconcluso':'');
- const loud=p.inlineLoudness?.[r.f+'|'+(p.channels==='separate'?'left':'both')+'|0'];
- const loudLabel=loud?.status==='matched'?'Sonoridad: similar con '+(loud.offsetDb>0?'+':'')+loud.offsetDb+' dBFS relativo':loud?.status==='bounded'?'Sonoridad: diferencia sin igualación confirmada':loud?.status==='reference'?'Sonoridad: frecuencia de referencia':loud?.status==='unavailable'?'Sonoridad: no concluyente':'Sonoridad: sin medir';
+ const loudSides=p.channels==='separate'?['left','right']:['both'];
+ const loudLabel=loudSides.map(side=>{
+  const l=p.inlineLoudness?.[r.f+'|'+side+'|0'];
+  const detail=l?.status==='matched'?'parecida con '+(l.offsetDb>0?'+':'')+l.offsetDb+' dBFS relativo (orientativo)':l?.status==='bounded'?'diferencia sin igualdad confirmada':l?.status==='reference'?'frecuencia de referencia':l?.status==='unavailable'?'no concluyente':'sin comparar';
+  return (loudSides.length===2?(side==='left'?'Izq. ':'Der. '):'Sonoridad: ')+detail;
+ }).join(' · ');
  const unit=physical.position===null?'Sin conversión fiable':(physical.position>0?'+':'')+physical.position+(context.eqScale==='db'?' dB':' pasos');
  return `<tr><th scope="row">${fmt(r.f)}</th><td>${esc(obs)}<small style="display:block">${mic}</small><small style="display:block">${esc(loudLabel)}</small></td><td>${confidence(r)}</td><td><strong>${r.gain>0?'+':''}${r.gain} dB</strong><small style="display:block">${unit}</small></td></tr>`;
  }).join('')}</tbody></table></div><p class="tiny muted">Si la equivalencia de pasos es desconocida, no se inventan posiciones físicas. El test no demuestra que una frecuencia audible necesite recortarse.</p></section>`;
@@ -1844,111 +1848,12 @@ function transferTable(list){
  return '<div class="transfer-table">'+list.map(x=>'<div class="transfer-line"><strong>'+esc(fmt(x.f))+'</strong><span>'+esc(transferLabel(x,current))+'</span></div>').join('')+'</div>';
 }
 function refreshTransfer(){const target=$('#transferPanel');if(!target)return;target.innerHTML=transferMarkup();localize(target)}
-
-/* Optional loudness matching: raw relative comparisons only; never modifies recommend(). */
-let loudnessFreq=null,loudnessOffsetDb=0,loudnessListened=new Set(),loudnessMessage='';
-function resetLoudnessSession(){stopTone();loudnessFreq=null;loudnessOffsetDb=0;loudnessListened=new Set();loudnessMessage=''}
+// Historical optional loudness records remain readable for imported profiles.
+// V2 measures relative loudness immediately after each frequency threshold.
+// The old independent matching interface and its duplicate audio controls are gone.
+function resetLoudnessSession(){stopTone()}
 function loudnessEligibleBands(p){
  return p.bands.filter(f=>f>=100&&f<=10000&&Math.abs(Math.log2(f/1000))>.08);
-}
-function loudnessSelectedBand(p){
- const eligible=loudnessEligibleBands(p);
- if(!eligible.length)return null;
- if(!eligible.includes(loudnessFreq))loudnessFreq=eligible[0];
- return loudnessFreq;
-}
-function loudnessRowText(samples){
- if(!samples?.length)return 'Sin datos';
- const offsets=samples.map(x=>(x.offsetDb>=0?'+':'')+x.offsetDb+' dBFS').join(' / ');
- return offsets+' · '+loudnessEvidenceStatus(samples);
-}
-function loudnessMarkup(p){
- const bands=loudnessEligibleBands(p),selected=loudnessSelectedBand(p);
- const records=p.loudness||{};
- if(selected===null)return '<p class="compact-note">Este ecualizador no tiene bandas entre 100 Hz y 10 kHz distintas de la referencia de 1 kHz. Conserva el resultado original del test.</p>';
- const samples=records[selected]||[],count=samples.length;
- const rows=bands.map(f=>'<tr><th scope="row">'+fmt(f)+'</th><td>'+esc(loudnessRowText(records[f]))+'</td></tr>').join('');
- return `<p class="compact-note"><strong>Procedimiento exploratorio, independiente del EQ.</strong> Escucha dos tonos de 1 segundo: referencia 1 kHz a −48 dBFS y frecuencia evaluada entre −54 y −42 dBFS. Son niveles digitales, no niveles seguros de presión sonora garantizados. Mantén un volumen físico bajo, fijo y cómodo. No intentes compensar tonos inaudibles subiendo el volumen.</p>
- <p class="tiny muted">Compara su intensidad percibida, no su timbre. Se necesitan dos comparaciones por banda. No se utilizan estas diferencias para subir ni bajar automáticamente el ecualizador.</p>
- <label for="loudnessFrequency">Frecuencia a comparar contra 1 kHz</label>
- <select id="loudnessFrequency" class="field">${bands.map(f=>'<option value="'+f+'" '+(f===selected?'selected':'')+'>'+fmt(f)+'</option>').join('')}</select>
- <div class="loudness-work">
- <p class="small"><strong>${count>=2?'Dos respuestas guardadas':'Comparación '+(count+1)+' de 2'}</strong> · ajuste relativo de la frecuencia evaluada:</p>
- <div class="loudness-offset">
- <button type="button" data-loudness="minus" aria-label="Reducir señal comparada 1 dB">−</button>
- <strong>${loudnessOffsetDb>=0?'+':''}${loudnessOffsetDb} dBFS respecto a referencia</strong>
- <button type="button" data-loudness="plus" aria-label="Aumentar señal comparada 1 dB">+</button></div>
- <div class="row wrap"><button type="button" class="btn btn-alt grow" data-loudness="reference">▶ Referencia 1 kHz</button>
- <button type="button" class="btn btn-alt grow" data-loudness="target">▶ ${fmt(selected)}</button></div>
- <div class="row wrap"><button type="button" class="btn btn-primary grow" data-loudness="record">${count>=2?'Volver a medir esta banda':'Registrar comparación'}</button>
- <button type="button" class="btn btn-ghost grow" data-loudness="stop">■ Detener</button></div>
- <p class="small" role="status" id="loudnessStatus">${esc(loudnessMessage||'Escucha ambas señales por separado antes de registrar una comparación. Si no distingues los sonidos, omite esta banda.')}</p>
- <p class="tiny muted">Las bandas fuera de 100 Hz–10 kHz se excluyen de esta prueba exploratoria, pero siguen presentes en tu EQ y test principal.</p>
- </div>
- <div class="trace-table-scroll"><table class="trace-table"><thead><tr><th>Banda</th><th>Comparaciones relativas guardadas</th></tr></thead><tbody>${rows}</tbody></table></div>
- <p class="tiny muted">Un valor positivo significa que amplificaste digitalmente la señal comparada para percibirla semejante a la referencia. NO significa que el EQ deba aumentar ese valor: la sensibilidad de cada frecuencia y el entorno ya producen diferencias normales.</p>`;
-}
-function refreshLoudnessUI(){
- const panel=$('#loudnessInner');
- if(panel&&current)panel.innerHTML=loudnessMarkup(current);
- localize(document.body);
-}
-async function playLoudnessSample(which){
- if(!current||page!=='results')return;
- const f=loudnessSelectedBand(current);if(f===null)return;
- const profileId=current.id;
- const frequency=which==='reference'?1000:f;
- const db=LOUDNESS_REFERENCE_DBFS+(which==='target'?loudnessOffsetDb:0);
- if(db>LOUDNESS_REFERENCE_DBFS+LOUDNESS_OFFSET_LIMIT)return;
- try{
-  stopTone();
-  if(playerAudio)playerAudio.pause();
-  const ctx=await ensureAudio();
-  if(!current||current.id!==profileId||page!=='results'||loudnessSelectedBand(current)!==f)return;
-  if(frequency>=ctx.sampleRate/2){loudnessMessage='Frecuencia fuera del rango reproducible en este equipo.';refreshLoudnessUI();return}
-  const oscillator=ctx.createOscillator(),gain=ctx.createGain();
-  oscillator.type='sine';oscillator.frequency.value=frequency;
-  oscillator.connect(gain);gain.connect(ctx.destination);
-  const t=ctx.currentTime+.03,amp=Math.pow(10,db/20);
-  gain.gain.setValueAtTime(0.00000001,t);
-  gain.gain.linearRampToValueAtTime(amp,t+.1);
-  gain.gain.setValueAtTime(amp,t+.85);
-  gain.gain.linearRampToValueAtTime(.00000001,t+.98);
-  oscillator.start(t);oscillator.stop(t+1.03);
-  oscillator.onended=()=>{try{oscillator.disconnect();gain.disconnect()}catch(e){}if(tone?.osc===oscillator)tone=null};
-  tone={mode:'loudness',osc:oscillator,gain,start:t};
-  loudnessListened.add(which);
-  loudnessMessage='Señal '+(which==='reference'?'de referencia':'evaluada')+' reproducida a '+db+' dBFS digitales. Compara sin cambiar el volumen físico.';
-  refreshLoudnessUI();
- }catch(e){loudnessMessage='No se pudo reproducir el tono: '+e.message;refreshLoudnessUI()}
-}
-function recordLoudnessSample(p){
- const f=loudnessSelectedBand(p);
- if(f===null)return false;
- if(!loudnessListened.has('reference')||!loudnessListened.has('target')){
-  loudnessMessage='Escucha primero ambas señales de esta comparación.';return false;
- }
- if(!p.loudness||typeof p.loudness!=='object')p.loudness={};
- let records=Array.isArray(p.loudness[f])?p.loudness[f]:[];
- if(records.length>=2)records=[];
- records=[...records,{offsetDb:loudnessOffsetDb,referenceDbfs:LOUDNESS_REFERENCE_DBFS,
-  method:'relative-tone-match-v1',at:Date.now()}];
- p.loudness[f]=records;
- loudnessMessage=records.length===1?'Primera comparación registrada. Repite con los mismos niveles físicos de escucha.':
-  'Dos comparaciones registradas: '+loudnessEvidenceStatus(records)+'. Estos datos no modifican el EQ.';
- loudnessOffsetDb=0;loudnessListened=new Set();
- touch();return true;
-}
-function loudnessAction(action){
- if(!current)return;
- if(action==='stop'){stopTone();loudnessMessage='Tono detenido.';refreshLoudnessUI();return}
- if(action==='reference'||action==='target'){void playLoudnessSample(action);return}
- if(action==='plus'||action==='minus'){
-  stopTone();loudnessOffsetDb=clamp(loudnessOffsetDb+(action==='plus'?1:-1),-LOUDNESS_OFFSET_LIMIT,LOUDNESS_OFFSET_LIMIT);
-  loudnessListened.delete('target');
-  loudnessMessage='Ajuste '+(loudnessOffsetDb>0?'+':'')+loudnessOffsetDb+' dBFS. Vuelve a escuchar la señal evaluada.';
- }else if(action==='record'){stopTone();recordLoudnessSample(current)}
- refreshLoudnessUI();
 }
 
 /* Audits repeatability only. No equal-loudness-to-EQ conversion. */
@@ -1975,6 +1880,8 @@ function evidenceReport(p){
   const earsDiffer=first.length===2&&Math.abs(first[0]-first[1])>9;
   const repeated=paired&&!earsDiffer&&trials.every(x=>Math.abs(x[0]-x[1])<=6)&&
    (second.length<2||Math.abs(second[0]-second[1])<=9);
+  const integrated=sides.map(side=>p.inlineLoudness?.[f+'|'+side+'|0']).filter(Boolean);
+  const inlineStatus=integrated.length?integrated.map(t=>t.status==='matched'?'Igualada (descriptiva)':t.status==='bounded'?'Diferencia sin igualdad':t.status==='reference'?'Referencia':'No concluyente').join(' / '):null;
   const raw=Array.isArray(p.loudness?.[f])?p.loudness[f]:[];
   const offsets=raw.slice(0,2).filter(x=>Number.isInteger(x?.offsetDb)&&Math.abs(x.offsetDb)<=6).map(x=>x.offsetDb);
   const ceiling=offsets.some(x=>Math.abs(x)===6);
@@ -1991,6 +1898,7 @@ function evidenceReport(p){
   return {f,threshold:{first:first.length?median(first):null,second:second.length?median(second):null,
     paired,repeated,historical,status:thresholdStatus},
    loudness:{offsets,eligible:eligible.includes(f),stable:matchStable,status:matchStatus},
+   inline:{status:inlineStatus,offsets:integrated.map(x=>x.status==='matched'?x.offsetDb:null)},
    auto:{gain:auto[i].base,stable:autoStable,status:autoStatus}};
  });
  const count={threshold:rows.filter(x=>x.threshold.repeated).length,
@@ -1998,6 +1906,8 @@ function evidenceReport(p){
   historical:rows.filter(x=>x.threshold.historical).length,
   matching:rows.filter(x=>x.loudness.stable).length,
   matchingPairs:rows.filter(x=>x.loudness.offsets.length===2).length,
+  integrated:rows.filter(x=>x.inline.status!==null).length,
+  integratedMatched:rows.filter(x=>x.inline.offsets.some(Number.isFinite)).length,
   automatic:rows.filter(x=>x.auto.stable).length,
   active:rows.filter(x=>x.auto.gain!==0).length};
  return {version:EVIDENCE_AUDIT_VERSION,algorithm:EQ_ALGORITHM_VERSION,context:calibrationContextLabel(p),rows,count};
@@ -2007,23 +1917,24 @@ function evidenceAuditMarkup(p){
  const shown=v=>v===null?'—':v+' dBFS';
  const rows=report.rows.map(x=>{
   const t=x.threshold,l=x.loudness,a=x.auto;
-  const offsets=l.offsets.length?l.offsets.map(v=>(v>0?'+':'')+v).join(' / ')+' dBFS':'—';
+  const inline=x.inline.status?x.inline.status+' · '+x.inline.offsets.map(v=>v===null?'—':(v>=0?'+':'')+v+' dBFS').join(' / '):null;
+  const offsets=x.inline.status?(x.inline.offsets.map(v=>v===null?'—':(v>=0?'+':'')+v+' dBFS').join(' / ')||'—'):(l.offsets.length?l.offsets.map(v=>(v>0?'+':'')+v).join(' / ')+' dBFS':'—');
   return '<tr><th scope="row">'+fmt(x.f)+'</th><td>'+shown(t.first)+' / '+shown(t.second)+
    '<small style="display:block">'+esc(t.status)+'</small></td><td>'+offsets+
-   '<small style="display:block">'+esc(l.status)+'</small></td><td>'+
+   '<small style="display:block">'+esc(inline||l.status)+'</small></td><td>'+
    (a.gain>0?'+':'')+a.gain+' dB<small style="display:block">'+esc(a.status)+'</small></td></tr>';
  }).join('');
  return '<section id="evidenceAudit" class="evidence-audit">'+
  '<h2>Validar la estabilidad de los resultados</h2>'+
  '<p class="small muted">Comparación independiente. No modifica la medición ni la corrección automática.</p>'+
  '<div class="evidence-metrics"><div><strong>'+n.threshold+'/'+p.bands.length+'</strong><span>Umbrales repetibles</span></div>'+
- '<div><strong>'+n.matching+'/'+loudnessEligibleBands(p).length+'</strong><span>Sonoridad repetible</span></div>'+
+ '<div><strong>'+(p.integratedLoudness?n.integratedMatched+'/'+p.bands.length:n.matching+'/'+loudnessEligibleBands(p).length)+'</strong><span>'+(p.integratedLoudness?'Sonoridad igualada en esta pasada':'Sonoridad repetible histórica')+'</span></div>'+
  '<div><strong>'+n.automatic+'/'+n.active+'</strong><span>Dirección del EQ repetida</span></div></div>'+
  '<p class="compact-note">'+(p.passes===2?'Umbrales con dos pasadas: '+n.thresholdPairs+'.':
  'Para evaluar repetibilidad del test original, realiza dos búsquedas independientes.')+
- ' Registros históricos no independientes: '+n.historical+'. Comparaciones dobles de sonoridad: '+n.matchingPairs+'.</p>'+
+ ' Registros históricos no independientes: '+n.historical+'. Comparaciones de sonoridad en la misma pasada: '+n.integrated+'. Doble comparación histórica: '+n.matchingPairs+'.</p>'+
  '<div class="trace-table-scroll"><table class="trace-table"><thead><tr><th>Frecuencia</th>'+
- '<th>Umbral pasada 1 / 2</th><th>Sonoridad comparación 1 / 2</th>'+
+ '<th>Umbral pasada 1 / 2</th><th>'+(p.integratedLoudness?'Sonoridad en esta pasada':'Sonoridad comparación 1 / 2')+'</th>'+
  '<th>EQ automático · estabilidad</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
  '<p class="tiny muted">Repetibilidad no demuestra precisión acústica ni preferencia musical. Los dBFS no son dB SPL ni ganancias del EQ. Los límites ±6 dBFS de la comparación se marcan como no concluyentes.</p>'+
  button('↓ Exportar evidencia CSV','download-audit','btn-alt full')+'</section>';
@@ -2034,16 +1945,16 @@ function evidenceCsv(p){
   ['Algoritmo',r.algorithm],['Informe',r.version],['Perfil',p.name],['Contexto',r.context],['Aclaración histórica','Las confirmaciones antiguas no cuentan como búsquedas independientes'],
   ['Frecuencia Hz','Umbral pasada 1 dBFS','Umbral pasada 2 dBFS','Estado umbral',
    'Sonoridad comparación 1 dBFS relativo','Sonoridad comparación 2 dBFS relativo',
+   'Sonoridad de esta pasada dBFS relativo','Estado sonoridad integrada',
    'Estado sonoridad','EQ automático dB','Estado EQ']];
  for(const x of r.rows)lines.push([x.f,x.threshold.first,x.threshold.second,x.threshold.status,
-  x.loudness.offsets[0]??'',x.loudness.offsets[1]??'',x.loudness.status,x.auto.gain,x.auto.status]);
+  x.loudness.offsets[0]??'',x.loudness.offsets[1]??'',x.inline.offsets.filter(Number.isFinite).join(' / '),x.inline.status||'',x.loudness.status,x.auto.gain,x.auto.status]);
  return '\uFEFF'+lines.map(row=>row.map(q).join(',')).join('\r\n')+'\r\n';
 }
 
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
 if(btn.dataset.inlineChoice){answerInlineMatch(btn.dataset.inlineChoice);return}
-if(btn.dataset.loudness){loudnessAction(btn.dataset.loudness);return}
 if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.context=defaultCalibrationContext(type);temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;temp.testStart=Math.min(temp.testStart,maxTestStart(temp));render();return}
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(btn.dataset.transferOs&&current){transferOS=btn.dataset.transferOs;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();return}
@@ -2156,7 +2067,6 @@ case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({ap
 case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
-if(t.id==='loudnessFrequency'&&current){stopTone();loudnessFreq=Number(t.value);loudnessOffsetDb=0;loudnessListened=new Set();loudnessMessage='Nueva frecuencia seleccionada. Compara las dos señales.';refreshLoudnessUI();return}
 if(current&&(t.id==='resultControlMin'||t.id==='resultControlMax')){
   const value=Number(t.value),field=t.id==='resultControlMin'?'controlMin':'controlMax';
   if(!Number.isInteger(value)||(field==='controlMin'&&(value>=0||value<-30))||(field==='controlMax'&&(value<=0||value>30))){
