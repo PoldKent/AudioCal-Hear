@@ -122,7 +122,8 @@ test('EQ PNG positioning is only exact for verified control units',()=>{
 });
 test('PNG export is integrated into source and monolithic app',()=>{
  const html=fs.readFileSync('index.html','utf8');
- for(const word of ['id="eqCardCanvas"','function saveEqCardPng(','case \'downloadpng\'','eqStepDb:\'unknown\''])assert.ok(html.includes(word),word);
+ for(const word of ["function saveEqCardPng(","document.createElement('canvas')","case 'downloadpng'","eqStepDb:'unknown'"])assert.ok(html.includes(word),word);
+ assert.doesNotMatch(html,/id="eqCardCanvas"/,'Only the live EQ may render; PNG is generated when requested');
  const src=fs.readFileSync('src/js/04-equalization.js','utf8');
  assert.match(src,/toDataURL\('image\/png'\)/);
  assert.match(src,/SIN CONVERSIÓN VALIDADA/);
@@ -375,7 +376,7 @@ test('an uncalibrated 10-band test can suggest small, optional starting adjustme
 test('results foreground actionable EQ and keep original evidence accessible but collapsed',()=>{
  const js=fs.readFileSync('src/js/04-equalization.js','utf8');
  assert.match(js,/id="starterGuide"/);
- assert.match(js,/Qué poner en tu ecualizador/);
+ assert.match(js,/Propuesta del test/);
  assert.match(js,/id="technicalResults"/);
  assert.match(js,/starter-apply/);
  assert.match(js,/starter-copy/);
