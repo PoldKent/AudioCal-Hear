@@ -18,12 +18,11 @@ function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea
  const item=items[missing],active=tone?.mode==='test',keyName=item.side==='left'?'OÍDO IZQUIERDO':item.side==='right'?'OÍDO DERECHO':'AMBOS CANALES';
  const id=key(item.f,item.side)+'-'+item.pass;
  if(!trial||trial.id!==id)trial=newTrial(item);
- if(item.pass===1&&!Number.isFinite(trial.heard)){logMeasure('timeout');return renderTest()}
- const pct=Math.round(doneCount(p)/total*100),level=trial.level;
+  const pct=Math.round(doneCount(p)/total*100),level=trial.level;
  const phase=trial.phase==='coarse'?'Búsqueda rápida · hasta 12 dB':trial.phase==='refine'?'Ajuste fino · hasta 1 dB':trial.phase==='recheck'?'Comprobación adicional':'Confirmación del umbral';
  return `<section class="hero"><p class="eyebrow">HEAR TEST · GUÍA ADAPTATIVA</p><h1>¿Lo escuchaste?</h1><p class="subtle">Cada nivel se reproduce por separado. Responde explícitamente para continuar. No cambies el volumen del teléfono.</p></section>
  <section class="card"><div class="row" style="justify-content:space-between"><strong data-profile-name="true">${esc(p.name)}</strong><span class="tag">${doneCount(p)+1} / ${total}</span></div>
- <div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><p class="center small muted">${keyName} · ${phase} · Repetición ${item.pass+1}/${p.passes}</p>
+ <div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><p class="center small muted">${keyName} · ${phase} · Búsqueda independiente ${item.pass+1}/${p.passes}</p>
  <div class="wavebox"><span class="muted small">FRECUENCIA ACTUAL</span><div class="frequency">${fmt(item.f)}</div><p class="small muted">Nivel de la prueba: <strong id="levelText">${level} dBFS</strong></p><div class="wave" aria-hidden="true" id="waves">${Array.from({length:32},(_,i)=>`<span style="height:${6+Math.round(Math.abs(Math.sin(i*.71)*30))}px"></span>`).join('')}</div></div>
  <div class="soft center"><strong>${active?'Escuchando · 3 segundos':trial.awaiting?'¿Escuchaste el sonido?':'Listo para esta frecuencia'}</strong><p class="small muted">${phase} · ${trial.done}/${MAX_STEPS} niveles examinados</p>${active?`<span class="hold-time" id="holdSeconds">3.0 s</span><div class="hold-meter"><div id="holdProgress"></div></div>`:''}</div>
  ${floorReached?'':active||trial.awaiting?`<div class="mini-options"><button class="choice" type="button" data-act="answerYes"><strong>✓ Sí lo escucho</strong><span>El tono era audible</span></button><button class="choice" type="button" data-act="answerNo"><strong>✕ Ya no lo escucho</strong><span>No fue audible</span></button></div>${!active&&trial.awaiting?`<p class="tiny center muted">Puedes volver a reproducir antes de contestar.</p>${button('▶ Repetir este nivel','play','btn-ghost full')}`:''}`:
@@ -83,8 +82,8 @@ function logMeasure(kind){
  const k=key(e.f,e.side),db=kind==='heard'&&trial&&Number.isFinite(trial.heard)&&Number.isFinite(trial.missed)?trial.heard:null;
  lastResultKind=kind;lastRecordedEntry={f:e.f,side:e.side,pass:e.pass};
  if(!current.measures[k])current.measures[k]=[];
- current.measures[k][e.pass]={kind,db,elapsedS:trial?.done*SECONDS_PER_DB||0,lastAudibleDb:kind==='stillheard'?getFloor(current):null,at:Date.now(),method:'adaptive-v18-explicit',testStart:getStart(current),testFloor:getFloor(current),history:trial?.history?.slice(0,MAX_STEPS)||[]};
- if(e.pass===0&&current.passes===2&&!Number.isFinite(db))current.measures[k][1]={kind:'skipped',db:null,elapsedS:0,at:Date.now(),method:'adaptive-v18-explicit'};
+ current.measures[k][e.pass]={kind,db,elapsedS:trial?.done*SECONDS_PER_DB||0,lastAudibleDb:kind==='stillheard'?getFloor(current):null,at:Date.now(),method:e.pass===1?INDEPENDENT_PASS_METHOD:'adaptive-v20-search',testStart:getStart(current),testFloor:getFloor(current),history:trial?.history?.slice(0,MAX_STEPS)||[]};
+
  sampleNote=kind==='heard'?'Umbral aproximado confirmado ✓':kind==='stillheard'?'Lo seguías escuchando al nivel mínimo; no implica bajar el EQ.':kind==='unheard'?'No era audible al nivel inicial. No aumentes el volumen.':kind==='unconfirmed'?'No se pudo confirmar el límite de esta frecuencia. Se guardaron tus respuestas; puedes repetirla sin rehacer todo el examen.':'Prueba terminada sin un umbral confirmado. No se inventa una medida.';
  trial=null;stopTone();floorReached=false;touch();awaitNext=true;render();
 }
