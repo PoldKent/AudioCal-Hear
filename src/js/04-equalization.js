@@ -210,6 +210,22 @@ function thresholdStatus(point){
  return 'Medición limitada; revisar';
 }
 
+function thresholdEvidenceLabel(p,f){
+ const sides=p.channels==='separate'?['left','right']:['both'];
+ return sides.map(side=>{
+  const records=(p.measures?.[key(f,side)]||[]).filter(Boolean);
+  if(!records.length)return '';
+  return records.map(m=>{
+   const known=Number.isFinite(m.audibleDb)||Number.isFinite(m.inaudibleDb);
+   if(!known)return '';
+   const interval='Oído '+(side==='both'?'ambos':side==='left'?'izquierdo':'derecho')+
+    ' · audible '+(Number.isFinite(m.audibleDb)?m.audibleDb+' dBFS':'sin límite')+
+    ' / inaudible '+(Number.isFinite(m.inaudibleDb)?m.inaudibleDb+' dBFS':'sin límite');
+   return interval+' · confianza '+(m.confidence||'no clasificada')+
+    (m.contradictions?' · '+m.contradictions+' discrepancias':'');
+  }).filter(Boolean).join(' | ');
+ }).filter(Boolean).join(' | ');
+}
 function renderCalibrationTrace(p,r){
  const finished=firstMissing(p)<0;
  const sides=p.channels==='separate'?['left','right']:['both'];
@@ -239,7 +255,7 @@ function renderCalibrationTrace(p,r){
    'I: '+formatDb(rawFrequencyThreshold(p,x.f,'left'))+'; D: '+formatDb(rawFrequencyThreshold(p,x.f,'right')):
    formatDb(rawFrequencyThreshold(p,x.f,'both'));
   const gain=(Number(x.gain)||0),automatic=(Number(x.base)||0);
-  return `<tr><th scope="row">${fmt(x.f)}</th><td>${raw}</td><td>${thresholdStatus(x)}<span class="tiny muted" style="display:block">${esc(x.autoReason||'')}</span></td><td>${automatic>=0?'+':''}${Number(automatic.toFixed(2))} dB</td><td><strong data-trace-final="${x.f}">${gain>=0?'+':''}${gain} dB</strong></td></tr>`;
+  return `<tr><th scope="row">${fmt(x.f)}</th><td>${raw}<span class="tiny muted" style="display:block">${esc(thresholdEvidenceLabel(p,x.f))}</span></td><td>${thresholdStatus(x)}<span class="tiny muted" style="display:block">${esc(x.autoReason||'')}</span></td><td>${automatic>=0?'+':''}${Number(automatic.toFixed(2))} dB</td><td><strong data-trace-final="${x.f}">${gain>=0?'+':''}${gain} dB</strong></td></tr>`;
  }).join('');
  return `<section id="tracePanel" class="trace-panel" aria-label="Comparación transparente de la calibración">
  <header class="trace-heading"><h2>Resultados del test · antes y después</h2><p class="compact-note">${incomplete}</p></header>
