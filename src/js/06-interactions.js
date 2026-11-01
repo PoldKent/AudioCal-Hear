@@ -10,7 +10,8 @@ if(btn.dataset.preset){temp.name=$('#deviceName')?.value||temp.name;temp.min=Num
 if(btn.dataset.channels){temp.name=$('#deviceName')?.value||temp.name;temp.channels=btn.dataset.channels;render();return}
 if(btn.dataset.testmode){temp.name=$('#deviceName')?.value||temp.name;temp.testMode=btn.dataset.testmode;render();return}
 if(btn.dataset.passes){temp.name=$('#deviceName')?.value||temp.name;temp.passes=Number(btn.dataset.passes);render();return}
-if(btn.dataset.adjust&&current){const f=Number(btn.dataset.adjust),r=recommend(current).find(x=>x.f===f);if(!r)return;const delta=Number(btn.dataset.delta),next=clamp(roundTo(r.gain+delta,current.step),current.min,current.max);current.manual[f]=(Number(current.manual[f])||0)+(next-r.gain);touch();refreshResultsUI();return}
+if(btn.dataset.startLevel&&temp.type!=='headphones'&&['-36','0'].includes(btn.dataset.startLevel)){temp.name=$('#deviceName')?.value||temp.name;temp.testStart=Number(btn.dataset.startLevel);render();return}
+ if(btn.dataset.adjust&&current){const f=Number(btn.dataset.adjust),r=recommend(current).find(x=>x.f===f);if(!r)return;const delta=Number(btn.dataset.delta),next=clamp(roundTo(r.gain+delta,current.step),current.min,current.max);current.manual[f]=(Number(current.manual[f])||0)+(next-r.gain);touch();refreshResultsUI();return}
 if(btn.dataset.balancePreview&&current){
  if(!playerAudio||!playerUrl||playerAudio.paused){balanceStatus='Primero selecciona una canción y pulsa reproducir.';refreshBalanceUI();return}
  if(!filters.some(f=>Math.abs(f.frequency.value-balanceFreq)<.01)){balanceStatus='Esta frecuencia no está disponible en la salida de audio actual.';refreshBalanceUI();return}
