@@ -98,6 +98,7 @@ test('EQ editor updates saved profile and JSON export is valid', async ({ page }
   await newProfile(page);
   await page.locator('[data-nav="results"]').click();
   await expect(page.locator('#root')).toHaveAttribute('data-page','results');
+  await page.locator('#musicComparison > summary').click();
   await expect(page.locator('#audioPlayer')).toBeVisible();
   await page.locator('[data-eq-select]').first().click();
   const slider = page.locator('#eqSlider');
@@ -154,6 +155,7 @@ test('contradictions yield a saved low-confidence estimate and advance without r
  await expect(page.locator('#levelText')).toContainText('-36 dBFS');
  await expect(page.locator('#root')).not.toContainText('Resultado guardado');
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
  await page.locator('#uiLanguage').selectOption('es');
  await expect(page.locator('#tracePanel')).toContainText('confianza baja');
 });
@@ -225,7 +227,8 @@ test('context is saved and raw threshold/automatic EQ remain visibly distinct', 
   expect(saved.context.windows).toBe('open');
   expect(saved.context.eqScale).toBe('steps');
   await page.locator('[data-nav="results"]').click();
-  await expect(page.locator('#tracePanel')).toBeVisible();
+  await page.locator('#technicalResults > summary').click();
+   await expect(page.locator('#tracePanel')).toBeVisible();
   await expect(page.locator('#tracePanel')).toContainText('Medición original sin modificar');
   await expect(page.locator('#tracePanel')).toContainText('Corrección automática frente al ajuste final');
   await expect(page.locator('#tracePanel .trace-table tbody tr')).toHaveCount(7);
@@ -252,6 +255,7 @@ test('EQ PNG card marks unknown units, then exports positions using a user-decla
  await page.locator('#deviceName').fill('Auto PNG QA');
  await page.locator('[data-act="create"]').click();
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
  await expect(page.locator('#eqCardCanvas')).toBeVisible();
  await expect(page.locator('#eqCardNotice')).toContainText('desconocida');
  await page.locator('#resultEqScale').selectOption('steps');
@@ -273,6 +277,7 @@ test('optional loudness matching saves two relative responses without changing E
  await page.locator('[data-nav="results"]').click();
  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  const eqBefore=await page.locator('.eqband .eqval').allTextContents();
+ await page.locator('#technicalResults > summary').click();
  await page.locator('#loudnessPanel summary').click();
  await expect(page.locator('#loudnessFrequency')).toBeVisible();
  await page.locator('[data-loudness="record"]').click();
@@ -291,6 +296,7 @@ test('optional loudness matching saves two relative responses without changing E
  expect(await page.locator('.eqband .eqval').allTextContents()).toEqual(eqBefore);
  await page.reload();
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
  await page.locator('#loudnessPanel summary').click();
  await expect(page.locator('#loudnessInner')).toContainText('Repetible');
  await noOverflow(page);
@@ -301,6 +307,7 @@ test('cross-evidence CSV exports with units and leaves EQ untouched',async({page
  await page.locator('#deviceName').fill('Auto audit QA');
  await page.locator('[data-act="create"]').click();
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
  await expect(page.locator('#evidenceAudit')).toBeVisible();
  const gains=await page.locator('.eqband .eqval').allTextContents();
  const event=page.waitForEvent('download');
@@ -328,6 +335,7 @@ test('historical second pass is not represented as independent repetition',async
  });
  await page.reload();
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
  await page.locator('#uiLanguage').selectOption('es');
  await expect(page.locator('#evidenceAudit')).toContainText('Confirmación histórica');
  await expect(page.locator('#evidenceAudit')).toContainText('Registros históricos no independientes: 1');
@@ -363,6 +371,7 @@ test('3 dB per step is selectable, saved and retained in the result EQ guide',as
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(saved.context.eqStepDb).toBe('3');
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
  await expect(page.locator('#resultEqScale')).toHaveValue('steps');
  await expect(page.locator('#resultEqStepDb')).toHaveValue('3');
  await page.locator('#resultEqStepDb').selectOption('2');
@@ -381,6 +390,7 @@ test('AF-02: changing a band keeps original measurements and synchronizes every 
  await page.locator('[data-act="create"]').click();
  await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
  const freq=1000;
  const originalGraph=await page.locator('#tracePanel .trace-plot svg').innerHTML();
  const originalAuto=await page.locator('#tracePanel tbody tr').filter({has:page.getByRole('rowheader',{name:'1 kHz'})}).locator('td').nth(2).innerText();
@@ -417,6 +427,7 @@ test('AF-02: transfer confirmation is invalidated after changing applied EQ valu
  await page.locator('[data-act="create"]').click();
  await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
  await page.locator('[data-act="transfer-open"]').click();
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-next"]').click();
@@ -434,6 +445,7 @@ test('AF-02: physical EQ scale changes invalidate checked transfer bands',async(
  await page.locator('[data-act="create"]').click();
  await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
  await page.locator('[data-act="transfer-open"]').click();
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-next"]').click();
@@ -506,6 +518,7 @@ test('physical car control limits are independent of recommended digital gain li
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect([saved.min,saved.max,saved.controlMin,saved.controlMax]).toEqual([-6,6,-4,5]);
  await page.locator('[data-nav="results"]').click();
+ await page.locator('#technicalResults > summary').click();
  await expect(page.locator('#resultControlMin')).toHaveValue('-4');
  await expect(page.locator('#resultControlMax')).toHaveValue('5');
  await expect(page.locator('#eqCardSection')).toContainText('equivalencia nominal -12 a +15 dB');
@@ -560,4 +573,38 @@ test('headphones cannot inherit the car full-scale setting',async({page})=>{
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(saved.type).toBe('headphones');
  expect(saved.testStart).toBe(-24);
+});
+
+test('results prioritize an actionable 10-band starter EQ and keep the evidence optional',async({page})=>{
+ await page.locator('[data-device="headphones"]').click();
+ await page.locator('#deviceName').fill('Guía práctica de 10 bandas');
+ await page.locator('[data-act="create"]').click();
+ await page.evaluate(()=>{
+  const list=JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'));
+  const p=list[0],freqs=[30,60,120,250,500,1000,2000,4000,8000,16000];
+  const left=[-36.5,-60,-68,-72,-84,-98,-90,-96,-87,-26];
+  const right=[-36,-60,-72,-72,-84,-94,null,-96,-96,-26];
+  for(let i=0;i<freqs.length;i++){
+   for(const [side,arr] of [['left',left],['right',right]]){
+    const db=arr[i];
+    p.measures[freqs[i]+'|'+side]=[{kind:db===null?'stillheard':'heard',db,confidence:'low',method:'adaptive-v21-short',
+      audibleDb:db,inaudibleDb:db===null?null:db-2,uncertaintyDb:2,contradictions:1,history:[]}];
+   }
+  }
+  localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify(list));
+ });
+ await page.reload();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#starterGuide')).toBeVisible();
+ await expect(page.locator('#starterGuide')).toContainText('Qué poner en tu ecualizador');
+ await expect(page.locator('#starterGuide .starter-band')).toHaveCount(10);
+ await expect(page.locator('#technicalResults')).not.toHaveAttribute('open');
+ await expect(page.locator('#starterGuide')).toContainText('Punto de partida');
+ await expect(page.locator('#starterGuide')).toContainText('+1 dB');
+ await page.locator('[data-act="starter-apply"]').click();
+ await expect(page.locator('#starterGuide')).toContainText('Propuesta aplicada');
+ const p=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(p.measures['250|left'][0].db).toBe(-72);
+ expect(Object.values(p.manual).some(x=>x!==0)).toBeTruthy();
+ await noOverflow(page);
 });
