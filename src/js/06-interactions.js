@@ -85,7 +85,7 @@ case 'transfer-copy':if(current){const ok=await copyText(transferCopy(current));
 case 'starter-apply':if(current){
  const proposal=starterEqProposal(current),actual=recommend(current);
  if(proposal.changes){
-  const hasPrevious=actual.some(x=>x.gain!==0);
+  const hasPrevious=Object.values(current.manual||{}).some(x=>Number(x)!==0)||Object.values(current.balance||{}).some(x=>Number(x)!==0)||Object.values(current.taste||{}).some(x=>Number(x)!==0);
   if(hasPrevious&&!uiConfirm('Usar esta propuesta reemplazará los valores actuales del EQ. Las respuestas del examen se conservarán. ¿Continuar?'))break;
   for(const [i,item] of proposal.rows.entries()){
    const target=clamp(item.gain,current.min,current.max);
