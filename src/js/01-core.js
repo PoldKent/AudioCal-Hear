@@ -58,8 +58,8 @@ function uiConfirm(s){return window.confirm(trans(s))}
 function uiPrompt(s,v){return window.prompt(trans(s),v)}
 
 const presets={
- car7:{name:'Automóvil · 7 bandas (tus fotos)',short:'Auto 7',bands:[64,160,400,1000,2500,6250,15625],min:-6,max:6,step:1,note:'Las frecuencias coinciden exactamente con tus fotos. El rango ±6 dB es provisional: ajústalo si tu radio admite otros límites.'},
- photo10:{name:'Auriculares · 10 bandas (tu foto)',short:'Auriculares 10',bands:[30,60,120,250,500,1000,2000,4000,8000,16000],min:-20,max:20,step:1,note:'Frecuencias exactas de la primera imagen; escala visible de −20 a +20 dB.'},
+ car7:{name:'Automóvil · 7 bandas (tus fotos)',short:'Auto 7',bands:[64,160,400,1000,2500,6250,15625],min:-6,max:6,step:1,note:'Las frecuencias coinciden con tus fotos. El rango del control es de −6 a +6 posiciones; verifica cuántos dB equivale cada paso.'},
+ photo10:{name:'Auriculares · 10 bandas (tu foto)',short:'Auriculares 10',bands:[30,60,120,250,500,1000,2000,4000,8000,16000],min:-20,max:20,step:1,note:'Frecuencias exactas de la primera imagen; escala visible de −20 a +20 niveles. Comprueba si el fabricante expresa esos niveles en dB.'},
  iso10:{name:'ISO · 10 bandas (octavas)',short:'ISO 10',bands:[31.5,63,125,250,500,1000,2000,4000,8000,16000],min:-12,max:12,step:1,note:'Frecuencias preferidas ISO/ANSI para intervalos de una octava.'},
  iso7:{name:'Habitual · 7 bandas',short:'Estándar 7',bands:[63,160,400,1000,2500,6300,16000],min:-12,max:12,step:1,note:'Distribución frecuente de siete bandas; no todos los aparatos de 7 bandas son iguales.'},
  five:{name:'Habitual · 5 bandas',short:'5 bandas',bands:[60,250,1000,4000,16000],min:-12,max:12,step:1,note:'Configuración común de cinco bandas. Comprueba las etiquetas de tu equipo.'},
