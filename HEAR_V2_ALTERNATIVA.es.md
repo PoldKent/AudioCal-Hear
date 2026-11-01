@@ -28,3 +28,11 @@ Se reutilizan la base v1.10.0, perfiles locales, lógica de umbrales y recomenda
 ## Protección de datos de la versión oficial
 
 La rama V2 escribe en el espacio local independiente `audiocal-hear-v2-profiles-preview`. Si está vacío puede leer una copia de perfiles de `audiocal-hear-profiles-v1`, pero **nunca escribe sobre esa clave oficial**. El importador y exportador JSON se conservan. La rama no se despliega ni fusiona automáticamente con `main`.
+
+## Integración de sonoridad en una sola pasada
+
+En perfiles V2 nuevos, tras el umbral digital de cada banda Hear reproduce **una pareja de tonos** (1 kHz y la frecuencia actual), con un solo toque y nivel digital acotado. El usuario elige el primero, el segundo o ambos parecidos; Hear hace hasta **tres comparaciones** cortas con ajustes internos, sin modificar el volumen físico ni pedir dBFS. La frecuencia de referencia no necesita compararse consigo misma. La falta de audibilidad o de margen seguro se guarda como «no concluyente» y no detiene el test. Cada respuesta queda asociada a `frecuencia|canal|pasada`, incluso tras recargar la página.
+
+Las nuevas observaciones se guardan en `inlineLoudness`, separadas de umbrales, de datos históricos opcionales y de los controles del ecualizador. La tabla del resultado muestra el estado por banda. **No se interpretan automáticamente como ganancia EQ**, porque no son una medición acústica calibrada ni una desviación demostrada respecto a la sonoridad natural. La sección independiente «Igualación de sonoridad» desaparece de la interfaz.
+
+Las observaciones antiguas no se pierden ni se reescriben. La continuación de perfiles antiguos no obliga a rehacer todo el test.
