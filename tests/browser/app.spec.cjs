@@ -287,7 +287,7 @@ test('same hearing pass includes loudness check per band and saves it before adv
  await expect(page.locator('#loudnessPanel')).toHaveCount(0);
  await page.reload();
  await page.locator('[data-nav="results"]').click();
- await expect(page.locator('#hearFrequencyReport')).toContainText('Sonoridad: similar');
+ await expect(page.locator('#hearFrequencyReport')).toContainText('Sonoridad: parecida');
  await noOverflow(page);
 });
 
