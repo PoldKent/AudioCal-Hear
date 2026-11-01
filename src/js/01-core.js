@@ -308,8 +308,32 @@ function newTrial(entry){
  // The second run is a new adaptive search, not a confirmation of pass 1.
  return {id:key(entry.f,entry.side)+'-'+entry.pass,
   level:getStart(current),phase:'coarse',heard:null,missed:null,
-  verifyIndex:0,done:0,awaiting:false,highConsent:false,
+  verifyIndex:0,done:0,awaiting:false,highConsent:false,listenedSeconds:0,
   history:[],lastTone:null};
+}
+// Estimate the most consistent perceptual boundary from EVERY recorded response.
+// A measured digital detection threshold is not a calibrated acoustic threshold.
+function trialEstimate(t){
+ const history=(t.history||[]).filter(x=>x&&Number.isFinite(x.db)&&typeof x.heard==='boolean');
+ const yes=history.filter(x=>x.heard).map(x=>x.db),no=history.filter(x=>!x.heard).map(x=>x.db);
+ const audibleDb=yes.length?Math.min(...yes):Number.isFinite(t.heard)?t.heard:null;
+ const inaudibleDb=no.length?Math.max(...no):Number.isFinite(t.missed)?t.missed:null;
+ if(audibleDb===null||inaudibleDb===null)
+  return {db:null,confidence:'bounded',audibleDb,inaudibleDb,uncertaintyDb:null,contradictions:0};
+ // Evaluate each possible boundary. A yes above it, and no below it, is consistent.
+ const low=Math.min(...yes,...no),high=Math.max(...yes,...no),middle=(audibleDb+inaudibleDb)/2;
+ let best=middle,lowest=Infinity;
+ for(let threshold=low-.5;threshold<=high+.5;threshold+=.5){
+  const errors=history.reduce((n,x)=>n+((x.db>=threshold)!==x.heard?1:0),0);
+  const penalty=errors+Math.abs(threshold-middle)*1e-5;
+  if(penalty<lowest){lowest=penalty;best=threshold}
+ }
+ const contradictions=history.reduce((n,x)=>n+((x.db>=best)!==x.heard?1:0),0);
+ const width=Math.abs(audibleDb-inaudibleDb);
+ // Keep a stable midpoint for coherent brackets; use best-fit only for contradictions.
+ const db=Number((contradictions?best:middle).toFixed(1));
+ const confidence=contradictions||audibleDb<=inaudibleDb?'low':width<=2&&t.verifyIndex>=2?'high':'medium';
+ return {db,confidence,audibleDb,inaudibleDb,uncertaintyDb:Math.max(.5,width/2),contradictions};
 }
 function boundaryVotes(t,level){
  let yes=0,no=0;
@@ -320,40 +344,29 @@ function boundaryVotes(t,level){
  return {yes,no};
 }
 function boundaryConfirmed(t){
- const high=boundaryVotes(t,t.heard),low=boundaryVotes(t,t.missed);
- return high.yes>=2&&low.no>=2&&high.yes>high.no&&low.no>low.yes;
+ const e=trialEstimate(t);
+ return e.db!==null&&e.confidence==='high';
 }
 function nextTrialLevel(t,heard,p){
  const floor=getFloor(p);
  if(t.phase==='coarse'){
-   if(heard){t.heard=t.level;if(t.level<=floor)return 'stillheard';t.level=Math.max(floor,t.level-12);return 'next';}
-   t.missed=t.level;
-   if(t.heard===null)return 'unheard';
-   t.phase='refine';
+  if(heard){t.heard=t.level;if(t.level<=floor)return 'stillheard';t.level=Math.max(floor,t.level-12);return 'next';}
+  t.missed=t.level;
+  if(t.heard===null)return 'unheard';
+  t.phase='refine';
  }else if(t.phase==='refine'){
-   if(heard)t.heard=t.level;else t.missed=t.level;
+  if(heard)t.heard=t.level;else t.missed=t.level;
  }else if(t.phase==='verify'){
-   const expected=t.verifyIndex===0;
-   if(heard!==expected){
-     // One different perception near the boundary is normal. Recheck rather
-     // than discarding the whole frequency or assigning an invented threshold.
-     t.phase='recheck';t.recheckIndex=0;t.level=t.heard;return 'next';
-   }
-   t.verifyIndex++;
-   if(t.verifyIndex>=2)return 'measured';
-   t.level=t.missed;return 'next';
- }else if(t.phase==='recheck'){
-   t.recheckIndex++;
-   // Alternate the louder / quieter adjacent levels. Each must have a
-   // reproducible majority, with at least two supporting responses.
-   if(t.recheckIndex>=4&&boundaryConfirmed(t))return 'measured';
-   if(t.recheckIndex>=6)return 'unconfirmed';
-   t.level=t.recheckIndex%2===0?t.heard:t.missed;
-   return 'next';
+  t.verifyIndex++;
+  // Always finish after at most two extra listens, even with disagreement.
+  if(t.verifyIndex>=2)return 'measured';
+  t.level=t.missed;return 'next';
  }
  if(t.heard!==null&&t.missed!==null){
-   if(t.heard-t.missed<=1){t.phase='verify';t.level=t.heard;t.verifyIndex=0;return 'next';}
-   t.level=Math.round((t.heard+t.missed)/2);return 'next';
+  if(t.heard-t.missed<=2){t.phase='verify';t.verifyIndex=0;t.level=t.heard;return 'next';}
+  const midpoint=Math.round((t.heard+t.missed)/2);
+  if(midpoint===t.level)return 'measured';
+  t.level=midpoint;return 'next';
  }
  return 'unconfirmed';
 }
@@ -369,7 +382,7 @@ function resetBalanceRound(){balanceRound=0;balancePreview=null;balanceListened=
 function balanceDelta(){if(!balancePreview||balanceRound>=2)return 0;return balanceRound===0?(balancePreview==='A'?-2:2):(balancePreview==='A'?1:-1)}
 function suggestedBalanceBands(p){const result=recommend(p),n=p.bands.length;const priority=[Math.round((n-1)*.2),Math.round((n-1)*.52),Math.round((n-1)*.85)].map(i=>p.bands[i]);const deviations=result.slice().sort((a,b)=>(Math.abs(b.base||0)-Math.abs(a.base||0))).filter(x=>Math.abs(x.base||0)>=1.5).map(x=>x.f);return [...new Set([...deviations.slice(0,2),...priority,...p.bands])].slice(0,3)}
 function resetBalanceSession(p){balanceQueue=suggestedBalanceBands(p);balanceQueueIndex=0;balanceFreq=balanceQueue[0]||p.bands[0]||null;resetBalanceRound()}
-let temp={name:'',type:'car',preset:'car7',channels:'both',passes:1,testMode:'quick',testStart:TEST_START_DB,testFloor:TEST_END_DB,bands:presets.car7.bands.slice(),min:-6,max:6,controlMin:-6,controlMax:6,step:1,context:presetCalibrationContext('car','car7')};
+let temp={name:'',type:'car',preset:'car7',channels:'both',passes:1,testMode:'complete',testStart:TEST_START_DB,testFloor:TEST_END_DB,bands:presets.car7.bands.slice(),min:-6,max:6,controlMin:-6,controlMax:6,step:1,context:presetCalibrationContext('car','car7')};
 const save=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(profiles));localStorage.setItem(STATEKEY,current?.id||'')}catch(e){notice='No se pudo guardar localmente. Puedes exportar tus valores.'}};
 const touch=()=>{if(!current)return;current.updatedAt=Date.now();save()};
 const nav=p=>{if(page==='results'&&p!=='results')resetLoudnessSession();if(tone)stopTone();floorReached=false;if(page==='results'&&playerAudio&&p!=='results')playerAudio.pause();page=p;render();window.scrollTo({top:0,behavior:'instant'})};
