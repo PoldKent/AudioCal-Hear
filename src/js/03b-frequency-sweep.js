@@ -30,6 +30,15 @@ function sweepRecordSummary(record){
    (found.length?' · Micrófono: '+found.length+' muestras con señal superior al ruido de referencia, no calibradas.':' · Micrófono: sin evidencia suficiente de captación; no demuestra ausencia de sonido.'):'';
  return 'Zona declarada audible aprox.: '+Math.round(status.first)+'–'+Math.round(status.last)+' Hz. '+status.segments.length+' tramo(s).'+microphone;
 }
+
+function sweepSummaryMarkup(p){
+ const records=Object.entries(p.sweepRecords||{}).filter(([side,record])=>['both','left','right'].includes(side)&&record?.method===SWEEP_METHOD);
+ if(!records.length)return '';
+ return '<details class="unobtrusive" id="preSweepResults"><summary>Barrido previo · alcance observado del sistema</summary><div class="inner-detail">'+
+  records.map(([side,record])=>'<p class="small"><strong>'+(side==='left'?'Oído izquierdo':side==='right'?'Oído derecho':'Ambos canales')+'</strong> · '+esc(sweepRecordSummary(record))+'</p>').join('')+
+  '<p class="tiny muted">El rango indicado procede de respuestas subjetivas a un tono digital constante. La respuesta del micrófono, cuando existe, está afectada por su sensibilidad, la sala, ruido y procesamiento del dispositivo. Ninguno mide aisladamente la capacidad del equipo o del oído; no son umbrales clínicos ni se usan para modificar el EQ.</p></div></details>';
+}
+
 function sweepPanelMarkup(p){
  const selected=p.channels==='separate'?(sweepSide==='right'?'right':'left'):'both';
  const saved=Object.entries(p.sweepRecords||{}).filter(([side,v])=>['both','left','right'].includes(side)&&v&&Array.isArray(v.events));
