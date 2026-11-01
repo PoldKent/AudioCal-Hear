@@ -9,7 +9,7 @@ function renderContextFields(){
  const scale=contextSelect('eqScale','¿Qué unidad muestran los controles del EQ?',
   [['unknown','No estoy seguro'],['steps','Posiciones / niveles (sin dB)'],['db','Decibelios (dB)']],c.eqScale)+
   (c.eqScale==='steps'?contextSelect('eqStepDb','Equivalencia por paso según manual del equipo',
-  [['unknown','Desconocida: no convertir'],['1','1 dB / paso confirmado'],['2','2 dB / paso confirmado']],c.eqStepDb):'');
+  [['unknown','Sin comprobar: no convertir'],['1','1 dB / paso (según manual)'],['2','2 dB / paso (según manual)']],c.eqStepDb):'');
  let specific='';
  if(temp.type==='car'){
   specific=contextSelect('seat','Asiento de escucha',[['driver','Conductor'],['passenger','Copiloto'],['rear','Fila trasera']],c.seat)+
@@ -27,7 +27,9 @@ function renderContextFields(){
    contextSelect('placement','Ubicación',[['unknown','Sin comprobar'],['nearwall','Cerca de pared'],['free','Alejados de paredes']],c.placement);
  }
  return '<section class="context-config"><div class="setup-title"><h2>01B · Tu entorno de escucha</h2><span class="tiny muted">Guarda las condiciones</span></div>'+
-  '<div class="grid2">'+specific+scale+'</div><p class="compact-note">Estos datos identifican cuándo es válida la prueba; no añaden correcciones acústicas inventadas. Si la escala de EQ no está confirmada, no asumiremos cuántos dB equivale un nivel.</p></section>';
+  '<div class="grid2">'+specific+scale+'</div>'+
+  '<div class="soft info small"><strong>Cómo influye realmente en el EQ:</strong> '+esc(calibrationContextEqExplanation({type:temp.type,context:c,bands:temp.bands}))+'</div>'+
+  '<p class="compact-note">El entorno no genera ganancias acústicas en dB. Los dB/paso deben provenir del manual; Hear no comprueba su exactitud. Sin equivalencia no se calculan posiciones físicas.</p></section>';
 }
 
 function renderSetup(){const showCustom=temp.preset==='custom',p=current;const duration=timeRange({...temp,measures:{}},0);
