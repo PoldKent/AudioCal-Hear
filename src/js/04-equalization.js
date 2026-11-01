@@ -16,7 +16,7 @@ function gather(p){
 const EQ_ALGORITHM_VERSION='local-contrast-v2-experimental';
 function estimateThresholdContrast(p,data){
  const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived&&x.quality!=='mixed'&&x.quality!=='unmeasurable');
- const enough=measured.length>=Math.max(4,Math.ceil(p.bands.length*.55));
+ const enough=measured.length>=minimumAutoCoverage(p);
  const context=normalizeCalibrationContext(p.context,p.type);
  return data.map((point,i)=>{
   const entry={f:point.f,base:0,contrastDb:null,autoReason:'sin datos suficientes',autoConfidence:'none'};
@@ -27,7 +27,7 @@ function estimateThresholdContrast(p,data){
   const idx=measured.findIndex(x=>x.f===point.f);
   if(idx<=0||idx===measured.length-1)return {...entry,autoReason:'banda extrema: no extrapolar'};
   const lo=measured[idx-1],hi=measured[idx+1];
-  if(point.f/lo.f>3.5||hi.f/point.f>3.5)return {...entry,autoReason:'bandas vecinas demasiado separadas'};
+  if(point.f/lo.f>5||hi.f/point.f>5)return {...entry,autoReason:'bandas vecinas demasiado separadas'};
   const blockReason=contextAutoBlockReason(p,point.f,context);
   if(blockReason)return {...entry,autoReason:blockReason};
   // Predict the local digital threshold from adjacent measured frequencies, not
@@ -183,8 +183,8 @@ function renderCalibrationTrace(p,r){
  const colors={left:'#2671db',right:'#b06bdb',both:'#2671db'};
  const minHz=Math.min(...p.bands),maxHz=Math.max(...p.bands);
  const xpos=f=>56+548*(Math.log(f/minHz)/Math.max(1e-8,Math.log(maxHz/minHz)));
- const ypos=db=>35+(-24-clamp(db,-84,-24))*2.15;
- const axisLevels=[-24,-44,-64,-84].map(n=>`<line x1="53" y1="${ypos(n)}" x2="615" y2="${ypos(n)}" stroke="#dfe5ed" stroke-dasharray="3 5"/><text x="47" y="${ypos(n)+3}" text-anchor="end" font-size="11" fill="#6e7d8e">${n}</text>`).join('');
+ const ypos=db=>35+(0-clamp(db,-100,0))*1.65;
+ const axisLevels=[0,-20,-40,-60,-80,-100].map(n=>`<line x1="53" y1="${ypos(n)}" x2="615" y2="${ypos(n)}" stroke="#dfe5ed" stroke-dasharray="3 5"/><text x="47" y="${ypos(n)+3}" text-anchor="end" font-size="11" fill="#6e7d8e">${n}</text>`).join('');
  const series=sides.map(side=>{
   const points=p.bands.map(f=>{const db=rawFrequencyThreshold(p,f,side);return db===null?null:{f,db,x:xpos(f),y:ypos(db)}}),
    segments=points.slice(1).map((v,i)=>v&&points[i]?`<line x1="${points[i].x}" y1="${points[i].y}" x2="${v.x}" y2="${v.y}" stroke="${colors[side]}" stroke-width="2.5"/>`:'').join(''),
@@ -400,7 +400,7 @@ function saveEqCardPng(p){
 }
 
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
- const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),usable=r.filter(x=>x.db!==null&&!x.derived).length,derived=r.filter(x=>x.derived).length,required=Math.max(3,Math.ceil(p.bands.length*.6));
+ const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),usable=r.filter(x=>x.db!==null&&!x.derived).length,derived=r.filter(x=>x.derived).length,required=minimumAutoCoverage(p);
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
  lastRenderedEqSignature=p.id+'|'+r.map(b=>b.f+':'+b.gain).join('|');
  const reliable=usable>=required;
