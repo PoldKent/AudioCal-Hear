@@ -220,3 +220,22 @@ test('in-ear parameters persist and do not claim an acoustic measurement', async
   await expect(page.locator('#tracePanel')).toContainText('In-ear');
   await noOverflow(page);
 });
+
+test('EQ PNG card marks unknown units, then exports positions using an explicitly confirmed 2 dB step', async ({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await page.locator('#deviceName').fill('Auto PNG QA');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#eqCardCanvas')).toBeVisible();
+ await expect(page.locator('#eqCardNotice')).toContainText('desconocida');
+ await page.locator('#resultEqScale').selectOption('steps');
+ await expect(page.locator('#resultEqStepDb')).toHaveValue('unknown');
+ await page.locator('#resultEqStepDb').selectOption('2');
+ await expect(page.locator('#eqCardNotice')).toContainText('experimental');
+ const imagePromise=page.waitForEvent('download');
+ await page.locator('[data-act="downloadpng"]').click();
+ const png=await imagePromise;expect(png.suggestedFilename()).toContain('.png');
+ const file=fs.readFileSync(await png.path());
+ expect(file.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
+ await noOverflow(page);
+});

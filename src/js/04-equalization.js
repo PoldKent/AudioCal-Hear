@@ -129,7 +129,7 @@ function refreshResultsUI(){
  updateSelectedEditor();
  const countEl=document.querySelector('.stat-grid .stat:nth-child(3) strong');if(countEl)countEl.textContent=count;
  const pref=document.querySelector('#prefRound');if(pref)pref.innerHTML=preferenceMarkup();
- updatePlayerFilters(preferencePreview?previewTaste():null);refreshTransfer();localize(document.body);
+ updatePlayerFilters(preferencePreview?previewTaste():null);refreshTransfer();refreshEqCard();localize(document.body);
 }
 function eqMark(b){return (b.gain>0?'+':'')+b.gain}
 function selectedBandInfo(b){return b.db===null?'Sin umbral medido · ajuste personal':b.derived?'Frecuencia estimada':b.quality==='good'?'Umbral consistente':'Umbral estimado · verifica si lo necesitas'}
@@ -208,6 +208,109 @@ function renderCalibrationTrace(p,r){
  <p class="tiny muted">Método de corrección: contrastes locales v2, experimental; conserva las medidas originales. Las curvas normales de igual sonoridad no pueden aplicarse directamente a este test digital sin calibración acústica. Una corrección neutral puede ser el único resultado justificable.</p></div></section>`;
 }
 
+
+// Transfer to a physical EQ is exact only when its unit is known.
+// Never turn a digital dB estimate into a step count by assumption.
+function eqResultModel(p){
+ const context=normalizeCalibrationContext(p.context,p.type);
+ const complete=firstMissing(p)<0;
+ const scale=context.eqScale;
+ const ratio=scale==='db'?1:(scale==='steps'&&['1','2'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
+ const rows=recommend(p).map(b=>{
+  const gain=b.gain;
+  const verified=Number.isFinite(ratio);
+  const position=verified?clamp(Math.round(gain/ratio),p.min,p.max):null;
+  const quality=b.db===null?'Sin umbral':b.derived?'Interpolado':b.quality==='mixed'?'Oídos distintos':b.quality==='good'?'Repetido':'Estimación';
+  return {f:b.f,gain,position,quality,auto:b.base,available:verified};
+ });
+ return {name:p.name,complete,scale,ratio,context:calibrationContextLabel(p),
+  device:p.type==='car'?'AUTO':p.type==='headphones'?'AURICULARES':'PARLANTES',
+  label:scale==='db'?'dB de control':scale==='steps'?'posición':'sin verificar',
+  rows,verified:Number.isFinite(ratio),
+  warning:!complete?'Prueba incompleta: ajustes provisionales.':
+   !Number.isFinite(ratio)?'Equivalencia del control desconocida. No hay posiciones verificadas.':
+   'Ajustes calculados: algoritmo experimental, sin calibración acústica.'};
+}
+function eqResultMarkup(p){
+ const m=eqResultModel(p);
+ const ctx=normalizeCalibrationContext(p.context,p.type);
+ const scaleOptions=[['unknown','Unidad sin verificar'],['db','Controles en dB'],['steps','Controles por posiciones']];
+ const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (manual confirmado)'],['2','2 dB por paso (manual confirmado)']];
+ return `<section id="eqCardSection" class="eq-card-section" aria-label="Imagen descargable del ecualizador">
+ <h2>Mi ecualizador · resultado para aplicar</h2>
+ <p class="compact-note">${esc(m.context)} · ${p.bands.length} bandas. ${m.complete?'Test completado':'Test pendiente de completar'}.</p>
+ <div class="eq-card-config"><label for="resultEqScale">Unidad real del ecualizador</label>
+ <select id="resultEqScale" class="field">${scaleOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqScale===k?'selected':'')+'>'+l+'</option>').join('')}</select>
+ ${ctx.eqScale==='steps'?'<label for="resultEqStepDb">Equivalencia documentada del control</label><select id="resultEqStepDb" class="field">'+stepOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqStepDb===k?'selected':'')+'>'+l+'</option>').join('')+'</select>':''}
+ <p class="tiny muted">Selecciona una equivalencia únicamente si tu equipo la especifica. El rango del auto es −6 a +6 posiciones; los auriculares de referencia, −20 a +20.</p></div>
+ <p class="eq-card-alert ${m.verified?'':'eq-card-warning'}" id="eqCardNotice">${esc(m.warning)}</p>
+ <canvas id="eqCardCanvas" class="eq-card-canvas" width="960" height="${440+m.rows.length*61}" role="img" aria-label="Vista previa del resultado visual y las bandas de EQ"></canvas>
+ <div class="row wrap eq-card-actions">${button('↓ Guardar imagen PNG','downloadpng','btn-primary grow')}${button('⎘ Copiar controles','copycontrols','btn-alt grow')}</div>
+ <p class="tiny muted">El PNG contiene los valores de cada banda, el contexto y las limitaciones. Los resultados numéricos no sustituyen una calibración acústica con micrófono.</p></section>`;
+}
+function paintEqResult(canvas,p){
+ if(!canvas||!p)return false;
+ const m=eqResultModel(p),rows=m.rows;
+ const w=960,h=440+rows.length*61;
+ canvas.width=w;canvas.height=h;
+ const c=canvas.getContext('2d');if(!c)return false;
+ const rounded=(x,y,width,height,r)=>{c.beginPath();c.roundRect(x,y,width,height,r)};
+ c.fillStyle='#ffffff';c.fillRect(0,0,w,h);
+ c.fillStyle='#2364cc';rounded(40,34,880,9,4);c.fill();
+ c.fillStyle='#192b47';c.font='bold 35px system-ui, sans-serif';c.fillText('AudioCal Hear',40,92);
+ c.fillStyle='#52647a';c.font='20px system-ui, sans-serif';c.fillText('MI ECUALIZADOR · '+m.device,40,130);
+ c.fillStyle='#1b3352';c.font='bold 25px system-ui, sans-serif';c.fillText(String(m.name).slice(0,50),40,181);
+ c.fillStyle='#63758c';c.font='16px system-ui, sans-serif';
+ const label=String(m.context);c.fillText(label.length>93?label.slice(0,90)+'...':label,40,217);
+ const labelVal=m.verified?(m.scale==='db'?'dB DEL CONTROL':'POSICIÓN DEL CONTROL'):'AJUSTE EQ ESTIMADO';
+ c.fillStyle='#2670d4';c.font='bold 18px system-ui, sans-serif';c.fillText(labelVal,40,273);
+ c.fillStyle='#64758b';c.font='15px system-ui, sans-serif';
+ c.fillText(m.verified?'Rango de control: '+p.min+' a +'+p.max+' · '+(m.scale==='steps'?m.ratio+' dB por paso':'en dB'):'Conversión a posiciones no confirmada',40,303);
+ const maxAbs=Math.max(3,...rows.map(r=>Math.abs(r.gain)));
+ rows.forEach((r,i)=>{
+  const y=345+i*61;
+  c.fillStyle=i%2===0?'#f4f7fc':'#ffffff';rounded(40,y-31,880,55,10);c.fill();
+  c.fillStyle='#1c3453';c.font='bold 19px system-ui, sans-serif';c.fillText(fmt(r.f),57,y+1);
+  const x0=425,maxWidth=185;
+  c.fillStyle='#ccd7e6';c.fillRect(x0-maxWidth,y-4,maxWidth*2,8);
+  const dx=r.gain/maxAbs*maxWidth;
+  c.fillStyle=dx>=0?'#2671db':'#df8843';
+  c.fillRect(dx<0?x0+dx:x0,y-10,Math.max(2,Math.abs(dx)),20);
+  c.fillStyle='#8595a8';c.fillRect(x0-1,y-15,2,30);
+  c.fillStyle='#1b3454';c.font='bold 24px system-ui, sans-serif';
+  const primary=r.position===null?'—':(r.position>0?'+':'')+r.position;
+  c.textAlign='right';c.fillText(primary,887,y+4);c.textAlign='left';
+  c.fillStyle='#8290a2';c.font='14px system-ui, sans-serif';
+  c.fillText('EQ '+(r.gain>0?'+':'')+r.gain+' dB · '+r.quality,57,y+22);
+ });
+ const foot=h-70;
+ c.fillStyle=m.verified?'#245787':'#95542a';c.font='bold 17px system-ui, sans-serif';
+ c.fillText(m.complete?'TEST FINALIZADO':'PRUEBA INCOMPLETA',40,foot);
+ c.fillStyle='#61748a';c.font='15px system-ui, sans-serif';
+ const warnings=m.verified?
+  'Corrección perceptiva experimental · verificar con escucha · sin medición acústica':
+  'SIN CONVERSIÓN VALIDADA: confirmar dB por nivel antes de mover controles';
+ c.fillText(warnings,40,foot+28);
+ return true;
+}
+function refreshEqCard(){if(page!=='results'||!current)return;const canvas=$('#eqCardCanvas');if(canvas)paintEqResult(canvas,current)}
+function eqControlText(p){
+ const m=eqResultModel(p);
+ return 'AudioCal Hear · '+m.name+'\n'+m.context+'\n'+m.warning+'\n'+m.rows.map(r=>
+  fmt(r.f)+' -> '+(r.position===null?'SIN POSICIÓN VERIFICADA':'control '+(r.position>=0?'+':'')+r.position+' '+m.label)+
+  ' · EQ '+(r.gain>=0?'+':'')+r.gain+' dB').join('\n');
+}
+function saveEqCardPng(p){
+ const canvas=document.createElement('canvas');
+ if(!paintEqResult(canvas,p))return false;
+ const filename='AudioCal_EQ_'+cleanName(p.name)+'.png';
+ const anchor=document.createElement('a');
+ anchor.download=filename;
+ anchor.href=canvas.toDataURL('image/png');
+ document.body.appendChild(anchor);anchor.click();anchor.remove();
+ return true;
+}
+
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
  const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),usable=r.filter(x=>x.db!==null&&!x.derived).length,derived=r.filter(x=>x.derived).length,required=Math.max(3,Math.ceil(p.bands.length*.6));
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
@@ -218,6 +321,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral · <span>${esc(status)}</span></p>
  ${usable<p.bands.length?`<div class="soft warning"><strong>⚠ ${p.bands.length-usable} frecuencias sin umbral</strong><p class="small">Puedes repetir solo las que faltan. No aumentes el volumen para escucharlas.</p>${button('↺ Repetir pendientes','retrymissing','btn-alt full')}</div>`:''}
  ${renderCalibrationTrace(p,r)}
+ ${eqResultMarkup(p)}
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
  <div class="eq-util">${button('⎘ Copiar todos','copy','btn-alt')}${button('↓ TXT','downloadtxt','btn-ghost')}${button('↺ Reiniciar cambios','clearmanual','btn-ghost')}</div>

@@ -7,7 +7,9 @@ function contextSelect(field,label,options,value){
 function renderContextFields(){
  const c=temp.context||defaultCalibrationContext(temp.type);
  const scale=contextSelect('eqScale','¿Qué unidad muestran los controles del EQ?',
-  [['unknown','No estoy seguro'],['steps','Posiciones / niveles (sin dB)'],['db','Decibelios (dB)']],c.eqScale);
+  [['unknown','No estoy seguro'],['steps','Posiciones / niveles (sin dB)'],['db','Decibelios (dB)']],c.eqScale)+
+  (c.eqScale==='steps'?contextSelect('eqStepDb','Equivalencia por paso según manual del equipo',
+  [['unknown','Desconocida: no convertir'],['1','1 dB / paso confirmado'],['2','2 dB / paso confirmado']],c.eqStepDb):'');
  let specific='';
  if(temp.type==='car'){
   specific=contextSelect('seat','Asiento de escucha',[['driver','Conductor'],['passenger','Copiloto'],['rear','Fila trasera']],c.seat)+

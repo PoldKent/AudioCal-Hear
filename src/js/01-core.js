@@ -75,7 +75,7 @@ const median=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b.length%2?b
 
 /* v2 model: listening conditions are metadata, never invented acoustic corrections. */
 function defaultCalibrationContext(type){
- return {provenance:'captured',eqScale:'unknown',seat:'driver',windows:'closed',engine:'off',
+ return {provenance:'captured',eqScale:'unknown',eqStepDb:'unknown',seat:'driver',windows:'closed',engine:'off',
   connection:'bluetooth',subtype:'overear',anc:'unknown',seal:'unknown',
   room:'living',position:'main',placement:'unknown'};
 }
@@ -83,7 +83,7 @@ function normalizeCalibrationContext(raw,type){
  const data=defaultCalibrationContext(type);
  if(!raw||typeof raw!=='object'||Array.isArray(raw)){data.provenance='legacy';return data}
  const options={
-  eqScale:['unknown','steps','db'],seat:['driver','passenger','rear'],windows:['closed','open'],
+  eqScale:['unknown','steps','db'],eqStepDb:['unknown','1','2'],seat:['driver','passenger','rear'],windows:['closed','open'],
   engine:['off','on'],connection:['bluetooth','cable','other'],subtype:['overear','inear','onear'],
   anc:['unknown','on','off','none'],seal:['unknown','good','poor'],
   room:['living','desk','studio','other'],position:['main','near','far'],
@@ -257,7 +257,7 @@ function setPreset(id){temp.preset=id;temp.bands=(presets[id]||presets.custom).b
 function render(){if(page==='test'&&current&&firstMissing(current)<0)page='results';if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
  el.dataset.page=page;
  el.innerHTML=page==='setup'?renderSetup():page==='test'?renderTest():page==='results'?renderResults():renderProfiles();
- if(page==='test'&&tone?.mode==='test')startVisualizer();if(page==='results'&&current){const newPlayer=$('#audioPlayer');if(playerAudio!==newPlayer){try{playerAudio?.pause()}catch(e){}try{playerSource?.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}playerPreamp=null;playerOutput=null;playerSource=null;filters=[];playerAudio=newPlayer;if(playerUrl)playerAudio.src=playerUrl;attachPlayerEvents(playerAudio)}updatePlayerFilters()}
+ if(page==='test'&&tone?.mode==='test')startVisualizer();if(page==='results'&&current){const newPlayer=$('#audioPlayer');if(playerAudio!==newPlayer){try{playerAudio?.pause()}catch(e){}try{playerSource?.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}playerPreamp=null;playerOutput=null;playerSource=null;filters=[];playerAudio=newPlayer;if(playerUrl)playerAudio.src=playerUrl;attachPlayerEvents(playerAudio)}updatePlayerFilters();refreshEqCard()}
  localize(document.body);
 }
 function approxTimeRange(d){return '~'+Math.max(1,Math.floor(d.exampleLow/60))+'–'+Math.max(1,Math.ceil(d.exampleHigh/60))+' min'}
