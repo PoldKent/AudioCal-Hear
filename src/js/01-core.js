@@ -90,7 +90,7 @@ function normalizeCalibrationContext(raw,type){
  const data=defaultCalibrationContext(type);
  if(!raw||typeof raw!=='object'||Array.isArray(raw)){data.provenance='legacy';return data}
  const options={
-  eqScale:['unknown','steps','db'],eqStepDb:['unknown','1','2'],seat:['driver','passenger','rear'],windows:['closed','open'],
+  eqScale:['unknown','steps','db'],eqStepDb:['unknown','1','2','3'],seat:['driver','passenger','rear'],windows:['closed','open'],
   engine:['off','on'],connection:['bluetooth','cable','other'],subtype:['overear','inear','onear'],
   anc:['unknown','on','off','none'],seal:['unknown','good','poor'],
   room:['living','desk','studio','other'],position:['main','near','far'],

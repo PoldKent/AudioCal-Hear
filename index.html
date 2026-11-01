@@ -359,7 +359,7 @@ function normalizeCalibrationContext(raw,type){
  const data=defaultCalibrationContext(type);
  if(!raw||typeof raw!=='object'||Array.isArray(raw)){data.provenance='legacy';return data}
  const options={
-  eqScale:['unknown','steps','db'],eqStepDb:['unknown','1','2'],seat:['driver','passenger','rear'],windows:['closed','open'],
+  eqScale:['unknown','steps','db'],eqStepDb:['unknown','1','2','3'],seat:['driver','passenger','rear'],windows:['closed','open'],
   engine:['off','on'],connection:['bluetooth','cable','other'],subtype:['overear','inear','onear'],
   anc:['unknown','on','off','none'],seal:['unknown','good','poor'],
   room:['living','desk','studio','other'],position:['main','near','far'],
@@ -604,7 +604,7 @@ function renderContextFields(){
  const scale=contextSelect('eqScale','¿Qué unidad muestran los controles del EQ?',
   [['unknown','No estoy seguro'],['steps','Posiciones / niveles (sin dB)'],['db','Decibelios (dB)']],c.eqScale)+
   (c.eqScale==='steps'?contextSelect('eqStepDb','Equivalencia por paso según manual del equipo',
-  [['unknown','Sin comprobar: no convertir'],['1','1 dB / paso (según manual)'],['2','2 dB / paso (según manual)']],c.eqStepDb):'');
+  [['unknown','Sin comprobar: no convertir'],['1','1 dB / paso (según manual)'],['2','2 dB / paso (según manual)'],['3','3 dB / paso (según manual)']],c.eqStepDb):'');
  let specific='';
  if(temp.type==='car'){
   specific=contextSelect('seat','Asiento de escucha',[['driver','Conductor'],['passenger','Copiloto'],['rear','Fila trasera']],c.seat)+
@@ -1014,7 +1014,7 @@ function renderCalibrationTrace(p,r){
 // Round exact half-steps toward zero to avoid unintended extra boost/cut.
 function physicalEqControl(gain,p,context=normalizeCalibrationContext(p.context,p.type)){
  const scale=context.eqScale;
- const ratio=scale==='db'?1:(scale==='steps'&&['1','2'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
+ const ratio=scale==='db'?1:(scale==='steps'&&['1','2','3'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
  if(!Number.isFinite(ratio))return {position:null,actualGain:null,delta:null,exact:false,ratio:null};
  const magnitude=Math.round(Math.abs(gain)/ratio-1e-9);
  const position=clamp(magnitude===0?0:Math.sign(gain)*magnitude,Math.ceil(p.min),Math.floor(p.max));
@@ -1044,7 +1044,7 @@ function eqResultMarkup(p){
  const m=eqResultModel(p);
  const ctx=normalizeCalibrationContext(p.context,p.type);
  const scaleOptions=[['unknown','Unidad sin verificar'],['db','Controles en dB'],['steps','Controles por posiciones']];
- const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (según manual)'],['2','2 dB por paso (según manual)']];
+ const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (según manual)'],['2','2 dB por paso (según manual)'],['3','3 dB por paso (según manual)']];
  return `<section id="eqCardSection" class="eq-card-section" aria-label="Imagen descargable del ecualizador">
  <h2>Mi ecualizador · resultado para aplicar</h2>
  <p class="compact-note">${esc(m.context)} · ${p.bands.length} bandas. ${m.complete?'Test completado':'Test pendiente de completar'}.</p>
@@ -1223,7 +1223,7 @@ function transferBands(p){
 function transferBounds(p){
  if(transferRange!=='profile')return TRANSFER_LIMITS[transferRange]||[p.min,p.max];
  const context=normalizeCalibrationContext(p.context,p.type);
- const ratio=context.eqScale==='steps'&&['1','2'].includes(context.eqStepDb)?Number(context.eqStepDb):1;
+ const ratio=context.eqScale==='steps'&&['1','2','3'].includes(context.eqStepDb)?Number(context.eqStepDb):1;
  return [p.min*ratio,p.max*ratio]; // dB range, not physical positions
 }
 function transferMapping(p){
