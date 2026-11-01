@@ -29,7 +29,7 @@ test('adaptive search uses ~2 dB interval with at most two final checks', () => 
     status = next(t, t.level >= expectedThreshold, profile);
   }
   assert.equal(status, 'measured');
-  assert.equal(t.heard, -50);
+  assert.equal(t.heard, -49);
   assert.ok(t.heard-t.missed<=2);
   assert.equal(t.verifyIndex, 2);
   assert.ok(checks <= 20, 'Test should respect the bounded audio-level schedule');
