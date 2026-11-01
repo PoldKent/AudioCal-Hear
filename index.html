@@ -232,6 +232,16 @@ select option{background:#fff;color:#172033}
 .eq-card-alert{padding:10px 12px;background:#eff7ff;border-radius:10px;color:#2d5c91;font-size:12px;margin:10px 0}
 .eq-card-alert.eq-card-warning{background:#fff6ec;color:#80501f}
 .eq-card-actions{margin-top:12px}
+
+/* Optional suprathreshold experiment: clearly separate from automatic EQ. */
+.loudness-panel{margin:14px 0}
+.loudness-panel .inner-detail{display:grid;gap:11px}
+.loudness-work{border:1px solid #e1e8f1;border-radius:13px;padding:12px;background:#f9fbff;display:grid;gap:11px}
+.loudness-work p{margin:0}
+.loudness-offset{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.loudness-offset button{min-width:48px;min-height:43px;border:1px solid #c8d9ef;border-radius:10px;background:#fff;color:#245bc1;font-size:23px}
+.loudness-offset strong{font-size:14px;text-align:center}
+@media(max-width:430px){.loudness-offset strong{font-size:12px}}
 </style>
 </head>
 <body>
@@ -369,6 +379,32 @@ function calibrationContextCaution(p){
  return 'Contexto registrado para comparar pruebas. No se aplican ganancias ambientales sin medición adicional.';
 }
 
+
+// Optional suprathreshold evidence. It is not an acoustic calibration nor
+// an input to automatic EQ, which requires an independently validated mapping.
+const LOUDNESS_REFERENCE_DBFS=-48, LOUDNESS_OFFSET_LIMIT=6;
+function normalizeLoudness(raw,bands){
+ const saved=Object.create(null);
+ if(!raw||typeof raw!=='object'||Array.isArray(raw))return saved;
+ for(const f of bands){
+  const list=raw[f];
+  if(!Array.isArray(list))continue;
+  const samples=list.slice(0,2).filter(x=>x&&typeof x==='object'&&!Array.isArray(x)&&
+   Number.isInteger(x.offsetDb)&&Math.abs(x.offsetDb)<=LOUDNESS_OFFSET_LIMIT&&
+   x.referenceDbfs===LOUDNESS_REFERENCE_DBFS&&x.method==='relative-tone-match-v1')
+   .map(x=>({offsetDb:x.offsetDb,referenceDbfs:LOUDNESS_REFERENCE_DBFS,
+    method:'relative-tone-match-v1',at:Number.isFinite(x.at)?clamp(x.at,0,Date.now()+86400000):Date.now()}));
+  if(samples.length)saved[f]=samples;
+ }
+ return saved;
+}
+function loudnessEvidenceStatus(samples){
+ if(!Array.isArray(samples)||!samples.length)return 'Sin comparar';
+ if(samples.length<2)return 'Una comparación; repetir';
+ return Math.abs(samples[0].offsetDb-samples[1].offsetDb)<=2?
+  'Repetible · descriptivo':'Inconsistente · no interpretar';
+}
+
 function normalizedProfile(p,importing=false){
  if(!p||typeof p!=='object'||Array.isArray(p)||!Array.isArray(p.bands)||p.bands.length<2||p.bands.length>31)return null;
  const bands=p.bands.map(Number);
@@ -406,6 +442,7 @@ function normalizedProfile(p,importing=false){
   preset:Object.hasOwn(presets,p.preset)?p.preset:'custom',bands,min,max,step:1,
   channels:p.channels==='separate'?'separate':'both',passes:p.passes===2?2:1,
   testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,
+  loudness:normalizeLoudness(p.loudness,bands),
   manual:finiteMap(p.manual,-30,30),balance:finiteMap(p.balance,-6,3),balanceProof:Object.fromEntries(bands.map(f=>[f,(Array.isArray(p.balanceProof?.[f])?p.balanceProof[f]:[]).slice(-10).filter(x=>x&&Number.isFinite(x.change)&&Math.abs(x.change)<=3).map(x=>({at:safeNumber(x.at,Date.now(),0,Date.now()+86400000),choices:Array.isArray(x.choices)?x.choices.slice(0,2).filter(q=>[-1,0,1].includes(q)):[],change:x.change,method:'music-ab-two-rounds'}))])),
   taste:{bass:safeNumber(taste.bass,0,-3,3),voices:safeNumber(taste.voices,0,-3,3),air:safeNumber(taste.air,0,-3,3)},
   context:normalizeCalibrationContext(p.context,p.type),
@@ -716,7 +753,7 @@ async function checkAmbient(){
 function parseBands(s){const arr=s.split(/[,;\s]+/).filter(Boolean).map(v=>Number(v));if(arr.length<2||arr.length>31||arr.some(x=>!Number.isFinite(x)||x<20||x>20000)||new Set(arr).size!==arr.length||arr.some((x,i)=>i&&x<=arr[i-1]))return null;return arr}
 function createProfile(){const name=$('#deviceName')?.value.trim()||'Mi equipo '+new Date().toLocaleDateString('es');const min=Number($('#eqMin')?.value),max=Number($('#eqMax')?.value);if(!Number.isFinite(min)||!Number.isFinite(max)||min>=0||max<=0||min<-30||max>30){uiAlert('Introduce límites de dB válidos: mínimo negativo y máximo positivo (hasta 30 dB).');return}
  let bands=temp.preset==='custom'?parseBands($('#customFreqs')?.value||''):temp.bands.slice();if(!bands){uiAlert('Revisa las frecuencias personalizadas: entre 2 y 31 valores, orden ascendente, de 20 a 20.000 Hz.');return}
- if(temp.testStart<=temp.testFloor){uiAlert('El nivel inicial debe ser mayor que el mínimo en dBFS.');return}if(temp.testStart>-30&&!uiConfirm('Nivel inicial cercano a −24 dBFS. Puede ser demasiado intenso. Usa volumen bajo y cómodo, nunca máximo. ¿Confirmas esta configuración?'))return;temp.name=name;temp.min=min;temp.max=max;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},context:normalizeCalibrationContext(temp.context,temp.type),manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetBalanceSession(p);introStep=0;trial=null;nav('test')}
+ if(temp.testStart<=temp.testFloor){uiAlert('El nivel inicial debe ser mayor que el mínimo en dBFS.');return}if(temp.testStart>-30&&!uiConfirm('Nivel inicial cercano a −24 dBFS. Puede ser demasiado intenso. Usa volumen bajo y cómodo, nunca máximo. ¿Confirmas esta configuración?'))return;temp.name=name;temp.min=min;temp.max=max;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},loudness:{},context:normalizeCalibrationContext(temp.context,temp.type),manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetBalanceSession(p);introStep=0;trial=null;nav('test')}
 function gather(p){
  const collect=f=>{let samples=[];for(const side of p.channels==='separate'?['left','right']:['both']){const arr=p.measures[key(f,side)]||[];const valid=arr.filter(r=>r&&r.db!==null&&Number.isFinite(r.db)).map(r=>r.db);if(valid.length){samples.push({db:median(valid),quality:Math.max(...valid)-Math.min(...valid)<=6&&valid.length>=2?'good':'low',side})}}if(!samples.length)return {f,db:null,quality:'unmeasurable'};const values=samples.map(s=>s.db),spread=Math.max(...values)-Math.min(...values);return {f,db:median(values),quality:spread>9?'mixed':samples.every(s=>s.quality==='good')?'good':'low'}};
  const allMeasured=[...new Set(Object.keys(p.measures).map(k=>Number(k.split('|')[0])).filter(Number.isFinite))].map(collect).filter(x=>x.db!==null).sort((a,b)=>a.f-b.f);
@@ -1040,6 +1077,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  ${usable<p.bands.length?`<div class="soft warning"><strong>⚠ ${p.bands.length-usable} frecuencias sin umbral</strong><p class="small">Puedes repetir solo las que faltan. No aumentes el volumen para escucharlas.</p>${button('↺ Repetir pendientes','retrymissing','btn-alt full')}</div>`:''}
  ${renderCalibrationTrace(p,r)}
  ${eqResultMarkup(p)}
+ <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>🔎 Igualación de sonoridad · prueba complementaria opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
  <div class="eq-util">${button('⎘ Copiar todos','copy','btn-alt')}${button('↓ TXT','downloadtxt','btn-ghost')}${button('↺ Reiniciar cambios','clearmanual','btn-ghost')}</div>
@@ -1220,8 +1258,112 @@ function transferTable(list){
 }
 function refreshTransfer(){const target=$('#transferPanel');if(!target)return;target.innerHTML=transferMarkup();localize(target)}
 
+/* Optional loudness matching: raw relative comparisons only; never modifies recommend(). */
+let loudnessFreq=null,loudnessOffsetDb=0,loudnessListened=new Set(),loudnessMessage='';
+function loudnessEligibleBands(p){
+ return p.bands.filter(f=>f>=100&&f<=10000&&Math.abs(Math.log2(f/1000))>.08);
+}
+function loudnessSelectedBand(p){
+ const eligible=loudnessEligibleBands(p);
+ if(!eligible.length)return null;
+ if(!eligible.includes(loudnessFreq))loudnessFreq=eligible[0];
+ return loudnessFreq;
+}
+function loudnessRowText(samples){
+ if(!samples?.length)return 'Sin datos';
+ const offsets=samples.map(x=>(x.offsetDb>=0?'+':'')+x.offsetDb+' dBFS').join(' / ');
+ return offsets+' · '+loudnessEvidenceStatus(samples);
+}
+function loudnessMarkup(p){
+ const bands=loudnessEligibleBands(p),selected=loudnessSelectedBand(p);
+ const records=p.loudness||{};
+ if(selected===null)return '<p class="compact-note">Este ecualizador no tiene bandas entre 100 Hz y 10 kHz distintas de la referencia de 1 kHz. Conserva el resultado original del test.</p>';
+ const samples=records[selected]||[],count=samples.length;
+ const rows=bands.map(f=>'<tr><th scope="row">'+fmt(f)+'</th><td>'+esc(loudnessRowText(records[f]))+'</td></tr>').join('');
+ return `<p class="compact-note"><strong>Procedimiento exploratorio, independiente del EQ.</strong> Escucha dos tonos de 1 segundo: referencia 1 kHz a −48 dBFS y frecuencia evaluada entre −54 y −42 dBFS. Son niveles digitales, no niveles seguros de presión sonora garantizados. Mantén un volumen físico bajo, fijo y cómodo. No intentes compensar tonos inaudibles subiendo el volumen.</p>
+ <p class="tiny muted">Compara su intensidad percibida, no su timbre. Se necesitan dos comparaciones por banda. No se utilizan estas diferencias para subir ni bajar automáticamente el ecualizador.</p>
+ <label for="loudnessFrequency">Frecuencia a comparar contra 1 kHz</label>
+ <select id="loudnessFrequency" class="field">${bands.map(f=>'<option value="'+f+'" '+(f===selected?'selected':'')+'>'+fmt(f)+'</option>').join('')}</select>
+ <div class="loudness-work">
+ <p class="small"><strong>${count>=2?'Dos respuestas guardadas':'Comparación '+(count+1)+' de 2'}</strong> · ajuste relativo de la frecuencia evaluada:</p>
+ <div class="loudness-offset">
+ <button type="button" data-loudness="minus" aria-label="Reducir señal comparada 1 dB">−</button>
+ <strong>${loudnessOffsetDb>=0?'+':''}${loudnessOffsetDb} dBFS respecto a referencia</strong>
+ <button type="button" data-loudness="plus" aria-label="Aumentar señal comparada 1 dB">+</button></div>
+ <div class="row wrap"><button type="button" class="btn btn-alt grow" data-loudness="reference">▶ Referencia 1 kHz</button>
+ <button type="button" class="btn btn-alt grow" data-loudness="target">▶ ${fmt(selected)}</button></div>
+ <div class="row wrap"><button type="button" class="btn btn-primary grow" data-loudness="record">${count>=2?'Volver a medir esta banda':'Registrar comparación'}</button>
+ <button type="button" class="btn btn-ghost grow" data-loudness="stop">■ Detener</button></div>
+ <p class="small" role="status" id="loudnessStatus">${esc(loudnessMessage||'Escucha ambas señales por separado antes de registrar una comparación. Si no distingues los sonidos, omite esta banda.')}</p>
+ <p class="tiny muted">Las bandas fuera de 100 Hz–10 kHz se excluyen de esta prueba exploratoria, pero siguen presentes en tu EQ y test principal.</p>
+ </div>
+ <div class="trace-table-scroll"><table class="trace-table"><thead><tr><th>Banda</th><th>Comparaciones relativas guardadas</th></tr></thead><tbody>${rows}</tbody></table></div>
+ <p class="tiny muted">Un valor positivo significa que amplificaste digitalmente la señal comparada para percibirla semejante a la referencia. NO significa que el EQ deba aumentar ese valor: la sensibilidad de cada frecuencia y el entorno ya producen diferencias normales.</p>`;
+}
+function refreshLoudnessUI(){
+ const panel=$('#loudnessInner');
+ if(panel&&current)panel.innerHTML=loudnessMarkup(current);
+ localize(document.body);
+}
+async function playLoudnessSample(which){
+ if(!current||page!=='results')return;
+ const f=loudnessSelectedBand(current);if(f===null)return;
+ const frequency=which==='reference'?1000:f;
+ const db=LOUDNESS_REFERENCE_DBFS+(which==='target'?loudnessOffsetDb:0);
+ if(db>LOUDNESS_REFERENCE_DBFS+LOUDNESS_OFFSET_LIMIT)return;
+ try{
+  stopTone();
+  if(playerAudio)playerAudio.pause();
+  const ctx=await ensureAudio();
+  if(frequency>=ctx.sampleRate/2){loudnessMessage='Frecuencia fuera del rango reproducible en este equipo.';refreshLoudnessUI();return}
+  const oscillator=ctx.createOscillator(),gain=ctx.createGain();
+  oscillator.type='sine';oscillator.frequency.value=frequency;
+  oscillator.connect(gain);gain.connect(ctx.destination);
+  const t=ctx.currentTime+.03,amp=Math.pow(10,db/20);
+  gain.gain.setValueAtTime(0.00000001,t);
+  gain.gain.linearRampToValueAtTime(amp,t+.1);
+  gain.gain.setValueAtTime(amp,t+.85);
+  gain.gain.linearRampToValueAtTime(.00000001,t+.98);
+  oscillator.start(t);oscillator.stop(t+1.03);
+  oscillator.onended=()=>{try{oscillator.disconnect();gain.disconnect()}catch(e){}if(tone?.osc===oscillator)tone=null};
+  tone={mode:'loudness',osc:oscillator,gain,start:t};
+  loudnessListened.add(which);
+  loudnessMessage='Señal '+(which==='reference'?'de referencia':'evaluada')+' reproducida a '+db+' dBFS digitales. Compara sin cambiar el volumen físico.';
+  refreshLoudnessUI();
+ }catch(e){loudnessMessage='No se pudo reproducir el tono: '+e.message;refreshLoudnessUI()}
+}
+function recordLoudnessSample(p){
+ const f=loudnessSelectedBand(p);
+ if(f===null)return false;
+ if(!loudnessListened.has('reference')||!loudnessListened.has('target')){
+  loudnessMessage='Escucha primero ambas señales de esta comparación.';return false;
+ }
+ if(!p.loudness||typeof p.loudness!=='object')p.loudness={};
+ let records=Array.isArray(p.loudness[f])?p.loudness[f]:[];
+ if(records.length>=2)records=[];
+ records=[...records,{offsetDb:loudnessOffsetDb,referenceDbfs:LOUDNESS_REFERENCE_DBFS,
+  method:'relative-tone-match-v1',at:Date.now()}];
+ p.loudness[f]=records;
+ loudnessMessage=records.length===1?'Primera comparación registrada. Repite con los mismos niveles físicos de escucha.':
+  'Dos comparaciones registradas: '+loudnessEvidenceStatus(records)+'. Estos datos no modifican el EQ.';
+ loudnessOffsetDb=0;loudnessListened=new Set();
+ touch();return true;
+}
+function loudnessAction(action){
+ if(!current)return;
+ if(action==='stop'){stopTone();loudnessMessage='Tono detenido.';refreshLoudnessUI();return}
+ if(action==='reference'||action==='target'){void playLoudnessSample(action);return}
+ if(action==='plus'||action==='minus'){
+  stopTone();loudnessOffsetDb=clamp(loudnessOffsetDb+(action==='plus'?1:-1),-LOUDNESS_OFFSET_LIMIT,LOUDNESS_OFFSET_LIMIT);
+  loudnessListened.delete('target');
+  loudnessMessage='Ajuste '+(loudnessOffsetDb>0?'+':'')+loudnessOffsetDb+' dBFS. Vuelve a escuchar la señal evaluada.';
+ }else if(action==='record'){stopTone();recordLoudnessSample(current)}
+ refreshLoudnessUI();
+}
+
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
+if(btn.dataset.loudness){loudnessAction(btn.dataset.loudness);return}
 if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.context=defaultCalibrationContext(type);temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;render();return}
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(btn.dataset.transferOs&&current){transferOS=btn.dataset.transferOs;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();return}
@@ -1275,7 +1417,7 @@ case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'
  }break;
  case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
 case 'retry':awaitNext=false;floorReached=false;trial=null;sampleNote='';stopTone();render();break;
-case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.manual={};awaitNext=false;floorReached=false;trial=null;introStep=3;sampleNote='';touch();render()}break;
+case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.manual={};awaitNext=false;floorReached=false;trial=null;introStep=3;sampleNote='';touch();render()}break;
 case 'transfer-open':transferOpen=true;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();break;
 case 'transfer-close':transferOpen=false;refreshTransfer();break;
 case 'transfer-next':if(!current)return;if(transferStep===1&&!transferMapping(current)){transferStatus='Revisa las frecuencias reales del ecualizador.';refreshTransfer();break}
@@ -1301,6 +1443,7 @@ case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({ap
 case 'import':$('#importInput')?.click();break;
 }}
 function handleChange(e){const t=e.target;
+if(t.id==='loudnessFrequency'&&current){stopTone();loudnessFreq=Number(t.value);loudnessOffsetDb=0;loudnessListened=new Set();loudnessMessage='Nueva frecuencia seleccionada. Compara las dos señales.';refreshLoudnessUI();return}
 if(current&&(t.id==='resultEqScale'||t.id==='resultEqStepDb')){
  const f=t.id==='resultEqScale'?'eqScale':'eqStepDb';
  const next={...normalizeCalibrationContext(current.context,current.type),provenance:'captured',[f]:t.value};

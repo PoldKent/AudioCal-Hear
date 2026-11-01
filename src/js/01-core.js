@@ -119,6 +119,32 @@ function calibrationContextCaution(p){
  return 'Contexto registrado para comparar pruebas. No se aplican ganancias ambientales sin medición adicional.';
 }
 
+
+// Optional suprathreshold evidence. It is not an acoustic calibration nor
+// an input to automatic EQ, which requires an independently validated mapping.
+const LOUDNESS_REFERENCE_DBFS=-48, LOUDNESS_OFFSET_LIMIT=6;
+function normalizeLoudness(raw,bands){
+ const saved=Object.create(null);
+ if(!raw||typeof raw!=='object'||Array.isArray(raw))return saved;
+ for(const f of bands){
+  const list=raw[f];
+  if(!Array.isArray(list))continue;
+  const samples=list.slice(0,2).filter(x=>x&&typeof x==='object'&&!Array.isArray(x)&&
+   Number.isInteger(x.offsetDb)&&Math.abs(x.offsetDb)<=LOUDNESS_OFFSET_LIMIT&&
+   x.referenceDbfs===LOUDNESS_REFERENCE_DBFS&&x.method==='relative-tone-match-v1')
+   .map(x=>({offsetDb:x.offsetDb,referenceDbfs:LOUDNESS_REFERENCE_DBFS,
+    method:'relative-tone-match-v1',at:Number.isFinite(x.at)?clamp(x.at,0,Date.now()+86400000):Date.now()}));
+  if(samples.length)saved[f]=samples;
+ }
+ return saved;
+}
+function loudnessEvidenceStatus(samples){
+ if(!Array.isArray(samples)||!samples.length)return 'Sin comparar';
+ if(samples.length<2)return 'Una comparación; repetir';
+ return Math.abs(samples[0].offsetDb-samples[1].offsetDb)<=2?
+  'Repetible · descriptivo':'Inconsistente · no interpretar';
+}
+
 function normalizedProfile(p,importing=false){
  if(!p||typeof p!=='object'||Array.isArray(p)||!Array.isArray(p.bands)||p.bands.length<2||p.bands.length>31)return null;
  const bands=p.bands.map(Number);
@@ -156,6 +182,7 @@ function normalizedProfile(p,importing=false){
   preset:Object.hasOwn(presets,p.preset)?p.preset:'custom',bands,min,max,step:1,
   channels:p.channels==='separate'?'separate':'both',passes:p.passes===2?2:1,
   testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,
+  loudness:normalizeLoudness(p.loudness,bands),
   manual:finiteMap(p.manual,-30,30),balance:finiteMap(p.balance,-6,3),balanceProof:Object.fromEntries(bands.map(f=>[f,(Array.isArray(p.balanceProof?.[f])?p.balanceProof[f]:[]).slice(-10).filter(x=>x&&Number.isFinite(x.change)&&Math.abs(x.change)<=3).map(x=>({at:safeNumber(x.at,Date.now(),0,Date.now()+86400000),choices:Array.isArray(x.choices)?x.choices.slice(0,2).filter(q=>[-1,0,1].includes(q)):[],change:x.change,method:'music-ab-two-rounds'}))])),
   taste:{bass:safeNumber(taste.bass,0,-3,3),voices:safeNumber(taste.voices,0,-3,3),air:safeNumber(taste.air,0,-3,3)},
   context:normalizeCalibrationContext(p.context,p.type),

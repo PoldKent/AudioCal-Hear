@@ -68,3 +68,13 @@ La implementación de los lotes 0–1 **no cambia** `recommend()`, los tonos ni 
 - Límite automático: ±1 dB en una pasada; hasta ±2 dB en medidas más consistentes, con máximo +1 dB en auto y parlantes.
 - Preferencias musicales y edición manual son *capas separadas* y no se reescriben. Sonoridad a volumen cómodo requiere diseñar y validar un protocolo antes de incorporarla a la ganancia automática.
 - La calibración exacta de respuesta de un recinto requiere medición acústica; la escala de pasos de los ecualizadores no se convierte a dB sin documentación.
+
+
+## Lote 2B: comparación supraliminal de sonoridad (opcional, en revisión)
+
+- Reproduce una referencia fija de 1 kHz a −48 dBFS y una frecuencia evaluada entre −54 y −42 dBFS. Son amplitudes **digitales**, nunca presión acústica garantizada en el oído.
+- El usuario ajusta la señal comparada, escucha ambas manualmente y registra dos respuestas independientes. Las discrepancias superiores a 2 dBFS se señalan como inconsistentes.
+- Se limita a bandas de 100 Hz a 10 kHz (salvo 1 kHz); las demás siguen en el examen principal y en el EQ.
+- Conservar los dos registros por frecuencia y por perfil en un campo `loudness` validado al importar y recargar.
+- **Sin aplicar ajustes automáticos de EQ por esta medición**: los contornos ISO 226:2023 son mediciones acústicas bajo condiciones de campo libre, no un objetivo de curva para auriculares o vehículos sin calibrar. Primero validar el método y la interpretación.
+- La música A/B y el micrófono no son necesarios para obtener el resultado principal ni el PNG.

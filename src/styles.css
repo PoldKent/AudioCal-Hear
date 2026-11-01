@@ -223,3 +223,13 @@ select option{background:#fff;color:#172033}
 .eq-card-alert{padding:10px 12px;background:#eff7ff;border-radius:10px;color:#2d5c91;font-size:12px;margin:10px 0}
 .eq-card-alert.eq-card-warning{background:#fff6ec;color:#80501f}
 .eq-card-actions{margin-top:12px}
+
+/* Optional suprathreshold experiment: clearly separate from automatic EQ. */
+.loudness-panel{margin:14px 0}
+.loudness-panel .inner-detail{display:grid;gap:11px}
+.loudness-work{border:1px solid #e1e8f1;border-radius:13px;padding:12px;background:#f9fbff;display:grid;gap:11px}
+.loudness-work p{margin:0}
+.loudness-offset{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.loudness-offset button{min-width:48px;min-height:43px;border:1px solid #c8d9ef;border-radius:10px;background:#fff;color:#245bc1;font-size:23px}
+.loudness-offset strong{font-size:14px;text-align:center}
+@media(max-width:430px){.loudness-offset strong{font-size:12px}}

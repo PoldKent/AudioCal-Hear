@@ -239,3 +239,33 @@ test('EQ PNG card marks unknown units, then exports positions using an explicitl
  expect(file.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
  await noOverflow(page);
 });
+
+test('optional loudness matching saves two relative responses without changing EQ',async({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await page.locator('#deviceName').fill('Auto Loudness QA');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('[data-nav="results"]').click();
+ const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ const eqBefore=await page.locator('.eqband .eqval').allTextContents();
+ await page.locator('#loudnessPanel summary').click();
+ await expect(page.locator('#loudnessFrequency')).toBeVisible();
+ await page.locator('[data-loudness="record"]').click();
+ await expect(page.locator('#loudnessStatus')).toContainText('Escucha primero ambas');
+ for(let pass=0;pass<2;pass++){
+  await page.locator('[data-loudness="reference"]').click();
+  await page.locator('[data-loudness="plus"]').click();
+  await page.locator('[data-loudness="target"]').click();
+  await page.locator('[data-loudness="record"]').click();
+ }
+ await expect(page.locator('#loudnessInner')).toContainText('Repetible');
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ const first=Number(await page.locator('#loudnessFrequency').inputValue());
+ expect(stored.loudness[first]).toHaveLength(2);
+ expect(stored.measures).toEqual(before.measures);
+ expect(await page.locator('.eqband .eqval').allTextContents()).toEqual(eqBefore);
+ await page.reload();
+ await page.locator('[data-nav="results"]').click();
+ await page.locator('#loudnessPanel summary').click();
+ await expect(page.locator('#loudnessInner')).toContainText('Repetible');
+ await noOverflow(page);
+});
