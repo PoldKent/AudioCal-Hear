@@ -461,6 +461,9 @@ function saveEqCardPng(p){
 function starterEqProposal(p){
  const raw=gather(p);
  const rows=p.bands.map(f=>({f,gain:0,reason:'Sin contraste local utilizable'}));
+ // Do not imply that a sub-2 dB digital hypothesis can be applied as a whole 2–3 dB hardware step.
+ const tooCoarse=p.context?.eqScale==='steps'&&['2','3'].includes(p.context?.eqStepDb);
+ if(tooCoarse)return {rows,changes:0,tooCoarse:true};
  const usable=f=>{
   const record=raw.find(x=>x.f===f);
   if(!record||!Number.isFinite(record.db)||record.derived||record.quality==='mixed'||record.quality==='unmeasurable')return false;
@@ -517,7 +520,7 @@ function starterEqMarkup(p,r){
   '<h2>Qué poner en tu ecualizador</h2>'+
   '<p class="small">'+(hasProposal?
    'Punto de partida <strong>experimental</strong>: '+proposal.changes+' ajustes pequeños sugeridos. No se aplican hasta que los elijas.':
-   'Tus mediciones no permiten defender un cambio automático. Punto de partida seguro: controles a 0, y afina escuchando tu música.')+'</p>'+
+   (proposal.tooCoarse?'El control físico avanza en pasos de 2–3 dB y los contrastes digitales no justifican saltos de ese tamaño: deja las posiciones en 0 y afina escuchando música.':'Tus mediciones no permiten defender un cambio automático. Punto de partida seguro: controles a 0, y afina escuchando tu música.'))+'</p>'+
   '<div class="starter-bands" aria-label="Valores propuestos por frecuencia">'+values+'</div>'+
   (hasProposal?
    '<p class="tiny muted">Estos valores de ±1 dB son una hipótesis basada en diferencias locales de detección digital; NO miden ni corrigen la respuesta acústica del auricular, oído o automóvil. Las bandas extremas y datos incompletos no generan refuerzos. Confirma con música a volumen cómodo.</p>'+
