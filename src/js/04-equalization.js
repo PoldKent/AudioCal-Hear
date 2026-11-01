@@ -212,7 +212,7 @@ function renderCalibrationTrace(p,r){
 // Round exact half-steps toward zero to avoid unintended extra boost/cut.
 function physicalEqControl(gain,p,context=normalizeCalibrationContext(p.context,p.type)){
  const scale=context.eqScale;
- const ratio=scale==='db'?1:(scale==='steps'&&['1','2'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
+ const ratio=scale==='db'?1:(scale==='steps'&&['1','2','3'].includes(context.eqStepDb)?Number(context.eqStepDb):null);
  if(!Number.isFinite(ratio))return {position:null,actualGain:null,delta:null,exact:false,ratio:null};
  const magnitude=Math.round(Math.abs(gain)/ratio-1e-9);
  const position=clamp(magnitude===0?0:Math.sign(gain)*magnitude,Math.ceil(p.min),Math.floor(p.max));
@@ -242,7 +242,7 @@ function eqResultMarkup(p){
  const m=eqResultModel(p);
  const ctx=normalizeCalibrationContext(p.context,p.type);
  const scaleOptions=[['unknown','Unidad sin verificar'],['db','Controles en dB'],['steps','Controles por posiciones']];
- const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (según manual)'],['2','2 dB por paso (según manual)']];
+ const stepOptions=[['unknown','dB por paso sin verificar'],['1','1 dB por paso (según manual)'],['2','2 dB por paso (según manual)'],['3','3 dB por paso (según manual)']];
  return `<section id="eqCardSection" class="eq-card-section" aria-label="Imagen descargable del ecualizador">
  <h2>Mi ecualizador · resultado para aplicar</h2>
  <p class="compact-note">${esc(m.context)} · ${p.bands.length} bandas. ${m.complete?'Test completado':'Test pendiente de completar'}.</p>
