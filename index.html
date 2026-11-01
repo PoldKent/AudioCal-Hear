@@ -285,10 +285,10 @@ function trans(input){
  let result=s;
  // First translate complete known phrases (before individual words).
  const fragments=FRAGMENTS[language];
- const isLetter=c=>Boolean(c)&&/\\p{L}/u.test(c);
+ const isLetter=c=>Boolean(c)&&/\p{L}/u.test(c);
  for(const fragment of fragments){
   if(!result.includes(fragment))continue;
-  const leftIsLetter=/^\\p{L}/u.test(fragment),rightIsLetter=/\\p{L}$/u.test(fragment);
+  const leftIsLetter=/^\p{L}/u.test(fragment),rightIsLetter=/\p{L}$/u.test(fragment);
   result=result.replaceAll(fragment,(matched,pos,full)=>
    (leftIsLetter&&isLetter(full[pos-1]))||(rightIsLetter&&isLetter(full[pos+fragment.length]))
     ?matched:table[fragment]);
