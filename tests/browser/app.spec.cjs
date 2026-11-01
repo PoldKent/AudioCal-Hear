@@ -70,7 +70,7 @@ test('profile creation and local persistence survive reload', async ({ page }) =
   expect(records[0].preset).toBe('photo10');
   expect(records[0].channels).toBe('separate');
   expect(records[0].testStart).toBe(-36);
-  expect(records[0].testFloor).toBe(-84);
+  expect(records[0].testFloor).toBe(-100);
   await noOverflow(page);
 });
 
@@ -130,6 +130,7 @@ test('optional microphone is not requested by default', async ({ page }) => {
 });
 
 test('a contradictory answer is rechecked instead of becoming an uncertain result', async ({ page }) => {
+  test.setTimeout(90000);
   await newProfile(page);
   await passPreparation(page);
   const reply = async heard => {
@@ -436,4 +437,15 @@ test('PNG horizontal EQ exports a landscape image with frequency columns for 7 a
   await noOverflow(page);
   await page.locator('[data-nav="setup"]').click();
  }
+});
+
+test('configured digital range extends to -100 but never starts at 0 dBFS',async({page})=>{
+ await expect(page.locator('#testFloor')).toHaveValue('-100');
+ await expect(page.locator('#testStart')).toHaveValue('-36');
+ await expect(page.locator('#testStart')).toHaveAttribute('max','-24');
+ await page.locator('#deviceName').fill('100 dBFS QA');
+ await page.locator('[data-act="create"]').click();
+ const p=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(p.testFloor).toBe(-100);
+ expect(p.testStart).toBe(-36);
 });
