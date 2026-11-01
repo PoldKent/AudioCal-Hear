@@ -456,6 +456,80 @@ function saveEqCardPng(p){
  return true;
 }
 
+// Optional, user-triggered starting hypothesis. Never rewrite the measured data
+// or represent digital detection thresholds as calibrated frequency response.
+function starterEqProposal(p){
+ const raw=gather(p);
+ const rows=p.bands.map(f=>({f,gain:0,reason:'Sin contraste local utilizable'}));
+ const usable=f=>{
+  const record=raw.find(x=>x.f===f);
+  if(!record||!Number.isFinite(record.db)||record.derived||record.quality==='mixed'||record.quality==='unmeasurable')return false;
+  const sides=p.channels==='separate'?['left','right']:['both'];
+  const values=sides.map(side=>(p.measures?.[key(f,side)]||[]).filter(x=>x?.kind==='heard'&&Number.isFinite(x.db)).map(x=>x.db)).filter(x=>x.length);
+  if(values.length!==sides.length)return false;
+  if(values.length===2&&Math.abs(median(values[0])-median(values[1]))>8)return false;
+  return true;
+ };
+ const suggestions=[];
+ for(let i=1;i<raw.length-1;i++){
+  const a=raw[i-1],b=raw[i],c=raw[i+1];
+  if(b.f<100||b.f>10000||![a,b,c].every(x=>usable(x.f)))continue;
+  if(b.f/a.f>3.5||c.f/b.f>3.5)continue;
+  // Outlying end bands often reflect the transducer or room, not the listener.
+  if(Math.abs(a.db-b.db)>24||Math.abs(c.db-b.db)>24)continue;
+  const expected=a.db+(c.db-a.db)*Math.log(b.f/a.f)/Math.log(c.f/a.f);
+  const contrast=b.db-expected;
+  if(Math.abs(contrast)<4)continue;
+  suggestions.push({i,contrast,gain:Math.sign(contrast),f:b.f});
+ }
+ suggestions.sort((a,b)=>Math.abs(b.contrast)-Math.abs(a.contrast));
+ // At most three small changes, never an inferred high-frequency rescue boost.
+ for(const x of suggestions.slice(0,3)){
+  rows[x.i].gain=x.gain;
+  rows[x.i].reason='Contraste digital local '+(x.contrast>0?'+':'')+x.contrast.toFixed(1)+' dBFS; prueba auditiva, no calibración acústica';
+ }
+ return {rows,changes:rows.filter(x=>x.gain!==0).length};
+}
+function starterEqCopy(p){
+ const proposal=starterEqProposal(p);
+ const c=normalizeCalibrationContext(p.context,p.type);
+ return 'Hear · PROPUESTA EXPERIMENTAL (NO CALIBRADA) · '+p.name+'\n'+
+  'Basada en contrastes de los umbrales digitales. Verifica escuchando música; no compensa una audiometría.\n'+
+  proposal.rows.map(x=>{
+   const ctrl=physicalEqControl(x.gain,p,c);
+   return fmt(x.f)+' · '+(x.gain>=0?'+':'')+x.gain+' dB sugeridos'+
+    (ctrl.position===null?' · sin conversión física documentada':
+    ' · control '+(ctrl.position>=0?'+':'')+ctrl.position+' '+(c.eqScale==='steps'?'pasos':'dB del control'));
+  }).join('\n');
+}
+function starterEqMarkup(p,r){
+ const proposal=starterEqProposal(p),hasProposal=proposal.changes>0;
+ const values=proposal.rows.map(x=>{
+  const ctrl=physicalEqControl(x.gain,p);
+  const physical=ctrl.position===null?'—':(ctrl.position>=0?'+':'')+ctrl.position;
+  return '<div class="starter-band"><strong>'+short(x.f)+'</strong><span class="'+(x.gain?'starter-adjust':'')+'">'+(x.gain>=0?'+':'')+x.gain+' dB</span>'+
+   '<small>'+(ctrl.position===null?'Unidad física sin verificar':physical+' '+(normalizeCalibrationContext(p.context,p.type).eqScale==='steps'?'pasos':'control'))+'</small></div>';
+ }).join('');
+ const applied=hasProposal&&proposal.rows.every((v,i)=>r[i]?.gain===v.gain);
+ const completed=firstMissing(p)<0;
+ return '<section class="card starter-card" id="starterGuide" aria-label="Recomendación práctica para el ecualizador">'+
+  '<span class="tiny muted">TU RESULTADO · '+p.bands.length+' BANDAS</span>'+
+  '<h2>Qué poner en tu ecualizador</h2>'+
+  '<p class="small">'+(hasProposal?
+   'Punto de partida <strong>experimental</strong>: '+proposal.changes+' ajustes pequeños sugeridos. No se aplican hasta que los elijas.':
+   'Tus mediciones no permiten defender un cambio automático. Punto de partida seguro: controles a 0, y afina escuchando tu música.')+'</p>'+
+  '<div class="starter-bands" aria-label="Valores propuestos por frecuencia">'+values+'</div>'+
+  (hasProposal?
+   '<p class="tiny muted">Estos valores de ±1 dB son una hipótesis basada en diferencias locales de detección digital; NO miden ni corrigen la respuesta acústica del auricular, oído o automóvil. Las bandas extremas y datos incompletos no generan refuerzos. Confirma con música a volumen cómodo.</p>'+
+   '<p class="tiny muted">Los umbrales dBFS no pueden transformarse directamente en un ecualizador óptimo. No vamos a inventar refuerzos grandes en las frecuencias que no oyes.</p>')+
+  '<div class="row wrap starter-actions">'+
+  (hasProposal?button(applied?'✓ Propuesta aplicada':'Aplicar punto de partida','starter-apply','btn-primary grow',applied?'disabled':''):'')+
+  button('Copiar valores sugeridos','starter-copy',hasProposal?'btn-alt grow':'btn-primary grow')+
+  '</div><p class="tiny muted" id="starterStatus" role="status">'+(hasProposal&&!applied?'Tu EQ actual no cambia hasta pulsar «Aplicar».':'')+'</p>'+
+  (completed?'<p class="tiny muted">Prueba completada. No necesitas volver a medir para usar o revisar estos valores.</p>':'<p class="tiny muted">Puedes continuar el test cuando quieras. Estas sugerencias son provisionales.</p>')+
+  '</section>';
+}
+
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
  const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),coverage=thresholdCoverage(p,gather(p)),usable=coverage.measured.length,derived=r.filter(x=>x.derived).length,required=coverage.required;
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
