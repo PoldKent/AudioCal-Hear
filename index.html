@@ -1066,54 +1066,113 @@ function eqResultMarkup(p){
  ${ctx.eqScale==='steps'?'<label for="resultEqStepDb">Equivalencia documentada del control</label><select id="resultEqStepDb" class="field">'+stepOptions.map(([k,l])=>'<option value="'+k+'" '+(ctx.eqStepDb===k?'selected':'')+'>'+l+'</option>').join('')+'</select>':''}
  <p class="tiny muted">Los pasos y los dB no son la misma unidad. Indica una equivalencia solo si está documentada para tu modelo. El rango de auto −6 a +6 describe posiciones, no dB.</p></div>
  <p class="eq-card-alert ${m.verified?'':'eq-card-warning'}" id="eqCardNotice">${esc(m.warning)}</p>
- <canvas id="eqCardCanvas" class="eq-card-canvas" width="960" height="${440+m.rows.length*61}" role="img" aria-label="Vista previa del resultado visual y las bandas de EQ"></canvas>
+ <canvas id="eqCardCanvas" class="eq-card-canvas" width="${eqPngLayout(p,m).width}" height="782" role="img" aria-label="Ecualizador horizontal, frecuencias de izquierda a derecha y barras verticales sobre cero"></canvas>
  <div class="row wrap eq-card-actions">${button('↓ Guardar imagen PNG','downloadpng','btn-primary grow')}${button('⎘ Copiar controles','copycontrols','btn-alt grow')}</div>
- <p class="tiny muted">El PNG muestra los dB sugeridos, el control aplicable y la diferencia de dB por redondeo. No sustituye una medición acústica.</p></section>`;
+ <p class="tiny muted">El PNG se muestra como ecualizador horizontal: frecuencias de izquierda a derecha, aumentos arriba de cero y recortes abajo. Cada banda incluye valor del control y dB sugeridos; una conversión no confirmada aparece como «—».</p></section>`;
+}
+
+/* Landscape EQ image: one column per frequency. The primary value always
+   comes from the same physicalEqControl projection as the transfer wizard. */
+function eqPngLayout(p,m=eqResultModel(p)){
+ const count=m.rows.length;
+ const width=Math.max(1080,count*98+138);
+ const height=782,left=82,right=width-52;
+ const plotTop=265,zeroY=370,plotBottom=475;
+ const gap=(right-left)/Math.max(1,count);
+ const output=m.rows.map(r=>m.verified?r.position:r.gain);
+ const absoluteMax=Math.max(3,...output.map(v=>Math.abs(v||0)));
+ const extent=Math.ceil(absoluteMax);
+ const marks=[-extent,-Math.round(extent/2),0,Math.round(extent/2),extent];
+ const x=i=>left+(i+.5)*gap;
+ const y=v=>zeroY-v/extent*88;
+ const columns=m.rows.map((r,i)=>({x:x(i),y:y(output[i]||0),value:output[i]||0,frequency:r.f,
+  gain:r.gain,position:r.position,actualGain:r.actualGain,delta:r.delta}));
+ return {width,height,left,right,plotTop,plotBottom,zeroY,gap,extent,marks,columns,
+  unit:m.verified?(m.scale==='steps'?'posiciones':'dB del control'):'dB sugeridos, SIN posiciones',
+  physical:m.verified};
 }
 function paintEqResult(canvas,p){
  if(!canvas||!p)return false;
- const m=eqResultModel(p),rows=m.rows;
- const w=960,h=440+rows.length*61;
+ const m=eqResultModel(p),layout=eqPngLayout(p,m),rows=m.rows;
+ const w=layout.width,h=layout.height;
  canvas.width=w;canvas.height=h;
  const c=canvas.getContext('2d');if(!c)return false;
- const rounded=(x,y,width,height,r)=>{c.beginPath();c.roundRect(x,y,width,height,r)};
+ const round=(x,y,width,height,r)=>{c.beginPath();c.roundRect(x,y,width,height,r)};
+ const signed=v=>(v>0?'+':'')+v;
+ const centered=(txt,x,y,font,color,maxWidth=layout.gap-14)=>{
+  c.font=font;c.fillStyle=color;c.textAlign='center';c.fillText(txt,x,y,Math.max(35,maxWidth));c.textAlign='left';
+ };
  c.fillStyle='#ffffff';c.fillRect(0,0,w,h);
- c.fillStyle='#2364cc';rounded(40,34,880,9,4);c.fill();
- c.fillStyle='#192b47';c.font='bold 35px system-ui, sans-serif';c.fillText('AudioCal Hear',40,92);
- c.fillStyle='#52647a';c.font='20px system-ui, sans-serif';c.fillText('MI ECUALIZADOR · '+m.device,40,130);
- c.fillStyle='#1b3352';c.font='bold 25px system-ui, sans-serif';c.fillText(String(m.name).slice(0,50),40,181);
- c.fillStyle='#63758c';c.font='16px system-ui, sans-serif';
- const label=String(m.context);c.fillText(label.length>93?label.slice(0,90)+'...':label,40,217);
- const labelVal=m.verified?(m.scale==='db'?'dB DEL CONTROL':'POSICIÓN DEL CONTROL'):'AJUSTE EQ ESTIMADO';
- c.fillStyle='#2670d4';c.font='bold 18px system-ui, sans-serif';c.fillText(labelVal,40,273);
- c.fillStyle='#64758b';c.font='15px system-ui, sans-serif';
- c.fillText(m.verified?'Rango de control: '+p.min+' a +'+p.max+' · '+(m.scale==='steps'?m.ratio+' dB/paso declarado':'controles en dB declarados'):'Conversión a posiciones no confirmada',40,303);
- const maxAbs=Math.max(3,...rows.map(r=>Math.abs(r.gain)));
- rows.forEach((r,i)=>{
-  const y=345+i*61;
-  c.fillStyle=i%2===0?'#f4f7fc':'#ffffff';rounded(40,y-31,880,55,10);c.fill();
-  c.fillStyle='#1c3453';c.font='bold 19px system-ui, sans-serif';c.fillText(fmt(r.f),57,y+1);
-  const x0=425,maxWidth=185;
-  c.fillStyle='#ccd7e6';c.fillRect(x0-maxWidth,y-4,maxWidth*2,8);
-  const dx=r.gain/maxAbs*maxWidth;
-  c.fillStyle=dx>=0?'#2671db':'#df8843';
-  c.fillRect(dx<0?x0+dx:x0,y-10,Math.max(2,Math.abs(dx)),20);
-  c.fillStyle='#8595a8';c.fillRect(x0-1,y-15,2,30);
-  c.fillStyle='#1b3454';c.font='bold 24px system-ui, sans-serif';
-  const primary=r.position===null?'—':(r.position>0?'+':'')+r.position;
-  c.textAlign='right';c.fillText(primary,887,y+4);c.textAlign='left';
-  c.fillStyle='#8290a2';c.font='14px system-ui, sans-serif';
-  const signed=v=>(v>0?'+':'')+v;
-  c.fillText('Sugerido '+signed(r.gain)+' dB · '+(r.actualGain===null?'sin conversión':'Real '+signed(r.actualGain)+' dB'+(r.exact?' · exacto':' · diferencia '+signed(r.delta)+' dB')),57,y+22);
- });
- const foot=h-70;
- c.fillStyle=m.verified?'#245787':'#95542a';c.font='bold 17px system-ui, sans-serif';
- c.fillText(m.complete?'TEST FINALIZADO':'PRUEBA INCOMPLETA',40,foot);
- c.fillStyle='#61748a';c.font='15px system-ui, sans-serif';
- const warnings=m.verified?
-  'dB/paso declarado, no verificado · EQ experimental · sin medición acústica':
-  'SIN CONVERSIÓN VALIDADA: confirmar dB por nivel antes de mover controles';
- c.fillText(warnings,40,foot+28);
+ c.fillStyle='#2565cc';round(38,30,w-76,9,4);c.fill();
+ c.fillStyle='#192e4b';c.font='bold 35px system-ui,sans-serif';
+ c.fillText('AudioCal Hear',45,88);
+ c.fillStyle='#52677f';c.font='20px system-ui,sans-serif';
+ c.fillText('MI ECUALIZADOR · '+m.device+' · '+rows.length+' BANDAS',45,126,w-90);
+ c.fillStyle='#1c3658';c.font='bold 27px system-ui,sans-serif';
+ c.fillText(String(m.name),45,171,w-90);
+ c.fillStyle='#63768c';c.font='17px system-ui,sans-serif';
+ c.fillText(String(m.context),45,205,w-90);
+ c.fillStyle='#245bb0';c.font='bold 20px system-ui,sans-serif';
+ c.fillText('RESULTADO FINAL · '+layout.unit.toUpperCase(),45,242,w-90);
+ // A common zero line and visible horizontal frequency axis.
+ const chartLeft=layout.left,chartRight=layout.right;
+ const n=layout.columns.length;
+ for(const tick of layout.marks){
+  if(layout.marks.indexOf(tick)!==layout.marks.lastIndexOf(tick))continue;
+  const y=layout.zeroY-tick/layout.extent*88;
+  c.strokeStyle=tick===0?'#637a99':'#dbe4f0';c.lineWidth=tick===0?3:1;
+  c.setLineDash(tick===0?[]:[5,6]);
+  c.beginPath();c.moveTo(chartLeft-13,y);c.lineTo(chartRight+14,y);c.stroke();
+  c.setLineDash([]);
+  c.fillStyle='#667a93';c.font='15px system-ui,sans-serif';c.textAlign='right';
+  c.fillText(signed(tick),chartLeft-21,y+5);c.textAlign='left';
+ }
+ for(const [i,r] of rows.entries()){
+  const point=layout.columns[i],x=point.x,y=point.y;
+  const bw=Math.max(15,Math.min(50,layout.gap*.54));
+  if(i%2===0){
+   c.fillStyle='#f7faff';round(x-layout.gap*.48,layout.plotTop,layout.gap*.96,248,8);c.fill();
+  }
+  // Draw each vertical control from zero, so boosts rise and cuts descend.
+  if(point.value!==0){
+   c.fillStyle=point.value>0?'#2a70d6':'#dc8247';
+   round(x-bw/2,Math.min(layout.zeroY,y),bw,Math.max(3,Math.abs(layout.zeroY-y)),7);c.fill();
+  }else{
+   c.fillStyle='#7b90a9';round(x-bw/2,layout.zeroY-3,bw,6,3);c.fill();
+  }
+  centered(signed(point.value),x,point.value>0?Math.max(layout.plotTop+16,y-11):
+   point.value<0?Math.min(layout.plotBottom-6,y+23):layout.zeroY-13,
+   'bold '+(n>17?16:21)+'px system-ui,sans-serif','#203c60');
+  centered(fmt(r.f),x,505,'bold '+(n>17?15:20)+'px system-ui,sans-serif','#263e5d');
+ }
+ // Control values and digital-processing suggestions remain distinct units.
+ c.fillStyle='#315478';c.font='bold 17px system-ui,sans-serif';
+ c.fillText('CONTROLES PARA APLICAR',45,536);
+ for(const [i,r] of rows.entries()){
+  const x=layout.columns[i].x,cardWidth=layout.gap*.91;
+  c.fillStyle=i%2===0?'#f2f6fc':'#f8faff';
+  round(x-cardWidth/2,550,cardWidth,119,10);c.fill();
+  centered(r.position===null?'—':signed(r.position),x,593,
+   'bold '+(n>17?23:30)+'px system-ui,sans-serif',
+   r.position===null?'#a45b27':'#205ca9',cardWidth-8);
+  centered(r.position===null?'NO VERIFICADO':m.scale==='steps'?'posición':'dB control',x,616,
+   (n>17?11:14)+'px system-ui,sans-serif','#5e7087',cardWidth-6);
+  centered('EQ '+signed(r.gain)+' dB',x,645,
+   'bold '+(n>17?12:16)+'px system-ui,sans-serif','#304964',cardWidth-6);
+  if(r.actualGain!==null&&!r.exact){
+   centered('dif. '+signed(r.delta)+' dB',x,661,
+    (n>17?10:12)+'px system-ui,sans-serif','#9a6237',cardWidth-6);
+  }
+ }
+ c.fillStyle=m.complete?'#245787':'#9a572c';c.font='bold 18px system-ui,sans-serif';
+ c.fillText(m.complete?'TEST FINALIZADO':'TEST INCOMPLETO · AJUSTES PROVISIONALES',45,708,w-90);
+ c.fillStyle=m.verified?'#5b718a':'#9a572c';c.font='16px system-ui,sans-serif';
+ const warning=m.verified?
+  'Equivalencia declarada por el usuario, NO verificada por Hear · Corrección experimental':
+  'SIN ESCALA VERIFICADA: las barras muestran dB sugeridos, NO posiciones físicas';
+ c.fillText(warning,45,737,w-90);
+ c.fillStyle='#75859b';c.font='14px system-ui,sans-serif';
+ c.fillText('Sin medición acústica calibrada. Los valores efectivos pueden diferir por redondeo o filtros del equipo.',45,765,w-90);
  return true;
 }
 function refreshEqCard(){if(page!=='results'||!current)return;
