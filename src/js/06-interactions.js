@@ -1,6 +1,7 @@
 
 async function handleClick(e){const btn=e.target.closest('button');if(!btn)return;
 if(btn.dataset.nav){nav(btn.dataset.nav);return}
+if(btn.dataset.inlineChoice){answerInlineMatch(btn.dataset.inlineChoice);return}
 if(btn.dataset.loudness){loudnessAction(btn.dataset.loudness);return}
 if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.context=defaultCalibrationContext(type);temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;temp.testStart=Math.min(temp.testStart,maxTestStart(temp));render();return}
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
@@ -46,6 +47,8 @@ case 'confirmright':if(channelCheckPlayed.right){channelVerified.right=true;rend
 case 'stopaudio':stopTone();if(trial)trial.awaiting=false;floorReached=false;if(playerAudio)playerAudio.pause();render();break;
 case 'resume':nav(firstMissing(current)<0?'results':'test');break;
 case 'play':await playTone(false);break;
+case 'inline-play':await playInlineMatch();break;
+case 'inline-skip':inlineRecord('unavailable');break;
 case 'answerYes':answerTone(true);break;
 case 'answerNo':answerTone(false);break;
 case 'introBack':stopTone();introStep=0;render();break;
@@ -70,11 +73,11 @@ case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'
   const k=key(lastRecordedEntry.f,lastRecordedEntry.side);
   if(lastRecordedEntry.pass===0){delete current.measures[k]}
   else if(Array.isArray(current.measures[k]))current.measures[k].length=1;
-  awaitNext=false;floorReached=false;trial=null;sampleNote='';lastResultKind=null;lastRecordedEntry=null;stopTone();touch();render();
+  awaitNext=false;floorReached=false;trial=null;inlineMatch=null;sampleNote='';lastResultKind=null;lastRecordedEntry=null;stopTone();touch();render();
  }break;
  case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
 case 'retry':awaitNext=false;floorReached=false;trial=null;sampleNote='';stopTone();render();break;
-case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.acoustic={};current.manual={};awaitNext=false;floorReached=false;trial=null;resetChannelCheck();resetVolumePreview();introStep=0;sampleNote='';touch();render()}break;
+case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.inlineLoudness={};current.integratedLoudness=true;inlineMatch=null;current.acoustic={};current.manual={};awaitNext=false;floorReached=false;trial=null;resetChannelCheck();resetVolumePreview();introStep=0;sampleNote='';touch();render()}break;
 case 'transfer-open':transferOpen=true;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();break;
 case 'transfer-close':transferOpen=false;refreshTransfer();break;
 case 'transfer-next':if(!current)return;if(transferStep===1&&!transferMapping(current)){transferStatus='Revisa las frecuencias reales del ecualizador.';refreshTransfer();break}
