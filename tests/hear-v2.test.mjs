@@ -55,7 +55,7 @@ test('integrated relative loudness is part of each frequency trial, not a duplic
  assert.match(hearing,/function answerInlineMatch\(/);
  assert.match(hearing,/function inlineRecord\(/);
  assert.match(hearing,/integratedLoudness:true,inlineLoudness:\{\}/);
- assert.match(eq,/Sonoridad: similar con/);
+ assert.match(eq,/Sonoridad: parecida con/);
  assert.doesNotMatch(eq, /id="loudnessPanel"/);
 });
 test('one-pass loudness observations are bounded, preserve exact source and remain independent of EQ',()=>{
