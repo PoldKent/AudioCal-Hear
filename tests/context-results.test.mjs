@@ -279,8 +279,11 @@ test('automatic EQ requires both ears for each contributing frequency',()=>{
  const frequencies=[64,160,400,1000,2500,6250,15625];
  const points=frequencies.map((f,i)=>({f,db:i===2?-30:-50,quality:'low'}));
  const profile={bands:frequencies,channels:'separate',type:'headphones',
-  measures:Object.fromEntries(frequencies.flatMap(f=>[[f+'|left',[{kind:'heard',db:-50}]],
-   ...(f===400?[]:[[f+'|right',[{kind:'heard',db:-50}]])]))};
+  measures:Object.fromEntries(frequencies.flatMap(f=>{
+   const pairs=[[f+'|left',[{kind:'heard',db:-50}]]];
+   if(f!==400)pairs.push([f+'|right',[{kind:'heard',db:-50}]]);
+   return pairs;
+  }))};
  const model={Math,Number,roundTo:(v,n)=>Math.round(v/n)*n,
   normalizeCalibrationContext:()=>({}),contextAutoBlockReason:()=>null,
   key:(f,side)=>f+'|'+side,autoCoverageMinimum:p=>Math.max(4,Math.ceil(p.bands.length*.55))};
