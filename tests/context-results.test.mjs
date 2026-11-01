@@ -63,7 +63,7 @@ test('local correction v2 does not invent EQ from isolated or unmeasured tones',
   {f:15625,db:-53,quality:'low'}
  ];
  const ctx=vm.createContext({Math,Number,JSON,
-  gather:()=>measured,roundTo:(x,s)=>Math.round(x/s)*s,
+  gather:()=>measured,minimumAutoCoverage:p=>Math.max(4,Math.ceil(p.bands.length*.55)),roundTo:(x,s)=>Math.round(x/s)*s,
   clamp:(x,lo,hi)=>Math.max(lo,Math.min(x,hi)),
   normalizeCalibrationContext:()=>({windows:'closed',engine:'off',subtype:'overear',seal:'unknown'}),
   contextAutoBlockReason:(p,f,c)=>p.type==='car'&&(c.windows==='open'||c.engine==='on')?'ruido variable del vehículo; no corregir automáticamente':null,
