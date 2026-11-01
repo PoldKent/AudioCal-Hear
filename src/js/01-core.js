@@ -179,7 +179,7 @@ function normalizedProfile(p,importing=false){
  if(bands.some(f=>!Number.isFinite(f)||f<20||f>20000)||new Set(bands).size!==bands.length||bands.some((f,i)=>i&&f<=bands[i-1]))return null;
  const safeNumber=(v,otherwise,min,max)=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?clamp(Number(v),min,max):otherwise;
  const min=safeNumber(p.min,-12,-30,-1),max=safeNumber(p.max,12,1,30);
- const testStart=safeNumber(p.testStart,-36,-100,-24),testFloor=safeNumber(p.testFloor,-100,-100,Math.min(-36,testStart-1));
+ const testStart=safeNumber(p.testStart,-36,-99,-24),testFloor=safeNumber(p.testFloor,-100,-100,Math.min(-36,testStart-1));
  const id=importing?'p'+Date.now()+Math.random().toString(36).slice(2,8):String(p.id||'').slice(0,100);
  if(!id)return null;
  const measures=Object.create(null),raw=p.measures&&typeof p.measures==='object'&&!Array.isArray(p.measures)?p.measures:{};
@@ -231,7 +231,7 @@ let current=profiles.find(p=>p.id===currentId)||null;
 // 0 dBFS is a reference (digital full scale), NEVER an allowed test amplitude.
 const DIGITAL_REFERENCE_DBFS=0, TEST_START_DB=-36, TEST_END_DB=-100, MAX_SAFE_DB=-24, SECONDS_PER_DB=3;
 const MAX_FIRST=60, MAX_VERIFY=60, MAX_STEPS=20;
-const getStart=p=>clamp(p?.testStart!=null&&Number.isFinite(Number(p.testStart))?Number(p.testStart):TEST_START_DB,TEST_END_DB,MAX_SAFE_DB);
+const getStart=p=>clamp(p?.testStart!=null&&Number.isFinite(Number(p.testStart))?Number(p.testStart):TEST_START_DB,TEST_END_DB+1,MAX_SAFE_DB);
 const getFloor=p=>clamp(p?.testFloor!=null&&Number.isFinite(Number(p.testFloor))?Number(p.testFloor):TEST_END_DB,TEST_END_DB,Math.min(-36,getStart(p)-1));
 function legacyQuickBands(bands){
  const sorted=bands.slice().sort((a,b)=>a-b);
