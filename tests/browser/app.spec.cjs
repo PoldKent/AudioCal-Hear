@@ -594,6 +594,7 @@ test('results prioritize an actionable 10-band starter EQ and keep the evidence 
   localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify(list));
  });
  await page.reload();
+ await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
  await expect(page.locator('#starterGuide')).toBeVisible();
  await expect(page.locator('#starterGuide')).toContainText('Qué poner en tu ecualizador');
