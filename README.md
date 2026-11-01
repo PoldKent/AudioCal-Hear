@@ -20,7 +20,7 @@ Validated backup import (2 MB limit), corrected estimated vs. measured EQ bands,
 
 ## What's new in v1.8
 
-- Expanded digital test range from **−24 to −84 dBFS**, with a safer default start of **−36 dBFS**, adjustable endpoints and explicit warnings near the louder end. **dBFS does not measure the sound pressure at your ear**.
+- Device-aware digital tone range: **0 to −100 dBFS** for cars and speakers (with an explicit 0 dBFS shortcut and staged level checks); headphone test starts are capped at **−24 dBFS**. The default starting level remains **−36 dBFS**. **dBFS does not measure the sound pressure at your ear**.
 - Explicit **heard / not heard** responses, adaptive 12 dB discovery, 1 dB refinement and confirmation tones; **“I could still hear it”** at the floor records data without an automatic EQ cut.
 - Guided setup with optional **relative-noise microphone** check (not calibrated dB SPL); fast representative-frequency testing or complete testing of every selected EQ band.
 - Separate-ear headphone testing by default, with an explanatory left/right chart; existing saved profiles, EQ presets, A/B music balance and eight locales are retained.

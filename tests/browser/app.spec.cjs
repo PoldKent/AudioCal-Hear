@@ -502,10 +502,10 @@ test('physical car control limits are independent of recommended digital gain li
 });
 
 test('car and speakers can opt into 0 dBFS only with staged manual volume verification',async({page})=>{
- await page.locator('details').filter({has:page.locator('#testStart')}).locator('summary').click();
+ await expect(page.locator('#testStart')).toBeVisible();
  await expect(page.locator('#testStart')).toHaveAttribute('max','0');
- await page.locator('#testStart').fill('0');
- page.once('dialog',d=>d.accept());
+ await page.locator('[data-start-level="0"]').click();
+ await expect(page.locator('#testStart')).toHaveValue('0');
  await page.locator('[data-act="create"]').click();
  await expect(page.locator('#root')).toHaveAttribute('data-page','test');
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
@@ -530,16 +530,15 @@ test('car and speakers can opt into 0 dBFS only with staged manual volume verifi
  await expect(page.locator('[data-act="previewlevel"]')).toBeVisible();
  await page.locator('[data-nav="setup"]').click();
  await page.locator('[data-device="speaker"]').click();
- await page.locator('details').filter({has:page.locator('#testStart')}).locator('summary').click();
+ await expect(page.locator('#testStart')).toBeVisible();
+ await expect(page.locator('[data-start-level="0"]')).toBeVisible();
  await expect(page.locator('#testStart')).toHaveAttribute('max','0');
  await noOverflow(page);
 });
 
 test('headphones cannot inherit the car full-scale setting',async({page})=>{
- await page.locator('details').filter({has:page.locator('#testStart')}).locator('summary').click();
  await page.locator('#testStart').fill('0');
  await page.locator('[data-device="headphones"]').click();
- await page.locator('details').filter({has:page.locator('#testStart')}).locator('summary').click();
  await expect(page.locator('#testStart')).toHaveAttribute('max','-24');
  await expect(page.locator('#testStart')).toHaveValue('-24');
  await page.locator('#deviceName').fill('Headphones QA safe bound');
