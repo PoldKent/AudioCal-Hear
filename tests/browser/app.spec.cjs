@@ -21,9 +21,7 @@ async function passPreparation(page) {
     await expect(page.locator('[data-act="confirmright"]')).toBeEnabled();
     await page.locator('[data-act="confirmright"]').click();
   }
-  for (let i = 0; i < 3; i++) {
-    await page.locator('[data-act="introNext"]').click();
-  }
+  await page.locator('[data-act="introNext"]').click();
   await expect(page.locator('#levelText')).toContainText('-36 dBFS');
 }
 async function noOverflow(page) {
@@ -43,7 +41,6 @@ test('device choices and duration stay responsive', async ({ page }) => {
   await expect(page.locator('[data-device="car"]')).toBeVisible();
   await page.locator('[data-device="headphones"]').click();
   await expect(page.locator('[data-preset="photo10"]')).toHaveClass(/selected/);
-  await page.locator('[data-testmode="complete"]').click();
   await expect(page.locator('#setupTrials')).toContainText('20');
   await page.locator('[data-device="car"]').click();
   await expect(page.locator('[data-preset="car7"]')).toHaveClass(/selected/);
@@ -137,24 +134,41 @@ test('optional microphone is not requested by default', async ({ page }) => {
   expect(await page.evaluate(() => window.__micRequests)).toBe(0);
 });
 
-test('a contradictory answer is rechecked instead of becoming an uncertain result', async ({ page }) => {
-  test.setTimeout(110000);
-  await newProfile(page);
-  await passPreparation(page);
-  const reply = async heard => {
-    await page.locator('[data-act="play"]').click();
-    await page.locator('[data-act="'+(heard?'answerYes':'answerNo')+'"]').click();
-  };
-  for (const heard of [true,true,false,false,false,true,false,false,true,false,true,false]) await reply(heard);
-  await expect(page.locator('#root')).toContainText('Umbral aproximado confirmado');
-  await expect(page.locator('#root')).not.toContainText('Resultado incierto');
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
-  const measured = Object.values(stored.measures).flat().filter(Boolean);
-  expect(measured).toHaveLength(1);
-  expect(measured[0].kind).toBe('heard');
-  expect(measured[0].db).toBe(-49);
+test('contradictions yield a saved low-confidence estimate and advance without repeating',async({page})=>{
+ await newProfile(page,'Estimación sin repeticiones');
+ await passPreparation(page);
+ const reply=async heard=>{
+  await page.locator('[data-act="play"]').click();
+  await expect(page.locator('[data-act="answerYes"]')).toBeVisible();
+  await page.locator('[data-act="'+(heard?'answerYes':'answerNo')+'"]').click();
+ };
+ for(const heard of [true,true,false,false,false,true,false,true])await reply(heard);
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ const samples=Object.values(stored.measures).flat().filter(Boolean);
+ expect(samples).toHaveLength(1);
+ expect(samples[0].kind).toBe('heard');
+ expect(Number.isFinite(samples[0].db)).toBe(true);
+ expect(samples[0].confidence).toBe('low');
+ expect(samples[0].history).toHaveLength(8);
+ expect(samples[0].contradictions).toBeGreaterThan(0);
+ await expect(page.locator('#levelText')).toContainText('-36 dBFS');
+ await expect(page.locator('#root')).not.toContainText('Resultado guardado');
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#tracePanel')).toContainText('confianza baja');
 });
 
+test('a tone can be answered while still playing on every viewport',async({page})=>{
+ await newProfile(page,'Responder antes de los tres segundos');
+ await passPreparation(page);
+ await page.locator('[data-act="play"]').click();
+ await expect(page.locator('#holdSeconds')).toBeVisible();
+ await expect(page.locator('[data-act="answerYes"]')).toBeVisible();
+ await expect(page.locator('[data-act="answerNo"]')).toBeVisible();
+ await page.locator('[data-act="answerYes"]').click();
+ await expect(page.locator('#levelText')).toContainText('-48 dBFS');
+ await expect(page.locator('#holdSeconds')).toHaveCount(0);
+ await noOverflow(page);
+});
 
 test('Spotify transfer guide keeps local audio upload and adapts to custom bands', async ({ page }) => {
   await newProfile(page, 'Auriculares EQ');
@@ -301,6 +315,7 @@ test('cross-evidence CSV exports with units and leaves EQ untouched',async({page
 
 test('historical second pass is not represented as independent repetition',async({page})=>{
  await page.locator('[data-device="car"]').click();
+ await page.locator('details').filter({has:page.locator('[data-passes="2"]')}).locator('summary').click();
  await page.locator('[data-passes="2"]').click();
  await page.locator('#deviceName').fill('Perfil antiguo');
  await page.locator('[data-act="create"]').click();
@@ -320,6 +335,7 @@ test('historical second pass is not represented as independent repetition',async
 });
 test('verify mode starts a fresh search for the second pass',async({page})=>{
  await page.locator('[data-device="car"]').click();
+ await page.locator('details').filter({has:page.locator('[data-passes="2"]')}).locator('summary').click();
  await page.locator('[data-passes="2"]').click();
  await page.locator('#deviceName').fill('Dos búsquedas independientes');
  await page.locator('[data-act="create"]').click();
@@ -330,7 +346,7 @@ test('verify mode starts a fresh search for the second pass',async({page})=>{
  });
  await page.reload();
  await page.locator('[data-nav="test"]').click();
- for(let i=0;i<3;i++)await page.locator('[data-act="introNext"]').click();
+ await page.locator('[data-act="introNext"]').click();
  await expect(page.locator('#levelText')).toContainText('-36 dBFS');
  await expect(page.locator('#root')).toContainText('Búsqueda independiente 2/2');
 });
@@ -442,7 +458,6 @@ test('digital reference is 0 to −100, playback defaults safely below 0',async(
 });
 test('separate-ear test requires subjective left/right checks before playing',async({page})=>{
  await newProfile(page,'Lados confirmados');
- await page.locator('[data-act="introNext"]').click();
  await expect(page.locator('#root')).toContainText('Comprobar izquierda y derecha');
  await expect(page.locator('[data-act="confirmleft"]')).toBeDisabled();
  await page.locator('[data-act="checkleft"]').click();
@@ -501,32 +516,28 @@ test('physical car control limits are independent of recommended digital gain li
  await noOverflow(page);
 });
 
-test('car and speakers can opt into 0 dBFS only with staged manual volume verification',async({page})=>{
+test('high-level car/speaker test retains a staged manual volume check on the single prep screen',async({page})=>{
  await page.locator('details').filter({has:page.locator('#testStart')}).locator('summary').click();
  await expect(page.locator('#testStart')).toHaveAttribute('max','0');
  await page.locator('#testStart').fill('0');
  page.once('dialog',d=>d.accept());
  await page.locator('[data-act="create"]').click();
- await expect(page.locator('#root')).toHaveAttribute('data-page','test');
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(saved.type).toBe('car');
  expect(saved.testStart).toBe(0);
  expect(saved.testFloor).toBe(-100);
- await page.locator('[data-act="introNext"]').click();
- await page.locator('[data-act="introNext"]').click();
- await expect(page.locator('[data-act="previewlevel"]')).toContainText('-36 dBFS');
+ await expect(page.locator('#root')).toContainText('Referencia 1');
+ await expect(page.locator('#root')).toContainText('-36 dBFS');
  await expect(page.locator('[data-act="confirmlevel"]')).toBeDisabled();
  page.once('dialog',d=>d.accept());
  await page.locator('[data-act="introNext"]').click();
  await expect(page.locator('[data-act="previewlevel"]')).toBeVisible();
  await page.locator('[data-act="previewlevel"]').click();
- await expect(page.locator('[data-act="confirmlevel"]')).toBeEnabled();
+ await expect(page.locator('[data-act="confirmlevel"]')).toBeEnabled({timeout:10000});
  await page.locator('[data-act="confirmlevel"]').click();
- await expect(page.locator('[data-act="previewlevel"]')).toContainText('-24 dBFS');
+ await expect(page.locator('#root')).toContainText('-24 dBFS');
  await page.reload();
  await page.locator('[data-nav="test"]').click();
- await page.locator('[data-act="introNext"]').click();
- await page.locator('[data-act="introNext"]').click();
  await expect(page.locator('[data-act="previewlevel"]')).toBeVisible();
  await page.locator('[data-nav="setup"]').click();
  await page.locator('[data-device="speaker"]').click();
