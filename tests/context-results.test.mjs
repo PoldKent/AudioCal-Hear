@@ -47,7 +47,7 @@ test('transparent result distinguishes raw measurements from calculated EQ',()=>
  assert.match(script,/x\.kind==='heard'/);
  assert.match(script,/function renderCalibrationTrace\(/);
  assert.match(script,/Corrección automática frente al ajuste final/);
- assert.match(script,/NO se ha verificado la conversión dB\/paso/);
+ assert.match(script,/La equivalencia dB\/paso fue declarada/);
 });
 
 
@@ -66,6 +66,7 @@ test('local correction v2 does not invent EQ from isolated or unmeasured tones',
   gather:()=>measured,roundTo:(x,s)=>Math.round(x/s)*s,
   clamp:(x,lo,hi)=>Math.max(lo,Math.min(x,hi)),
   normalizeCalibrationContext:()=>({windows:'closed',engine:'off',subtype:'overear',seal:'unknown'}),
+  contextAutoBlockReason:(p,f,c)=>p.type==='car'&&(c.windows==='open'||c.engine==='on')?'ruido variable del vehículo; no corregir automáticamente':null,
   cleanTaste:()=>({}),tasteGain:()=>0,balanceGain:()=>0
  });
  vm.runInContext(script.slice(start,end),ctx);
@@ -101,7 +102,7 @@ test('original response table, automatic explanation, and 7/10-band formats rema
 
 test('EQ PNG positioning is only exact for verified control units',()=>{
  const source=fs.readFileSync('src/js/04-equalization.js','utf8');
- const start=source.indexOf('function eqResultModel('),end=source.indexOf('function eqResultMarkup(',start);
+ const start=source.indexOf('function physicalEqControl('),end=source.indexOf('function eqResultMarkup(',start);
  assert.ok(start>=0&&end>start);
  const context={normalizeCalibrationContext:(c)=>c,
   firstMissing:()=>-1,calibrationContextLabel:()=> 'Auto · conductor',
@@ -173,4 +174,33 @@ test('cross-evidence marks truncated loudness as inconclusive and preserves data
 test('CSV export explicitly distinguishes dBFS from dB of EQ',()=>{
  const html=fs.readFileSync('index.html','utf8');
  for(const s of ['evidenceAuditMarkup(p)','function evidenceCsv(', "case 'download-audit'",'Sonoridad comparación 1 dBFS relativo'])assert.ok(html.includes(s),s);
+});
+
+test('context conditions describe their real impact without inventing acoustic dB',()=>{
+ const p={type:'speaker',bands:[64,160,400,1000],context:{room:'studio',position:'near',placement:'nearwall'}};
+ assert.equal(ctx.contextAutoBlockReason(p,64),null);
+ assert.match(ctx.calibrationContextEqExplanation(p),/No añaden ni restan dB/);
+ const car={type:'car',bands:[64,160],context:{windows:'open',engine:'off'}};
+ assert.match(ctx.contextAutoBlockReason(car,64),/ruido variable/);
+ assert.match(ctx.calibrationContextEqExplanation(car),/bloquean/);
+ const inear={type:'headphones',bands:[60,160,400],context:{subtype:'inear',seal:'poor'}};
+ assert.match(ctx.contextAutoBlockReason(inear,60),/sellado/);
+ assert.equal(ctx.contextAutoBlockReason(inear,400),null);
+});
+test('EQ positions preserve requested, actual and residual dB with conservative half-step rounding',()=>{
+ const src=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const start=src.indexOf('function physicalEqControl('),end=src.indexOf('function eqResultModel(',start);
+ const obj={Math,Number,clamp:(x,a,b)=>Math.max(a,Math.min(x,b)),normalizeCalibrationContext:c=>c};
+ vm.runInNewContext(src.slice(start,end),obj);
+ const p={min:-6,max:6,type:'car',context:{eqScale:'steps',eqStepDb:'2'}};
+ assert.deepEqual([1,2,3,-1,-2,-3].map(g=>obj.physicalEqControl(g,p).position),[0,1,1,0,-1,-1]);
+ assert.equal(obj.physicalEqControl(3,p).actualGain,2);
+ assert.equal(obj.physicalEqControl(3,p).delta,-1);
+ assert.equal(obj.physicalEqControl(-3,p).delta,1);
+ assert.equal(obj.physicalEqControl(2,p).exact,true);
+ assert.equal(obj.physicalEqControl(3,{...p,context:{eqScale:'steps',eqStepDb:'unknown'}}).position,null);
+ assert.equal(obj.physicalEqControl(3,{...p,context:{eqScale:'db'}}).actualGain,3);
+ const limited={...p,min:-1,max:1};
+ assert.equal(obj.physicalEqControl(5,limited).position,1);
+ assert.equal(obj.physicalEqControl(5,limited).delta,-3);
 });
