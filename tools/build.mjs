@@ -8,6 +8,7 @@ const MODULES = [
   'src/js/01-core.js',
   'src/js/02-setup.js',
   'src/js/03-hearing-test.js',
+  'src/js/03b-frequency-sweep.js',
   'src/js/04-equalization.js',
   'src/js/05-audio-player.js',
   'src/js/05b-eq-transfer.js',
