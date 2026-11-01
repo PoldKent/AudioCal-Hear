@@ -972,13 +972,14 @@ function hasBothChannelThresholds(p,f){
 // A measured digital threshold and an eligible automatic EQ cue are different.
 // Keep low-confidence thresholds as measured evidence, while restricting EQ gains.
 function thresholdCoverage(p,data){
- const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived);
- const complete=measured.filter(x=>hasBothChannelThresholds(p,x.f));
+ const observed=data.filter(x=>Number.isFinite(x.db)&&!x.derived);
+ const measured=observed.filter(x=>hasBothChannelThresholds(p,x.f));
+ const complete=measured;
  const eligible=complete.filter(x=>x.quality!=='mixed');
  const required=autoCoverageMinimum(p);
  const candidates=eligible.slice(1,-1).filter((x,i)=>x.f/eligible[i].f<=3.5&&eligible[i+2].f/x.f<=3.5).length;
  const lowConfidence=complete.filter(x=>['uncertain','low','legacy'].includes(x.quality)).length;
- return {measured,complete,eligible,required,enough:eligible.length>=required,candidates,lowConfidence};
+ return {observed,measured,complete,eligible,required,enough:eligible.length>=required,candidates,lowConfidence};
 }
 function estimateThresholdContrast(p,data){
  const {eligible,enough}=thresholdCoverage(p,data);
