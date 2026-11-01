@@ -257,33 +257,56 @@ test('EQ PNG card marks unknown units, then exports positions using a user-decla
  await noOverflow(page);
 });
 
-test('optional loudness matching saves two relative responses without changing EQ',async({page})=>{
+test('same hearing pass includes loudness check per band and saves it before advancing',async({page})=>{
  await page.locator('[data-device="car"]').click();
- await page.locator('#deviceName').fill('Auto Loudness QA');
+ await page.locator('#deviceName').fill('Auto Test Integral');
  await page.locator('[data-act="create"]').click();
+ await expect(page.locator('[data-act="introNext"]')).toBeVisible();
+ await page.evaluate(()=>{
+  const records=JSON.parse(localStorage.getItem('audiocal-hear-v2-profiles-preview'));
+  records[0].measures['64|both']=[{kind:'heard',db:-52,confidence:'medium',method:'adaptive-v21-short',history:[{db:-48,heard:true},{db:-55,heard:false}]}];
+  localStorage.setItem('audiocal-hear-v2-profiles-preview',JSON.stringify(records));
+ });
+ await page.reload();
+ await page.locator('[data-nav="test"]').click();
+ await page.locator('[data-act="introNext"]').click();
+ await expect(page.locator('#root')).toContainText('¿Cuál suena más fuerte?');
+ await expect(page.locator('[data-act="inline-play"]')).toBeVisible();
+ await expect(page.locator('[data-inline-choice="similar"]')).toHaveCount(0);
+ await page.locator('[data-act="inline-play"]').click();
+ await expect(page.locator('[data-inline-choice="similar"]')).toBeVisible({timeout:10000});
+ await page.locator('[data-inline-choice="similar"]').click();
+ await expect(page.locator('#levelText')).toBeVisible();
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-v2-profiles-preview'))[0]);
+ expect(saved.integratedLoudness).toBe(true);
+ expect(saved.inlineLoudness['64|both|0'].status).toBe('matched');
+ expect(saved.inlineLoudness['64|both|0'].offsetDb).toBe(0);
+ expect(saved.measures['64|both'][0].db).toBe(-52);
  await page.locator('[data-nav="results"]').click();
- const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-v2-profiles-preview'))[0]);
- const eqBefore=await page.locator('.eqband .eqval').allTextContents();
- await page.locator('#loudnessPanel summary').click();
- await expect(page.locator('#loudnessFrequency')).toBeVisible();
- await page.locator('[data-loudness="record"]').click();
- await expect(page.locator('#loudnessStatus')).toContainText('Escucha primero ambas');
- for(let pass=0;pass<2;pass++){
-  await page.locator('[data-loudness="reference"]').click();
-  await page.locator('[data-loudness="plus"]').click();
-  await page.locator('[data-loudness="target"]').click();
-  await page.locator('[data-loudness="record"]').click();
- }
- await expect(page.locator('#loudnessInner')).toContainText('Repetible');
- const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-v2-profiles-preview'))[0]);
- const first=Number(await page.locator('#loudnessFrequency').inputValue());
- expect(stored.loudness[first]).toHaveLength(2);
- expect(stored.measures).toEqual(before.measures);
- expect(await page.locator('.eqband .eqval').allTextContents()).toEqual(eqBefore);
+ await expect(page.locator('#hearFrequencyReport')).toContainText('Sonoridad: similar con +0 dBFS relativo');
+ await expect(page.locator('#loudnessPanel')).toHaveCount(0);
  await page.reload();
  await page.locator('[data-nav="results"]').click();
- await page.locator('#loudnessPanel summary').click();
- await expect(page.locator('#loudnessInner')).toContainText('Repetible');
+ await expect(page.locator('#hearFrequencyReport')).toContainText('Sonoridad: similar');
+ await noOverflow(page);
+});
+
+test('integrated loudness records inconclusive comparisons and proceeds without raising volume',async({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await page.locator('[data-act="create"]').click();
+ await page.evaluate(()=>{
+  const profiles=JSON.parse(localStorage.getItem('audiocal-hear-v2-profiles-preview'));
+  profiles[0].measures['64|both']=[{kind:'heard',db:-54,method:'adaptive-v21-short'}];
+  localStorage.setItem('audiocal-hear-v2-profiles-preview',JSON.stringify(profiles));
+ });
+ await page.reload();
+ await page.locator('[data-nav="test"]').click();
+ await page.locator('[data-act="introNext"]').click();
+ await expect(page.locator('[data-act="inline-skip"]')).toBeVisible();
+ await page.locator('[data-act="inline-skip"]').click();
+ await expect(page.locator('#levelText')).toBeVisible();
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-v2-profiles-preview'))[0]);
+ expect(saved.inlineLoudness['64|both|0'].status).toBe('unavailable');
  await noOverflow(page);
 });
 
