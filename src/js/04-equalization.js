@@ -38,46 +38,50 @@ function hasBothChannelThresholds(p,f){
  if(p.channels!=='separate')return true;
  return ['left','right'].every(side=>(p.measures?.[key(f,side)]||[]).some(m=>m?.kind==='heard'&&Number.isFinite(m.db)));
 }
-// This function is shared by the algorithm and result labels.
+// A measured digital threshold and an eligible automatic EQ cue are different.
+// Keep low-confidence thresholds as measured evidence, while restricting EQ gains.
 function thresholdCoverage(p,data){
- const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived&&x.quality!=='mixed'&&x.quality!=='unmeasurable'&&x.quality!=='uncertain'&&hasBothChannelThresholds(p,x.f));
+ const measured=data.filter(x=>Number.isFinite(x.db)&&!x.derived);
+ const complete=measured.filter(x=>hasBothChannelThresholds(p,x.f));
+ const eligible=complete.filter(x=>x.quality!=='mixed');
  const required=autoCoverageMinimum(p);
- const candidates=measured.slice(1,-1).filter((x,i)=>x.f/measured[i].f<=3.5&&measured[i+2].f/x.f<=3.5).length;
- return {measured,required,enough:measured.length>=required,candidates};
+ const candidates=eligible.slice(1,-1).filter((x,i)=>x.f/eligible[i].f<=3.5&&eligible[i+2].f/x.f<=3.5).length;
+ const lowConfidence=complete.filter(x=>['uncertain','low','legacy'].includes(x.quality)).length;
+ return {measured,complete,eligible,required,enough:eligible.length>=required,candidates,lowConfidence};
 }
 function estimateThresholdContrast(p,data){
- const {measured,enough}=thresholdCoverage(p,data);
+ const {eligible,enough}=thresholdCoverage(p,data);
  const context=normalizeCalibrationContext(p.context,p.type);
- return data.map((point,i)=>{
+ return data.map(point=>{
   const entry={f:point.f,base:0,contrastDb:null,autoReason:'sin datos suficientes',autoConfidence:'none'};
   if(!enough)return entry;
   if(!Number.isFinite(point.db)||point.derived)return {...entry,autoReason:'frecuencia no medida directamente'};
-  if(!hasBothChannelThresholds(p,point.f))return {...entry,autoReason:'faltan umbrales de uno de los oídos: no corregir automáticamente'};
-  if(point.quality==='mixed')return {...entry,autoReason:'respuesta diferente entre oídos'};
-  if(point.quality==='uncertain')return {...entry,autoReason:'umbral estimado con confianza baja: no aplicar EQ automático'};
+  if(!hasBothChannelThresholds(p,point.f))return {...entry,autoReason:'falta un umbral de uno de los oídos: no corregir automáticamente'};
+  if(point.quality==='mixed')return {...entry,autoReason:'diferencias relevantes entre oídos: sin corrección automática'};
   if(point.quality==='unmeasurable')return {...entry,autoReason:'sin umbral confirmado'};
-  const idx=measured.findIndex(x=>x.f===point.f);
-  if(idx<=0||idx===measured.length-1)return {...entry,autoReason:'banda extrema: no extrapolar'};
-  const lo=measured[idx-1],hi=measured[idx+1];
+  const idx=eligible.findIndex(x=>x.f===point.f);
+  if(idx<=0||idx===eligible.length-1)return {...entry,autoReason:'banda extrema: no extrapolar'};
+  const lo=eligible[idx-1],hi=eligible[idx+1];
   if(point.f/lo.f>3.5||hi.f/point.f>3.5)return {...entry,autoReason:'bandas vecinas demasiado separadas'};
   const blockReason=contextAutoBlockReason(p,point.f,context);
   if(blockReason)return {...entry,autoReason:blockReason};
-  // Predict the local digital threshold from adjacent measured frequencies, not
-  // from a population audiogram, a global quadratic or an acoustic room model.
+  // Compare digital detection thresholds locally; do not equate dBFS with dB SPL.
   const ratio=Math.log(point.f/lo.f)/Math.log(hi.f/lo.f);
   const expected=lo.db+(hi.db-lo.db)*ratio;
   const deviation=point.db-expected;
-  const uncertainty=3; // exploratory dead-zone in digital dB (not a clinical tolerance)
+  const verified=[point,lo,hi].every(x=>x.quality==='good');
+  // Inferred/low-confidence thresholds are still real observations, but
+  // have a larger dead zone and a strict +/-1 dB tentative EQ limit.
+  const uncertainty=verified?3:6;
   const evidence=Math.max(0,Math.abs(deviation)-uncertainty);
-  // Limit one-pass results to +/-1 EQ dB, verified two-pass to +/-2 dB;
-  // auto/speaker playback additionally limits boosts to +1 dB.
-  const verified=point.quality==='good'&&lo.quality==='good'&&hi.quality==='good';
   const maxBoost=p.type==='car'||p.type==='speaker'?1:verified?2:1;
   const maxCut=verified?2:1;
-  let base=deviation>=0?Math.min(maxBoost,evidence*.20): -Math.min(maxCut,evidence*.20);
-  base=roundTo(base,p.step||1);
-  return {f:point.f,base,contrastDb:Number(deviation.toFixed(2)),
-   autoReason:Math.abs(deviation)<=uncertainty?'sin contraste local significativo':base===0?'contraste insuficiente para cambiar 1 paso':'desviación local; compensación limitada y experimental',
+  const raw=deviation>=0?Math.min(maxBoost,evidence*.20):-Math.min(maxCut,evidence*.20);
+  const base=roundTo(raw,p.step||1);
+  const autoReason=base===0?'contraste local insuficiente; sin cambio justificable':
+   verified?'contraste local medido; ajuste experimental limitado':
+   'estimación de confianza limitada; sugerencia provisional de máximo 1 dB';
+  return {f:point.f,base,contrastDb:Number(deviation.toFixed(2)),autoReason,
    autoConfidence:verified?'medium':'low'};
  });
 }
@@ -457,24 +461,25 @@ function saveEqCardPng(p){
 }
 
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
- const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),coverage=thresholdCoverage(p,gather(p)),usable=coverage.measured.length,derived=r.filter(x=>x.derived).length,required=coverage.required;
+ const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),coverage=thresholdCoverage(p,gather(p)),usable=coverage.complete.length,derived=r.filter(x=>x.derived).length,required=coverage.required,eligible=coverage.eligible.length;
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
  lastRenderedEqSignature=p.id+'|'+r.map(b=>b.f+':'+b.gain).join('|');
  const reliable=coverage.enough&&coverage.candidates>0;
- const status=!coverage.enough?'Cobertura insuficiente para EQ automático; ajustes personales separados.':coverage.candidates===0?'Sin bandas vecinas elegibles para EQ automático: salida neutra, sin inventar corrección.':'Contrastes locales experimentales (v2) + ajustes personales.';
+ const status=!coverage.enough?'Hay umbrales medidos, pero no suficientes bandas compatibles para sugerir EQ automático.':coverage.candidates===0?'Mediciones disponibles; sin contrastes locales calculables para ajuste automático.':coverage.lowConfidence?'Mediciones conservadas; sugerencias provisionales de hasta 1 dB cuando el contraste lo justifica.':'Contrastes locales experimentales (v2) + ajustes personales.';
  return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">AUDIOCAL · INFORME DE FRECUENCIAS</p><h1>Medición y <em>ajuste.</em></h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
  <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${p.bands.length} bandas · <span style="color:var(--cyan)">${esc(presets[p.preset]?.short||'Personalizado')}</span></h2><span class="tag" id="eqChangeCount">${r.filter(x=>x.gain!==0).length} cambios</span></div>
- <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral · <span>${esc(status)}</span></p>
- ${usable<p.bands.length?`<div class="soft warning"><strong>⚠ ${p.bands.length-usable} frecuencias sin umbral</strong><p class="small">Puedes repetir solo las que faltan. No aumentes el volumen para escucharlas.</p>${button('↺ Repetir umbrales no confirmados','retrymissing','btn-alt full')}</div>`:''}
- ${renderCalibrationTrace(p,r)}
+ <p class="result-feedback"><strong>${usable}/${p.bands.length}</strong> frecuencias con umbral digital registrado${p.channels==='separate'?' en ambos oídos':''} · <span>${esc(status)}</span></p>
+ ${coverage.lowConfidence?`<p class="compact-note">${coverage.lowConfidence} frecuencia(s) con confianza limitada: sí tienen umbral estimado. La confianza reduce la fuerza de la recomendación, no elimina los resultados.</p>`:''}
+ ${usable<p.bands.length?`<div class="soft warning"><strong>⚠ ${p.bands.length-usable} frecuencias con datos incompletos</strong><p class="small">Solo se consideran pendientes las mediciones que realmente faltan, no las que tienen confianza baja. No aumentes el volumen.</p>${progress<total?button('↺ Repetir mediciones pendientes','retrymissing','btn-alt full'):''}</div>`:''}
  ${eqResultMarkup(p)}
+ <details class="unobtrusive"><summary>Ver mediciones originales y explicación técnica · opcional</summary><div class="inner-detail">${renderCalibrationTrace(p,r)}</div></details>
  ${evidenceAuditMarkup(p)}
  <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>🔎 Igualación de sonoridad · prueba complementaria opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
  <div class="eq-util">${button('⎘ Copiar todos','copy','btn-alt')}${button('↓ TXT','downloadtxt','btn-ghost')}${button('↺ Reiniciar cambios','clearmanual','btn-ghost')}</div>
  <details class="unobtrusive"><summary>Valores exactos y opciones avanzadas</summary><div class="inner-detail"><div class="result-list">${r.map(x=>`<div class="result-item"><div><strong>${fmt(x.f)}</strong><small>${selectedBandInfo(x)}</small></div><div class="itemcontrols"><button type="button" data-adjust="${x.f}" data-delta="-1" aria-label="Reducir ${fmt(x.f)}">−</button><button type="button" data-adjust="${x.f}" data-delta="1" aria-label="Aumentar ${fmt(x.f)}">+</button></div><strong class="value" data-eq-value="${x.f}">${eqMark(x)} <small style="display:inline;color:var(--muted)">dB</small></strong></div>`).join('')}</div><div style="margin-top:10px">${button('Cambiar formato de EQ','format','btn-ghost full')}</div><p class="tiny muted">Los valores se guardan por perfil. Debes introducirlos manualmente en tu equipo.</p></div></details>
- <details class="unobtrusive"><summary>Detalles de la calibración <span class="tiny muted">${progress}/${total} muestras</span></summary><div class="inner-detail"><div class="stat-grid"><div class="stat"><strong>${progress}/${total}</strong><small>MUESTRAS</small></div><div class="stat"><strong>${usable}</strong><small>UMBRALES</small></div><div class="stat"><strong>${r.filter(x=>x.gain!==0).length}</strong><small>CAMBIOS</small></div></div><p class="small">${reliable?'Compensación exploratoria calculable a partir de los umbrales válidos.':coverage.enough&&coverage.candidates===0?'Hay cobertura, pero las bandas medidas no tienen vecinos cercanos para una corrección automática segura.':`Solo ${usable} bandas elegibles de ${p.bands.length}. Necesitas al menos ${required} para evaluar una corrección automática.`} ${derived?`${derived} banda(s) interpolada(s).`:''} Esta no es una audiometría ni una calibración acústica.</p></div></details>
+ <details class="unobtrusive"><summary>Detalles de la calibración <span class="tiny muted">${progress}/${total} muestras</span></summary><div class="inner-detail"><div class="stat-grid"><div class="stat"><strong>${progress}/${total}</strong><small>MUESTRAS</small></div><div class="stat"><strong>${usable}</strong><small>UMBRALES</small></div><div class="stat"><strong>${r.filter(x=>x.gain!==0).length}</strong><small>CAMBIOS</small></div></div><p class="small">${reliable?'Compensación exploratoria calculable a partir de los umbrales válidos.':coverage.enough&&coverage.candidates===0?'Hay cobertura, pero las bandas medidas no tienen vecinos cercanos para una corrección automática segura.':`Solo ${eligible} bandas aptas para comparación automática de ${p.bands.length} con umbral completo. Se necesitan al menos ${required}.`} ${derived?`${derived} banda(s) interpolada(s).`:''} Esta no es una audiometría ni una calibración acústica.</p></div></details>
  <p id="copyStatus" class="status" role="status"></p></section>
  <div class="results-side"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🎵 Escuchar la diferencia</h2><span class="tag">A / B</span></div><p class="compact-note">Carga una canción y alterna entre tu EQ y el sonido original. Solo cambia lo que reproduce esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button></section>
  <section class="card transfer-card"><div id="transferPanel">${transferMarkup()}</div></section>
