@@ -323,3 +323,26 @@ test('verify mode starts a fresh search for the second pass',async({page})=>{
  await expect(page.locator('#levelText')).toContainText('-36 dBFS');
  await expect(page.locator('#root')).toContainText('Búsqueda independiente 2/2');
 });
+
+test('3 dB per step is selectable, saved and retained in the result EQ guide',async({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await page.locator('#context-eqScale').selectOption('steps');
+ await expect(page.locator('#context-eqStepDb option')).toHaveCount(4);
+ await page.locator('#context-eqStepDb').selectOption('3');
+ await expect(page.locator('#context-eqStepDb')).toHaveValue('3');
+ await page.locator('#deviceName').fill('Auto 3 dB por paso');
+ await page.locator('[data-act="create"]').click();
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(saved.context.eqStepDb).toBe('3');
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#resultEqScale')).toHaveValue('steps');
+ await expect(page.locator('#resultEqStepDb')).toHaveValue('3');
+ await page.locator('#resultEqStepDb').selectOption('2');
+ await expect(page.locator('#resultEqStepDb')).toHaveValue('2');
+ await page.locator('#resultEqStepDb').selectOption('3');
+ await expect(page.locator('#resultEqStepDb')).toHaveValue('3');
+ await page.reload();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#resultEqStepDb')).toHaveValue('3');
+ await noOverflow(page);
+});
