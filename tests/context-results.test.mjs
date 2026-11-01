@@ -122,7 +122,8 @@ test('EQ PNG positioning is only exact for verified control units',()=>{
 });
 test('PNG export is integrated into source and monolithic app',()=>{
  const html=fs.readFileSync('index.html','utf8');
- for(const word of ['id="eqCardCanvas"','function saveEqCardPng(','case \'downloadpng\'','eqStepDb:\'unknown\''])assert.ok(html.includes(word),word);
+ for(const word of ["function saveEqCardPng(","document.createElement('canvas')","case 'downloadpng'","eqStepDb:'unknown'"])assert.ok(html.includes(word),word);
+ assert.doesNotMatch(html,/id="eqCardCanvas"/,'Export-only canvas should no longer duplicate the live EQ');
  const src=fs.readFileSync('src/js/04-equalization.js','utf8');
  assert.match(src,/toDataURL\('image\/png'\)/);
  assert.match(src,/SIN CONVERSIÓN VALIDADA/);
