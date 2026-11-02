@@ -40,7 +40,7 @@ test('dynamic experimental EQ guidance is translated with embedded numbers prese
   assert.ok(result.includes('2'),lang+': uncertainty count lost');
   assert.ok(!result.includes('Punto de partida experimental incluido'),lang+': Spanish recommendation remains');
   assert.ok(!result.includes('bandas con evidencia ausente'),lang+': caution remains Spanish');
-  assert.ok(!result.includes('bandas adicionales'),lang+': count suffix remains Spanish');
+  assert.ok(result.includes(dictionary[lang]['bandas adicionales']),lang+': translated count suffix missing');
  }
 });
 
