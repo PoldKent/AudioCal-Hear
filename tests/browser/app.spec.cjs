@@ -913,3 +913,20 @@ test('keyboard changes EQ without live-announcing the entire application',async(
  expect(p.manual['1000']).toBe(1);
  await noOverflow(page);
 });
+
+test('results headings and advanced EQ options are localized in all eight languages',async({page})=>{
+ await newProfile(page,'Resultados idiomas');
+ await page.locator('[data-nav="results"]').click();
+ const headings={es:'Tu resultado auditivo',en:'Your hearing test results',fr:'Vos résultats auditifs',
+  pt:'Seus resultados auditivos',it:'I tuoi risultati uditivi',de:'Deine Hörergebnisse',
+  zh:'你的听力测试结果',ja:'聴力テストの結果'};
+ const advanced={en:'Advanced EQ options · bands and physical controls',fr:'Options EQ avancées · bandes et commandes physiques',
+  pt:'Opções avançadas de EQ · bandas e controles físicos',it:'Opzioni EQ avanzate · bande e controlli fisici',
+  de:'Erweiterte EQ-Optionen · Bänder und Gerätebedienung',zh:'高级均衡器选项 · 频段与实体控件',ja:'EQの詳細設定 · 帯域と機器の操作'};
+ for(const [locale,title] of Object.entries(headings)){
+  await page.locator('#uiLanguage').selectOption(locale);
+  await expect(page.locator('.result-head h1')).toHaveText(title);
+  if(locale!=='es')await expect(page.locator('#eqCardSection > summary')).toHaveText(advanced[locale]);
+  await noOverflow(page);
+ }
+});
