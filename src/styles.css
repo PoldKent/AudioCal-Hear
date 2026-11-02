@@ -276,3 +276,9 @@ select option{background:#fff;color:#172033}
 .sweep-saved{border-top:1px solid #dbe5f4;margin-top:12px;padding-top:10px}
 .sweep-saved p{margin:7px 0}
 @media(max-width:420px){.sweep-panel{padding:10px}.sweep-live{padding:9px}.sweep-panel .sweep-choices .btn{padding:8px 4px;font-size:11px}}
+
+/* Personal Sound: single EQ, optional subjective validation with no extra graphs. */
+.personal-sound-review{padding:12px;border:1px solid #dbe5f5;background:#f7faff;border-radius:12px;margin-top:12px}
+.personal-sound-review>strong{color:#1a478b}.personal-sound-review>.row{margin:11px 0}
+.personal-sound-review .btn{flex:1 1 110px}
+.starter-inline .starter-actions>.btn{flex:1 1 145px}
