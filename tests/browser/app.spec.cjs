@@ -658,7 +658,10 @@ test('preflight sweep records the perceived range without replacing adaptive thr
  await page.locator('#uiLanguage').selectOption('es');
  await expect(page.locator('#preSweepPanel')).toBeVisible();
  await expect(page.locator('#sweepMicChoice')).not.toBeChecked();
+ await expect(page.locator('#preSweepPanel')).toContainText('Duración aproximada: 30 s');
  await page.locator('[data-sweep-range="wide"]').click();
+ await expect(page.locator('#preSweepPanel')).toContainText('Duración aproximada: 44 s');
+ await expect(page.locator('#preSweepPanel')).toContainText('desde 15 kHz');
  await page.locator('[data-act="sweep-start"]').click();
  await expect(page.locator('#sweepCurrentHz')).toBeVisible();
  await page.locator('[data-sweep-response="yes"]').click();
