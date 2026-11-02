@@ -6,7 +6,7 @@ import vm from 'node:vm';
 const source=fs.readFileSync('src/js/03c-personal-sound.js','utf8');
 const sandbox={
  Date,Number,Object,Array,Math,
- gather:p=>p.bands.map((f,i)=>({f,db:p.data?.[i]??-70,quality:p.lowConfidence?'uncertain':'good'})),
+ gather:p=>p.bands.map((f,i)=>({f,db:p.data&&Object.hasOwn(p.data,i)?p.data[i]:-70,quality:p.lowConfidence?'uncertain':'good'})),
  thresholdCoverage:(p,d)=>({complete:d.filter(x=>Number.isFinite(x.db))}),
  doneCount:p=>p.done??p.bands.length,
  plan:p=>p.bands,
@@ -47,6 +47,6 @@ test('review requires comparison modes and becomes stale when EQ changes',()=>{
 test('malformed review values cannot be applied as hearing evidence',()=>{
  const p=make();sandbox.current=p;
  assert.equal(sandbox.personalSoundSaveReview('boost-40db'),false);
- assert.match(sandbox.personalSoundReviewMarkup(p),/No notaste|Reproduce una canción/);
+ assert.match(sandbox.personalSoundReviewMarkup(p),/Escucha tu música|Reproduce una canción|Comparaste los dos modos/);
  assert.ok(!source.includes('p.measures='));
 });
