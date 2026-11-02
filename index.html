@@ -296,6 +296,14 @@ select option{background:#fff;color:#172033}
 .inline-loudness{margin:14px 0;padding:9px 12px;border:1px solid #dce7f7;border-radius:12px;background:#f7faff}
 .inline-loudness .row{margin:9px 0}.inline-loudness .btn{min-height:42px}
 .inline-loudness .inner-detail{padding-top:9px}
+
+/* Hear 2.0: surface the next action when completed thresholds cannot yield EQ. */
+.personal-sound-finish{margin:13px 0;padding:15px;border:1px solid #b8cee9;background:#f0f6ff;border-radius:15px;min-width:0}
+.personal-sound-finish>strong{display:block;color:#1a477f;font-size:15px}
+.personal-sound-finish .small{color:#344b64;line-height:1.5}
+.personal-sound-finish .tiny{color:#526985;line-height:1.5}
+.personal-sound-finish .btn{margin-top:8px;white-space:normal}
+@media(max-width:420px){.personal-sound-finish{padding:12px}.personal-sound-finish .btn{font-size:13px}}
 </style>
 </head>
 <body>
@@ -1217,6 +1225,30 @@ function personalSoundStatus(p,rows=recommend(p)){
  return {grade,tip,measured,good,provisional,tuned,verified,signature:sig,completed,
   hasSweep:!!Object.keys(p.sweepRecords||{}).length,version:PERSONAL_SOUND_VERSION};
 }
+// When the completed threshold test cannot justify a non-zero EQ, make the
+// existing music-based, conservative adjustment workflow the main next step.
+// No made-up gain is calculated from contradictory dBFS thresholds.
+function personalSoundFinishMarkup(p,rows=recommend(p)){
+ if(!p||doneCount(p)<plan(p).length)return '';
+ const checked=suggestedBalanceBands(p);
+ const compared=checked.filter(f=>Array.isArray(p.balanceProof?.[f])&&p.balanceProof[f].some(x=>x?.method==='music-ab-two-rounds')).length;
+ const changes=rows.filter(x=>x.gain!==0).length;
+ const allNeutral=changes===0,completed=checked.length>0&&compared===checked.length;
+ const header=completed?'Tu EQ se ha revisado escuchando música':
+  allNeutral?'Tu test está completo; falta personalizar el sonido':
+  'Termina de comprobar tu ecualizador';
+ const explanation=allNeutral?
+  'Las mediciones presentan incertidumbre o diferencias entre oídos. Hear no debe inventar ganancias: por eso el ajuste inicial está en 0 dB. No necesitas repetir todo el examen.':
+  'Los cambios actuales siguen siendo experimentales. Compáralos con tu música para decidir qué bandas prefieres corregir.';
+ return '<div class="personal-sound-finish" id="personalSoundFinish" role="region" aria-label="Terminar personalización de sonido">'+
+  '<strong>'+header+'</strong>'+
+  '<p class="small">'+explanation+'</p>'+
+  '<p class="small"><strong>'+compared+'/'+checked.length+' bandas comparadas con música</strong> · '+changes+
+   ' banda(s) con ajustes distintos de cero. Que todas permanezcan neutras también puede ser una decisión válida.</p>'+
+  '<p class="tiny muted">Escucharás dos variantes por banda, dos veces con el orden invertido. Solo tus preferencias coherentes generan pequeños cambios; tus umbrales originales no se modifican. El ajuste físico de otro equipo sigue siendo manual.</p>'+
+  button(completed?'↺ Revisar la personalización':'▶ Terminar mi ecualizador con música','finish-sound','btn-primary full')+
+  '</div>';
+}
 function personalSoundPreviewMark(mode,now=Date.now()){
  if(!current||!['with','without'].includes(mode))return;
  const signature=personalSoundEqSignature(current);
@@ -1442,6 +1474,23 @@ function recommend(p){
   return {...point,...automatic,gain,algorithmVersion:EQ_ALGORITHM_VERSION};
  });
 }
+// Count actual playback time rather than quick taps on A and B.
+const BALANCE_MIN_LISTEN_MS=1800;
+let balanceListeningSession={profile:'',band:null,round:-1,mode:null,since:0};
+function balanceEndListening(now=Date.now()){
+ const s=balanceListeningSession;
+ if(s.mode&&current?.id===s.profile&&balanceFreq===s.band&&balanceRound===s.round&&
+    now-s.since>=BALANCE_MIN_LISTEN_MS)balanceListened.add(s.mode);
+ s.mode=null;s.since=0;
+}
+function balanceStartListening(mode,now=Date.now()){
+ if(!current||!['A','B'].includes(mode)||!playerAudio||playerAudio.paused||!playerUrl)return false;
+ if(balanceListeningSession.profile===current.id&&balanceListeningSession.band===balanceFreq&&
+    balanceListeningSession.round===balanceRound)balanceEndListening(now);
+ balancePreview=mode;
+ balanceListeningSession={profile:current.id,band:balanceFreq,round:balanceRound,mode,since:now};
+ return true;
+}
 function balanceMarkup(){
  if(!current)return '';
  const p=current;
@@ -1461,7 +1510,8 @@ function balanceMarkup(){
 function refreshBalanceUI(){const target=$('#balanceTrainer');if(target)target.innerHTML=balanceMarkup();updatePlayerFilters(preferencePreview?previewTaste():null);localize(document.body)}
 function balanceChoose(choice){
  if(!current||balanceRound>=2)return;
- if(balanceListened.size<2){balanceStatus='Escucha ambas opciones A y B con la música reproduciéndose antes de elegir.';refreshBalanceUI();return}
+ balanceEndListening();
+ if(balanceListened.size<2){balanceStatus='Escucha cada variante A y B durante al menos dos segundos con la música reproduciéndose.';refreshBalanceUI();return}
  const direction=choice==='same'?0:Math.sign(balanceRound===0?(choice==='A'?-1:1):(choice==='B'?-1:1));
  balanceChoices.push(direction);balancePreview=null;balanceListened=new Set();balanceStatus='';balanceRound++;
  if(balanceRound===2){
@@ -1526,6 +1576,8 @@ function refreshResultsUI(){
  const pref=document.querySelector('#prefRound');if(pref)pref.innerHTML=preferenceMarkup();
  // The proposal and listening verdict depend on the live EQ signature.
  // Updating only the bars left the Apply button and verdict stale after manual edits.
+ const finish=$('#personalSoundFinish');
+ if(finish){const temp=document.createElement('div');temp.innerHTML=personalSoundFinishMarkup(current,r);if(temp.firstElementChild)finish.replaceWith(temp.firstElementChild)}
  const starter=$('#starterGuide');
  if(starter){const fresh=document.createElement('div');fresh.innerHTML=starterEqMarkup(current,r);if(fresh.firstElementChild)starter.replaceWith(fresh.firstElementChild)}
  const review=$('#personalSoundReview');
@@ -1891,6 +1943,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Tu ecualizador · ${p.bands.length} bandas</h2><span class="tag" id="eqChangeCount">${r.filter(x=>x.gain!==0).length} cambios</span></div>
  <p class="small muted">${usable}/${p.bands.length} frecuencias con umbral digital registrado${p.channels==='separate'?' en ambos oídos':''}. Valores actuales en dB, editables y guardados en este perfil.</p>
  ${starterEqMarkup(p,r)}
+ ${personalSoundFinishMarkup(p,r)}
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
  <div class="eq-util">${button('⎘ Copiar ajustes','copy','btn-alt')}${button('↓ Guardar PNG','downloadpng','btn-ghost')}${button('↺ Reiniciar','clearmanual','btn-ghost')}</div>
@@ -1907,7 +1960,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <p id="copyStatus" class="status" role="status"></p></section>
  <div class="results-side"><details class="unobtrusive music-options" id="musicComparison"><summary>🎵 Comparar con música · opcional</summary><div class="inner-detail"><p class="compact-note">Escucha tu EQ frente al original con una canción propia. La comparación es opcional y solo afecta al sonido de esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button>${personalSoundReviewMarkup(p)}</div></details>
  <details class="card transfer-card optional-tool"><summary>Aplicar ajustes en otro equipo o app</summary><div class="inner-detail"><div id="transferPanel">${transferMarkup()}</div></div></details>
- <details class="unobtrusive balance-card" id="toneBalance"><summary>🎛️ Afinar bandas escuchando música · opcional</summary><div class="inner-detail"><p class="compact-note">Puedes confirmar qué suena mejor con comparaciones de una canción. Estos cambios son opcionales y no alteran las mediciones auditivas.</p><div id="balanceTrainer">${balanceMarkup()}</div></div></details>
+ <details class="unobtrusive balance-card" id="toneBalance"><summary>🎛️ Terminar mi ecualizador · comparar bandas A/B</summary><div class="inner-detail"><p class="compact-note">Puedes confirmar qué suena mejor con comparaciones de una canción. Estos cambios son opcionales y no alteran las mediciones auditivas.</p><div id="balanceTrainer">${balanceMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>🎧 Personalizar graves, voces y brillo <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="compact-note">Con la canción reproduciéndose, escucha A y B durante varios segundos y elige qué suena mejor. Mantén el volumen fijo.</p><div id="prefRound">${preferenceMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>Seguridad y límites de precisión</summary><div class="inner-detail"><p class="compact-note">Los niveles dBFS de la prueba no miden la presión sonora en el oído. Evita subir niveles para buscar tonos inaudibles y reduce los ajustes si aparece distorsión o molestia. Si ambos oídos comparten ecualización, no se corrigen por separado.</p></div></details></div></div></div>`}
 function deviceIcon(p){return p.type==='car'?'🚗':p.type==='headphones'?'🎧':'🔊'}
@@ -1977,8 +2030,8 @@ function updatePlayerFilters(preview=null){
   const totalPeak=cachedHeadroomDb;
  playerPreamp?.gain.setTargetAtTime(Math.pow(10,(-totalPeak-2)/20),now,.06);
 }
-function attachPlayerEvents(player){if(!player)return;player.onpause=()=>{personalSoundPreviewPause();const view=$('#personalSoundReview');if(view&&current)view.outerHTML=personalSoundReviewMarkup(current)};player.onplay=async()=>{try{await setupPlayer();if(current)personalSoundPreviewMark(eqBypass?'without':'with')}catch(e){player.pause();uiAlert('No se pudo iniciar la escucha A/B: '+e.message)}}}
-function handleResultsEvents(t){if(t.id==='musicFile'){const file=t.files?.[0];if(!file)return;personalSoundPreview={profile:'',heardWith:false,heardWithout:false};if(playerUrl)URL.revokeObjectURL(playerUrl);playerUrl=URL.createObjectURL(file);const view=$('#audioPlayer');if(playerAudio){try{playerAudio.pause()}catch(e){}}playerAudio=view;playerAudio.src=playerUrl;attachPlayerEvents(playerAudio);return}}// Guided, read-only transfer of AudioCal EQ suggestions to external equalizers.
+function attachPlayerEvents(player){if(!player)return;player.onpause=()=>{balanceEndListening();personalSoundPreviewPause();const view=$('#personalSoundReview');if(view&&current)view.outerHTML=personalSoundReviewMarkup(current)};player.onplay=async()=>{try{await setupPlayer();if(current)personalSoundPreviewMark(eqBypass?'without':'with')}catch(e){player.pause();uiAlert('No se pudo iniciar la escucha A/B: '+e.message)}}}
+function handleResultsEvents(t){if(t.id==='musicFile'){const file=t.files?.[0];if(!file)return;balanceEndListening();balancePreview=null;balanceListened=new Set();personalSoundPreview={profile:'',heardWith:false,heardWithout:false};if(playerUrl)URL.revokeObjectURL(playerUrl);playerUrl=URL.createObjectURL(file);const view=$('#audioPlayer');if(playerAudio){try{playerAudio.pause()}catch(e){}}playerAudio=view;playerAudio.src=playerUrl;attachPlayerEvents(playerAudio);return}}// Guided, read-only transfer of AudioCal EQ suggestions to external equalizers.
 // External applications cannot be controlled from this static website.
 let transferOpen=false,transferTarget='device',transferOS='android',transferPreset='profile',transferCustom='',transferRange='profile',transferStep=0,transferBandIndex=0,transferCompleted=new Set(),transferStatus='';
 const TRANSFER_LIMITS={six:[-6,6],twelve:[-12,12],twenty:[-20,20]};
@@ -2339,7 +2392,11 @@ if(btn.dataset.adjust&&current){const f=Number(btn.dataset.adjust),r=recommend(c
 if(btn.dataset.balancePreview&&current){
  if(!playerAudio||!playerUrl||playerAudio.paused){balanceStatus='Primero selecciona una canción y pulsa reproducir.';refreshBalanceUI();return}
  if(!filters.some(f=>Math.abs(f.frequency.value-balanceFreq)<.01)){balanceStatus='Esta frecuencia no está disponible en la salida de audio actual.';refreshBalanceUI();return}
- preferencePreview=null;balancePreview=btn.dataset.balancePreview;balanceListened.add(balancePreview);balanceStatus='Escucha varios segundos antes de cambiar entre A y B.';refreshBalanceUI();return;
+ preferencePreview=null;
+ if(balanceStartListening(btn.dataset.balancePreview)){
+  balanceStatus='Escucha esta variante al menos dos segundos antes de cambiar. Después escucha la otra.';
+ }else balanceStatus='Reproduce primero una canción para iniciar esta comparación.';
+ refreshBalanceUI();return;
 }
 if(btn.dataset.balanceChoose&&current){balanceChoose(btn.dataset.balanceChoose);return}
 if(btn.dataset.prefPreview&&current){
@@ -2422,6 +2479,19 @@ case 'starter-apply':if(current){
   if(transferOpen)transferStatus='Cambió el EQ; revisa los controles físicos antes de aplicarlos.';
   touch();render();
  }break;
+}
+case 'finish-sound':if(current){
+ const music=$('#musicComparison'),balance=$('#toneBalance');
+ if(music)music.open=true;
+ if(balance)balance.open=true;
+ if(!balanceQueue.length||!current.bands.includes(balanceFreq))resetBalanceSession(current);
+ balanceStatus=playerUrl?'Pulsa reproducir, escucha A y B durante al menos dos segundos cada una y elige tu preferencia.':
+  'Carga una canción local y pulsa reproducir; después compara A y B en el panel que se ha abierto.';
+ refreshBalanceUI();
+ const target=playerUrl?$('#toneBalance'):$('#musicComparison');
+ target?.scrollIntoView({behavior:'smooth',block:'start'});
+ if(!playerUrl)$('#musicFile')?.focus();else $('#balanceFrequency')?.focus();
+ break;
 }
 case 'preview-sound':if(current){
  const panel=$('#musicComparison');if(panel){panel.open=true;panel.scrollIntoView({behavior:'smooth',block:'start'});$('#musicFile')?.focus()}
