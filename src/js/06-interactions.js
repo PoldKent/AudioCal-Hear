@@ -18,7 +18,11 @@ if(btn.dataset.adjust&&current){const f=Number(btn.dataset.adjust),r=recommend(c
 if(btn.dataset.balancePreview&&current){
  if(!playerAudio||!playerUrl||playerAudio.paused){balanceStatus='Primero selecciona una canción y pulsa reproducir.';refreshBalanceUI();return}
  if(!filters.some(f=>Math.abs(f.frequency.value-balanceFreq)<.01)){balanceStatus='Esta frecuencia no está disponible en la salida de audio actual.';refreshBalanceUI();return}
- preferencePreview=null;balancePreview=btn.dataset.balancePreview;balanceListened.add(balancePreview);balanceStatus='Escucha varios segundos antes de cambiar entre A y B.';refreshBalanceUI();return;
+ preferencePreview=null;
+ if(balanceStartListening(btn.dataset.balancePreview)){
+  balanceStatus='Escucha esta variante al menos dos segundos antes de cambiar. Después escucha la otra.';
+ }else balanceStatus='Reproduce primero una canción para iniciar esta comparación.';
+ refreshBalanceUI();return;
 }
 if(btn.dataset.balanceChoose&&current){balanceChoose(btn.dataset.balanceChoose);return}
 if(btn.dataset.prefPreview&&current){
@@ -101,6 +105,19 @@ case 'starter-apply':if(current){
   if(transferOpen)transferStatus='Cambió el EQ; revisa los controles físicos antes de aplicarlos.';
   touch();render();
  }break;
+}
+case 'finish-sound':if(current){
+ const music=$('#musicComparison'),balance=$('#toneBalance');
+ if(music)music.open=true;
+ if(balance)balance.open=true;
+ if(!balanceQueue.length||!current.bands.includes(balanceFreq))resetBalanceSession(current);
+ balanceStatus=playerUrl?'Pulsa reproducir, escucha A y B durante al menos dos segundos cada una y elige tu preferencia.':
+  'Carga una canción local y pulsa reproducir; después compara A y B en el panel que se ha abierto.';
+ refreshBalanceUI();
+ const target=playerUrl?$('#toneBalance'):$('#musicComparison');
+ target?.scrollIntoView({behavior:'smooth',block:'start'});
+ if(!playerUrl)$('#musicFile')?.focus();else $('#balanceFrequency')?.focus();
+ break;
 }
 case 'preview-sound':if(current){
  const panel=$('#musicComparison');if(panel){panel.open=true;panel.scrollIntoView({behavior:'smooth',block:'start'});$('#musicFile')?.focus()}
