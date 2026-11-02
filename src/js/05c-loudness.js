@@ -47,34 +47,47 @@ function refreshLoudnessUI(){
  if(panel&&current)panel.innerHTML=loudnessMarkup(current);
  localize(document.body);
 }
-async function playLoudnessSample(which){
- if(!current||page!=='results')return;
- const f=loudnessSelectedBand(current);if(f===null)return;
- const profileId=current.id;
+
+async function playLoudnessSample(which,integrated=false){
+ if(!current||!(integrated?page==='test'&&introStep===3:page==='results'))return;
+ const entry=integrated?inlineLoudnessEntry(current):null;
+ if(integrated&&!entry)return;
+ const f=integrated?entry.f:loudnessSelectedBand(current);if(f===null)return;
+ const profile=current,comparisonKey=integrated?key(entry.f,entry.side):'';
  const frequency=which==='reference'?1000:f;
- const db=LOUDNESS_REFERENCE_DBFS+(which==='target'?loudnessOffsetDb:0);
- if(db>LOUDNESS_REFERENCE_DBFS+LOUDNESS_OFFSET_LIMIT)return;
+ const offset=integrated?inlineLoudnessOffsetDb:loudnessOffsetDb;
+ const db=LOUDNESS_REFERENCE_DBFS+(which==='target'?offset:0);
+ const update=(msg)=>{
+  if(integrated){inlineLoudnessMessage=msg;inlineLoudnessRefresh()}
+  else{loudnessMessage=msg;refreshLoudnessUI()}
+ };
+ if(db>LOUDNESS_REFERENCE_DBFS+LOUDNESS_OFFSET_LIMIT||db<LOUDNESS_REFERENCE_DBFS-LOUDNESS_OFFSET_LIMIT)return;
  try{
-  stopTone();
-  if(playerAudio)playerAudio.pause();
+  stopTone();if(playerAudio)playerAudio.pause();
   const ctx=await ensureAudio();
-  if(!current||current.id!==profileId||page!=='results'||loudnessSelectedBand(current)!==f)return;
-  if(frequency>=ctx.sampleRate/2){loudnessMessage='Frecuencia fuera del rango reproducible en este equipo.';refreshLoudnessUI();return}
-  const oscillator=ctx.createOscillator(),gain=ctx.createGain();
-  oscillator.type='sine';oscillator.frequency.value=frequency;
-  oscillator.connect(gain);gain.connect(ctx.destination);
+  if(current!==profile||
+   (integrated?(page!=='test'||introStep!==3||key(inlineLoudnessEntry(profile)?.f,inlineLoudnessEntry(profile)?.side)!==comparisonKey):
+    (page!=='results'||loudnessSelectedBand(profile)!==f)))return;
+  if(frequency>=ctx.sampleRate/2){update('Esta frecuencia supera la capacidad digital del dispositivo.');return}
+  const side=integrated?entry.side:'both';
+  const pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
+  if(side!=='both'&&!pan){update('El navegador no puede aislar este oído. Omite la comparación.');return}
+  const osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.type='sine';osc.frequency.value=frequency;
+  if(pan){pan.pan.value=side==='left'?-1:side==='right'?1:0;osc.connect(pan);pan.connect(gain)}
+  else osc.connect(gain);
+  gain.connect(ctx.destination);
   const t=ctx.currentTime+.03,amp=Math.pow(10,db/20);
   gain.gain.setValueAtTime(0.00000001,t);
   gain.gain.linearRampToValueAtTime(amp,t+.1);
   gain.gain.setValueAtTime(amp,t+.85);
   gain.gain.linearRampToValueAtTime(.00000001,t+.98);
-  oscillator.start(t);oscillator.stop(t+1.03);
-  oscillator.onended=()=>{try{oscillator.disconnect();gain.disconnect()}catch(e){}if(tone?.osc===oscillator)tone=null};
-  tone={mode:'loudness',osc:oscillator,gain,start:t};
-  loudnessListened.add(which);
-  loudnessMessage='Señal '+(which==='reference'?'de referencia':'evaluada')+' reproducida a '+db+' dBFS digitales. Compara sin cambiar el volumen físico.';
-  refreshLoudnessUI();
- }catch(e){loudnessMessage='No se pudo reproducir el tono: '+e.message;refreshLoudnessUI()}
+  osc.start(t);osc.stop(t+1.03);
+  osc.onended=()=>{try{osc.disconnect();pan?.disconnect();gain.disconnect()}catch(e){}if(tone?.osc===osc)tone=null};
+  tone={mode:'loudness',osc,gain,pan,start:t};
+  (integrated?inlineLoudnessListened:loudnessListened).add(which);
+  update('Señal '+(which==='reference'?'de referencia':'evaluada')+' reproducida a '+db+' dBFS. Mantén el volumen físico constante.');
+ }catch(e){update('No se pudo reproducir el tono: '+e.message)}
 }
 function recordLoudnessSample(p){
  const f=loudnessSelectedBand(p);
