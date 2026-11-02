@@ -101,6 +101,15 @@ case 'starter-apply':if(current){
   touch();render();
  }break;
 }
+case 'preview-sound':if(current){
+ const panel=$('#musicComparison');if(panel){panel.open=true;panel.scrollIntoView({behavior:'smooth',block:'start'});$('#musicFile')?.focus()}
+ break;
+}
+case 'sound-better':case 'sound-same':case 'sound-worse':if(current){
+ const choice=a.slice('sound-'.length);
+ if(!personalSoundSaveReview(choice))uiAlert('Reproduce una canción y compara el EQ encendido y apagado antes de guardar tu preferencia.');
+ break;
+}
 case 'starter-copy':if(current){
  const ok=await copyText(starterEqCopy(current));
  const el=$('#starterStatus');if(el)el.textContent=ok?'Valores sugeridos copiados. Verifica los controles físicos antes de aplicarlos.':'No se pudo copiar; puedes consultar la tabla superior.';
@@ -128,7 +137,7 @@ case 'retrymissing':if(current){
  }else uiAlert('Todos los umbrales programados ya están confirmados.');
 }break;
 case 'format':changeEqFormat();break;
-case 'bypass':eqBypass=!eqBypass;balancePreview=null;updatePlayerFilters(preferencePreview?previewTaste():null);btn.textContent=eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ';break;
+case 'bypass':eqBypass=!eqBypass;balancePreview=null;updatePlayerFilters(preferencePreview?previewTaste():null);if(playerAudio&&!playerAudio.paused){personalSoundPreviewMark(eqBypass?'without':'with');const node=$('#personalSoundReview');if(node)node.outerHTML=personalSoundReviewMarkup(current)}btn.textContent=eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ';break;
 case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({app:'AudioCal Hear',version:1,profiles},null,2),'application/json');break;
 case 'import':$('#importInput')?.click();break;
 }}
