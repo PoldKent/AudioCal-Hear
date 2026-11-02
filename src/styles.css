@@ -282,3 +282,8 @@ select option{background:#fff;color:#172033}
 .personal-sound-review>strong{color:#1a478b}.personal-sound-review>.row{margin:11px 0}
 .personal-sound-review .btn{flex:1 1 110px}
 .starter-inline .starter-actions>.btn{flex:1 1 145px}
+
+/* Optional inline comparison remains inside the existing exam screen. */
+.inline-loudness{margin:14px 0;padding:9px 12px;border:1px solid #dce7f7;border-radius:12px;background:#f7faff}
+.inline-loudness .row{margin:9px 0}.inline-loudness .btn{min-height:42px}
+.inline-loudness .inner-detail{padding-top:9px}
