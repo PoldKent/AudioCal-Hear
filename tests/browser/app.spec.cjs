@@ -721,6 +721,7 @@ test('inline equal-loudness shares the exam screen and stores one separate obser
  await page.locator('[data-device="speaker"]').click();
  await page.locator('#deviceName').fill('Inline loudness QA');
  await page.locator('[data-act="create"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
  await page.evaluate(()=>{
   const profiles=JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'));
   profiles[0].measures['1000|both']=[{kind:'heard',db:-70,confidence:'low',method:'adaptive-v21-short'}];
