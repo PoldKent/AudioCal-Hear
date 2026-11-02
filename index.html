@@ -291,6 +291,11 @@ select option{background:#fff;color:#172033}
 .personal-sound-review>strong{color:#1a478b}.personal-sound-review>.row{margin:11px 0}
 .personal-sound-review .btn{flex:1 1 110px}
 .starter-inline .starter-actions>.btn{flex:1 1 145px}
+
+/* Optional inline comparison remains inside the existing exam screen. */
+.inline-loudness{margin:14px 0;padding:9px 12px;border:1px solid #dce7f7;border-radius:12px;background:#f7faff}
+.inline-loudness .row{margin:9px 0}.inline-loudness .btn{min-height:42px}
+.inline-loudness .inner-detail{padding-top:9px}
 </style>
 </head>
 <body>
@@ -544,6 +549,14 @@ function normalizedProfile(p,importing=false){
    levelDbfs:safeNumber(item.levelDbfs,-42,-100,-24),durationS:safeNumber(item.durationS,0,0,22),
    at:safeNumber(item.at,Date.now(),0,Date.now()+86400000),events,micUsed,mic};
  }
+ const loudnessInline=Object.create(null),rawInline=p.loudnessInline&&typeof p.loudnessInline==='object'&&!Array.isArray(p.loudnessInline)?p.loudnessInline:{};
+ for(const [k,item] of Object.entries(rawInline).slice(0,72)){
+  const match=/^(\d+(?:\.\d+)?)\|(left|right|both)$/.exec(k);
+  if(!match||!bands.includes(Number(match[1]))||!item||typeof item!=='object'||Array.isArray(item)||item.method!=='inline-relative-match-v1')continue;
+  if(!Number.isInteger(item.offsetDb)||Math.abs(item.offsetDb)>6)continue;
+  loudnessInline[k]={method:'inline-relative-match-v1',offsetDb:item.offsetDb,referenceDbfs:-48,
+   at:safeNumber(item.at,Date.now(),0,Date.now()+86400000)};
+ }
  const rawReview=p.personalSoundReview;
  const personalSoundReview=rawReview&&typeof rawReview==='object'&&!Array.isArray(rawReview)&&
   rawReview.version==='personal-sound-v1'&&['better','same','worse'].includes(rawReview.choice)&&
@@ -562,7 +575,7 @@ function normalizedProfile(p,importing=false){
    p.testBandPlan.every(f=>bands.includes(f))?
     p.testBandPlan.slice():legacyQuickBands(bands)
   ):null,
-  loudness:normalizeLoudness(p.loudness,bands),personalSoundReview,
+  loudness:normalizeLoudness(p.loudness,bands),loudnessInline,personalSoundReview,
   manual:finiteMap(p.manual,-30,30),balance:finiteMap(p.balance,-6,3),balanceProof:Object.fromEntries(bands.map(f=>[f,(Array.isArray(p.balanceProof?.[f])?p.balanceProof[f]:[]).slice(-10).filter(x=>x&&Number.isFinite(x.change)&&Math.abs(x.change)<=3).map(x=>({at:safeNumber(x.at,Date.now(),0,Date.now()+86400000),choices:Array.isArray(x.choices)?x.choices.slice(0,2).filter(q=>[-1,0,1].includes(q)):[],change:x.change,method:'music-ab-two-rounds'}))])),
   taste:{bass:safeNumber(taste.bass,0,-3,3),voices:safeNumber(taste.voices,0,-3,3),air:safeNumber(taste.air,0,-3,3)},
   context:normalizeCalibrationContext(p.context,p.type),
@@ -869,6 +882,7 @@ function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea
  ${floorReached?'':(trial.awaiting||active)?`<div class="mini-options"><button class="choice" type="button" data-act="answerYes"><strong>✓ Sí lo escucho</strong><span>Interrumpir y registrar</span></button><button class="choice" type="button" data-act="answerNo"><strong>✕ No lo escucho</strong><span>Interrumpir y registrar</span></button></div>${trial.awaiting&&!active?'<p class="tiny center muted">Puedes repetir el nivel antes de contestar.</p>'+button('▶ Reproducir este nivel','play','btn-ghost full'):''}`:
  button('▶ Reproducir nivel · '+level+' dBFS','play','btn-primary full bigbutton')}
  ${floorReached?`<div class="soft info center"><strong>Se alcanzó ${getFloor(p)} dBFS</strong><p class="small">Si seguías escuchando el tono, regístralo. Eso NO implica reducir automáticamente el EQ.</p>${button('Lo seguía escuchando','endheard','btn-alt full')}${button('No estoy seguro','enduncertain','btn-ghost full')}</div>`:''}
+ ${inlineLoudnessMarkup(p)}
  <div class="row wrap" style="margin-top:12px">${button('■ Detener','stopaudio','btn-ghost grow')}${button('Reiniciar frecuencia','retry','btn-ghost grow')}</div><p class="tiny muted center">${getStart(p)} a ${getFloor(p)} dBFS · no son niveles acústicos. No uses el volumen máximo ni lo aumentes para buscar tonos inaudibles.</p></section>`;
 }
 // Three seconds per tone, explicit yes/no answers. A skipped tap never becomes an audible response.
@@ -990,7 +1004,7 @@ function createProfile(){const name=$('#deviceName')?.value.trim()||'Mi equipo '
  if(temp.testStart<=temp.testFloor){uiAlert('El nivel inicial debe ser mayor que el mínimo en dBFS.');return}
  if(temp.testStart>maxTestStart(temp)){uiAlert('El nivel inicial supera el límite del tipo de dispositivo.');return}
  if(temp.testStart>MAX_SAFE_DB&&!uiConfirm('Rango digital avanzado: '+temp.testStart+' dBFS puede sonar muy fuerte o distorsionar. Empieza con el volumen físico muy bajo y completa la comprobación gradual. ¿Deseas habilitarlo para este equipo?'))return;
- if(temp.testStart>=-30&&temp.testStart<=MAX_SAFE_DB&&!uiConfirm('Nivel digital alto ('+temp.testStart+' dBFS). Puede ser excesivo. No uses el máximo volumen físico. ¿Continuar?'))return;temp.name=name;temp.min=min;temp.max=max;temp.controlMin=controlMin;temp.controlMax=controlMax;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,controlMin,controlMax,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testBandPlan:temp.testMode==='quick'?testBands(temp):null,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},sweepRecords:{},loudness:{},personalSoundReview:null,context:normalizeCalibrationContext(temp.context,temp.type),manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetLoudnessSession();resetBalanceSession(p);resetChannelCheck();resetVolumePreview();introStep=0;trial=null;nav('test')}
+ if(temp.testStart>=-30&&temp.testStart<=MAX_SAFE_DB&&!uiConfirm('Nivel digital alto ('+temp.testStart+' dBFS). Puede ser excesivo. No uses el máximo volumen físico. ¿Continuar?'))return;temp.name=name;temp.min=min;temp.max=max;temp.controlMin=controlMin;temp.controlMax=controlMax;const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,8),name,type:temp.type,preset:temp.preset,bands,min,max,controlMin,controlMax,step:1,channels:temp.channels,passes:temp.passes,testMode:temp.testMode,testBandPlan:temp.testMode==='quick'?testBands(temp):null,testStart:temp.testStart,testFloor:temp.testFloor,measures:{},sweepRecords:{},loudness:{},loudnessInline:{},personalSoundReview:null,context:normalizeCalibrationContext(temp.context,temp.type),manual:{},balance:{},balanceProof:{},taste:{bass:0,voices:0,air:0},createdAt:Date.now(),updatedAt:Date.now()};profiles.unshift(p);current=p;preferenceStage=0;preferencePreview=null;preferenceListened=new Set();currentId=p.id;awaitNext=false;floorReached=false;save();resetLoudnessSession();resetBalanceSession(p);resetChannelCheck();resetVolumePreview();introStep=0;trial=null;nav('test')}
 // Optional pre-test sweep. Observations never become hearing thresholds or EQ gains.
 const SWEEP_DURATION_S=22;
 const SWEEP_METHOD='fixed-digital-level-preflight-v1';
@@ -1234,6 +1248,85 @@ function personalSoundSaveReview(choice){
  current.personalSoundReview={version:PERSONAL_SOUND_VERSION,choice,signature:status.signature,at:Date.now()};
  touch();render();
  return true;
+}
+
+// An inline loudness comparison lives on the same adaptive-test screen.
+// It is optional, one observation per frequency/ear, and never an EQ gain.
+const INLINE_LOUDNESS_VERSION='inline-relative-match-v1';
+let inlineLoudnessId='',inlineLoudnessOffsetDb=0,inlineLoudnessListened=new Set(),inlineLoudnessMessage='';
+function inlineLoudnessEntry(p){
+ if(!p||page!=='test'||introStep!==3)return null;
+ const e=plan(p)[firstMissing(p)];
+ if(!e||e.pass!==0||e.f<100||e.f>10000||Math.abs(Math.log2(e.f/1000))<=.08)return null;
+ return e;
+}
+function inlineLoudnessEnsure(entry){
+ const id=entry?key(entry.f,entry.side):'';
+ if(id!==inlineLoudnessId){inlineLoudnessId=id;inlineLoudnessOffsetDb=0;inlineLoudnessListened=new Set();inlineLoudnessMessage=''}
+}
+function inlineLoudnessMarkup(p){
+ const entry=inlineLoudnessEntry(p);if(!entry)return '';
+ inlineLoudnessEnsure(entry);
+ const id=key(entry.f,entry.side),saved=p.loudnessInline?.[id];
+ const side=entry.side==='left'?'oído izquierdo':entry.side==='right'?'oído derecho':'ambos canales';
+ return '<details class="unobtrusive inline-loudness" id="inlineLoudness">'+
+  '<summary>Comparar sonoridad de '+fmt(entry.f)+' · opcional en esta misma pasada</summary>'+
+  '<div class="inner-detail" id="inlineLoudnessInner">'+
+  '<p class="small">Escucha 1 kHz y luego '+fmt(entry.f)+' en el '+side+'. Ajusta únicamente el nivel digital de la segunda señal hasta percibir intensidad semejante; mantén fijo el volumen físico. Puedes omitir esta comparación sin repetir el examen.</p>'+
+  '<p class="small"><strong>Señal comparada: '+(inlineLoudnessOffsetDb>=0?'+':'')+inlineLoudnessOffsetDb+' dBFS</strong> respecto de la referencia a −48 dBFS. Límites: ±6 dBFS, sin buscar sonidos inaudibles.</p>'+
+  '<div class="row wrap">'+
+   '<button class="btn btn-ghost grow" type="button" data-inline-loudness="minus">−1 dBFS</button>'+
+   '<button class="btn btn-ghost grow" type="button" data-inline-loudness="plus">+1 dBFS</button></div>'+
+  '<div class="row wrap">'+
+   '<button class="btn btn-alt grow" type="button" data-inline-loudness="reference">▶ 1 kHz</button>'+
+   '<button class="btn btn-alt grow" type="button" data-inline-loudness="target">▶ '+fmt(entry.f)+'</button></div>'+
+  '<div class="row wrap"><button class="btn btn-primary grow" type="button" data-inline-loudness="record">Guardar comparación</button>'+
+   '<button class="btn btn-ghost grow" type="button" data-inline-loudness="stop">■ Detener</button></div>'+
+  '<p class="tiny muted" id="inlineLoudnessStatus" role="status">'+esc(inlineLoudnessMessage||(saved?'Comparación anterior guardada: '+(saved.offsetDb>=0?'+':'')+saved.offsetDb+' dBFS; puedes continuar el test.':'Primero escucha ambas señales. Esta observación no modifica el EQ.'))+'</p>'+
+  '</div></details>';
+}
+function inlineLoudnessSummaryMarkup(p){
+ const entries=Object.entries(p.loudnessInline||{}).filter(([k,x])=>/^\d+(?:\.\d+)?\|(both|left|right)$/.test(k)&&
+  x?.method===INLINE_LOUDNESS_VERSION&&Number.isInteger(x.offsetDb)&&Math.abs(x.offsetDb)<=6);
+ if(!entries.length)return '';
+ const label=k=>{const [f,side]=k.split('|');return fmt(Number(f))+' · '+(side==='left'?'izquierdo':side==='right'?'derecho':'ambos')};
+ return '<details class="unobtrusive" id="inlineLoudnessResults"><summary>Sonoridad relativa registrada en la misma prueba · '+entries.length+' frecuencias/oídos</summary><div class="inner-detail">'+
+  entries.slice(0,40).map(([k,x])=>'<p class="small"><strong>'+esc(label(k))+'</strong>: '+(x.offsetDb>=0?'+':'')+x.offsetDb+' dBFS respecto a 1 kHz</p>').join('')+
+  '<p class="tiny muted">Comparaciones subjetivas a nivel físico constante. No se traducen directamente a ganancias del ecualizador ni a pérdida auditiva.</p></div></details>';
+}
+function inlineLoudnessRefresh(){
+ const panel=$('#inlineLoudnessInner'),entry=inlineLoudnessEntry(current);
+ if(!panel||!entry)return;
+ const temporary=document.createElement('div');temporary.innerHTML=inlineLoudnessMarkup(current);
+ const inner=temporary.querySelector('#inlineLoudnessInner');
+ if(inner)panel.innerHTML=inner.innerHTML;
+ localize(panel);
+}
+function recordInlineLoudness(){
+ const p=current,entry=inlineLoudnessEntry(p);
+ if(!p||!entry||!inlineLoudnessListened.has('reference')||!inlineLoudnessListened.has('target')){
+  inlineLoudnessMessage='Escucha primero la referencia y la frecuencia evaluada. Si no puedes compararlas, omite esta parte.';
+  return false;
+ }
+ const id=key(entry.f,entry.side);
+ p.loudnessInline=p.loudnessInline&&typeof p.loudnessInline==='object'?p.loudnessInline:{};
+ p.loudnessInline[id]={method:INLINE_LOUDNESS_VERSION,offsetDb:inlineLoudnessOffsetDb,
+  referenceDbfs:LOUDNESS_REFERENCE_DBFS,at:Date.now()};
+ inlineLoudnessMessage='Comparación guardada para '+fmt(entry.f)+' en '+(entry.side==='both'?'ambos canales':entry.side)+'. Sigue respondiendo al test auditivo; no se aplicó ninguna corrección.';
+ inlineLoudnessListened=new Set();touch();return true;
+}
+function inlineLoudnessAction(action){
+ if(!current||page!=='test'||introStep!==3)return;
+ const entry=inlineLoudnessEntry(current);if(!entry)return;
+ inlineLoudnessEnsure(entry);
+ if(action==='stop'){stopTone();inlineLoudnessMessage='Tono detenido.';inlineLoudnessRefresh();return}
+ if(action==='reference'||action==='target'){void playLoudnessSample(action,true);return}
+ if(action==='plus'||action==='minus'){
+  stopTone();inlineLoudnessOffsetDb=clamp(inlineLoudnessOffsetDb+(action==='plus'?1:-1),-LOUDNESS_OFFSET_LIMIT,LOUDNESS_OFFSET_LIMIT);
+  inlineLoudnessListened.delete('target');
+  inlineLoudnessMessage='Nuevo nivel relativo. Escucha otra vez la frecuencia evaluada.';
+ }else if(action==='record'){stopTone();recordInlineLoudness()}
+ inlineLoudnessRefresh();
 }
 
 function gather(p){
@@ -1781,6 +1874,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <details class="unobtrusive" id="technicalResults"><summary>Mediciones del test y fiabilidad · opcional</summary><div class="inner-detail">
  ${renderCalibrationTrace(p,r)}
  ${sweepSummaryMarkup(p)}
+ ${inlineLoudnessSummaryMarkup(p)}
  ${evidenceAuditMarkup(p)}
  <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>Igualación de sonoridad · experimento opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
  ${usable<p.bands.length?`<p class="small muted">${p.bands.length-usable} bandas no tienen ambos umbrales. El test ya conservó los límites observados. Solo repite voluntariamente si quieres mejorar la evidencia. ${button('↺ Repetir bandas sin umbral','retrymissing','btn-ghost')}</p>`:''}
@@ -2041,34 +2135,47 @@ function refreshLoudnessUI(){
  if(panel&&current)panel.innerHTML=loudnessMarkup(current);
  localize(document.body);
 }
-async function playLoudnessSample(which){
- if(!current||page!=='results')return;
- const f=loudnessSelectedBand(current);if(f===null)return;
- const profileId=current.id;
+
+async function playLoudnessSample(which,integrated=false){
+ if(!current||!(integrated?page==='test'&&introStep===3:page==='results'))return;
+ const entry=integrated?inlineLoudnessEntry(current):null;
+ if(integrated&&!entry)return;
+ const f=integrated?entry.f:loudnessSelectedBand(current);if(f===null)return;
+ const profile=current,comparisonKey=integrated?key(entry.f,entry.side):'';
  const frequency=which==='reference'?1000:f;
- const db=LOUDNESS_REFERENCE_DBFS+(which==='target'?loudnessOffsetDb:0);
- if(db>LOUDNESS_REFERENCE_DBFS+LOUDNESS_OFFSET_LIMIT)return;
+ const offset=integrated?inlineLoudnessOffsetDb:loudnessOffsetDb;
+ const db=LOUDNESS_REFERENCE_DBFS+(which==='target'?offset:0);
+ const update=(msg)=>{
+  if(integrated){inlineLoudnessMessage=msg;inlineLoudnessRefresh()}
+  else{loudnessMessage=msg;refreshLoudnessUI()}
+ };
+ if(db>LOUDNESS_REFERENCE_DBFS+LOUDNESS_OFFSET_LIMIT||db<LOUDNESS_REFERENCE_DBFS-LOUDNESS_OFFSET_LIMIT)return;
  try{
-  stopTone();
-  if(playerAudio)playerAudio.pause();
+  stopTone();if(playerAudio)playerAudio.pause();
   const ctx=await ensureAudio();
-  if(!current||current.id!==profileId||page!=='results'||loudnessSelectedBand(current)!==f)return;
-  if(frequency>=ctx.sampleRate/2){loudnessMessage='Frecuencia fuera del rango reproducible en este equipo.';refreshLoudnessUI();return}
-  const oscillator=ctx.createOscillator(),gain=ctx.createGain();
-  oscillator.type='sine';oscillator.frequency.value=frequency;
-  oscillator.connect(gain);gain.connect(ctx.destination);
+  if(current!==profile||
+   (integrated?(page!=='test'||introStep!==3||key(inlineLoudnessEntry(profile)?.f,inlineLoudnessEntry(profile)?.side)!==comparisonKey):
+    (page!=='results'||loudnessSelectedBand(profile)!==f)))return;
+  if(frequency>=ctx.sampleRate/2){update('Esta frecuencia supera la capacidad digital del dispositivo.');return}
+  const side=integrated?entry.side:'both';
+  const pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
+  if(side!=='both'&&!pan){update('El navegador no puede aislar este oído. Omite la comparación.');return}
+  const osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.type='sine';osc.frequency.value=frequency;
+  if(pan){pan.pan.value=side==='left'?-1:side==='right'?1:0;osc.connect(pan);pan.connect(gain)}
+  else osc.connect(gain);
+  gain.connect(ctx.destination);
   const t=ctx.currentTime+.03,amp=Math.pow(10,db/20);
   gain.gain.setValueAtTime(0.00000001,t);
   gain.gain.linearRampToValueAtTime(amp,t+.1);
   gain.gain.setValueAtTime(amp,t+.85);
   gain.gain.linearRampToValueAtTime(.00000001,t+.98);
-  oscillator.start(t);oscillator.stop(t+1.03);
-  oscillator.onended=()=>{try{oscillator.disconnect();gain.disconnect()}catch(e){}if(tone?.osc===oscillator)tone=null};
-  tone={mode:'loudness',osc:oscillator,gain,start:t};
-  loudnessListened.add(which);
-  loudnessMessage='Señal '+(which==='reference'?'de referencia':'evaluada')+' reproducida a '+db+' dBFS digitales. Compara sin cambiar el volumen físico.';
-  refreshLoudnessUI();
- }catch(e){loudnessMessage='No se pudo reproducir el tono: '+e.message;refreshLoudnessUI()}
+  osc.start(t);osc.stop(t+1.03);
+  osc.onended=()=>{try{osc.disconnect();pan?.disconnect();gain.disconnect()}catch(e){}if(tone?.osc===osc)tone=null};
+  tone={mode:'loudness',osc,gain,pan,start:t};
+  (integrated?inlineLoudnessListened:loudnessListened).add(which);
+  update('Señal '+(which==='reference'?'de referencia':'evaluada')+' reproducida a '+db+' dBFS. Mantén el volumen físico constante.');
+ }catch(e){update('No se pudo reproducir el tono: '+e.message)}
 }
 function recordLoudnessSample(p){
  const f=loudnessSelectedBand(p);
@@ -2194,6 +2301,7 @@ if(btn.dataset.sweepSide){if(!sweepSession){sweepSide=btn.dataset.sweepSide;rend
 if(btn.dataset.sweepRange){if(!sweepSession){sweepRange=btn.dataset.sweepRange;render()}return}
 if(btn.dataset.sweepResponse){sweepLogResponse(btn.dataset.sweepResponse==='yes');return}
 if(btn.dataset.loudness){loudnessAction(btn.dataset.loudness);return}
+if(btn.dataset.inlineLoudness){inlineLoudnessAction(btn.dataset.inlineLoudness);return}
 if(btn.dataset.device){const type=btn.dataset.device;temp.name=$('#deviceName')?.value||temp.name;temp.type=type;temp.context=defaultCalibrationContext(type);temp.channels=type==='headphones'?'separate':'both';if(type==='car')setPreset('car7');else if(type==='headphones')setPreset('photo10');else setPreset('iso7');temp.type=type;temp.testStart=Math.min(temp.testStart,maxTestStart(temp));render();return}
 if(btn.dataset.transferTarget&&current){transferTarget=btn.dataset.transferTarget;transferStep=0;transferBandIndex=0;transferCompleted=new Set();transferStatus='';refreshTransfer();return}
 if(btn.dataset.transferOs&&current){transferOS=btn.dataset.transferOs;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();return}
@@ -2265,7 +2373,7 @@ case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'
  }break;
  case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
 case 'retry':awaitNext=false;floorReached=false;trial=null;sampleNote='';stopTone();render();break;
-case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.manual={};awaitNext=false;floorReached=false;trial=null;resetChannelCheck();resetVolumePreview();introStep=0;sampleNote='';touch();render()}break;
+case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.loudnessInline={};current.manual={};awaitNext=false;floorReached=false;trial=null;resetChannelCheck();resetVolumePreview();introStep=0;sampleNote='';touch();render()}break;
 case 'transfer-open':transferOpen=true;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();break;
 case 'transfer-close':transferOpen=false;refreshTransfer();break;
 case 'transfer-next':if(!current)return;if(transferStep===1&&!transferMapping(current)){transferStatus='Revisa las frecuencias reales del ecualizador.';refreshTransfer();break}
