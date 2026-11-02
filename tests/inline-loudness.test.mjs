@@ -41,7 +41,7 @@ test('relative match is present only as technical evidence, never direct EQ gain
  const markup=sandbox.inlineLoudnessSummaryMarkup(p);
  assert.match(markup,/Sonoridad relativa/);
  assert.match(markup,/2 dBFS/);
- assert.match(markup,/no se traducen directamente/);
+ assert.match(markup,/No se traducen directamente/);
  const eq=fs.readFileSync('src/js/04-equalization.js','utf8');
  const automatic=eq.slice(eq.indexOf('function estimateThresholdContrast('),eq.indexOf('function recommend(p)'));
  assert.doesNotMatch(automatic,/loudnessInline|offsetDb/);
