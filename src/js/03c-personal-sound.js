@@ -2,7 +2,8 @@
 // The Personal Sound workflow shares one actual EQ result across previews and exports.
 // An uncalibrated listening test is not an audiogram and never justifies aggressive boosts.
 const PERSONAL_SOUND_VERSION='personal-sound-v1';
-let personalSoundPreview={profile:'',heardWith:false,heardWithout:false};
+const PERSONAL_SOUND_MIN_LISTEN_MS=1800;
+let personalSoundPreview={profile:'',heardWith:false,heardWithout:false,mode:null,since:0};
 function personalSoundEqSignature(p,rows=recommend(p)){
  return p.id+'|'+p.bands.join(',')+'|'+rows.map(b=>b.f+':'+b.gain).join('|');
 }
@@ -26,11 +27,26 @@ function personalSoundStatus(p,rows=recommend(p)){
  return {grade,tip,measured,good,provisional,tuned,verified,signature:sig,completed,
   hasSweep:!!Object.keys(p.sweepRecords||{}).length,version:PERSONAL_SOUND_VERSION};
 }
-function personalSoundPreviewMark(mode){
- if(!current)return;
- if(personalSoundPreview.profile!==current.id)personalSoundPreview={profile:current.id,heardWith:false,heardWithout:false};
- if(mode==='with')personalSoundPreview.heardWith=true;
- if(mode==='without')personalSoundPreview.heardWithout=true;
+function personalSoundPreviewMark(mode,now=Date.now()){
+ if(!current||!['with','without'].includes(mode))return;
+ if(personalSoundPreview.profile!==current.id)
+  personalSoundPreview={profile:current.id,heardWith:false,heardWithout:false,mode:null,since:0};
+ const state=personalSoundPreview;
+ if(state.mode===mode)return;
+ if(state.mode&&now-state.since>=PERSONAL_SOUND_MIN_LISTEN_MS){
+  if(state.mode==='with')state.heardWith=true;
+  if(state.mode==='without')state.heardWithout=true;
+ }
+ state.mode=mode;state.since=now;
+}
+function personalSoundPreviewPause(now=Date.now()){
+ const state=personalSoundPreview;
+ if(!state.mode)return;
+ if(now-state.since>=PERSONAL_SOUND_MIN_LISTEN_MS){
+  if(state.mode==='with')state.heardWith=true;
+  if(state.mode==='without')state.heardWithout=true;
+ }
+ state.mode=null;state.since=0;
 }
 function personalSoundReviewMarkup(p){
  const m=personalSoundStatus(p),review=p.personalSoundReview;
@@ -48,7 +64,7 @@ function personalSoundReviewMarkup(p){
   button('Peor','sound-worse','btn-ghost grow',heard?'':'disabled')+
   '</div><p class="tiny muted" role="status">'+(heard?
   'Comparaste los dos modos en esta sesión: puedes guardar tu opinión.':
-  'Reproduce una canción y alterna entre EQ activo y desactivado para registrar tu opinión.')+
+  'Reproduce la canción, escucha ambos modos durante al menos 2 segundos y cambia de uno a otro para registrar tu opinión.')+
   '</p></div>';
 }
 function personalSoundSaveReview(choice){
