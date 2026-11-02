@@ -838,6 +838,7 @@ test('completed uncertain hearing test keeps recommendations first and music opt
  await expect(page.locator('#musicComparison')).not.toHaveAttribute('open','');
  await expect(page.locator('#musicFile')).not.toBeVisible();
  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
+ page.once('dialog',dialog=>dialog.accept());
  await page.locator('[data-act="previous-frequency"]').click();
  await expect(page.locator('#preSweepPanel')).toBeVisible();
  const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
