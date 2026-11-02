@@ -107,19 +107,6 @@ case 'starter-apply':if(current){
   touch();render();
  }break;
 }
-case 'finish-sound':if(current){
- const music=$('#musicComparison'),balance=$('#toneBalance');
- if(music)music.open=true;
- if(balance)balance.open=true;
- if(!balanceQueue.length||!current.bands.includes(balanceFreq))resetBalanceSession(current);
- balanceStatus=playerUrl?'Pulsa reproducir, escucha A y B durante al menos dos segundos cada una y elige tu preferencia.':
-  'Carga una canción local y pulsa reproducir; después compara A y B en el panel que se ha abierto.';
- refreshBalanceUI();
- const target=playerUrl?$('#toneBalance'):$('#musicComparison');
- target?.scrollIntoView({behavior:'smooth',block:'start'});
- if(!playerUrl)$('#musicFile')?.focus();else $('#balanceFrequency')?.focus();
- break;
-}
 case 'preview-sound':if(current){
  const panel=$('#musicComparison');if(panel){panel.open=true;panel.scrollIntoView({behavior:'smooth',block:'start'});$('#musicFile')?.focus()}
  break;
