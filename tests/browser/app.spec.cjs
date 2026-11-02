@@ -699,3 +699,20 @@ test('headphone preflight requires left/right confirmation and never requests a 
  expect(Object.keys(saved.measures)).toHaveLength(0);
  await noOverflow(page);
 });
+
+test('personalized sound starts as estimated, exposes one listening panel and never changes raw thresholds on review',async({page})=>{
+ await page.locator('[data-device="headphones"]').click();
+ await page.locator('#deviceName').fill('Personal Sound QA');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#starterGuide')).toContainText('Estado del resultado');
+ await page.locator('[data-act="preview-sound"]').click();
+ await expect(page.locator('#musicComparison')).toHaveAttribute('open','');
+ await expect(page.locator('#personalSoundReview')).toBeVisible();
+ await expect(page.locator('[data-act="sound-better"]')).toBeDisabled();
+ const data=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(data.personalSoundReview).toBe(null);
+ await expect(page.getByRole('heading',{name:/Tu ecualizador/})).toHaveCount(1);
+ await noOverflow(page);
+});
