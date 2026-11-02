@@ -16,7 +16,7 @@ test('AudioCal Hear acceptance: measured 4/5/7/10 band profiles survive full res
   await page.locator('#uiLanguage').selectOption('es');
   await page.locator('[data-device="'+config.device+'"]').click();
   if(config.preset==='custom'){
-   await page.locator('#moreFormats > summary').click();
+   if(await page.locator('#moreFormats').getAttribute('open')===null)await page.locator('#moreFormats > summary').click();
    await page.locator('#extraPreset').selectOption('custom');
    await page.locator('#customFreqs').fill(config.bands.join(', '));
    await page.locator('#customFreqs').dispatchEvent('change');
