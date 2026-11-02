@@ -14,7 +14,7 @@ const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 const begin = source.indexOf('function trialEstimate(');
 const end = source.indexOf('\nlet page=', begin);
 assert(begin >= 0 && end > begin, 'Hearing algorithm extraction boundary changed');
-const sandbox = {clamp, getStart: p => p.testStart, getFloor: p => p.testFloor, Math, Number};
+const sandbox = {clamp, getStart: p => p.testStart, getFloor: p => p.testFloor, MAX_STEPS:20, Math, Number};
 vm.runInNewContext(source.slice(begin, end), sandbox);
 const next = sandbox.nextTrialLevel;
 
@@ -46,9 +46,16 @@ test('a tone heard all the way down to the digital floor stays an observation', 
   assert.equal(t.level, -100);
 });
 
-test('inaudible first tone has no measured threshold', () => {
-  const t = trial();
-  assert.equal(next(t, false, profile), 'unheard');
+test('inaudible first tone tries safe +3 dBFS steps before recording only an inaudible limit', () => {
+ const t=trial();
+ for(const nextLevel of [-33,-30,-27,-24]){
+  t.done++;
+  assert.equal(next(t,false,profile),'next');
+  assert.equal(t.level,nextLevel);
+ }
+ t.done++;
+ assert.equal(next(t,false,profile),'unheard');
+ assert.equal(t.heard,null);
 });
 
 test('two final checks always end the frequency, even when responses disagree',()=>{
