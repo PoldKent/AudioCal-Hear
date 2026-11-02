@@ -418,7 +418,7 @@ test('AF-02: changing a band keeps original measurements and synchronizes every 
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(saved.manual['1000']).toBe(3);
  const txtEvent=page.waitForEvent('download');
- await page.getByText('Más opciones de ecualización',{exact:true}).click();
+ await page.locator('#eqCardSection > summary').click();
  await page.locator('[data-act="downloadtxt"]').click();
  const txt=await txtEvent;
  const contents=fs.readFileSync(await txt.path(),'utf8');
@@ -872,5 +872,44 @@ test('16 kHz first inaudible presentation increases digital dBFS and remains in 
  await expect(page.locator('.frequency')).toContainText('16 kHz');
  const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
  expect(stored['16000|left']).toBeUndefined();
+ await noOverflow(page);
+});
+
+test('advanced result groups keep existing optional features available',async({page})=>{
+ await newProfile(page,'Opciones agrupadas');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#eqCardSection')).not.toHaveAttribute('open');
+ await expect(page.locator('#musicTools')).not.toHaveAttribute('open');
+ await expect(page.locator('#toneBalance')).toBeAttached();
+ await expect(page.locator('#prefRound')).toBeAttached();
+ await page.locator('#eqCardSection > summary').click();
+ await expect(page.locator('[data-act="format"]')).toBeVisible();
+ await expect(page.locator('[data-act="downloadtxt"]')).toBeVisible();
+ await page.locator('#musicTools > summary').click();
+ await expect(page.locator('#toneBalance > summary')).toBeVisible();
+ await expect(page.locator('#musicTools > .inner-detail > details > summary').last()).toBeVisible();
+ await expect(page.locator('#musicComparison')).not.toHaveAttribute('open');
+ await noOverflow(page);
+});
+test('keyboard changes EQ without live-announcing the entire application',async({page})=>{
+ await newProfile(page,'Teclado');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#root')).toHaveAttribute('tabindex','-1');
+ await expect(page.locator('#root')).not.toHaveAttribute('aria-live');
+ await expect(page.locator('.skip-link')).toHaveAttribute('href','#root');
+ await page.locator('[data-eq-select="1000"]').click();
+ const slider=page.locator('#eqSlider');
+ await expect(slider).toHaveAttribute('aria-describedby','eqSelectedNote');
+ await expect(page.locator('[data-eq-select="1000"]')).toHaveAttribute('aria-pressed','true');
+ const initial=Number(await slider.inputValue());
+ await slider.focus();
+ await slider.press('ArrowRight');
+ await expect(slider).toHaveValue(String(initial+1));
+ await expect(page.locator('#eqSelectedValue')).toHaveText('+'+(initial+1)+' dB');
+ await expect(page.locator('#eqEditor [data-delta="1"]')).toHaveAttribute('aria-label',/1 kHz/);
+ const p=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(p.manual['1000']).toBe(1);
  await noOverflow(page);
 });

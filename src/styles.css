@@ -295,3 +295,11 @@ select option{background:#fff;color:#172033}
 .personal-sound-finish .tiny{color:#526985;line-height:1.5}
 .personal-sound-finish .btn{margin-top:8px;white-space:normal}
 @media(max-width:420px){.personal-sound-finish{padding:12px}.personal-sound-finish .btn{font-size:13px}}
+
+/* Keyboard access and grouped advanced results. */
+.skip-link{position:fixed;top:10px;left:10px;z-index:30;padding:11px 15px;border-radius:10px;background:#17384b;color:#fff;font-weight:750;transform:translateY(-170%);transition:transform .12s ease}
+.skip-link:focus{transform:none;outline:3px solid #2768e8;outline-offset:2px}
+#root:focus{outline:none}
+.results-compact .music-tools>.inner-detail{min-width:0}
+.results-compact .music-tools>.inner-detail>.unobtrusive{margin:8px 0}
+@media(prefers-reduced-motion:reduce){.skip-link{transition:none}}
