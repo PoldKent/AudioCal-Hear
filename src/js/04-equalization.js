@@ -104,7 +104,7 @@ function balanceEndListening(now=Date.now()){
  s.mode=null;s.since=0;
 }
 function balanceStartListening(mode,now=Date.now()){
- if(!current||!['A','B'].includes(mode)||!playerAudio||playerAudio.paused||!playerUrl)return false;
+ if(!current||!['A','B'].includes(mode)||!playerAudio||playerAudio.paused||!playerUrl){balanceListeningSession.mode=null;balanceListeningSession.since=0;return false;}
  if(balanceListeningSession.profile===current.id&&balanceListeningSession.band===balanceFreq&&
     balanceListeningSession.round===balanceRound)balanceEndListening(now);
  balancePreview=mode;
