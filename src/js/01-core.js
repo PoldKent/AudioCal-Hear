@@ -237,7 +237,7 @@ function normalizedProfile(p,importing=false){
  }
  const loudnessInline=Object.create(null),rawInline=p.loudnessInline&&typeof p.loudnessInline==='object'&&!Array.isArray(p.loudnessInline)?p.loudnessInline:{};
  for(const [k,item] of Object.entries(rawInline).slice(0,72)){
-  const match=/^(\\d+(?:\\.\\d+)?)\\|(left|right|both)$/.exec(k);
+  const match=/^(\d+(?:\.\d+)?)\|(left|right|both)$/.exec(k);
   if(!match||!bands.includes(Number(match[1]))||!item||typeof item!=='object'||Array.isArray(item)||item.method!=='inline-relative-match-v1')continue;
   if(!Number.isInteger(item.offsetDb)||Math.abs(item.offsetDb)>6)continue;
   loudnessInline[k]={method:'inline-relative-match-v1',offsetDb:item.offsetDb,referenceDbfs:-48,
