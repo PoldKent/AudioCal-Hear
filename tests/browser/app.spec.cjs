@@ -716,3 +716,34 @@ test('personalized sound starts as estimated, exposes one listening panel and ne
  await expect(page.getByRole('heading',{name:/Tu ecualizador/})).toHaveCount(1);
  await noOverflow(page);
 });
+
+test('inline equal-loudness shares the exam screen and stores one separate observation',async({page})=>{
+ await page.locator('[data-device="speaker"]').click();
+ await page.locator('#deviceName').fill('Inline loudness QA');
+ await page.locator('[data-act="create"]').click();
+ await page.evaluate(()=>{
+  const profiles=JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'));
+  profiles[0].measures['1000|both']=[{kind:'heard',db:-70,confidence:'low',method:'adaptive-v21-short'}];
+  localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify(profiles));
+ });
+ await page.reload();
+ await page.locator('[data-nav="test"]').click();
+ await page.locator('[data-act="introNext"]').click();
+ const band=await page.locator('.frequency').innerText();
+ await expect(page.locator('#inlineLoudness')).toBeVisible();
+ await page.locator('#inlineLoudness > summary').click();
+ await page.locator('[data-inline-loudness="reference"]').click();
+ await page.locator('[data-inline-loudness="target"]').click();
+ await page.locator('[data-inline-loudness="record"]').click();
+ await expect(page.locator('#inlineLoudnessStatus')).toContainText('Comparación guardada');
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(Object.keys(saved.loudnessInline)).toHaveLength(1);
+ expect(Object.keys(saved.measures)).toHaveLength(1);
+ expect(Object.values(saved.loudnessInline)[0].method).toBe('inline-relative-match-v1');
+ await page.reload();
+ await page.locator('[data-nav="test"]').click();
+ await page.locator('[data-act="introNext"]').click();
+ await page.locator('#inlineLoudness > summary').click();
+ await expect(page.locator('#inlineLoudnessStatus')).toContainText('guardada');
+ await noOverflow(page);
+});
