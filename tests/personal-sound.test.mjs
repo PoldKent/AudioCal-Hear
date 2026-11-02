@@ -35,9 +35,11 @@ test('review requires comparison modes and becomes stale when EQ changes',()=>{
  const p=make(),saved=JSON.stringify(p.measures);
  sandbox.current=p;
  assert.equal(sandbox.personalSoundSaveReview('better'),false);
- sandbox.personalSoundPreviewMark('with');
+ sandbox.personalSoundPreviewMark('with',10000);
  assert.equal(sandbox.personalSoundSaveReview('better'),false);
- sandbox.personalSoundPreviewMark('without');
+ sandbox.personalSoundPreviewMark('without',12000);
+ assert.equal(sandbox.personalSoundSaveReview('better'),false);
+ sandbox.personalSoundPreviewMark('with',14000);
  assert.equal(sandbox.personalSoundSaveReview('better'),true);
  assert.equal(sandbox.personalSoundStatus(p).verified,'better');
  p.gains[1]=2;
