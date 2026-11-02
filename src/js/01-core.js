@@ -232,7 +232,7 @@ function normalizedProfile(p,importing=false){
   const micUsed=item.micUsed===true;
   const mic=micUsed&&Array.isArray(item.mic)?item.mic.slice(0,100).filter(x=>x&&Number.isFinite(x.hz)&&x.hz>=minHz&&x.hz<=maxHz&&Number.isFinite(x.relativeDb)).map(x=>({hz:Math.round(x.hz),relativeDb:clamp(Math.round(x.relativeDb),-60,60),detected:x.detected===true})):[];
   sweepRecords[side]={method:'fixed-digital-level-preflight-v1',minHz,maxHz,
-   levelDbfs:safeNumber(item.levelDbfs,-42,-100,-24),durationS:safeNumber(item.durationS,0,0,22),
+   levelDbfs:safeNumber(item.levelDbfs,-42,-100,-24),durationS:safeNumber(item.durationS,0,0,60),
    at:safeNumber(item.at,Date.now(),0,Date.now()+86400000),events,micUsed,mic};
  }
  const loudnessInline=Object.create(null),rawInline=p.loudnessInline&&typeof p.loudnessInline==='object'&&!Array.isArray(p.loudnessInline)?p.loudnessInline:{};
