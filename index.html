@@ -1524,6 +1524,12 @@ function refreshResultsUI(){
  const headerCount=$('#eqChangeCount');if(headerCount)headerCount.textContent=count+' cambios';
  const copyStatus=$('#copyStatus');if(copyStatus)copyStatus.textContent='';
  const pref=document.querySelector('#prefRound');if(pref)pref.innerHTML=preferenceMarkup();
+ // The proposal and listening verdict depend on the live EQ signature.
+ // Updating only the bars left the Apply button and verdict stale after manual edits.
+ const starter=$('#starterGuide');
+ if(starter){const fresh=document.createElement('div');fresh.innerHTML=starterEqMarkup(current,r);if(fresh.firstElementChild)starter.replaceWith(fresh.firstElementChild)}
+ const review=$('#personalSoundReview');
+ if(review){const fresh=document.createElement('div');fresh.innerHTML=personalSoundReviewMarkup(current);if(fresh.firstElementChild)review.replaceWith(fresh.firstElementChild)}
  updatePlayerFilters(preferencePreview?previewTaste():null);refreshTransfer();refreshEqCard();localize(document.body);
 }
 function eqMark(b){return (b.gain>0?'+':'')+b.gain}
