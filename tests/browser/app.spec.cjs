@@ -748,3 +748,59 @@ test('inline equal-loudness shares the exam screen and stores one separate obser
  await expect(page.locator('#inlineLoudnessStatus')).toContainText('guardada');
  await noOverflow(page);
 });
+
+test('Hear 2.0 complete simulated 20-threshold profile produces one persistent editable/exportable EQ',async({page})=>{
+ await newProfile(page,'Recorrido completo 10 bandas');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.evaluate(()=>{
+  const all=JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'));
+  const p=all[0],freq=p.bands;
+  const levels=freq.map(f=>f===1000?-82:f===2000?-62:-62);
+  for(const [i,f] of freq.entries()){
+   for(const side of ['left','right']){
+    p.measures[f+'|'+side]=[{kind:'heard',db:levels[i]+(side==='right'?1:0),
+     confidence:'low',method:'adaptive-v21-short',elapsedS:24,at:Date.now()}];
+   }
+  }
+  p.sweepRecords={left:{method:'fixed-digital-level-preflight-v1',minHz:125,maxHz:8000,
+   durationS:22,levelDbfs:-42,at:Date.now(),micUsed:false,mic:[],
+   events:[{hz:300,heard:true},{hz:7800,heard:false}]}};
+  localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify(all));
+ });
+ await page.reload();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.getByRole('heading',{name:/Tu ecualizador · 10 bandas/})).toHaveCount(1);
+ await expect(page.locator('[data-eq-band]')).toHaveCount(10);
+ await expect(page.locator('#starterGuide')).toContainText('Propuesta del test');
+ await expect(page.locator('p.small.muted').filter({hasText:'10/10 frecuencias'})).toHaveCount(1);
+ const original=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
+ expect(Object.keys(original)).toHaveLength(20);
+ await expect(page.locator('[data-act="starter-apply"]')).toBeEnabled();
+ const firstDownload=page.waitForEvent('download');
+ await page.locator('[data-act="downloadpng"]').click();
+ const pngBefore=fs.readFileSync(await (await firstDownload).path());
+ expect(pngBefore.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
+ await page.locator('[data-act="starter-apply"]').click();
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(stored.measures).toEqual(original);
+ expect(Object.values(stored.manual).some(x=>x!==0)).toBe(true);
+ const secondDownload=page.waitForEvent('download');
+ await page.locator('[data-act="downloadpng"]').click();
+ const pngAfter=fs.readFileSync(await (await secondDownload).path());
+ expect(pngAfter.equals(pngBefore)).toBe(false);
+ await page.locator('#technicalResults > summary').click();
+ await expect(page.locator('#preSweepResults')).toBeVisible();
+ await expect(page.locator('#tracePanel')).toBeVisible();
+ await page.reload();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('[data-eq-band]')).toHaveCount(10);
+ await expect(page.locator('[data-act="starter-apply"]')).toHaveCount(1);
+ const afterReload=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(afterReload.measures).toEqual(original);
+ expect(afterReload.manual).toEqual(stored.manual);
+ await page.locator('[data-act="preview-sound"]').click();
+ await expect(page.locator('#musicComparison')).toHaveAttribute('open','');
+ await expect(page.locator('#personalSoundReview')).toBeVisible();
+ await expect(page.locator('[data-act="sound-better"]')).toBeDisabled();
+ await noOverflow(page);
+});
