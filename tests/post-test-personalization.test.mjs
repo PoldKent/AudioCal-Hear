@@ -53,7 +53,9 @@ test('higher output after first miss stays capped at configured safe presentatio
  assert.equal(t.level,-12);
 });
 test('EQ recommendation remains independent from upload and A/B music',()=>{
- assert.match(eq,/function starterEqProposal\(p\)/);
+ assert.match(eq,/function recommend\(p\)/);
+ assert.match(eq,/function starterEqMarkup\(p,r\)/);
+ assert.doesNotMatch(eq,/function starterEqProposal\(p\)/);
  assert.match(eq,/\$\{starterEqMarkup\(p,r\)\}/);
  assert.match(eq,/id="musicComparison"/);
  assert.match(eq,/Opcional después del EQ/);
