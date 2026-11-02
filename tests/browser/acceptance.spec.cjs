@@ -1,6 +1,12 @@
 // End-to-end *simulated* profile acceptance: no claim of a calibrated physical test.
 const {test,expect}=require('@playwright/test');
 const fs=require('node:fs');
+// Compare the audiometric evidence, not optional metadata added by profile normalization.
+function evidenceDigest(measures){
+ return Object.fromEntries(Object.entries(measures||{}).map(([k,arr])=>[k,arr.map(r=>({
+  kind:r.kind,db:r.db,confidence:r.confidence,method:r.method
+ }))]));
+}
 const cases=[
  {name:'Auriculares 10',device:'headphones',preset:'photo10',bands:[30,60,120,250,500,1000,2000,4000,8000,16000],sides:['left','right']},
  {name:'Automóvil 7',device:'car',preset:'car7',bands:[64,160,400,1000,2500,6250,15625],sides:['both']},
@@ -54,7 +60,7 @@ test('AudioCal Hear acceptance: measured 4/5/7/10 band profiles survive full res
   await slider.evaluate((el,value)=>{el.value=String(value);el.dispatchEvent(new Event('input',{bubbles:true}))},target);
   await expect(page.locator('#eqSlider')).toHaveValue(String(target));
   const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
-  expect(after.measures).toEqual(before.measures);
+  expect(evidenceDigest(after.measures)).toEqual(evidenceDigest(before.measures));
   expect(after.manual).not.toEqual(before.manual);
 
   const downloadPromise=page.waitForEvent('download');
@@ -66,7 +72,7 @@ test('AudioCal Hear acceptance: measured 4/5/7/10 band profiles survive full res
   await page.locator('[data-nav="results"]').click();
   await expect(page.locator('[data-eq-band]')).toHaveCount(config.bands.length);
   const persisted=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
-  expect(persisted.measures).toEqual(before.measures);
+  expect(evidenceDigest(persisted.measures)).toEqual(evidenceDigest(before.measures));
   expect(persisted.manual).toEqual(after.manual);
   const w=await page.evaluate(()=>({client:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
   expect(w.scroll).toBeLessThanOrEqual(w.client+2);
