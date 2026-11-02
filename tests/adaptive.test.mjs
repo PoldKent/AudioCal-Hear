@@ -119,7 +119,7 @@ test('music playback applies headroom for boosted filters and caches identical s
 });
 
 test('second pass is a completely new search without using the first threshold',()=>{
- const begin=source.indexOf('function newTrial('),end=source.indexOf('\nfunction boundaryVotes(',begin);
+ const begin=source.indexOf('function newTrial('),end=source.indexOf('\nfunction trialEstimate(',begin);
  assert.ok(begin>=0&&end>begin);
  const c={getStart:()=>-36,current:{measures:{'400|both':[{kind:'heard',db:-50}]}},key:(f,s)=>f+'|'+s,Math,Number};
  vm.runInNewContext(source.slice(begin,end),c);
