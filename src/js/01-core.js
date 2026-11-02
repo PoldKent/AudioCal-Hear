@@ -235,7 +235,13 @@ function normalizedProfile(p,importing=false){
    levelDbfs:safeNumber(item.levelDbfs,-42,-100,-24),durationS:safeNumber(item.durationS,0,0,22),
    at:safeNumber(item.at,Date.now(),0,Date.now()+86400000),events,micUsed,mic};
  }
- const taste=p.taste&&typeof p.taste==='object'&&!Array.isArray(p.taste)?p.taste:{};
+ const rawReview=p.personalSoundReview;
+ const personalSoundReview=rawReview&&typeof rawReview==='object'&&!Array.isArray(rawReview)&&
+  rawReview.version==='personal-sound-v1'&&['better','same','worse'].includes(rawReview.choice)&&
+  typeof rawReview.signature==='string'&&rawReview.signature.length<=2000?
+  {version:'personal-sound-v1',choice:rawReview.choice,signature:rawReview.signature,
+   at:safeNumber(rawReview.at,Date.now(),0,Date.now()+86400000)}:null;
+  const taste=p.taste&&typeof p.taste==='object'&&!Array.isArray(p.taste)?p.taste:{};
  return {
   id,name:String(p.name||'Mi equipo').slice(0,70),type:['car','headphones','speaker'].includes(p.type)?p.type:'headphones',
   preset:Object.hasOwn(presets,p.preset)?p.preset:'custom',bands,min,max,controlMin,controlMax,step:1,
@@ -247,7 +253,7 @@ function normalizedProfile(p,importing=false){
    p.testBandPlan.every(f=>bands.includes(f))?
     p.testBandPlan.slice():legacyQuickBands(bands)
   ):null,
-  loudness:normalizeLoudness(p.loudness,bands),
+  loudness:normalizeLoudness(p.loudness,bands),personalSoundReview,
   manual:finiteMap(p.manual,-30,30),balance:finiteMap(p.balance,-6,3),balanceProof:Object.fromEntries(bands.map(f=>[f,(Array.isArray(p.balanceProof?.[f])?p.balanceProof[f]:[]).slice(-10).filter(x=>x&&Number.isFinite(x.change)&&Math.abs(x.change)<=3).map(x=>({at:safeNumber(x.at,Date.now(),0,Date.now()+86400000),choices:Array.isArray(x.choices)?x.choices.slice(0,2).filter(q=>[-1,0,1].includes(q)):[],change:x.change,method:'music-ab-two-rounds'}))])),
   taste:{bass:safeNumber(taste.bass,0,-3,3),voices:safeNumber(taste.voices,0,-3,3),air:safeNumber(taste.air,0,-3,3)},
   context:normalizeCalibrationContext(p.context,p.type),
