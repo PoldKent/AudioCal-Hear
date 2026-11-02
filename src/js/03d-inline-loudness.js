@@ -35,7 +35,7 @@ function inlineLoudnessMarkup(p){
   '</div></details>';
 }
 function inlineLoudnessSummaryMarkup(p){
- const entries=Object.entries(p.loudnessInline||{}).filter(([k,x])=>/^\\d+(?:\\.\\d+)?\\|(both|left|right)$/.test(k)&&
+ const entries=Object.entries(p.loudnessInline||{}).filter(([k,x])=>/^\d+(?:\.\d+)?\|(both|left|right)$/.test(k)&&
   x?.method===INLINE_LOUDNESS_VERSION&&Number.isInteger(x.offsetDb)&&Math.abs(x.offsetDb)<=6);
  if(!entries.length)return '';
  const label=k=>{const [f,side]=k.split('|');return fmt(Number(f))+' · '+(side==='left'?'izquierdo':side==='right'?'derecho':'ambos')};
