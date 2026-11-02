@@ -94,6 +94,23 @@ function recommend(p){
   return {...point,...automatic,gain,algorithmVersion:EQ_ALGORITHM_VERSION};
  });
 }
+// Count actual playback time rather than quick taps on A and B.
+const BALANCE_MIN_LISTEN_MS=1800;
+let balanceListeningSession={profile:'',band:null,round:-1,mode:null,since:0};
+function balanceEndListening(now=Date.now()){
+ const s=balanceListeningSession;
+ if(s.mode&&current?.id===s.profile&&balanceFreq===s.band&&balanceRound===s.round&&
+    now-s.since>=BALANCE_MIN_LISTEN_MS)balanceListened.add(s.mode);
+ s.mode=null;s.since=0;
+}
+function balanceStartListening(mode,now=Date.now()){
+ if(!current||!['A','B'].includes(mode)||!playerAudio||playerAudio.paused||!playerUrl)return false;
+ if(balanceListeningSession.profile===current.id&&balanceListeningSession.band===balanceFreq&&
+    balanceListeningSession.round===balanceRound)balanceEndListening(now);
+ balancePreview=mode;
+ balanceListeningSession={profile:current.id,band:balanceFreq,round:balanceRound,mode,since:now};
+ return true;
+}
 function balanceMarkup(){
  if(!current)return '';
  const p=current;
@@ -113,7 +130,8 @@ function balanceMarkup(){
 function refreshBalanceUI(){const target=$('#balanceTrainer');if(target)target.innerHTML=balanceMarkup();updatePlayerFilters(preferencePreview?previewTaste():null);localize(document.body)}
 function balanceChoose(choice){
  if(!current||balanceRound>=2)return;
- if(balanceListened.size<2){balanceStatus='Escucha ambas opciones A y B con la música reproduciéndose antes de elegir.';refreshBalanceUI();return}
+ balanceEndListening();
+ if(balanceListened.size<2){balanceStatus='Escucha cada variante A y B durante al menos dos segundos con la música reproduciéndose.';refreshBalanceUI();return}
  const direction=choice==='same'?0:Math.sign(balanceRound===0?(choice==='A'?-1:1):(choice==='B'?-1:1));
  balanceChoices.push(direction);balancePreview=null;balanceListened=new Set();balanceStatus='';balanceRound++;
  if(balanceRound===2){
