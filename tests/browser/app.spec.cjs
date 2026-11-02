@@ -607,12 +607,10 @@ test('results prioritize an actionable 10-band starter EQ and keep the evidence 
  await expect(page.locator('[data-eq-band]')).toHaveCount(10);
  await expect(page.locator('#technicalResults')).not.toHaveAttribute('open');
  await expect(page.locator('#starterGuide')).toContainText('Punto de partida');
- await expect(page.locator('#starterGuide')).toContainText('+1 dB');
- await page.locator('[data-act="starter-apply"]').click();
- await expect(page.locator('#starterGuide')).toContainText('Propuesta aplicada');
+ await expect(page.locator('[data-act="starter-apply"]')).toHaveCount(0);
  const p=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(p.measures['250|left'][0].db).toBe(-72);
- expect(Object.values(p.manual).some(x=>x!==0)).toBeTruthy();
+ expect(Object.values(p.manual).every(x=>x===0)).toBeTruthy();
  await noOverflow(page);
 });
 
@@ -779,13 +777,13 @@ test('Hear 2.0 complete simulated 20-threshold profile produces one persistent e
  await expect(page.locator('p.small.muted').filter({hasText:'10/10 frecuencias'})).toHaveCount(1);
  const original=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
  expect(Object.keys(original)).toHaveLength(20);
- await expect(page.locator('[data-act="starter-apply"]')).toHaveCount(1);
+ await expect(page.locator('[data-act="starter-apply"]')).toHaveCount(0);
  const firstDownload=page.waitForEvent('download');
  await page.locator('[data-act="downloadpng"]').click();
  const pngBefore=fs.readFileSync(await (await firstDownload).path());
  expect(pngBefore.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
- // The automatic proposal can already match the live EQ, so force a user edit
- // before verifying the explicit Apply action and its confirmation.
+ // The automatic recommendation is already in the live EQ.
+ // An edit must change exported values without changing threshold evidence.
  await page.locator('[data-eq-select="1000"]').click();
  await page.locator('#eqEditor [data-delta="1"]').click();
  const edited=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
@@ -795,9 +793,7 @@ test('Hear 2.0 complete simulated 20-threshold profile produces one persistent e
  await page.locator('[data-act="downloadpng"]').click();
  const pngAfter=fs.readFileSync(await (await secondDownload).path());
  expect(pngAfter.equals(pngBefore)).toBe(false);
- await expect(page.locator('[data-act="starter-apply"]')).toBeEnabled();
- page.once('dialog',dialog=>dialog.accept());
- await page.locator('[data-act="starter-apply"]').click();
+ await expect(page.locator('#starterGuide')).toContainText('ajustes personales');
  const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(thresholdEvidence(stored.measures)).toEqual(thresholdEvidence(original));
  await page.locator('#technicalResults > summary').click();
@@ -806,7 +802,7 @@ test('Hear 2.0 complete simulated 20-threshold profile produces one persistent e
  await page.reload();
  await page.locator('[data-nav="results"]').click();
  await expect(page.locator('[data-eq-band]')).toHaveCount(10);
- await expect(page.locator('[data-act="starter-apply"]')).toHaveCount(1);
+ await expect(page.locator('[data-act="starter-apply"]')).toHaveCount(0);
  const afterReload=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(thresholdEvidence(afterReload.measures)).toEqual(thresholdEvidence(original));
  expect(afterReload.manual).toEqual(stored.manual);

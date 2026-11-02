@@ -1610,8 +1610,7 @@ function refreshResultsUI(){
  const headerCount=$('#eqChangeCount');if(headerCount)headerCount.textContent=count+' cambios';
  const copyStatus=$('#copyStatus');if(copyStatus)copyStatus.textContent='';
  const pref=document.querySelector('#prefRound');if(pref)pref.innerHTML=preferenceMarkup();
- // The proposal and listening verdict depend on the live EQ signature.
- // Updating only the bars left the Apply button and verdict stale after manual edits.
+ // Re-render the EQ explanation and listening verdict from the current final gains.
  const starter=$('#starterGuide');
  if(starter){const fresh=document.createElement('div');fresh.innerHTML=starterEqMarkup(current,r);if(fresh.firstElementChild)starter.replaceWith(fresh.firstElementChild)}
  const review=$('#personalSoundReview');
@@ -1881,81 +1880,32 @@ function saveEqCardPng(p){
  return true;
 }
 
-// Optional, user-triggered starting hypothesis. Never rewrite the measured data
-// or represent digital detection thresholds as calibrated frequency response.
-function starterEqProposal(p){
- const raw=gather(p);
- const rows=p.bands.map(f=>({f,gain:0,reason:'Sin contraste local utilizable'}));
- // Do not imply that a sub-2 dB digital hypothesis can be applied as a whole 2–3 dB hardware step.
- const tooCoarse=p.context?.eqScale==='steps'&&['2','3'].includes(p.context?.eqStepDb);
- if(tooCoarse)return {rows,changes:0,tooCoarse:true};
- const usable=f=>{
-  const record=raw.find(x=>x.f===f);
-  if(!record||!Number.isFinite(record.db)||record.derived||record.quality==='mixed'||record.quality==='unmeasurable')return false;
-  const sides=p.channels==='separate'?['left','right']:['both'];
-  const values=sides.map(side=>(p.measures?.[key(f,side)]||[]).filter(x=>x?.kind==='heard'&&Number.isFinite(x.db)).map(x=>x.db)).filter(x=>x.length);
-  if(values.length!==sides.length)return false;
-  if(values.length===2&&Math.abs(median(values[0])-median(values[1]))>8)return false;
-  return true;
- };
- const suggestions=[];
- for(let i=1;i<raw.length-1;i++){
-  const a=raw[i-1],b=raw[i],c=raw[i+1];
-  if(b.f<100||b.f>10000||![a,b,c].every(x=>usable(x.f)))continue;
-  if(b.f/a.f>3.5||c.f/b.f>3.5)continue;
-  // Outlying end bands often reflect the transducer or room, not the listener.
-  if(Math.abs(a.db-b.db)>24||Math.abs(c.db-b.db)>24)continue;
-  const expected=a.db+(c.db-a.db)*Math.log(b.f/a.f)/Math.log(c.f/a.f);
-  const contrast=b.db-expected;
-  if(Math.abs(contrast)<4)continue;
-  suggestions.push({i,contrast,gain:Math.sign(contrast),f:b.f});
- }
- suggestions.sort((a,b)=>Math.abs(b.contrast)-Math.abs(a.contrast));
- // At most three small changes, never an inferred high-frequency rescue boost.
- for(const x of suggestions.slice(0,3)){
-  rows[x.i].gain=x.gain;
-  rows[x.i].reason='Contraste digital local '+(x.contrast>0?'+':'')+x.contrast.toFixed(1)+' dBFS; prueba auditiva, no calibración acústica';
- }
- return {rows,changes:rows.filter(x=>x.gain!==0).length};
-}
-function starterEqCopy(p){
- const proposal=starterEqProposal(p);
- const c=normalizeCalibrationContext(p.context,p.type);
- return 'Hear · PROPUESTA EXPERIMENTAL (NO CALIBRADA) · '+p.name+'\n'+
-  'Basada en contrastes de los umbrales digitales. Verifica escuchando música; no compensa una audiometría.\n'+
-  proposal.rows.map(x=>{
-   const ctrl=physicalEqControl(x.gain,p,c);
-   return fmt(x.f)+' · '+(x.gain>=0?'+':'')+x.gain+' dB sugeridos'+
-    (ctrl.position===null?' · sin conversión física documentada':
-    ' · control '+(ctrl.position>=0?'+':'')+ctrl.position+' '+(c.eqScale==='steps'?'pasos':'dB del control'));
-  }).join('\n');
-}
+// The primary recommend(p) model is the only algorithm that creates EQ gains.
+// This panel describes its values; it never creates an alternative curve.
 function starterEqMarkup(p,r){
- const proposal=starterEqProposal(p),hasProposal=proposal.changes>0;
+ const suggested=r.filter(x=>Number.isFinite(x.base)&&x.base!==0);
+ const personal=r.some(x=>x.gain!==x.base);
+ const uncertain=r.filter(x=>!Number.isFinite(x.db)||x.derived||x.quality==='mixed').length;
  const sound=personalSoundStatus(p,r);
- const applied=hasProposal&&proposal.rows.every((v,i)=>r[i]?.gain===v.gain);
- const picks=proposal.rows.filter(x=>x.gain).map(x=>short(x.f)+' '+(x.gain>0?'+':'')+x.gain+' dB').join(' · ');
- const message=hasProposal?'Punto de partida experimental: '+picks+'. Las demás bandas se proponen en 0 dB.':
-  (proposal.tooCoarse?'El control avanza en pasos físicos de 2–3 dB: no se justifican cambios de ese tamaño.':
-   'Sin contrastes suficientes para un ajuste automático fiable: punto de partida 0 dB.');
+ const picks=suggested.slice(0,5).map(x=>short(x.f)+' '+(x.base>0?'+':'')+x.base+' dB').join(' · ');
+ const extra=suggested.length>5?' · y '+(suggested.length-5)+' bandas más':'';
+ const message=suggested.length?'Punto de partida experimental incluido en el EQ: '+picks+extra+'.':
+  'Punto de partida 0 dB: el examen no justifica correcciones automáticas.';
+ const caution=uncertain?' '+uncertain+' bandas con evidencia ausente, interpolada o discrepante no justifican un refuerzo por sí solas.':'';
+ const note=personal?
+  'Hay ajustes personales; las barras, el botón Copiar ajustes, el PNG y la transferencia muestran los valores finales.':
+  'Las barras ya incluyen los cambios automáticos; no hay un segundo botón Aplicar. Copiar y PNG usan esos mismos valores.';
  return '<div class="starter-inline" id="starterGuide" aria-label="Propuesta inicial de ecualización">'+
-  '<p class="small"><strong>Propuesta del test:</strong> '+message+'</p>'+
+  '<p class="small"><strong>Propuesta del test:</strong> '+esc(message+caution)+'</p>'+
   '<p class="tiny muted"><strong>Estado del resultado:</strong> '+esc(sound.grade)+' · '+esc(sound.tip)+'</p>'+
-  '<div class="row wrap starter-actions">'+
-  (hasProposal?button(applied?'✓ Propuesta aplicada':'Aplicar propuesta','starter-apply','btn-primary grow',applied?'disabled':''):'')+
-  button('Copiar propuesta','starter-copy','btn-alt grow')+
-  button('▶ Escuchar el resultado','preview-sound','btn-ghost grow')+
-  '</div><p class="tiny muted" id="starterStatus" role="status">'+
-  (hasProposal&&!applied?'Todavía no está aplicada. Revisa el sonido a volumen cómodo.':'Valores estimados; no son una calibración acústica.')+
-  '</p></div>';
+  '<div class="row wrap starter-actions">'+button('▶ Escuchar el resultado','preview-sound','btn-ghost grow')+'</div>'+
+  '<p class="tiny muted" id="starterStatus" role="status">'+esc(note)+'</p></div>';
 }
 
 function renderResults(){if(!current)return `<section class="hero"><h1>Todavía no hay ajustes</h1><p>Primero realiza una prueba auditiva.</p>${button('Configurar prueba','setup','btn-primary')}</section>`;
- const p=current,progress=doneCount(p),total=plan(p).length,r=recommend(p),coverage=thresholdCoverage(p,gather(p)),usable=coverage.complete.length,derived=r.filter(x=>x.derived).length,required=coverage.required;
+ const p=current,r=recommend(p),coverage=thresholdCoverage(p,r),usable=coverage.complete.length;
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
  lastRenderedEqSignature=p.id+'|'+r.map(b=>b.f+':'+b.gain).join('|');
- const reliable=coverage.enough&&coverage.candidates>0;
- const status=!coverage.enough?'Umbrales guardados, pero cobertura limitada para una corrección automática fiable.':coverage.candidates===0?'Umbrales guardados; sin contraste local suficiente para modificar el EQ.':'Contrastes locales experimentales (v2) + ajustes personales.';
  return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">AUDIOCAL · RESULTADOS</p><h1>Tu resultado auditivo</h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
  <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Tu ecualizador · ${p.bands.length} bandas</h2><span class="tag" id="eqChangeCount">${r.filter(x=>x.gain!==0).length} cambios</span></div>
  <p class="small muted">${usable}/${p.bands.length} frecuencias con umbral digital estimado${p.channels==='separate'?' para ambos oídos':''}. El EQ inicial es una propuesta conservadora basada en la evidencia disponible; 0 dB significa que no se justifica corregir esa banda, no que hayas fallado el examen.</p>
@@ -2484,20 +2434,6 @@ case 'transfer-nextband':if(current){const bands=transferMapping(current)||[];if
 case 'transfer-mark':if(current){const bands=transferMapping(current)||[];const f=bands[transferBandIndex]?.f;if(f!==undefined){if(transferCompleted.has(f))transferCompleted.delete(f);else transferCompleted.add(f);refreshTransfer()}}break;
 case 'transfer-applyfreq':if(current){transferCustom=$('#transferCustom')?.value||transferCustom;transferStatus=transferMapping(current)?'Bandas registradas. Los valores aproximados se identificarán.':'Revisa las frecuencias: de 2 a 31 valores únicos en orden ascendente.';transferBandIndex=0;transferCompleted=new Set();refreshTransfer()}break;
 case 'transfer-copy':if(current){const ok=await copyText(transferCopy(current));transferStatus=ok?'Lista copiada. Debes introducirla manualmente.':'No se pudo copiar la lista.';refreshTransfer()}break;
-case 'starter-apply':if(current){
- const proposal=starterEqProposal(current),actual=recommend(current);
- if(proposal.changes){
-  const hasPrevious=Object.values(current.manual||{}).some(x=>Number(x)!==0)||Object.values(current.balance||{}).some(x=>Number(x)!==0)||Object.values(current.taste||{}).some(x=>Number(x)!==0);
-  if(hasPrevious&&!uiConfirm('Usar esta propuesta reemplazará los valores actuales del EQ. Las respuestas del examen se conservarán. ¿Continuar?'))break;
-  for(const [i,item] of proposal.rows.entries()){
-   const target=clamp(item.gain,current.min,current.max);
-   current.manual[item.f]=(Number(current.manual[item.f])||0)+target-actual[i].gain;
-  }
-  transferCompleted.clear();lastRenderedEqSignature=null;
-  if(transferOpen)transferStatus='Cambió el EQ; revisa los controles físicos antes de aplicarlos.';
-  touch();render();
- }break;
-}
 case 'preview-sound':if(current){
  const panel=$('#musicComparison');if(panel){panel.open=true;panel.scrollIntoView({behavior:'smooth',block:'start'});$('#musicFile')?.focus()}
  break;
@@ -2505,11 +2441,6 @@ case 'preview-sound':if(current){
 case 'sound-better':case 'sound-same':case 'sound-worse':if(current){
  const choice=a.slice('sound-'.length);
  if(!personalSoundSaveReview(choice))uiAlert('Reproduce una canción y compara el EQ encendido y apagado antes de guardar tu preferencia.');
- break;
-}
-case 'starter-copy':if(current){
- const ok=await copyText(starterEqCopy(current));
- const el=$('#starterStatus');if(el)el.textContent=ok?'Valores sugeridos copiados. Verifica los controles físicos antes de aplicarlos.':'No se pudo copiar; puedes consultar la tabla superior.';
  break;
 }
 case 'copy':{let ok=await copyText(resultText(current));$('#copyStatus').textContent=ok?'Valores copiados al portapapeles.':'No se pudo copiar. Usa Descargar TXT.';break}

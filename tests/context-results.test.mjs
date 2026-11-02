@@ -349,37 +349,34 @@ test('physical control bounds are separate from the conservative EQ gain budget'
 });
 
 
-test('an uncalibrated 10-band test can suggest small, optional starting adjustments without exaggerating outliers',()=>{
- const source=fs.readFileSync('src/js/04-equalization.js','utf8');
- const a=source.indexOf('function starterEqProposal('),b=source.indexOf('function starterEqCopy(',a);
- assert.ok(a>=0&&b>a);
- const freqs=[30,60,120,250,500,1000,2000,4000,8000,16000];
- const values=[-36.25,-60,-70,-72,-84,-96,-90,-96,-91.5,-26];
- const p={bands:freqs,channels:'separate',measures:{}};
- for(let i=0;i<freqs.length;i++){
-  p.measures[freqs[i]+'|left']=[{kind:'heard',db:values[i],confidence:'low'}];
-  p.measures[freqs[i]+'|right']=i===6?[]:[{kind:'heard',db:values[i],confidence:'low'}];
- }
- const ctx={gather:()=>freqs.map((f,i)=>({f,db:values[i],quality:'uncertain'})),
-  key:(f,side)=>f+'|'+side,median:a=>a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)],Math,Number};
- vm.runInNewContext(source.slice(a,b),ctx);
- const result=ctx.starterEqProposal(p);
- assert.equal(result.rows.length,10);
- assert.equal(result.rows.find(x=>x.f===120).gain,-1);
- assert.equal(result.rows.find(x=>x.f===250).gain,1);
- assert.equal(result.rows.find(x=>x.f===16000).gain,0);
- assert.equal(result.rows.find(x=>x.f===2000).gain,0,'missing other ear should not drive recommendation');
- assert.ok(result.changes<=3);
- const unavailable={...p,measures:{}};
- assert.equal(ctx.starterEqProposal(unavailable).changes,0);
+test('the EQ guide describes the single live recommendation without a competing algorithm',()=>{
+ const js=fs.readFileSync('src/js/04-equalization.js','utf8');
+ const start=js.indexOf('function starterEqMarkup('),end=js.indexOf('function renderResults(){',start);
+ assert.ok(start>=0&&end>start);
+ assert.doesNotMatch(js,/function starterEqProposal\(|function starterEqCopy\(|starter-apply|starter-copy/);
+ const env={Number,personalSoundStatus:()=>({grade:'Provisional',tip:'Medición limitada'}),
+  short:f=>f+' Hz',esc:x=>x,button:(label,act)=>'<button data-act="'+act+'">'+label+'</button>'};
+ vm.runInNewContext(js.slice(start,end),env);
+ const rows=[{f:1000,db:-51,base:0,gain:0,quality:'good'},
+  {f:2000,db:-55,base:1,gain:1,quality:'good'},
+  {f:4000,db:null,base:0,gain:0,quality:'unmeasurable'}];
+ const profile={name:'QA'};
+ const html=env.starterEqMarkup(profile,rows);
+ assert.match(html,/Propuesta del test/);
+ assert.match(html,/2000 Hz \+1 dB/);
+ assert.match(html,/evidencia ausente/);
+ assert.match(html,/data-act="preview-sound"/);
+ assert.doesNotMatch(html,/starter-apply|starter-copy/);
+ assert.match(env.starterEqMarkup(profile,rows.map(x=>x.f===2000?{...x,gain:2}:x)),/ajustes personales/);
+ assert.match(env.starterEqMarkup(profile,rows.map(x=>({...x,base:0,gain:0}))),/Punto de partida 0 dB/);
 });
-test('results foreground actionable EQ and keep original evidence accessible but collapsed',()=>{
+test('results keep a single EQ, original measurements and one copy action',()=>{
  const js=fs.readFileSync('src/js/04-equalization.js','utf8');
  assert.match(js,/id="starterGuide"/);
  assert.match(js,/Propuesta del test/);
  assert.match(js,/id="technicalResults"/);
- assert.match(js,/starter-apply/);
- assert.match(js,/starter-copy/);
+ assert.match(js,/button\('⎘ Copiar ajustes','copy'/);
+ assert.doesNotMatch(js,/starter-apply|starter-copy/);
  assert.match(js,/renderCalibrationTrace\(p,r\)/);
  assert.match(js,/eqResultMarkup\(p\)/);
  assert.match(js,/evidenceAuditMarkup\(p\)/);
