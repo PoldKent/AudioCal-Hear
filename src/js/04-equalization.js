@@ -509,6 +509,7 @@ function starterEqCopy(p){
 }
 function starterEqMarkup(p,r){
  const proposal=starterEqProposal(p),hasProposal=proposal.changes>0;
+ const sound=personalSoundStatus(p,r);
  const applied=hasProposal&&proposal.rows.every((v,i)=>r[i]?.gain===v.gain);
  const picks=proposal.rows.filter(x=>x.gain).map(x=>short(x.f)+' '+(x.gain>0?'+':'')+x.gain+' dB').join(' · ');
  const message=hasProposal?'Punto de partida experimental: '+picks+'. Las demás bandas se proponen en 0 dB.':
@@ -516,9 +517,11 @@ function starterEqMarkup(p,r){
    'Sin contrastes suficientes para un ajuste automático fiable: punto de partida 0 dB.');
  return '<div class="starter-inline" id="starterGuide" aria-label="Propuesta inicial de ecualización">'+
   '<p class="small"><strong>Propuesta del test:</strong> '+message+'</p>'+
+  '<p class="tiny muted"><strong>Estado del resultado:</strong> '+esc(sound.grade)+' · '+esc(sound.tip)+'</p>'+
   '<div class="row wrap starter-actions">'+
   (hasProposal?button(applied?'✓ Propuesta aplicada':'Aplicar propuesta','starter-apply','btn-primary grow',applied?'disabled':''):'')+
   button('Copiar propuesta','starter-copy','btn-alt grow')+
+  button('▶ Escuchar el resultado','preview-sound','btn-ghost grow')+
   '</div><p class="tiny muted" id="starterStatus" role="status">'+
   (hasProposal&&!applied?'Todavía no está aplicada. Revisa el sonido a volumen cómodo.':'Valores estimados; no son una calibración acústica.')+
   '</p></div>';
@@ -547,7 +550,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  </div></details>
  <details class="unobtrusive"><summary>Más opciones de ecualización</summary><div class="inner-detail"><div class="row wrap">${button('Cambiar formato de bandas','format','btn-ghost grow')}${button('Descargar TXT','downloadtxt','btn-ghost grow')}</div></div></details>
  <p id="copyStatus" class="status" role="status"></p></section>
- <div class="results-side"><details class="unobtrusive music-options" id="musicComparison"><summary>🎵 Comparar con música · opcional</summary><div class="inner-detail"><p class="compact-note">Escucha tu EQ frente al original con una canción propia. La comparación es opcional y solo afecta al sonido de esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button></div></details>
+ <div class="results-side"><details class="unobtrusive music-options" id="musicComparison"><summary>🎵 Comparar con música · opcional</summary><div class="inner-detail"><p class="compact-note">Escucha tu EQ frente al original con una canción propia. La comparación es opcional y solo afecta al sonido de esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button>${personalSoundReviewMarkup(p)}</div></details>
  <details class="card transfer-card optional-tool"><summary>Aplicar ajustes en otro equipo o app</summary><div class="inner-detail"><div id="transferPanel">${transferMarkup()}</div></div></details>
  <details class="unobtrusive balance-card" id="toneBalance"><summary>🎛️ Afinar bandas escuchando música · opcional</summary><div class="inner-detail"><p class="compact-note">Puedes confirmar qué suena mejor con comparaciones de una canción. Estos cambios son opcionales y no alteran las mediciones auditivas.</p><div id="balanceTrainer">${balanceMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>🎧 Personalizar graves, voces y brillo <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="compact-note">Con la canción reproduciéndose, escucha A y B durante varios segundos y elige qué suena mejor. Mantén el volumen fijo.</p><div id="prefRound">${preferenceMarkup()}</div></div></details>
