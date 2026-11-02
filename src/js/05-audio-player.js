@@ -45,5 +45,5 @@ function updatePlayerFilters(preview=null){
   const totalPeak=cachedHeadroomDb;
  playerPreamp?.gain.setTargetAtTime(Math.pow(10,(-totalPeak-2)/20),now,.06);
 }
-function attachPlayerEvents(player){if(!player)return;player.onplay=async()=>{try{await setupPlayer();if(current)personalSoundPreviewMark(eqBypass?'without':'with')}catch(e){player.pause();uiAlert('No se pudo iniciar la escucha A/B: '+e.message)}}}
+function attachPlayerEvents(player){if(!player)return;player.onpause=()=>{personalSoundPreviewPause();const view=$('#personalSoundReview');if(view&&current)view.outerHTML=personalSoundReviewMarkup(current)};player.onplay=async()=>{try{await setupPlayer();if(current)personalSoundPreviewMark(eqBypass?'without':'with')}catch(e){player.pause();uiAlert('No se pudo iniciar la escucha A/B: '+e.message)}}}
 function handleResultsEvents(t){if(t.id==='musicFile'){const file=t.files?.[0];if(!file)return;personalSoundPreview={profile:'',heardWith:false,heardWithout:false};if(playerUrl)URL.revokeObjectURL(playerUrl);playerUrl=URL.createObjectURL(file);const view=$('#audioPlayer');if(playerAudio){try{playerAudio.pause()}catch(e){}}playerAudio=view;playerAudio.src=playerUrl;attachPlayerEvents(playerAudio);return}}
