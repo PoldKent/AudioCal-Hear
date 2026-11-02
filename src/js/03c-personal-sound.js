@@ -27,30 +27,6 @@ function personalSoundStatus(p,rows=recommend(p)){
  return {grade,tip,measured,good,provisional,tuned,verified,signature:sig,completed,
   hasSweep:!!Object.keys(p.sweepRecords||{}).length,version:PERSONAL_SOUND_VERSION};
 }
-// When the completed threshold test cannot justify a non-zero EQ, make the
-// existing music-based, conservative adjustment workflow the main next step.
-// No made-up gain is calculated from contradictory dBFS thresholds.
-function personalSoundFinishMarkup(p,rows=recommend(p)){
- if(!p||doneCount(p)<plan(p).length)return '';
- const checked=suggestedBalanceBands(p);
- const compared=checked.filter(f=>Array.isArray(p.balanceProof?.[f])&&p.balanceProof[f].some(x=>x?.method==='music-ab-two-rounds')).length;
- const changes=rows.filter(x=>x.gain!==0).length;
- const allNeutral=changes===0,completed=checked.length>0&&compared===checked.length;
- const header=completed?'Tu EQ se ha revisado escuchando música':
-  allNeutral?'Tu test está completo; falta personalizar el sonido':
-  'Termina de comprobar tu ecualizador';
- const explanation=allNeutral?
-  'Las mediciones presentan incertidumbre o diferencias entre oídos. Hear no debe inventar ganancias: por eso el ajuste inicial está en 0 dB. No necesitas repetir todo el examen.':
-  'Los cambios actuales siguen siendo experimentales. Compáralos con tu música para decidir qué bandas prefieres corregir.';
- return '<div class="personal-sound-finish" id="personalSoundFinish" role="region" aria-label="Terminar personalización de sonido">'+
-  '<strong>'+header+'</strong>'+
-  '<p class="small">'+explanation+'</p>'+
-  '<p class="small"><strong>'+compared+'/'+checked.length+' bandas comparadas con música</strong> · '+changes+
-   ' banda(s) con ajustes distintos de cero. Que todas permanezcan neutras también puede ser una decisión válida.</p>'+
-  '<p class="tiny muted">Escucharás dos variantes por banda, dos veces con el orden invertido. Solo tus preferencias coherentes generan pequeños cambios; tus umbrales originales no se modifican. El ajuste físico de otro equipo sigue siendo manual.</p>'+
-  button(completed?'↺ Revisar la personalización':'▶ Terminar mi ecualizador con música','finish-sound','btn-primary full')+
-  '</div>';
-}
 function personalSoundPreviewMark(mode,now=Date.now()){
  if(!current||!['with','without'].includes(mode))return;
  const signature=personalSoundEqSignature(current);
