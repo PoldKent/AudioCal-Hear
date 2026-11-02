@@ -287,3 +287,11 @@ select option{background:#fff;color:#172033}
 .inline-loudness{margin:14px 0;padding:9px 12px;border:1px solid #dce7f7;border-radius:12px;background:#f7faff}
 .inline-loudness .row{margin:9px 0}.inline-loudness .btn{min-height:42px}
 .inline-loudness .inner-detail{padding-top:9px}
+
+/* Hear 2.0: surface the next action when completed thresholds cannot yield EQ. */
+.personal-sound-finish{margin:13px 0;padding:15px;border:1px solid #b8cee9;background:#f0f6ff;border-radius:15px;min-width:0}
+.personal-sound-finish>strong{display:block;color:#1a477f;font-size:15px}
+.personal-sound-finish .small{color:#344b64;line-height:1.5}
+.personal-sound-finish .tiny{color:#526985;line-height:1.5}
+.personal-sound-finish .btn{margin-top:8px;white-space:normal}
+@media(max-width:420px){.personal-sound-finish{padding:12px}.personal-sound-finish .btn{font-size:13px}}
