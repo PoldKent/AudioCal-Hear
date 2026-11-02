@@ -14,6 +14,36 @@ function renderIntro(){
  ${button('Comenzar examen completo →','introNext','btn-primary full bigbutton')}
  </section>`;
 }
+// Rewind the previous completed frequency in the same independent pass,
+// preserving the rest of the measurements for both ears and other passes.
+function previousFrequencyEntries(p){
+ const entries=plan(p),idx=firstMissing(p);
+ if(!entries.length)return [];
+ const here=idx>=0?entries[idx]:null;
+ let at=idx>=0?idx-1:entries.length-1;
+ while(at>=0&&here&&entries[at].f===here.f&&entries[at].pass===here.pass)at--;
+ if(at<0)return [];
+ const target=entries[at];
+ return entries.filter(x=>x.f===target.f&&x.pass===target.pass);
+}
+function hasPreviousFrequency(p){return previousFrequencyEntries(p).some(entry=>recorded(p,entry))}
+function rewindPreviousFrequency(){
+ if(!current)return false;
+ const entries=previousFrequencyEntries(current);
+ if(!entries.length)return false;
+ if(!uiConfirm('¿Volver a '+fmt(entries[0].f)+'? Se repetirán las mediciones de esa frecuencia y pasada, conservando las demás.'))return false;
+ stopTone();if(playerAudio)playerAudio.pause();
+ for(const entry of entries){
+  const k=key(entry.f,entry.side),samples=current.measures[k];
+  if(!Array.isArray(samples))continue;
+  delete samples[entry.pass];
+  if(!samples.some(x=>x!==undefined))delete current.measures[k];
+ }
+ trial=null;awaitNext=false;floorReached=false;sampleNote='';
+ lastResultKind=null;lastRecordedEntry=null;
+ introStep=3;touch();nav('test');
+ return true;
+}
 function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea un perfil</h1><p>Elige tu ecualizador y el dispositivo que vas a calibrar.</p>${button('Ir a configurar','setup','btn-primary')}</section>`;
  if(introStep<3||!channelsReady(current)||(needsVolumePreview(current)&&!volumeReady)){introStep=0;return renderIntro();}
  const p=current,items=plan(p),total=items.length,missing=firstMissing(p);
@@ -27,12 +57,13 @@ function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea
  <section class="card"><div class="row" style="justify-content:space-between"><strong data-profile-name="true">${esc(p.name)}</strong><span class="tag">${doneCount(p)+1} / ${total}</span></div>
  <div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><p class="center small muted">${keyName} · ${phase} · Búsqueda independiente ${item.pass+1}/${p.passes}</p>
  <div class="wavebox"><span class="muted small">FRECUENCIA ACTUAL</span><div class="frequency">${fmt(item.f)}</div><p class="small muted">Nivel de la prueba: <strong id="levelText">${level} dBFS</strong></p><div class="wave" aria-hidden="true" id="waves">${Array.from({length:32},(_,i)=>`<span style="height:${6+Math.round(Math.abs(Math.sin(i*.71)*30))}px"></span>`).join('')}</div></div>
+ ${trial.initialBoosts>0&&trial.heard===null?'<div class="soft info small" id="testBoostNotice"><strong>Primeros intentos no audibles.</strong> Se aumentó el nivel digital de esta frecuencia de forma gradual (+3 dBFS por intento), sin cambiar el volumen físico. Reproduce el nuevo tono cuando estés cómodo; si sigue inaudible al límite, se guardará como límite y no como umbral inventado.</div>':''}
  <div class="soft center"><strong>${active?'Escuchando · 3 segundos':trial.awaiting?'¿Escuchaste el sonido?':'Listo para esta frecuencia'}</strong><p class="small muted">${phase} · ${trial.done}/${MAX_STEPS} niveles examinados</p>${active?`<span class="hold-time" id="holdSeconds">3.0 s</span><div class="hold-meter"><div id="holdProgress"></div></div>`:''}</div>
  ${floorReached?'':(trial.awaiting||active)?`<div class="mini-options"><button class="choice" type="button" data-act="answerYes"><strong>✓ Sí lo escucho</strong><span>Interrumpir y registrar</span></button><button class="choice" type="button" data-act="answerNo"><strong>✕ No lo escucho</strong><span>Interrumpir y registrar</span></button></div>${trial.awaiting&&!active?'<p class="tiny center muted">Puedes repetir el nivel antes de contestar.</p>'+button('▶ Reproducir este nivel','play','btn-ghost full'):''}`:
  button('▶ Reproducir nivel · '+level+' dBFS','play','btn-primary full bigbutton')}
  ${floorReached?`<div class="soft info center"><strong>Se alcanzó ${getFloor(p)} dBFS</strong><p class="small">Si seguías escuchando el tono, regístralo. Eso NO implica reducir automáticamente el EQ.</p>${button('Lo seguía escuchando','endheard','btn-alt full')}${button('No estoy seguro','enduncertain','btn-ghost full')}</div>`:''}
  ${inlineLoudnessMarkup(p)}
- <div class="row wrap" style="margin-top:12px">${button('■ Detener','stopaudio','btn-ghost grow')}${button('Reiniciar frecuencia','retry','btn-ghost grow')}</div><p class="tiny muted center">${getStart(p)} a ${getFloor(p)} dBFS · no son niveles acústicos. No uses el volumen máximo ni lo aumentes para buscar tonos inaudibles.</p></section>`;
+ <div class="row wrap" style="margin-top:12px">${button('← Empezar frecuencia anterior','previous-frequency','btn-alt grow',hasPreviousFrequency(p)?'':'disabled')}${button('■ Detener','stopaudio','btn-ghost grow')}${button('Reiniciar frecuencia','retry','btn-ghost grow')}</div><p class="tiny muted center">${getStart(p)} a ${getFloor(p)} dBFS · no son niveles acústicos. No uses el volumen máximo ni lo aumentes para buscar tonos inaudibles.</p></section>`;
 }
 // Three seconds per tone, explicit yes/no answers. A skipped tap never becomes an audible response.
 function getElapsed(){return tone?.mode==='test'&&audioCtx?Math.max(0,audioCtx.currentTime-tone.start):0}
@@ -72,7 +103,9 @@ async function playTone(check=false,checkSide='both',previewDb=null){
   if(!check&&needsVolumePreview(current)&&!volumeReady){uiAlert('Completa primero la comprobación progresiva de volumen.');return}
   const db=isPreview?previewDb:check?-42:trial.level;
   if(db>maxTestStart(current||temp)||db>DIGITAL_REFERENCE_DBFS||db<TEST_END_DB){uiAlert('Nivel digital fuera del rango permitido para este equipo.');return}
-  if(db>getStart(current||temp)&&!check)return;
+  if(!check&&db>getStart(current||temp)&&
+     !(trial?.phase==='coarse'&&trial?.heard===null&&trial?.initialBoosts>0&&
+       db<=(current.type==='headphones'?-24:Math.max(-24,getStart(current)))))return;
   if(db>=-30&&!check&&!trial.highConsent&&!(needsVolumePreview(current)&&volumeReady)){if(!uiConfirm('Nivel digital alto ('+db+' dBFS). Puede ser demasiado fuerte. Nunca uses el volumen máximo. ¿Quieres continuar a volumen bajo y cómodo?'))return;trial.highConsent=true;}
   const osc=ctx.createOscillator(),gain=ctx.createGain(),pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
   osc.type='sine';osc.frequency.value=freq;
