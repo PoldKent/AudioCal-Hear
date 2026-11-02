@@ -196,8 +196,6 @@ function refreshResultsUI(){
  const pref=document.querySelector('#prefRound');if(pref)pref.innerHTML=preferenceMarkup();
  // The proposal and listening verdict depend on the live EQ signature.
  // Updating only the bars left the Apply button and verdict stale after manual edits.
- const finish=$('#personalSoundFinish');
- if(finish){const temp=document.createElement('div');temp.innerHTML=personalSoundFinishMarkup(current,r);if(temp.firstElementChild)finish.replaceWith(temp.firstElementChild)}
  const starter=$('#starterGuide');
  if(starter){const fresh=document.createElement('div');fresh.innerHTML=starterEqMarkup(current,r);if(fresh.firstElementChild)starter.replaceWith(fresh.firstElementChild)}
  const review=$('#personalSoundReview');
@@ -580,7 +578,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <p id="copyStatus" class="status" role="status"></p></section>
  <div class="results-side"><details class="unobtrusive music-options" id="musicComparison"><summary>🎵 Opcional después del EQ · comparar con música</summary><div class="inner-detail"><p class="compact-note">Escucha tu EQ frente al original con una canción propia. La comparación es opcional y solo afecta al sonido de esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button>${personalSoundReviewMarkup(p)}</div></details>
  <details class="card transfer-card optional-tool"><summary>Aplicar ajustes en otro equipo o app</summary><div class="inner-detail"><div id="transferPanel">${transferMarkup()}</div></div></details>
- <details class="unobtrusive balance-card" id="toneBalance"><summary>🎛️ Terminar mi ecualizador · comparar bandas A/B</summary><div class="inner-detail"><p class="compact-note">Puedes confirmar qué suena mejor con comparaciones de una canción. Estos cambios son opcionales y no alteran las mediciones auditivas.</p><div id="balanceTrainer">${balanceMarkup()}</div></div></details>
+ <details class="unobtrusive balance-card" id="toneBalance"><summary>🎛️ Opcional · refinar bandas con música</summary><div class="inner-detail"><p class="compact-note">Puedes confirmar qué suena mejor con comparaciones de una canción. Estos cambios son opcionales y no alteran las mediciones auditivas.</p><div id="balanceTrainer">${balanceMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>🎧 Personalizar graves, voces y brillo <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="compact-note">Con la canción reproduciéndose, escucha A y B durante varios segundos y elige qué suena mejor. Mantén el volumen fijo.</p><div id="prefRound">${preferenceMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>Seguridad y límites de precisión</summary><div class="inner-detail"><p class="compact-note">Los niveles dBFS de la prueba no miden la presión sonora en el oído. Evita subir niveles para buscar tonos inaudibles y reduce los ajustes si aparece distorsión o molestia. Si ambos oídos comparten ecualización, no se corrigen por separado.</p></div></details></div></div></div>`}
 function deviceIcon(p){return p.type==='car'?'🚗':p.type==='headphones'?'🎧':'🔊'}
