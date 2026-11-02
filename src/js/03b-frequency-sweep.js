@@ -1,6 +1,8 @@
 
 // Optional pre-test sweep. Observations never become hearing thresholds or EQ gains.
-const SWEEP_DURATION_S=22;
+// Keep a continuous sine tone, but spend more time at the perceptual edges.
+const SWEEP_MIDDLE_DURATION_S=22;
+const SWEEP_LOW_EDGE_HZ=250,SWEEP_HIGH_EDGE_HZ=15000;
 const SWEEP_METHOD='fixed-digital-level-preflight-v1';
 let sweepSide='both',sweepRange='standard',sweepMicEnabled=false,sweepStarting=false;
 let sweepSession=null,sweepFrame=null,sweepNotice='';
@@ -8,6 +10,30 @@ function sweepBounds(wide=false){
  return wide?{min:40,max:16000}:{min:125,max:8000};
 }
 function sweepHz(min,max,t){return min*Math.pow(max/min,clamp(t,0,1))}
+function sweepSchedule(min,max){
+ const segments=[];let cursor=min,elapsed=0;
+ const add=(to,seconds,zone)=>{
+  if(to<=cursor)return;
+  segments.push({from:cursor,to,seconds,zone,start:elapsed,end:elapsed+seconds});
+  elapsed+=seconds;cursor=to;
+ };
+ // At low frequencies a logarithmic sweep used to pass 125–250 Hz in only
+ // ~3.7 seconds. Slow it down so responses have time to be registered.
+ if(cursor<SWEEP_LOW_EDGE_HZ)add(Math.min(max,SWEEP_LOW_EDGE_HZ),min<100?12:8,'graves');
+ if(cursor<max&&cursor<SWEEP_HIGH_EDGE_HZ)add(Math.min(max,SWEEP_HIGH_EDGE_HZ),SWEEP_MIDDLE_DURATION_S,'medios');
+ // The expanded 15–16 kHz area previously took <0.3s: allow 10s.
+ if(cursor<max)add(max,10,'agudos');
+ return {min,max,segments,duration:elapsed};
+}
+function sweepFrequencyAt(schedule,elapsed){
+ if(!schedule.segments.length)return schedule.min;
+ for(const segment of schedule.segments){
+  if(elapsed<=segment.end){
+   return sweepHz(segment.from,segment.to,(elapsed-segment.start)/segment.seconds);
+  }
+ }
+ return schedule.max;
+}
 function sweepAssessment(record){
  const events=Array.isArray(record?.events)?record.events:[];
  if(!events.length)return {known:false,first:null,last:null,segments:[]};
@@ -42,7 +68,7 @@ function sweepSummaryMarkup(p){
 function sweepPanelMarkup(p){
  const selected=p.channels==='separate'?(sweepSide==='right'?'right':'left'):'both';
  const saved=Object.entries(p.sweepRecords||{}).filter(([side,v])=>['both','left','right'].includes(side)&&v&&Array.isArray(v.events));
- const bounds=sweepBounds(sweepRange==='wide');
+ const bounds=sweepBounds(sweepRange==='wide'),schedule=sweepSchedule(bounds.min,bounds.max);
  const isRunning=!!sweepSession&&sweepSession.profile===p;
  return `<section class="soft sweep-panel" id="preSweepPanel">
  <strong>Exploración previa de frecuencias · opcional</strong>
@@ -53,7 +79,7 @@ function sweepPanelMarkup(p){
   <button type="button" class="btn ${sweepRange==='wide'?'btn-alt':'btn-ghost'} grow" data-sweep-range="wide" ${isRunning?'disabled':''}>40–16.000 Hz · ampliado</button>
  </div>
  ${p.type==='headphones'?'':`<label class="sweep-mic-option"><input type="checkbox" id="sweepMicChoice" ${sweepMicEnabled?'checked':''} ${isRunning?'disabled':''}> Comparar también con micrófono (opcional; no calibrado)</label>`}
- <p class="tiny muted">Duración: 22 s · nivel: ${Math.min(-42,getStart(p))} dBFS · rango ${bounds.min}–${bounds.max} Hz. Comienza con volumen físico bajo, cómodo y constante. No uses máximo ni persigas frecuencias inaudibles. En auto, estacionado.</p>
+ <p class="tiny muted">Duración aproximada: ${schedule.duration} s · nivel: ${Math.min(-42,getStart(p))} dBFS · rango ${bounds.min}–${bounds.max} Hz. Más lento por debajo de 250 Hz${bounds.max>15000?' y desde 15 kHz':''}; ritmo normal en la zona central. Volumen físico bajo, cómodo y constante. No persigas frecuencias inaudibles. En auto, estacionado.</p>
  ${isRunning?`<div class="sweep-live"><p class="center"><strong id="sweepCurrentHz">${Math.round(sweepSession.frequency)} Hz</strong> · <span id="sweepElapsed">0 s</span></p><div class="progress"><div id="sweepProgress" style="width:0%"></div></div><p id="sweepResponse" class="compact-note">Indica cuándo lo escuchas y cuándo dejas de escucharlo.</p><div class="grid2"><button type="button" class="btn btn-alt" data-sweep-response="yes">✓ Lo escucho</button><button type="button" class="btn btn-ghost" data-sweep-response="no">✕ No lo escucho</button></div>${button('■ Detener y conservar observaciones','sweep-finish','btn-ghost full')}</div>`:
  button(sweepStarting?'Preparando…':'▶ Iniciar barrido previo','sweep-start','btn-alt full',sweepStarting?'disabled':'')}
  ${sweepNotice?'<p class="compact-note" id="sweepNotice" role="status">'+esc(sweepNotice)+'</p>':''}
@@ -89,21 +115,21 @@ function sweepMicSample(run,freq){
 }
 function sweepTick(){
  const run=sweepSession;if(!run||page!=='test'||tone?.mode!=='sweep'){sweepFrame=null;return}
- const elapsed=clamp(run.ctx.currentTime-run.start,0,SWEEP_DURATION_S);
- run.frequency=sweepHz(run.min,run.max,elapsed/SWEEP_DURATION_S);
+ const elapsed=clamp(run.ctx.currentTime-run.start,0,run.schedule.duration);
+ run.frequency=sweepFrequencyAt(run.schedule,elapsed);
  const h=$('#sweepCurrentHz'),e=$('#sweepElapsed'),bar=$('#sweepProgress');
  if(h)h.textContent=Math.round(run.frequency)+' Hz';
  if(e)e.textContent=elapsed.toFixed(1)+' s';
- if(bar)bar.style.width=Math.round(elapsed/SWEEP_DURATION_S*100)+'%';
- if(elapsed>=SWEEP_DURATION_S){finishSweep();return}
+ if(bar)bar.style.width=Math.round(elapsed/run.schedule.duration*100)+'%';
+ if(elapsed>=run.schedule.duration){finishSweep();return}
  if(run.mic&&elapsed-run.lastMicAt>=.24){run.lastMicAt=elapsed;sweepMicSample(run,run.frequency)}
  sweepFrame=requestAnimationFrame(sweepTick);
 }
 function finishSweep(){
  const run=sweepSession;if(!run)return;
- const elapsed=clamp(run.ctx.currentTime-run.start,0,SWEEP_DURATION_S);
+ const elapsed=clamp(run.ctx.currentTime-run.start,0,run.schedule.duration);
  const record={
-  method:SWEEP_METHOD,minHz:run.min,maxHz:Math.round(sweepHz(run.min,run.max,elapsed/SWEEP_DURATION_S)),
+  method:SWEEP_METHOD,minHz:run.min,maxHz:Math.round(sweepFrequencyAt(run.schedule,elapsed)),
   levelDbfs:run.db,durationS:Number(elapsed.toFixed(1)),at:Date.now(),
   events:run.events.slice(0,60),micUsed:!!run.mic,mic:run.micSamples.slice(0,100)
  };
@@ -160,19 +186,22 @@ async function startSweep(){
   if(side!=='both'&&!pan)throw Error('El navegador no permite separar los canales.');
   osc.type='sine';
   const now=ctx.currentTime+.08,amp=Math.pow(10,db/20);
+  const schedule=sweepSchedule(limits.min,high);
+  if(!schedule.segments.length)throw Error('Rango de frecuencias insuficiente.');
   osc.frequency.setValueAtTime(limits.min,now);
-  osc.frequency.exponentialRampToValueAtTime(high,now+SWEEP_DURATION_S);
+  for(const segment of schedule.segments)
+   osc.frequency.exponentialRampToValueAtTime(segment.to,now+segment.end);
   if(pan){pan.pan.value=side==='left'?-1:side==='right'?1:0;osc.connect(pan);pan.connect(gain)}else osc.connect(gain);
   gain.connect(ctx.destination);
   gain.gain.setValueAtTime(.00000001,now-.01);
   gain.gain.linearRampToValueAtTime(amp,now+.15);
-  gain.gain.setValueAtTime(amp,now+SWEEP_DURATION_S-.18);
-  gain.gain.linearRampToValueAtTime(.00000001,now+SWEEP_DURATION_S);
-  sweepSession={profile:p,side,min:limits.min,max:high,start:now,ctx,db,events:[],
+  gain.gain.setValueAtTime(amp,now+schedule.duration-.18);
+  gain.gain.linearRampToValueAtTime(.00000001,now+schedule.duration);
+  sweepSession={profile:p,side,min:limits.min,max:high,start:now,ctx,db,schedule,events:[],
     frequency:limits.min,mic,micSamples:[],lastMicAt:-1};
   tone={mode:'sweep',osc,gain,pan,start:now};
   osc.onended=()=>{try{osc.disconnect();pan?.disconnect();gain.disconnect()}catch(e){}if(sweepSession?.profile===p)finishSweep()};
-  osc.start(now);osc.stop(now+SWEEP_DURATION_S+.03);
+  osc.start(now);osc.stop(now+schedule.duration+.03);
   render();sweepFrame=requestAnimationFrame(sweepTick);
   stream=null;
  }catch(e){sweepNotice='No se pudo realizar el barrido: '+e.message;render()}
