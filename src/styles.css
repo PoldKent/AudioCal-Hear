@@ -215,11 +215,8 @@ select option{background:#fff;color:#172033}
 @media(max-width:430px){.trace-panel{padding:9px}.trace-part{padding:9px}.trace-heading h2{font-size:16px}}
 
 /* Calibrated control-card preview: a local, offline canvas exported as PNG. */
-.eq-card-section{border:1px solid #dce6f2;border-radius:17px;background:#fff;padding:14px;margin:15px 0}
-.eq-card-section h2{font-size:19px;margin:0 0 7px;color:#223756}
 .eq-card-config{display:grid;gap:7px;margin:13px 0;padding:12px;border-radius:12px;background:#f6f9ff}
 .eq-card-config label{font-size:13px;font-weight:650;color:#39516f}
-.eq-card-canvas{width:100%;height:auto;border:1px solid #e2eaf4;border-radius:10px;display:block;background:#fff}
 .eq-card-alert{padding:10px 12px;background:#eff7ff;border-radius:10px;color:#2d5c91;font-size:12px;margin:10px 0}
 .eq-card-alert.eq-card-warning{background:#fff6ec;color:#80501f}
 .eq-card-actions{margin-top:12px}
@@ -259,3 +256,42 @@ select option{background:#fff;color:#172033}
 .results-side .music-options,.results-side .balance-card{margin:0}
 .results-side .music-options>.inner-detail,.results-side .balance-card>.inner-detail{min-width:0}
 @media(max-width:520px){.starter-card{padding:15px}.starter-card h2{font-size:20px}.starter-bands{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.starter-band{padding:6px 2px;min-height:77px}.starter-band span{font-size:16px}.starter-band strong{font-size:11px}.starter-band small{font-size:9px}}
+
+/* Unified results for v1.11: only one live EQ, PNG generated on demand. */
+.eq-main-card{min-width:0}.starter-inline{margin:12px 0;padding:12px;background:#f6f9ff;border:1px solid #dce7f7;border-radius:13px}.starter-inline p{margin:5px 0 9px}.starter-inline strong{color:#214d99}
+.eq-device-settings{margin-top:12px}.eq-device-settings>.inner-detail{padding-top:8px}.eq-card-config{padding:10px;margin:8px 0}.eq-card-config .field{min-width:0}
+.optional-tool>summary,.eq-device-settings>summary{font-weight:750;color:#253e69}.optional-tool .inner-detail{min-width:0}.eq-card-actions>.btn{flex:1 1 180px}
+
+/* Optional pre-test sweep: one compact step, no extra calibration wizard. */
+.sweep-panel{margin:14px 0;padding:13px;background:#f7faff;border-color:#dce7f7;min-width:0}
+.sweep-panel>strong{display:block;color:#204c8c;font-size:14px}
+.sweep-panel .sweep-choices{margin:9px 0}
+.sweep-panel .sweep-choices>.btn{font-size:12px;min-height:43px;padding:8px}
+.sweep-mic-option{display:flex;align-items:center;gap:9px;font-weight:600;margin:12px 0;color:#304766}
+.sweep-mic-option input{height:17px;width:17px;flex:0 0 auto}
+.sweep-live{margin:12px 0;padding:12px;border:1px solid #d7e6fa;background:white;border-radius:13px}
+.sweep-live #sweepCurrentHz{font-variant-numeric:tabular-nums;font-size:21px}
+.sweep-live .grid2{margin:12px 0;gap:8px}
+.sweep-live .grid2 button{min-height:52px}
+.sweep-saved{border-top:1px solid #dbe5f4;margin-top:12px;padding-top:10px}
+.sweep-saved p{margin:7px 0}
+@media(max-width:420px){.sweep-panel{padding:10px}.sweep-live{padding:9px}.sweep-panel .sweep-choices .btn{padding:8px 4px;font-size:11px}}
+
+/* Personal Sound: single EQ, optional subjective validation with no extra graphs. */
+.personal-sound-review{padding:12px;border:1px solid #dbe5f5;background:#f7faff;border-radius:12px;margin-top:12px}
+.personal-sound-review>strong{color:#1a478b}.personal-sound-review>.row{margin:11px 0}
+.personal-sound-review .btn{flex:1 1 110px}
+.starter-inline .starter-actions>.btn{flex:1 1 145px}
+
+/* Optional inline comparison remains inside the existing exam screen. */
+.inline-loudness{margin:14px 0;padding:9px 12px;border:1px solid #dce7f7;border-radius:12px;background:#f7faff}
+.inline-loudness .row{margin:9px 0}.inline-loudness .btn{min-height:42px}
+.inline-loudness .inner-detail{padding-top:9px}
+
+/* Hear 2.0: surface the next action when completed thresholds cannot yield EQ. */
+.personal-sound-finish{margin:13px 0;padding:15px;border:1px solid #b8cee9;background:#f0f6ff;border-radius:15px;min-width:0}
+.personal-sound-finish>strong{display:block;color:#1a477f;font-size:15px}
+.personal-sound-finish .small{color:#344b64;line-height:1.5}
+.personal-sound-finish .tiny{color:#526985;line-height:1.5}
+.personal-sound-finish .btn{margin-top:8px;white-space:normal}
+@media(max-width:420px){.personal-sound-finish{padding:12px}.personal-sound-finish .btn{font-size:13px}}

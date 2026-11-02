@@ -221,19 +221,47 @@ function normalizedProfile(p,importing=false){
   for(const f of bands){const v=value[f];if(typeof v==='number'&&Number.isFinite(v))output[f]=clamp(v,minValue,maxValue)}
   return output;
  };
- const taste=p.taste&&typeof p.taste==='object'&&!Array.isArray(p.taste)?p.taste:{};
+
+ // Preflight observations are exploratory and never merged into pure-tone measurements.
+ const sweepRecords=Object.create(null),sweeps=p.sweepRecords&&typeof p.sweepRecords==='object'&&!Array.isArray(p.sweepRecords)?p.sweepRecords:{};
+ for(const side of ['both','left','right']){
+  const item=sweeps[side];
+  if(!item||typeof item!=='object'||Array.isArray(item)||item.method!=='fixed-digital-level-preflight-v1')continue;
+  const minHz=safeNumber(item.minHz,125,20,20000),maxHz=safeNumber(item.maxHz,8000,minHz,20000);
+  const events=Array.isArray(item.events)?item.events.slice(0,60).filter(x=>x&&Number.isFinite(x.hz)&&x.hz>=minHz&&x.hz<=maxHz&&typeof x.heard==='boolean').map(x=>({hz:Math.round(x.hz),heard:x.heard})):[];
+  const micUsed=item.micUsed===true;
+  const mic=micUsed&&Array.isArray(item.mic)?item.mic.slice(0,100).filter(x=>x&&Number.isFinite(x.hz)&&x.hz>=minHz&&x.hz<=maxHz&&Number.isFinite(x.relativeDb)).map(x=>({hz:Math.round(x.hz),relativeDb:clamp(Math.round(x.relativeDb),-60,60),detected:x.detected===true})):[];
+  sweepRecords[side]={method:'fixed-digital-level-preflight-v1',minHz,maxHz,
+   levelDbfs:safeNumber(item.levelDbfs,-42,-100,-24),durationS:safeNumber(item.durationS,0,0,60),
+   at:safeNumber(item.at,Date.now(),0,Date.now()+86400000),events,micUsed,mic};
+ }
+ const loudnessInline=Object.create(null),rawInline=p.loudnessInline&&typeof p.loudnessInline==='object'&&!Array.isArray(p.loudnessInline)?p.loudnessInline:{};
+ for(const [k,item] of Object.entries(rawInline).slice(0,72)){
+  const match=/^(\d+(?:\.\d+)?)\|(left|right|both)$/.exec(k);
+  if(!match||!bands.includes(Number(match[1]))||!item||typeof item!=='object'||Array.isArray(item)||item.method!=='inline-relative-match-v1')continue;
+  if(!Number.isInteger(item.offsetDb)||Math.abs(item.offsetDb)>6)continue;
+  loudnessInline[k]={method:'inline-relative-match-v1',offsetDb:item.offsetDb,referenceDbfs:-48,
+   at:safeNumber(item.at,Date.now(),0,Date.now()+86400000)};
+ }
+ const rawReview=p.personalSoundReview;
+ const personalSoundReview=rawReview&&typeof rawReview==='object'&&!Array.isArray(rawReview)&&
+  rawReview.version==='personal-sound-v1'&&['better','same','worse'].includes(rawReview.choice)&&
+  typeof rawReview.signature==='string'&&rawReview.signature.length<=2000?
+  {version:'personal-sound-v1',choice:rawReview.choice,signature:rawReview.signature,
+   at:safeNumber(rawReview.at,Date.now(),0,Date.now()+86400000)}:null;
+  const taste=p.taste&&typeof p.taste==='object'&&!Array.isArray(p.taste)?p.taste:{};
  return {
   id,name:String(p.name||'Mi equipo').slice(0,70),type:['car','headphones','speaker'].includes(p.type)?p.type:'headphones',
   preset:Object.hasOwn(presets,p.preset)?p.preset:'custom',bands,min,max,controlMin,controlMax,step:1,
   channels:p.channels==='separate'?'separate':'both',passes:p.passes===2?2:1,
-  testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,
+  testMode:p.testMode==='quick'?'quick':'complete',testStart,testFloor,measures,sweepRecords,
   // Freeze historical quick sampling so existing observations are never silently reassigned.
   testBandPlan:p.testMode==='quick'?(
    Array.isArray(p.testBandPlan)&&p.testBandPlan.length>0&&p.testBandPlan.length<=QUICK_LIMIT&&
    p.testBandPlan.every(f=>bands.includes(f))?
     p.testBandPlan.slice():legacyQuickBands(bands)
   ):null,
-  loudness:normalizeLoudness(p.loudness,bands),
+  loudness:normalizeLoudness(p.loudness,bands),loudnessInline,personalSoundReview,
   manual:finiteMap(p.manual,-30,30),balance:finiteMap(p.balance,-6,3),balanceProof:Object.fromEntries(bands.map(f=>[f,(Array.isArray(p.balanceProof?.[f])?p.balanceProof[f]:[]).slice(-10).filter(x=>x&&Number.isFinite(x.change)&&Math.abs(x.change)<=3).map(x=>({at:safeNumber(x.at,Date.now(),0,Date.now()+86400000),choices:Array.isArray(x.choices)?x.choices.slice(0,2).filter(q=>[-1,0,1].includes(q)):[],change:x.change,method:'music-ab-two-rounds'}))])),
   taste:{bass:safeNumber(taste.bass,0,-3,3),voices:safeNumber(taste.voices,0,-3,3),air:safeNumber(taste.air,0,-3,3)},
   context:normalizeCalibrationContext(p.context,p.type),
@@ -312,7 +340,7 @@ function newTrial(entry){
  // Both passes start without any threshold borrowed from earlier measurements.
  // The second run is a new adaptive search, not a confirmation of pass 1.
  return {id:key(entry.f,entry.side)+'-'+entry.pass,
-  level:getStart(current),phase:'coarse',heard:null,missed:null,
+  level:getStart(current),phase:'coarse',heard:null,missed:null,initialBoosts:0,
   verifyIndex:0,done:0,awaiting:false,highConsent:false,listenedSeconds:0,
   history:[],lastTone:null};
 }
@@ -357,7 +385,17 @@ function nextTrialLevel(t,heard,p){
  if(t.phase==='coarse'){
   if(heard){t.heard=t.level;if(t.level<=floor)return 'stillheard';t.level=Math.max(floor,t.level-12);return 'next';}
   t.missed=t.level;
-  if(t.heard===null)return 'unheard';
+  if(t.heard===null){
+   // A first inaudible presentation is not a complete threshold: step up
+   // the digital tone only after a new user action, never physical volume.
+   const cap=p.type==='headphones'?-24:Math.max(-24,getStart(p));
+   if(t.level<cap&&t.done<MAX_STEPS){
+    t.level=Math.min(cap,t.level+3);
+    t.initialBoosts=(t.initialBoosts||0)+1;
+    return 'next';
+   }
+   return 'unheard';
+  }
   t.phase='refine';
  }else if(t.phase==='refine'){
   if(heard)t.heard=t.level;else t.missed=t.level;

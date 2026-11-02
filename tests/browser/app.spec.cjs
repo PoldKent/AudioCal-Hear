@@ -179,7 +179,8 @@ test('Spotify transfer guide keeps local audio upload and adapts to custom bands
   await page.locator('[data-nav="results"]').click();
   await expect(page.locator('#musicFile')).toBeAttached();
   await page.locator('#eqEditor [data-delta="1"]').click();
-  await page.locator('[data-act="transfer-open"]').click();
+  await page.locator('.transfer-card > summary').click();
+ await page.locator('[data-act="transfer-open"]').click();
   await page.locator('[data-transfer-target="spotify"]').click();
   await expect(page.locator('#transferPanel')).toContainText('Spotify Connect');
   await page.locator('[data-act="transfer-next"]').click();
@@ -200,7 +201,8 @@ test('YouTube Music iPhone shows external hardware fallback, not false automatic
   await newProfile(page, 'Auriculares YT');
   await page.locator('#uiLanguage').selectOption('es');
   await page.locator('[data-nav="results"]').click();
-  await page.locator('[data-act="transfer-open"]').click();
+  await page.locator('.transfer-card > summary').click();
+ await page.locator('[data-act="transfer-open"]').click();
   await page.locator('[data-transfer-target="youtube"]').click();
   await page.locator('[data-transfer-os="ios"]').click();
   await expect(page.locator('#transferPanel')).toContainText('no ofrece un ecualizador manual universal');
@@ -255,8 +257,8 @@ test('EQ PNG card marks unknown units, then exports positions using a user-decla
  await page.locator('#deviceName').fill('Auto PNG QA');
  await page.locator('[data-act="create"]').click();
  await page.locator('[data-nav="results"]').click();
- await page.locator('#technicalResults > summary').click();
- await expect(page.locator('#eqCardCanvas')).toBeVisible();
+ await page.locator('#eqCardSection > summary').click();
+ await expect(page.locator('#eqCardCanvas')).toHaveCount(0);
  await expect(page.locator('#eqCardNotice')).toContainText('desconocida');
  await page.locator('#resultEqScale').selectOption('steps');
  await expect(page.locator('#resultEqStepDb')).toHaveValue('unknown');
@@ -371,7 +373,7 @@ test('3 dB per step is selectable, saved and retained in the result EQ guide',as
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(saved.context.eqStepDb).toBe('3');
  await page.locator('[data-nav="results"]').click();
- await page.locator('#technicalResults > summary').click();
+ await page.locator('#eqCardSection > summary').click();
  await expect(page.locator('#resultEqScale')).toHaveValue('steps');
  await expect(page.locator('#resultEqStepDb')).toHaveValue('3');
  await page.locator('#resultEqStepDb').selectOption('2');
@@ -394,17 +396,21 @@ test('AF-02: changing a band keeps original measurements and synchronizes every 
  const freq=1000;
  const originalGraph=await page.locator('#tracePanel .trace-plot svg').innerHTML();
  const originalAuto=await page.locator('#tracePanel tbody tr').filter({has:page.getByRole('rowheader',{name:'1 kHz'})}).locator('td').nth(2).innerText();
- const pngBefore=await page.locator('#eqCardCanvas').evaluate(c=>c.toDataURL('image/png'));
+ const beforeDownload=page.waitForEvent('download');
+ await page.locator('[data-act="downloadpng"]').click();
+ const pngBefore=fs.readFileSync(await (await beforeDownload).path());
  await page.evaluate(()=>window.__audioPlayerBefore=document.getElementById('audioPlayer'));
  await page.locator('[data-eq-select="1000"]').click();
  await page.locator('#eqSlider').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}));});
  await expect(page.locator('[data-trace-final="1000"]')).toHaveText('+3 dB');
  await expect(page.locator('[data-eq-band="1000"] .eqval')).toHaveText('+3');
- await expect(page.locator('[data-eq-value="1000"]')).toContainText('+3');
+ await expect(page.locator('#eqSlider')).toHaveValue('3');
  await expect(page.locator('#eqSelectedValue')).toHaveText('+3 dB');
  await expect(page.locator('#eqChangeCount')).toHaveText('1 cambios');
- await expect(page.locator('.stat-grid .stat:nth-child(3) strong')).toHaveText('1');
- const pngAfter=await page.locator('#eqCardCanvas').evaluate(c=>c.toDataURL('image/png'));
+ 
+ const afterDownload=page.waitForEvent('download');
+ await page.locator('[data-act="downloadpng"]').click();
+ const pngAfter=fs.readFileSync(await (await afterDownload).path());
  expect(pngAfter).not.toBe(pngBefore);
  expect(await page.locator('#tracePanel .trace-plot svg').innerHTML()).toBe(originalGraph);
  expect(await page.locator('#tracePanel tbody tr').filter({has:page.getByRole('rowheader',{name:'1 kHz'})}).locator('td').nth(2).innerText()).toBe(originalAuto);
@@ -412,6 +418,7 @@ test('AF-02: changing a band keeps original measurements and synchronizes every 
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(saved.manual['1000']).toBe(3);
  const txtEvent=page.waitForEvent('download');
+ await page.getByText('Más opciones de ecualización',{exact:true}).click();
  await page.locator('[data-act="downloadtxt"]').click();
  const txt=await txtEvent;
  const contents=fs.readFileSync(await txt.path(),'utf8');
@@ -428,6 +435,7 @@ test('AF-02: transfer confirmation is invalidated after changing applied EQ valu
  await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
  await page.locator('#technicalResults > summary').click();
+ await page.locator('.transfer-card > summary').click();
  await page.locator('[data-act="transfer-open"]').click();
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-next"]').click();
@@ -445,7 +453,8 @@ test('AF-02: physical EQ scale changes invalidate checked transfer bands',async(
  await page.locator('[data-act="create"]').click();
  await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
- await page.locator('#technicalResults > summary').click();
+ await page.locator('#eqCardSection > summary').click();
+ await page.locator('.transfer-card > summary').click();
  await page.locator('[data-act="transfer-open"]').click();
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-next"]').click();
@@ -486,13 +495,9 @@ test('PNG horizontal EQ exports a landscape image with frequency columns for 7 a
   await page.locator('#deviceName').fill('Horizontal EQ '+count);
   await page.locator('[data-act="create"]').click();
   await page.locator('[data-nav="results"]').click();
-  await page.locator('#technicalResults > summary').click();
-  const canvas=page.locator('#eqCardCanvas');
-  const dims=await canvas.evaluate(c=>({w:c.width,h:c.height,signature:c.toDataURL('image/png').slice(0,30)}));
-  expect(dims.w).toBeGreaterThan(dims.h);
-  expect(dims.h).toBe(782);
-  expect(dims.signature).toContain('data:image/png;base64,');
-  await expect(canvas).toHaveAttribute('aria-label',/Ecualizador horizontal/);
+  
+
+   await expect(page.locator('#eqCardCanvas')).toHaveCount(0);
   const download=page.waitForEvent('download');
   await page.locator('[data-act="downloadpng"]').click();
   const png=await download;
@@ -519,7 +524,7 @@ test('physical car control limits are independent of recommended digital gain li
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect([saved.min,saved.max,saved.controlMin,saved.controlMax]).toEqual([-6,6,-4,5]);
  await page.locator('[data-nav="results"]').click();
- await page.locator('#technicalResults > summary').click();
+ await page.locator('#eqCardSection > summary').click();
  await expect(page.locator('#resultControlMin')).toHaveValue('-4');
  await expect(page.locator('#resultControlMax')).toHaveValue('5');
  await expect(page.locator('#eqCardSection')).toContainText('equivalencia nominal -12 a +15 dB');
@@ -598,8 +603,8 @@ test('results prioritize an actionable 10-band starter EQ and keep the evidence 
  await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
  await expect(page.locator('#starterGuide')).toBeVisible();
- await expect(page.locator('#starterGuide')).toContainText('Qué poner en tu ecualizador');
- await expect(page.locator('#starterGuide .starter-band')).toHaveCount(10);
+ await expect(page.locator('#starterGuide')).toContainText('Propuesta del test');
+ await expect(page.locator('[data-eq-band]')).toHaveCount(10);
  await expect(page.locator('#technicalResults')).not.toHaveAttribute('open');
  await expect(page.locator('#starterGuide')).toContainText('Punto de partida');
  await expect(page.locator('#starterGuide')).toContainText('+1 dB');
@@ -616,12 +621,260 @@ test('opening advanced results stays preserved when physical EQ unit changes',as
  await page.locator('#deviceName').fill('Paneles persistentes');
  await page.locator('[data-act="create"]').click();
  await page.locator('[data-nav="results"]').click();
- await page.locator('#technicalResults > summary').click();
- await expect(page.locator('#technicalResults')).toHaveAttribute('open','');
+ await page.locator('#eqCardSection > summary').click();
+ await expect(page.locator('#eqCardSection')).toHaveAttribute('open','');
  await page.locator('#resultEqScale').selectOption('db');
- await expect(page.locator('#technicalResults')).toHaveAttribute('open','');
+ await expect(page.locator('#eqCardSection')).toHaveAttribute('open','');
  await page.locator('#resultEqScale').selectOption('steps');
- await expect(page.locator('#technicalResults')).toHaveAttribute('open','');
+ await expect(page.locator('#eqCardSection')).toHaveAttribute('open','');
  await expect(page.locator('#resultEqStepDb')).toBeVisible();
+ await noOverflow(page);
+});
+
+test('single equalizer keeps one visible chart and exposes categorized optional actions',async({page})=>{
+ await page.locator('[data-device="headphones"]').click();
+ await page.locator('#deviceName').fill('Único EQ');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.getByRole('heading',{name:/Tu ecualizador · 10 bandas/})).toHaveCount(1);
+ await expect(page.getByRole('heading',{name:/Mi ecualizador · resultado para aplicar/})).toHaveCount(0);
+ await expect(page.locator('#eqCardCanvas')).toHaveCount(0);
+ await expect(page.locator('[data-eq-band]')).toHaveCount(10);
+ await expect(page.locator('#starterGuide')).toBeVisible();
+ await expect(page.locator('#eqCardSection')).not.toHaveAttribute('open','');
+ await page.locator('#eqCardSection > summary').click();
+ await page.locator('#resultEqScale').selectOption('steps');
+ await expect(page.locator('#eqCardSection')).toHaveAttribute('open','');
+ await expect(page.locator('#resultEqStepDb')).toBeVisible();
+ await noOverflow(page);
+});
+
+
+test('preflight sweep records the perceived range without replacing adaptive thresholds',async({page})=>{
+ await page.locator('[data-device="speaker"]').click();
+ await page.locator('#deviceName').fill('Parlantes con barrido');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
+ await expect(page.locator('#preSweepPanel')).toBeVisible();
+ await expect(page.locator('#sweepMicChoice')).not.toBeChecked();
+ await expect(page.locator('#preSweepPanel')).toContainText('Duración aproximada: 30 s');
+ await page.locator('[data-sweep-range="wide"]').click();
+ await expect(page.locator('#preSweepPanel')).toContainText('Duración aproximada: 44 s');
+ await expect(page.locator('#preSweepPanel')).toContainText('desde 15 kHz');
+ await page.locator('[data-act="sweep-start"]').click();
+ await expect(page.locator('#sweepCurrentHz')).toBeVisible();
+ await page.locator('[data-sweep-response="yes"]').click();
+ await page.waitForTimeout(350);
+ await page.locator('[data-sweep-response="no"]').click();
+ await page.locator('[data-act="sweep-finish"]').click();
+ await expect(page.locator('.sweep-saved')).toContainText('Zona declarada audible');
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(Object.keys(saved.measures)).toHaveLength(0);
+ expect(saved.sweepRecords.both.method).toBe('fixed-digital-level-preflight-v1');
+ expect(saved.sweepRecords.both.events).toHaveLength(2);
+ expect(saved.sweepRecords.both.maxHz).toBeLessThanOrEqual(16000);
+ await page.reload();
+ await page.locator('[data-nav="test"]').click();
+ await expect(page.locator('.sweep-saved')).toContainText('Zona declarada audible');
+ await page.locator('[data-act="introNext"]').click();
+ await expect(page.locator('#levelText')).toBeVisible();
+ await noOverflow(page);
+});
+test('headphone preflight requires left/right confirmation and never requests a microphone',async({page})=>{
+ await page.locator('[data-device="headphones"]').click();
+ await page.locator('#deviceName').fill('Audición por oído');
+ await page.locator('[data-act="create"]').click();
+ await expect(page.locator('#sweepMicChoice')).toHaveCount(0);
+ await page.locator('[data-act="sweep-start"]').click();
+ await expect(page.locator('#sweepNotice')).toContainText('Comprueba y confirma');
+ await page.locator('[data-act="checkleft"]').click();
+ await page.locator('[data-act="confirmleft"]').click();
+ await page.locator('[data-act="checkright"]').click();
+ await page.locator('[data-act="confirmright"]').click();
+ await page.locator('[data-sweep-side="right"]').click();
+ await page.locator('[data-act="sweep-start"]').click();
+ await expect(page.locator('#sweepCurrentHz')).toBeVisible();
+ await page.locator('[data-sweep-response="yes"]').click();
+ await page.locator('[data-act="sweep-finish"]').click();
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(saved.sweepRecords.right.events).toHaveLength(1);
+ expect(Object.keys(saved.measures)).toHaveLength(0);
+ await noOverflow(page);
+});
+
+test('personalized sound starts as estimated, exposes one listening panel and never changes raw thresholds on review',async({page})=>{
+ await page.locator('[data-device="headphones"]').click();
+ await page.locator('#deviceName').fill('Personal Sound QA');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#starterGuide')).toContainText('Estado del resultado');
+ await page.locator('[data-act="preview-sound"]').click();
+ await expect(page.locator('#musicComparison')).toHaveAttribute('open','');
+ await expect(page.locator('#personalSoundReview')).toBeVisible();
+ await expect(page.locator('[data-act="sound-better"]')).toBeDisabled();
+ const data=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(data.personalSoundReview).toBe(null);
+ await expect(page.getByRole('heading',{name:/Tu ecualizador/})).toHaveCount(1);
+ await noOverflow(page);
+});
+
+test('inline equal-loudness shares the exam screen and stores one separate observation',async({page})=>{
+ await page.locator('[data-device="speaker"]').click();
+ await page.locator('#deviceName').fill('Inline loudness QA');
+ await page.locator('[data-act="create"]').click();
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.evaluate(()=>{
+  const profiles=JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'));
+  profiles[0].measures['1000|both']=[{kind:'heard',db:-70,confidence:'low',method:'adaptive-v21-short'}];
+  localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify(profiles));
+ });
+ await page.reload();
+ await page.locator('[data-nav="test"]').click();
+ await page.locator('[data-act="introNext"]').click();
+ const band=await page.locator('.frequency').innerText();
+ await expect(page.locator('#inlineLoudness')).toBeVisible();
+ await page.locator('#inlineLoudness > summary').click();
+ await page.locator('[data-inline-loudness="reference"]').click();
+ await page.locator('[data-inline-loudness="target"]').click();
+ await page.locator('[data-inline-loudness="record"]').click();
+ await expect(page.locator('#inlineLoudnessStatus')).toContainText('Comparación guardada');
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(Object.keys(saved.loudnessInline)).toHaveLength(1);
+ expect(Object.keys(saved.measures)).toHaveLength(1);
+ expect(Object.values(saved.loudnessInline)[0].method).toBe('inline-relative-match-v1');
+ await page.reload();
+ await page.locator('[data-nav="test"]').click();
+ await page.locator('[data-act="introNext"]').click();
+ await page.locator('#inlineLoudness > summary').click();
+ await expect(page.locator('#inlineLoudnessStatus')).toContainText('guardada');
+ await noOverflow(page);
+});
+
+const thresholdEvidence=measures=>Object.fromEntries(Object.entries(measures||{}).map(([k,records])=>[k,records.map(x=>({kind:x.kind,db:x.db,confidence:x.confidence,method:x.method}))]));
+test('Hear 2.0 complete simulated 20-threshold profile produces one persistent editable/exportable EQ',async({page})=>{
+ await newProfile(page,'Recorrido completo 10 bandas');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.evaluate(()=>{
+  const all=JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'));
+  const p=all[0],freq=p.bands;
+  const levels=freq.map(f=>f===1000?-82:f===2000?-62:-62);
+  for(const [i,f] of freq.entries()){
+   for(const side of ['left','right']){
+    p.measures[f+'|'+side]=[{kind:'heard',db:levels[i]+(side==='right'?1:0),
+     confidence:'low',method:'adaptive-v21-short',elapsedS:24,at:Date.now()}];
+   }
+  }
+  p.sweepRecords={left:{method:'fixed-digital-level-preflight-v1',minHz:125,maxHz:8000,
+   durationS:22,levelDbfs:-42,at:Date.now(),micUsed:false,mic:[],
+   events:[{hz:300,heard:true},{hz:7800,heard:false}]}};
+  localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify(all));
+ });
+ await page.reload();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.getByRole('heading',{name:/Tu ecualizador · 10 bandas/})).toHaveCount(1);
+ await expect(page.locator('[data-eq-band]')).toHaveCount(10);
+ await expect(page.locator('#starterGuide')).toContainText('Propuesta del test');
+ await expect(page.locator('p.small.muted').filter({hasText:'10/10 frecuencias'})).toHaveCount(1);
+ const original=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
+ expect(Object.keys(original)).toHaveLength(20);
+ await expect(page.locator('[data-act="starter-apply"]')).toHaveCount(1);
+ const firstDownload=page.waitForEvent('download');
+ await page.locator('[data-act="downloadpng"]').click();
+ const pngBefore=fs.readFileSync(await (await firstDownload).path());
+ expect(pngBefore.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
+ // The automatic proposal can already match the live EQ, so force a user edit
+ // before verifying the explicit Apply action and its confirmation.
+ await page.locator('[data-eq-select="1000"]').click();
+ await page.locator('#eqEditor [data-delta="1"]').click();
+ const edited=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(Object.values(edited.manual).some(x=>x!==0)).toBe(true);
+ expect(thresholdEvidence(edited.measures)).toEqual(thresholdEvidence(original));
+ const secondDownload=page.waitForEvent('download');
+ await page.locator('[data-act="downloadpng"]').click();
+ const pngAfter=fs.readFileSync(await (await secondDownload).path());
+ expect(pngAfter.equals(pngBefore)).toBe(false);
+ await expect(page.locator('[data-act="starter-apply"]')).toBeEnabled();
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('[data-act="starter-apply"]').click();
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(thresholdEvidence(stored.measures)).toEqual(thresholdEvidence(original));
+ await page.locator('#technicalResults > summary').click();
+ await expect(page.locator('#preSweepResults')).toBeVisible();
+ await expect(page.locator('#tracePanel')).toBeVisible();
+ await page.reload();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('[data-eq-band]')).toHaveCount(10);
+ await expect(page.locator('[data-act="starter-apply"]')).toHaveCount(1);
+ const afterReload=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(thresholdEvidence(afterReload.measures)).toEqual(thresholdEvidence(original));
+ expect(afterReload.manual).toEqual(stored.manual);
+ await page.locator('[data-act="preview-sound"]').click();
+ await expect(page.locator('#musicComparison')).toHaveAttribute('open','');
+ await expect(page.locator('#personalSoundReview')).toBeVisible();
+ await expect(page.locator('[data-act="sound-better"]')).toBeDisabled();
+ await noOverflow(page);
+});
+
+test('completed uncertain hearing test keeps recommendations first and music optional',async({page})=>{
+ await newProfile(page,'Umbrales inciertos');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.evaluate(()=>{
+  const key='audiocal-hear-profiles-v1',p=JSON.parse(localStorage.getItem(key));
+  for(const f of p[0].bands){
+   for(const side of ['left','right']){
+    p[0].measures[f+'|'+side]=[{kind:'heard',db:-49,confidence:'low',method:'adaptive-v21-short',
+     audibleDb:-49,inaudibleDb:-49,contradictions:1}];
+   }
+  }
+  localStorage.setItem(key,JSON.stringify(p));
+ });
+ await page.reload();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#starterGuide')).toBeVisible();
+ await expect(page.locator('#eqChangeCount')).toContainText('0 cambios');
+ await expect(page.locator('#personalSoundFinish')).toHaveCount(0);
+ await expect(page.locator('#musicComparison')).not.toHaveAttribute('open','');
+ await expect(page.locator('#musicFile')).not.toBeVisible();
+ const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('[data-act="previous-frequency"]').click();
+ await expect(page.locator('#preSweepPanel')).toBeVisible();
+ const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
+ expect(Object.keys(after).length).toBe(Object.keys(before).length-2);
+ await noOverflow(page);
+});
+test('16 kHz first inaudible presentation increases digital dBFS and remains in the same band',async({page})=>{
+ await newProfile(page,'Prueba 16 kHz');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.evaluate(()=>{
+  const store='audiocal-hear-profiles-v1',all=JSON.parse(localStorage.getItem(store));
+  const profile=all[0];
+  for(const f of profile.bands){
+   if(f===16000)continue;
+   for(const side of ['left','right']){
+    profile.measures[f+'|'+side]=[{kind:'heard',db:-54,confidence:'low'}];
+   }
+  }
+  localStorage.setItem(store,JSON.stringify(all));
+ });
+ await page.reload();
+ // Channel checks must be repeated when reopening a profile in another session.
+ await page.locator('[data-nav="test"]').click();
+ await page.locator('[data-act="checkleft"]').click();
+ await page.locator('[data-act="confirmleft"]').click();
+ await page.locator('[data-act="checkright"]').click();
+ await page.locator('[data-act="confirmright"]').click();
+ await page.locator('[data-act="introNext"]').click();
+ await expect(page.locator('.frequency')).toContainText('16 kHz');
+ await expect(page.locator('#levelText')).toContainText('-36 dBFS');
+ await page.locator('[data-act="play"]').click();
+ await page.locator('[data-act="answerNo"]').click();
+ await expect(page.locator('#levelText')).toContainText('-33 dBFS');
+ await expect(page.locator('#testBoostNotice')).toBeVisible();
+ await expect(page.locator('.frequency')).toContainText('16 kHz');
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
+ expect(stored['16000|left']).toBeUndefined();
  await noOverflow(page);
 });
