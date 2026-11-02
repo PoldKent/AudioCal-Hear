@@ -813,3 +813,33 @@ test('Hear 2.0 complete simulated 20-threshold profile produces one persistent e
  await expect(page.locator('[data-act="sound-better"]')).toBeDisabled();
  await noOverflow(page);
 });
+
+test('completed uncertain hearing test offers a visible guided EQ path instead of a blank zero result',async({page})=>{
+ await newProfile(page,'Umbrales inciertos');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.evaluate(()=>{
+  const key='audiocal-hear-profiles-v1',p=JSON.parse(localStorage.getItem(key));
+  for(const f of p[0].bands){
+   for(const side of ['left','right']){
+    p[0].measures[f+'|'+side]=[{kind:'heard',db:-49,confidence:'low',method:'adaptive-v21-short',
+     audibleDb:-49,inaudibleDb:-49,contradictions:1}];
+   }
+  }
+  localStorage.setItem(key,JSON.stringify(p));
+ });
+ await page.reload();
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#personalSoundFinish')).toBeVisible();
+ await expect(page.locator('#personalSoundFinish')).toContainText('falta personalizar el sonido');
+ await expect(page.locator('#eqChangeCount')).toContainText('0 cambios');
+ const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
+ await page.locator('[data-act="finish-sound"]').click();
+ await expect(page.locator('#musicComparison')).toHaveAttribute('open','');
+ await expect(page.locator('#toneBalance')).toHaveAttribute('open','');
+ await expect(page.locator('#balanceTrainer')).toBeVisible();
+ await page.locator('[data-balance-preview="A"]').click();
+ await expect(page.locator('#balanceFeedback')).toContainText('Primero selecciona una canción');
+ const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
+ expect(after).toEqual(before);
+ await noOverflow(page);
+});
