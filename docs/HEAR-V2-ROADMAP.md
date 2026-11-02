@@ -1,57 +1,26 @@
-# AudioCal Hear 2.0 — ejecución del plan aprobado
+# AudioCal Hear 2.0 — estado verificable y trabajo pendiente
 
-## Propósito y definición de terminado
+**Actualización:** 2026-11-02. La PR [#29](https://github.com/PoldKent/AudioCal-Hear/pull/29) fusionó en `main` el trabajo previamente apilado en #22, #23, #24, #25, #27 y #28. No volver a fusionar esas PR como si estuvieran pendientes.
 
-Un examen auditivo que termina en **un único EQ editable, aplicable dentro de Hear y transferible manualmente**, conservando observaciones originales, niveles de confianza y perfiles de hardware. No se afirma que un dBFS digital equivale a un dB SPL acústico, ni que el software diagnostica hipoacusia.
+## Ruta principal
 
-### Flujo objetivo
+1. Configurar el dispositivo y las frecuencias y escala reales del EQ (4/5/7/10/personalizadas).
+2. Comprobar canales, usar volumen físico bajo, cómodo y fijo; barrido previo opcional, más lento en extremos por debajo de 250 Hz y desde 15 kHz.
+3. Completar las respuestas adaptativas por oído y frecuencia; permitir volver a la anterior sin borrar mediciones independientes. Un primer «No» permite reintentar gradualmente con +3 dBFS dentro de límites digitales seguros.
+4. Mostrar umbrales digitales registrados y confianza, separados de las ganancias EQ. Ofrecer **un único EQ editable**, propuesta conservadora, copia/PNG/TXT e instrucciones de aplicación.
+5. Guardar e importar/exportar perfiles. Solo después, y de forma opcional, comparar música, realizar sonoridad A/B o transferir valores a hardware.
 
-1. Seleccionar el tipo de salida y las frecuencias/escala del EQ (4/5/7/10 o personalizadas).
-2. Comprobación de canal, volumen físico bajo y fijo; barrido preliminar opcional (PR #23).
-3. Test de umbrales adaptativo para cada banda y oído (fuentes actuales).
-4. Comparación **opcional de sonoridad en esa misma pantalla** para frecuencias elegibles: 1 kHz de referencia a −48 dBFS; muestra con ±6 dBFS; un registro por frecuencia/oído, sin afectar al test.
-5. Resultado conservador con una única lista de bandas (PR #22), propuesta experimental, explicación de confianza, control manual, PNG/TXT e instrucciones de transferencia.
-6. Reproducción dentro de Hear con EQ activado/desactivado y valoración subjetiva tras escuchar ambos modos.
-7. Guardar por perfil y poder importar/exportar.
+## Verificado por automatización
 
-### Estado verificable del código
+Las comprobaciones de fuente, integridad de la app y navegador para el commit integrado en `main` finalizaron correctamente el 2026-11-02. Eso confirma consistencia de software, no calibración acústica, precisión clínica ni hardware Bluetooth real. Un EQ en 0 dB puede ser correcto cuando la evidencia no justifica modificación: no forzar ganancias para conseguir una gráfica con cambios.
 
-| Entrega | PR | Estado |
-| --- | --- | --- |
-| Unificar el ecualizador, reconocer umbrales digitales de confianza limitada | #22 | Implementada en rama; CI aprobada |
-| Barrido previo y micrófono relativo opcional | #23 | Implementada en rama; CI aprobada |
-| Estado Personal Sound, A/B en el reproductor y opinión invalidable | #24 | Implementada en rama; pruebas CI |
-| Comparación de sonoridad por frecuencia/oído, en la misma pantalla del test | #25 | Implementada en rama; pruebas CI |
+## Pendiente de validación
 
-**Las PR están apiladas en el orden #22 → #23 → #24 → #25. No alterar `main` ni publicarlas automáticamente hasta aceptar el conjunto.**
+- **P0:** probar diez bandas por oído en auriculares, siete en vehículo estacionado y cinco en parlantes reales; confirmar ruta Bluetooth, seguridad de volumen, permisos de micrófono, persistencia e importación/exportación ([issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26)).
+- **P0:** reproducir casos de umbrales presentes pero EQ neutro: cobertura, discrepancias entre oídos, calidad de evidencias y ausencia legítima de contraste. No convertir diferencias dBFS directamente en ganancias acústicas.
+- **P1:** comprobar accesibilidad móvil, localización en ocho idiomas y que las opciones de música/refinamiento no interrumpen el flujo principal. Seguir retirando únicamente duplicaciones y código sin referencias verificadas.
+- **P2:** estudiar por separado respuesta de sala/equipo con protocolo físico validado, instrumentos con entrada real y posibles integraciones con APIs documentadas. No prometer aplicaciones universales ni equivalencia HearID sin evidencia.
 
-### Lo que las mediciones justifican
+## Criterio de finalización
 
-- El barrido subjetivo mide la audibilidad declarada del **conjunto oído + equipo + sala**, no de cada parte.
-- Un micrófono no calibrado solo aporta evidencia **relativa** de energía captada frente al ruido: no certifica respuesta en frecuencia ni SPL.
-- Los umbrales digitales y las comparaciones de sonoridad son observaciones **distintas**. Las segundas no se convierten directamente en ganancias de EQ.
-- La recomendación inicial se restringe a pequeños contrastes locales entre bandas con mediciones utilizables; bandas extremas, incompletas o con incompatibilidades no deben recibir refuerzos inventados.
-- La EQ digital del reproductor web de Hear **sí puede aplicarse**. La EQ física externa necesita ajustes manuales o una API documentada.
-- No inventar dB por posición, anchos de banda ni frecuencias de control de un hardware no identificado.
-
-## Criterios de aceptación pendientes de QA presencial
-
-- Completar un perfil con 10 bandas en auriculares: ambos oídos, barrido opcional, estimaciones guardadas, propuesta de EQ coherente y reproductor con control de bypass.
-- Completar 7 bandas en automóvil estacionado y 5 bandas personalizadas en parlantes, con control de escala física independiente del nivel digital.
-- Validar que la captura por micrófono tiene consentimiento, no se activa por defecto y detiene todas las pistas de audio al salir.
-- Evaluar reproducibilidad en dos sesiones con el mismo equipo, condiciones, volumen y usuario.
-- Comprobar a ciegas, con igualación de volumen, preferencia por EQ personalizada, EQ neutra y EQ del fabricante; registrar sin forzar que exista una mejora.
-- Pruebas de compatibilidad real en Android, iOS/WebKit y escritorio, más validación de persistencia tras recargar y exportar/importar.
-- Auditoría de seguridad y distorsión/recorte: si aparece molestia, volumen alto o saturación, terminar inmediatamente.
-
-## Trabajo que aún NO debe darse por finalizado
-
-1. **Motor de validación acústica en parlantes/automóvil:** referencia calibrada opcional, control de posición, micrófono y ruido, normalización relativa, calidad de captura y resultados sin confundir equipo con audición.
-2. **Perfiles de instrumentos musicales:** el preamplificador de guitarra no puede probarse reproduciendo tonos que nunca atraviesan su circuito; necesita entrada de señal o grabaciones repetibles.
-3. **Motor de personalización perceptiva validado externamente:** estudio comparativo con usuarios y hardware real, y revisión de sesgos antes de usar diferencias de sonoridad o micrófono para sugerir ganancias adicionales.
-4. **Integraciones de fabricante:** aplicación directa a hardware únicamente con APIs documentadas y permisos explícitos.
-5. **Traducciones y accesibilidad completas** para los nuevos paneles, incluidos lectores de pantalla y modos móviles.
-
-## Protocolo de integración
-
-Fusionar PR #22, después #23, después #24 y después #25, únicamente cuando cada una tenga CI verde, revisión funcional y el historial de `main` sea actual. Si hay conflictos, rebasar las ramas apiladas y ejecutar de nuevo todas las pruebas. Publicar la web solo después de verificar visualmente el resultado y su coherencia con los datos de una prueba real.
+CI verde **y** validación en dispositivos reales con reproducción segura y resultados interpretables. Nunca presentar dBFS como dB SPL, afirmar audiometría clínica, ni indicar elevar el volumen físico para alcanzar frecuencias inaudibles. Mantener [el issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26) abierto hasta las pruebas físicas.

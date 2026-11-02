@@ -205,23 +205,6 @@ function refreshResultsUI(){
 function eqMark(b){return (b.gain>0?'+':'')+b.gain}
 function selectedBandInfo(b){return b.db===null?'Sin umbral medido · ajuste personal':b.derived?'Frecuencia estimada':b.quality==='good'?'Umbral consistente':'Umbral estimado · verifica si lo necesitas'}
 function selectedEqEditor(p,r){let x=r.find(q=>q.f===selectedEqFreq)||r[0];if(!x)return '';selectedEqFreq=x.f;return `<div class="eq-editor" id="eqEditor"><div class="eq-editor-head"><div><div class="tiny muted">AJUSTAR BANDA</div><h3 id="eqSelectedLabel">${fmt(x.f)}</h3></div><strong id="eqSelectedValue">${eqMark(x)} dB</strong></div><input id="eqSlider" type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${x.gain}" aria-label="Ganancia de ${fmt(x.f)} en decibelios"><div class="editor-commands"><button type="button" data-adjust="${x.f}" data-delta="-1" aria-label="Reducir banda">−</button><span class="tip" id="eqSelectedNote">${selectedBandInfo(x)}</span><button type="button" data-adjust="${x.f}" data-delta="1" aria-label="Aumentar banda">+</button></div></div>`}
-function renderListeningGraph(p){
- if(p.channels!=='separate')return '';
- const pairs=['left','right'];
- const series=pairs.map(side=>p.bands.map((f,i)=>{
-  const arr=p.measures?.[key(f,side)]||[];
-  const values=arr.filter(r=>r&&Number.isFinite(r.db)).map(r=>r.db);
-  if(!values.length)return null;
-  const db=median(values);
-  return {f,db,x:30+i*(480/Math.max(1,p.bands.length-1)),y:190-(db+84)*(150/60)};
- }));
- const colors=['#27bde4','#8c8dff'];
- const dots=series.map((points,j)=>points.filter(Boolean).map(x=>`<circle cx="${x.x}" cy="${clamp(x.y,20,200)}" r="4" fill="${colors[j]}"><title>${pairs[j]} · ${fmt(x.f)} · ${x.db} dBFS</title></circle>`).join('')).join('');
- // Do not draw lines over frequencies where no measurement exists.
- const segments=series.map((points,j)=>points.slice(1).map((x,i)=>x&&points[i]?`<line x1="${points[i].x}" y1="${clamp(points[i].y,20,200)}" x2="${x.x}" y2="${clamp(x.y,20,200)}" stroke="${colors[j]}" stroke-width="3"/>`:'').join('')).join('');
- const labels=p.bands.map((f,i)=>`<text x="${30+i*480/Math.max(1,p.bands.length-1)}" y="220" text-anchor="middle" fill="#8ba9b9" font-size="10">${short(f)}</text>`).join('');
- return `<details class="unobtrusive"><summary>Comparar oído izquierdo y derecho · umbrales digitales</summary><div class="inner-detail"><div class="row wrap small"><span style="color:${colors[0]}">● Izquierdo</span> <span style="color:${colors[1]}">● Derecho</span></div><svg viewBox="0 0 540 240" width="100%" role="img" aria-label="Umbrales medidos por oído, con espacios sin datos"><path d="M30 20 V190 H510" fill="none" stroke="#496477"/>${segments}${dots}${labels}</svg><p class="tiny muted">Se dibujan solo frecuencias realmente medidas. No son dB SPL, ni audiometría clínica, ni una curva de ganancia EQ.</p></div></details>`;
-}
 function rawFrequencyThreshold(p,f,side){
  const a=p.measures?.[f+'|'+side]||[];
  const valid=a.filter(x=>x&&x.kind==='heard'&&Number.isFinite(x.db)).map(x=>x.db);

@@ -1,46 +1,23 @@
-# AudioCal Hear 2.0 — BETA para pruebas reales
+# AudioCal Hear 2.0 — pruebas con la versión actual
 
-Esta beta incluye los cambios de las PR #22 → #23 → #24 → #25, pero **todavía no es una audiometría clínica ni una calibración acústica certificada**. La versión publicada en GitHub Pages continúa sin modificarse.
+**La PR #29 fue fusionada en `main` el 2 de noviembre de 2026.** La antigua guía para PR #25 y la rama apilada `feat/hear-v2-inline-loudness` ya no representa la versión actual.
 
-## Descarga e inicio en Windows
+## Cómo abrir una copia local
 
-1. Abre la [PR #25](https://github.com/PoldKent/AudioCal-Hear/pull/25) y entra en **Checks**. Busca **AudioCal Hear 2.0 beta bundle** y descarga el artefacto **AudioCal-Hear-2-0-Beta** cuando la comprobación aparezca en verde. Se descarga como ZIP.
-2. Extrae el ZIP completo en una carpeta nueva (por ejemplo, `Descargas\AudioCal-Hear-Beta`). No lo ejecutes dentro del ZIP.
-3. Haz doble clic en **start-beta.cmd**. Solo requiere Node.js 20 o superior, que también puede comprobarse con `node --version`. No hace falta instalar npm packages ni tener una cuenta.
-4. Abre **http://127.0.0.1:8765/** en el navegador de **esta misma computadora**. Mantén abierta la ventana de la terminal mientras haces la prueba; Ctrl+C detiene el servidor.
-5. Si `start-beta.cmd` no abre la beta, utiliza PowerShell dentro de esa carpeta: `node serve-beta.mjs`, y visita la misma dirección.
+1. Desde el [repositorio](https://github.com/PoldKent/AudioCal-Hear), descarga el ZIP de `main` y extráelo en una carpeta distinta a tu instalación habitual.
+2. Con Node.js 20 o superior ejecuta `npm run beta` desde la raíz; abre `http://127.0.0.1:8765/`. También funciona `node tools/serve-beta.mjs`, sin instalar paquetes adicionales.
+3. Para un futuro paquete de una PR, busca **Checks → AudioCal Hear 2.0 beta bundle** en esa PR. Los artefactos anteriores son instantáneas históricas, no entregas automáticas de la versión vigente.
 
-**Alternativa para desarrolladores:** descarga la rama `feat/hear-v2-inline-loudness`, ejecuta `npm run beta` desde la raíz del proyecto y abre http://127.0.0.1:8765/.
+El sitio de GitHub Pages y `localhost` tienen almacenamientos locales independientes. Exporta tus perfiles como JSON antes de copiar, borrar o cambiar de origen.
 
-El servidor responde únicamente en `127.0.0.1` (tu computadora) y sirve el HTML de la app. No ofrece endpoints de importación remota ni envía datos de tus perfiles a GitHub. A diferencia del sitio publicado, su almacenamiento es independiente porque utiliza un origen distinto.
+## Pruebas prioritarias
 
-## Antes de hacer el test
+- Preparar un dispositivo real, comprobar canales y mantener volumen físico bajo, cómodo y constante.
+- Completar el examen con barrido previo opcional; confirmar que el botón de frecuencia anterior no borra otras frecuencias y que el primer tono inaudible reintenta +3 dBFS hasta el límite de seguridad.
+- Comprobar umbrales por banda, explicación de fiabilidad y **un solo EQ editable**; verificar PNG, TXT, importación/exportación y recarga.
+- No interpretar 0 dB de ganancia como ausencia de medición: inspeccionar la calidad y el contraste de los datos originales.
+- **Solo después**, si se desea, desplegar la comparación musical y cargar un archivo propio. La música y los refinamientos opcionales no deben bloquear los resultados del examen.
 
-1. En la versión publicada, abre **Mis perfiles → Respaldo de perfiles → Exportar todo** y guarda el JSON. No borres nada.
-2. En la beta, entra en **Mis perfiles → Respaldo de perfiles → Importar JSON** e importa **una copia**. No se modificará el perfil del sitio publicado. Si prefieres, crea un perfil nuevo para tus auriculares.
-3. Conecta los auriculares al mismo ordenador, configura el volumen físico **bajo, cómodo y constante** y comprueba los canales izquierdo y derecho.
-4. El barrido previo es **opcional**. Ahora ralentiza el recorrido hasta 250 Hz y, en el rango ampliado, de 15 a 16 kHz. El modo normal dura unos 30 s (125–8.000 Hz) y el ampliado unos 44 s (40–16.000 Hz), siempre limitado por la frecuencia de muestreo de la salida. Puedes contestar «Lo escucho / No lo escucho», pero ese mapa no se convierte directamente en ganancias ni demuestra la capacidad independiente del oído o del equipo.
-5. Realiza la prueba de umbrales. Las comparaciones de sonoridad de cada frecuencia son opcionales y se registran aparte.
+## Límites y reporte
 
-## Comprobar el resultado HearID-like
-
-1. Después del examen, abre **Resultados**: debe haber **un único ecualizador**, con las bandas de tu equipo y un indicador de calidad de las estimaciones.
-2. Si aparece una propuesta automática, puedes aplicarla y editar las bandas. Si no hay evidencia suficiente, es correcto que algunas permanezcan a **0 dB**.
-3. Exporta una imagen PNG o TXT y verifica que refleje los ajustes actuales. Comprueba que la gráfica de mediciones no cambie al editar.
-4. Expande **Comparar con música**, carga una canción local y alterna **EQ activado / desactivado**, sin cambiar el volumen de los auriculares. Escucha al menos dos segundos cada modo. Puedes registrar **Mejor / Igual / Peor**.
-5. Recarga la beta y verifica que los cambios permanecen. Si cambias las ganancias, la opinión auditiva anterior debería perder vigencia hasta repetir la comparación.
-
-Para comparar de forma más objetiva, es preferible igualar la sonoridad percibida: el modo que suena más fuerte puede parecer mejor sin serlo realmente.
-
-## Reporte de prueba
-
-Indica en [el issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26): dispositivo, navegador/OS, bandas, umbrales registrados, si hubo bandas neutras, ajustes aplicados y si preferiste mejor/igual/peor. Si compartes capturas, evita datos personales, archivos de música o grabaciones de tu audición.
-
-### Limitaciones
-
-- El reproductor integrado aplica la EQ dentro de Hear; **no controla Spotify, otros programas, Soundcore u otros equipos externos**.
-- El micrófono se pide solo en los flujos opcionales que lo requieren y no produce mediciones calibradas en dB SPL.
-- La beta local no estará disponible desde otro celular conectado por Wi-Fi. Esa modalidad necesita una publicación HTTPS separada.
-- No subas el volumen para escuchar frecuencias que no percibes. Detén cualquier prueba ante molestia, dolor, zumbidos o distorsión.
-
-Versión técnica: rama `feat/hear-v2-inline-loudness`, publicada como artefacto de GitHub Actions; identifica el SHA exacto en la página de esa ejecución.
+No es audiometría clínica, ni mide dB SPL; no puede establecer por sí sola la respuesta en frecuencia de un dispositivo externo ni controlar su ecualizador. La validación física de Bluetooth, seguridad y percepción sigue pendiente en [issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26). Reporta únicamente información técnica no sensible. Ante dolor, zumbidos o distorsión detén la prueba y no subas el volumen físico.

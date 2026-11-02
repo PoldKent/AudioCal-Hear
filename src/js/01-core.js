@@ -368,18 +368,6 @@ function trialEstimate(t){
  const confidence=contradictions||audibleDb<=inaudibleDb?'low':width<=2&&t.verifyIndex>=2?'high':'medium';
  return {db,confidence,audibleDb,inaudibleDb,uncertaintyDb:Math.max(.5,width/2),contradictions};
 }
-function boundaryVotes(t,level){
- let yes=0,no=0;
- for(const answer of t.history||[]){
-  if(answer.db!==level)continue;
-  if(answer.heard)yes++;else no++;
- }
- return {yes,no};
-}
-function boundaryConfirmed(t){
- const e=trialEstimate(t);
- return e.db!==null&&e.confidence==='high';
-}
 function nextTrialLevel(t,heard,p){
  const floor=getFloor(p);
  if(t.phase==='coarse'){

@@ -48,12 +48,8 @@ Guardar solamente los perfiles y capturas relevantes, sin nombres personales ni 
 **Puerta de publicación:** CI completo en la última revisión + QA visual y de dispositivo real. Mientras falte esa evidencia, mantener el trabajo en PR de desarrollo, no afirmar equivalencia probada con HearID.
 
 
-## Ejecutar una copia local de la beta sin afectar la web publicada
+## Ejecutar la versión vigente en un entorno aislado
 
-1. Descargar la rama `feat/hear-v2-inline-loudness` del repositorio como ZIP y extraerla en una carpeta nueva. No copiar encima de la instalación habitual.
-2. Abrir una terminal en esa carpeta y ejecutar `python -m http.server 8000` (o `py -m http.server 8000` en Windows). Acceder a `http://localhost:8000` en el navegador.
-3. Para comprobar solo el resultado existente, exportar primero el perfil desde la versión antigua y después importarlo en la copia local. Se guardará en el almacenamiento propio de `localhost`, separado del sitio publicado.
-4. Si se desea usar el micrófono, conceder el permiso solo cuando se solicita explícitamente; rechazarlo no debe impedir completar la prueba auditiva.
-5. Antes de borrar datos del navegador o cambiar de versión, exportar JSON como respaldo. Para detener el servidor local, pulsar Ctrl+C en la terminal.
+La PR #29 ya se integró en `main`; los antiguos paquetes de PR #25 y la rama `feat/hear-v2-inline-loudness` no representan necesariamente el estado actual. Descarga `main` y ejecuta `npm run beta` con Node.js 20+ en una carpeta de pruebas. Abre `http://127.0.0.1:8765/`, o consulta [HEAR-V2-BETA.md](./HEAR-V2-BETA.md).
 
-La versión de desarrollo **no** es una audiometría médica ni una calibración acústica certificada; no aumentar el volumen físico para perseguir frecuencias inaudibles.
+Exporta JSON antes de borrar o cambiar datos de perfil. Los orígenes local y publicado almacenan perfiles de forma independiente. El acceso al micrófono es opcional y exige permiso explícito. No des por completada la validación en hardware solo porque CI esté verde.
