@@ -3,7 +3,7 @@
 // An uncalibrated listening test is not an audiogram and never justifies aggressive boosts.
 const PERSONAL_SOUND_VERSION='personal-sound-v1';
 const PERSONAL_SOUND_MIN_LISTEN_MS=1800;
-let personalSoundPreview={profile:'',heardWith:false,heardWithout:false,mode:null,since:0};
+let personalSoundPreview={profile:'',signature:'',heardWith:false,heardWithout:false,mode:null,since:0};
 function personalSoundEqSignature(p,rows=recommend(p)){
  return p.id+'|'+p.bands.join(',')+'|'+rows.map(b=>b.f+':'+b.gain).join('|');
 }
@@ -29,8 +29,9 @@ function personalSoundStatus(p,rows=recommend(p)){
 }
 function personalSoundPreviewMark(mode,now=Date.now()){
  if(!current||!['with','without'].includes(mode))return;
- if(personalSoundPreview.profile!==current.id)
-  personalSoundPreview={profile:current.id,heardWith:false,heardWithout:false,mode:null,since:0};
+ const signature=personalSoundEqSignature(current);
+ if(personalSoundPreview.profile!==current.id||personalSoundPreview.signature!==signature)
+  personalSoundPreview={profile:current.id,signature,heardWith:false,heardWithout:false,mode:null,since:0};
  const state=personalSoundPreview;
  if(state.mode===mode)return;
  if(state.mode&&now-state.since>=PERSONAL_SOUND_MIN_LISTEN_MS){
@@ -53,7 +54,7 @@ function personalSoundReviewMarkup(p){
  const rating=m.verified==='better'?'Prefieres el sonido personalizado':
   m.verified==='same'?'No notaste una diferencia clara':
   m.verified==='worse'?'Prefieres el sonido original':null;
- const heard=personalSoundPreview.profile===p.id&&personalSoundPreview.heardWith&&personalSoundPreview.heardWithout;
+ const heard=personalSoundPreview.profile===p.id&&personalSoundPreview.signature===m.signature&&personalSoundPreview.heardWith&&personalSoundPreview.heardWithout;
  return '<div class="personal-sound-review" id="personalSoundReview">'+
   '<strong>¿Te gusta más el resultado?</strong>'+
   '<p class="tiny muted">Escucha tu música con el EQ encendido y apagado a volumen cómodo. La comparación es opcional; no cambia los umbrales. El ecualizador físico externo no se controla desde Hear.</p>'+
@@ -70,7 +71,7 @@ function personalSoundReviewMarkup(p){
 function personalSoundSaveReview(choice){
  if(!current||!['better','same','worse'].includes(choice))return false;
  const id=current.id;
- if(personalSoundPreview.profile!==id||!personalSoundPreview.heardWith||!personalSoundPreview.heardWithout)return false;
+ if(personalSoundPreview.profile!==id||personalSoundPreview.signature!==personalSoundEqSignature(current)||!personalSoundPreview.heardWith||!personalSoundPreview.heardWithout)return false;
  const status=personalSoundStatus(current);
  current.personalSoundReview={version:PERSONAL_SOUND_VERSION,choice,signature:status.signature,at:Date.now()};
  touch();render();
