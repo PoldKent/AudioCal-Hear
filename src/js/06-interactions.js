@@ -124,7 +124,7 @@ case 'retrymissing':if(current){
  }else uiAlert('Todos los umbrales programados ya están confirmados.');
 }break;
 case 'format':changeEqFormat();break;
-case 'bypass':eqBypass=!eqBypass;balancePreview=null;updatePlayerFilters(preferencePreview?previewTaste():null);if(playerAudio&&!playerAudio.paused){personalSoundPreviewMark(eqBypass?'without':'with');const node=$('#personalSoundReview');if(node)node.outerHTML=personalSoundReviewMarkup(current)}btn.textContent=eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ';break;
+case 'bypass':eqBypass=!eqBypass;balancePreview=null;updatePlayerFilters(preferencePreview?previewTaste():null);if(playerAudio&&!playerAudio.paused){personalSoundPreviewMark(eqBypass?'without':'with');const node=$('#personalSoundReview');if(node)node.outerHTML=personalSoundReviewMarkup(current)}btn.textContent=eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ';btn.setAttribute('aria-pressed',String(!eqBypass));localize(btn);break;
 case 'exportall':exportDownload('AudioCal_Hear_perfiles.json',JSON.stringify({app:'AudioCal Hear',version:1,profiles},null,2),'application/json');break;
 case 'import':$('#importInput')?.click();break;
 }}

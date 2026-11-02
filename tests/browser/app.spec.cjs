@@ -930,3 +930,22 @@ test('results headings and advanced EQ options are localized in all eight langua
   await noOverflow(page);
  }
 });
+
+test('music EQ bypass is an accessible toggle and remains optional',async({page})=>{
+ await newProfile(page,'Comparación accesible');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('#musicComparison')).not.toHaveAttribute('open');
+ await page.locator('#musicComparison > summary').click();
+ const toggle=page.locator('#bypassBtn');
+ await expect(toggle).toHaveAttribute('aria-pressed','true');
+ await toggle.click();
+ await expect(toggle).toHaveAttribute('aria-pressed','false');
+ await expect(toggle).toContainText('EQ DESACTIVADO');
+ await page.locator('#uiLanguage').selectOption('en');
+ await expect(toggle).toContainText('EQ OFF');
+ await toggle.click();
+ await expect(toggle).toHaveAttribute('aria-pressed','true');
+ await expect(toggle).toContainText('EQ ON');
+ await noOverflow(page);
+});
