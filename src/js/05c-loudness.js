@@ -63,6 +63,7 @@ async function playLoudnessSample(which,integrated=false){
  };
  if(db>LOUDNESS_REFERENCE_DBFS+LOUDNESS_OFFSET_LIMIT||db<LOUDNESS_REFERENCE_DBFS-LOUDNESS_OFFSET_LIMIT)return;
  try{
+  if(integrated&&trial)trial.awaiting=false;
   stopTone();if(playerAudio)playerAudio.pause();
   const ctx=await ensureAudio();
   if(current!==profile||
