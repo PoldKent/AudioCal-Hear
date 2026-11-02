@@ -1,0 +1,66 @@
+name: AudioCal Hear 2.0 beta bundle
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/**'
+      - 'tools/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'docs/HEAR-V2-BETA.md'
+      - '.github/workflows/beta-package.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  beta-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the proposed Hear 2.0 code
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate generated app and automated tests
+        run: npm run verify
+      - name: Prepare standalone Windows beta
+        run: |
+          set -euo pipefail
+          node --check tools/serve-beta.mjs
+          mkdir -p beta-dist
+          cp index.html beta-dist/index.html
+          cp tools/serve-beta.mjs beta-dist/serve-beta.mjs
+          cp tools/start-beta.cmd beta-dist/start-beta.cmd
+          cp docs/HEAR-V2-BETA.md beta-dist/README.md
+          test "$(wc -c < beta-dist/index.html)" -gt 100000
+      - name: Confirm offline local host serves the exact release file
+        run: |
+          set -euo pipefail
+          cd beta-dist
+          node serve-beta.mjs > ../beta-server.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 15); do
+            if curl --fail --silent --show-error --max-time 2 http://127.0.0.1:8765/ -o /tmp/hear-v2-beta-served.html; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/hear-v2-beta-served.html
+          cmp index.html /tmp/hear-v2-beta-served.html
+          if curl --fail --silent --max-time 2 http://127.0.0.1:8765/../../package.json >/dev/null; then
+            echo 'Unexpected server file access'
+            exit 1
+          fi
+      - name: Upload downloadable beta package for real-device testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: AudioCal-Hear-2-0-Beta
+          path: beta-dist/
+          if-no-files-found: error
+          retention-days: 14
