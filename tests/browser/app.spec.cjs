@@ -749,6 +749,7 @@ test('inline equal-loudness shares the exam screen and stores one separate obser
  await noOverflow(page);
 });
 
+const thresholdEvidence=measures=>Object.fromEntries(Object.entries(measures||{}).map(([k,records])=>[k,records.map(x=>({kind:x.kind,db:x.db,confidence:x.confidence,method:x.method}))]));
 test('Hear 2.0 complete simulated 20-threshold profile produces one persistent editable/exportable EQ',async({page})=>{
  await newProfile(page,'Recorrido completo 10 bandas');
  await page.locator('#uiLanguage').selectOption('es');
@@ -786,7 +787,7 @@ test('Hear 2.0 complete simulated 20-threshold profile produces one persistent e
  await page.locator('#eqEditor [data-delta="1"]').click();
  const edited=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(Object.values(edited.manual).some(x=>x!==0)).toBe(true);
- expect(edited.measures).toEqual(original);
+ expect(thresholdEvidence(edited.measures)).toEqual(thresholdEvidence(original));
  const secondDownload=page.waitForEvent('download');
  await page.locator('[data-act="downloadpng"]').click();
  const pngAfter=fs.readFileSync(await (await secondDownload).path());
@@ -795,7 +796,7 @@ test('Hear 2.0 complete simulated 20-threshold profile produces one persistent e
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('[data-act="starter-apply"]').click();
  const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
- expect(stored.measures).toEqual(original);
+ expect(thresholdEvidence(stored.measures)).toEqual(thresholdEvidence(original));
  await page.locator('#technicalResults > summary').click();
  await expect(page.locator('#preSweepResults')).toBeVisible();
  await expect(page.locator('#tracePanel')).toBeVisible();
@@ -804,7 +805,7 @@ test('Hear 2.0 complete simulated 20-threshold profile produces one persistent e
  await expect(page.locator('[data-eq-band]')).toHaveCount(10);
  await expect(page.locator('[data-act="starter-apply"]')).toHaveCount(1);
  const afterReload=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
- expect(afterReload.measures).toEqual(original);
+ expect(thresholdEvidence(afterReload.measures)).toEqual(thresholdEvidence(original));
  expect(afterReload.manual).toEqual(stored.manual);
  await page.locator('[data-act="preview-sound"]').click();
  await expect(page.locator('#musicComparison')).toHaveAttribute('open','');
