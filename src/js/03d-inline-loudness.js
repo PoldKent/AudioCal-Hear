@@ -39,7 +39,7 @@ function inlineLoudnessSummaryMarkup(p){
   x?.method===INLINE_LOUDNESS_VERSION&&Number.isInteger(x.offsetDb)&&Math.abs(x.offsetDb)<=6);
  if(!entries.length)return '';
  const label=k=>{const [f,side]=k.split('|');return fmt(Number(f))+' · '+(side==='left'?'izquierdo':side==='right'?'derecho':'ambos')};
- return '<details class="unobtrusive" id="inlineLoudnessResults"><summary>Sonoridad relativa registrada en la misma prueba · '+entries.length+' frecuencias/oídos</summary><div class="inner-detail">'+
+ return '<details class="unobtrusive" id="inlineLoudnessResults"><summary>Sonoridad relativa registrada en la misma prueba · '+entries.length+' registro(s)</summary><div class="inner-detail">'+
   entries.slice(0,40).map(([k,x])=>'<p class="small"><strong>'+esc(label(k))+'</strong>: '+(x.offsetDb>=0?'+':'')+x.offsetDb+' dBFS respecto a 1 kHz</p>').join('')+
   '<p class="tiny muted">Comparaciones subjetivas a nivel físico constante. No se traducen directamente a ganancias del ecualizador ni a pérdida auditiva.</p></div></details>';
 }
