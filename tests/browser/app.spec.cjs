@@ -775,19 +775,27 @@ test('Hear 2.0 complete simulated 20-threshold profile produces one persistent e
  await expect(page.locator('p.small.muted').filter({hasText:'10/10 frecuencias'})).toHaveCount(1);
  const original=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
  expect(Object.keys(original)).toHaveLength(20);
- await expect(page.locator('[data-act="starter-apply"]')).toBeEnabled();
+ await expect(page.locator('[data-act="starter-apply"]')).toHaveCount(1);
  const firstDownload=page.waitForEvent('download');
  await page.locator('[data-act="downloadpng"]').click();
  const pngBefore=fs.readFileSync(await (await firstDownload).path());
  expect(pngBefore.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
- await page.locator('[data-act="starter-apply"]').click();
- const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
- expect(stored.measures).toEqual(original);
- expect(Object.values(stored.manual).some(x=>x!==0)).toBe(true);
+ // The automatic proposal can already match the live EQ, so force a user edit
+ // before verifying the explicit Apply action and its confirmation.
+ await page.locator('[data-eq-select="1000"]').click();
+ await page.locator('#eqEditor [data-delta="1"]').click();
+ const edited=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(Object.values(edited.manual).some(x=>x!==0)).toBe(true);
+ expect(edited.measures).toEqual(original);
  const secondDownload=page.waitForEvent('download');
  await page.locator('[data-act="downloadpng"]').click();
  const pngAfter=fs.readFileSync(await (await secondDownload).path());
  expect(pngAfter.equals(pngBefore)).toBe(false);
+ await expect(page.locator('[data-act="starter-apply"]')).toBeEnabled();
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('[data-act="starter-apply"]').click();
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(stored.measures).toEqual(original);
  await page.locator('#technicalResults > summary').click();
  await expect(page.locator('#preSweepResults')).toBeVisible();
  await expect(page.locator('#tracePanel')).toBeVisible();
