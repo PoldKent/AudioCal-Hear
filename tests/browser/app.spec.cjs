@@ -817,7 +817,7 @@ test('Hear 2.0 complete simulated 20-threshold profile produces one persistent e
  await noOverflow(page);
 });
 
-test('completed uncertain hearing test offers a visible guided EQ path instead of a blank zero result',async({page})=>{
+test('completed uncertain hearing test keeps recommendations first and music optional',async({page})=>{
  await newProfile(page,'Umbrales inciertos');
  await page.locator('#uiLanguage').selectOption('es');
  await page.evaluate(()=>{
@@ -832,17 +832,48 @@ test('completed uncertain hearing test offers a visible guided EQ path instead o
  });
  await page.reload();
  await page.locator('[data-nav="results"]').click();
- await expect(page.locator('#personalSoundFinish')).toBeVisible();
- await expect(page.locator('#personalSoundFinish')).toContainText('falta personalizar el sonido');
+ await expect(page.locator('#starterGuide')).toBeVisible();
  await expect(page.locator('#eqChangeCount')).toContainText('0 cambios');
+ await expect(page.locator('#personalSoundFinish')).toHaveCount(0);
+ await expect(page.locator('#musicComparison')).not.toHaveAttribute('open','');
+ await expect(page.locator('#musicFile')).not.toBeVisible();
  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
- await page.locator('[data-act="finish-sound"]').click();
- await expect(page.locator('#musicComparison')).toHaveAttribute('open','');
- await expect(page.locator('#toneBalance')).toHaveAttribute('open','');
- await expect(page.locator('#balanceTrainer')).toBeVisible();
- await page.locator('[data-balance-preview="A"]').click();
- await expect(page.locator('#balanceFeedback')).toContainText('Primero selecciona una canción');
+ await page.locator('[data-act="previous-frequency"]').click();
+ await expect(page.locator('#preSweepPanel')).toBeVisible();
  const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
- expect(after).toEqual(before);
+ expect(Object.keys(after).length).toBe(Object.keys(before).length-2);
+ await noOverflow(page);
+});
+test('16 kHz first inaudible presentation increases digital dBFS and remains in the same band',async({page})=>{
+ await newProfile(page,'Prueba 16 kHz');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.evaluate(()=>{
+  const store='audiocal-hear-profiles-v1',all=JSON.parse(localStorage.getItem(store));
+  const profile=all[0];
+  for(const f of profile.bands){
+   if(f===16000)continue;
+   for(const side of ['left','right']){
+    profile.measures[f+'|'+side]=[{kind:'heard',db:-54,confidence:'low'}];
+   }
+  }
+  localStorage.setItem(store,JSON.stringify(all));
+ });
+ await page.reload();
+ // Channel checks must be repeated when reopening a profile in another session.
+ await page.locator('[data-nav="test"]').click();
+ await page.locator('[data-act="checkleft"]').click();
+ await page.locator('[data-act="confirmleft"]').click();
+ await page.locator('[data-act="checkright"]').click();
+ await page.locator('[data-act="confirmright"]').click();
+ await page.locator('[data-act="introNext"]').click();
+ await expect(page.locator('.frequency')).toContainText('16 kHz');
+ await expect(page.locator('#levelText')).toContainText('-36 dBFS');
+ await page.locator('[data-act="play"]').click();
+ await page.locator('[data-act="answerNo"]').click();
+ await expect(page.locator('#levelText')).toContainText('-33 dBFS');
+ await expect(page.locator('#testBoostNotice')).toBeVisible();
+ await expect(page.locator('.frequency')).toContainText('16 kHz');
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
+ expect(stored['16000|left']).toBeUndefined();
  await noOverflow(page);
 });
