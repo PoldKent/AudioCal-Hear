@@ -44,6 +44,7 @@ test('review requires comparison modes and becomes stale when EQ changes',()=>{
  assert.equal(sandbox.personalSoundStatus(p).verified,'better');
  p.gains[1]=2;
  assert.equal(sandbox.personalSoundStatus(p).verified,null);
+ assert.equal(sandbox.personalSoundSaveReview('better'),false,'a new EQ requires a fresh A/B comparison');
  assert.equal(JSON.stringify(p.measures),saved);
 });
 test('malformed review values cannot be applied as hearing evidence',()=>{
