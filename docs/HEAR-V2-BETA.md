@@ -19,7 +19,7 @@ El servidor responde únicamente en `127.0.0.1` (tu computadora) y sirve el HTML
 1. En la versión publicada, abre **Mis perfiles → Respaldo de perfiles → Exportar todo** y guarda el JSON. No borres nada.
 2. En la beta, entra en **Mis perfiles → Respaldo de perfiles → Importar JSON** e importa **una copia**. No se modificará el perfil del sitio publicado. Si prefieres, crea un perfil nuevo para tus auriculares.
 3. Conecta los auriculares al mismo ordenador, configura el volumen físico **bajo, cómodo y constante** y comprueba los canales izquierdo y derecho.
-4. El barrido previo es **opcional**. Puedes contestar «Lo escucho / No lo escucho», pero ese mapa no se convierte directamente en ganancias ni demuestra la capacidad independiente del oído o del equipo.
+4. El barrido previo es **opcional**. Ahora ralentiza el recorrido hasta 250 Hz y, en el rango ampliado, de 15 a 16 kHz. El modo normal dura unos 30 s (125–8.000 Hz) y el ampliado unos 44 s (40–16.000 Hz), siempre limitado por la frecuencia de muestreo de la salida. Puedes contestar «Lo escucho / No lo escucho», pero ese mapa no se convierte directamente en ganancias ni demuestra la capacidad independiente del oído o del equipo.
 5. Realiza la prueba de umbrales. Las comparaciones de sonoridad de cada frecuencia son opcionales y se registran aparte.
 
 ## Comprobar el resultado HearID-like
