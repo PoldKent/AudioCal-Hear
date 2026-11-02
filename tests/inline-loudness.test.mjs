@@ -46,3 +46,10 @@ test('relative match is present only as technical evidence, never direct EQ gain
  const automatic=eq.slice(eq.indexOf('function estimateThresholdContrast('),eq.indexOf('function recommend(p)'));
  assert.doesNotMatch(automatic,/loudnessInline|offsetDb/);
 });
+
+test('a comparison tone cannot be mistaken for a threshold answer',()=>{
+ const testSource=fs.readFileSync('src/js/03-hearing-test.js','utf8');
+ assert.match(testSource,/tone&&tone.mode!=='test'/);
+ const audio=fs.readFileSync('src/js/05c-loudness.js','utf8');
+ assert.match(audio,/if\(integrated&&trial\)trial.awaiting=false/);
+});
