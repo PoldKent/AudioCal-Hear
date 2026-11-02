@@ -662,7 +662,7 @@ function newTrial(entry){
  // Both passes start without any threshold borrowed from earlier measurements.
  // The second run is a new adaptive search, not a confirmation of pass 1.
  return {id:key(entry.f,entry.side)+'-'+entry.pass,
-  level:getStart(current),phase:'coarse',heard:null,missed:null,
+  level:getStart(current),phase:'coarse',heard:null,missed:null,initialBoosts:0,
   verifyIndex:0,done:0,awaiting:false,highConsent:false,listenedSeconds:0,
   history:[],lastTone:null};
 }
@@ -707,7 +707,17 @@ function nextTrialLevel(t,heard,p){
  if(t.phase==='coarse'){
   if(heard){t.heard=t.level;if(t.level<=floor)return 'stillheard';t.level=Math.max(floor,t.level-12);return 'next';}
   t.missed=t.level;
-  if(t.heard===null)return 'unheard';
+  if(t.heard===null){
+   // A first inaudible presentation is not a complete threshold: step up
+   // the digital tone only after a new user action, never physical volume.
+   const cap=p.type==='headphones'?-24:Math.max(-24,getStart(p));
+   if(t.level<cap&&t.done<MAX_STEPS){
+    t.level=Math.min(cap,t.level+3);
+    t.initialBoosts=(t.initialBoosts||0)+1;
+    return 'next';
+   }
+   return 'unheard';
+  }
   t.phase='refine';
  }else if(t.phase==='refine'){
   if(heard)t.heard=t.level;else t.missed=t.level;
@@ -873,6 +883,36 @@ function renderIntro(){
  ${button('Comenzar examen completo →','introNext','btn-primary full bigbutton')}
  </section>`;
 }
+// Rewind the previous completed frequency in the same independent pass,
+// preserving the rest of the measurements for both ears and other passes.
+function previousFrequencyEntries(p){
+ const entries=plan(p),idx=firstMissing(p);
+ if(!entries.length)return [];
+ const here=idx>=0?entries[idx]:null;
+ let at=idx>=0?idx-1:entries.length-1;
+ while(at>=0&&here&&entries[at].f===here.f&&entries[at].pass===here.pass)at--;
+ if(at<0)return [];
+ const target=entries[at];
+ return entries.filter(x=>x.f===target.f&&x.pass===target.pass);
+}
+function hasPreviousFrequency(p){return previousFrequencyEntries(p).some(entry=>recorded(p,entry))}
+function rewindPreviousFrequency(){
+ if(!current)return false;
+ const entries=previousFrequencyEntries(current);
+ if(!entries.length)return false;
+ if(!uiConfirm('¿Volver a '+fmt(entries[0].f)+'? Se repetirán las mediciones de esa frecuencia y pasada, conservando las demás.'))return false;
+ stopTone();if(playerAudio)playerAudio.pause();
+ for(const entry of entries){
+  const k=key(entry.f,entry.side),samples=current.measures[k];
+  if(!Array.isArray(samples))continue;
+  delete samples[entry.pass];
+  if(!samples.some(x=>x!==undefined))delete current.measures[k];
+ }
+ trial=null;awaitNext=false;floorReached=false;sampleNote='';
+ lastResultKind=null;lastRecordedEntry=null;
+ introStep=3;touch();nav('test');
+ return true;
+}
 function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea un perfil</h1><p>Elige tu ecualizador y el dispositivo que vas a calibrar.</p>${button('Ir a configurar','setup','btn-primary')}</section>`;
  if(introStep<3||!channelsReady(current)||(needsVolumePreview(current)&&!volumeReady)){introStep=0;return renderIntro();}
  const p=current,items=plan(p),total=items.length,missing=firstMissing(p);
@@ -886,12 +926,13 @@ function renderTest(){if(!current)return `<section class="hero"><h1>Primero crea
  <section class="card"><div class="row" style="justify-content:space-between"><strong data-profile-name="true">${esc(p.name)}</strong><span class="tag">${doneCount(p)+1} / ${total}</span></div>
  <div class="progress" style="margin:11px 0"><div style="width:${pct}%"></div></div><p class="center small muted">${keyName} · ${phase} · Búsqueda independiente ${item.pass+1}/${p.passes}</p>
  <div class="wavebox"><span class="muted small">FRECUENCIA ACTUAL</span><div class="frequency">${fmt(item.f)}</div><p class="small muted">Nivel de la prueba: <strong id="levelText">${level} dBFS</strong></p><div class="wave" aria-hidden="true" id="waves">${Array.from({length:32},(_,i)=>`<span style="height:${6+Math.round(Math.abs(Math.sin(i*.71)*30))}px"></span>`).join('')}</div></div>
+ ${trial.initialBoosts>0&&trial.heard===null?'<div class="soft info small" id="testBoostNotice"><strong>Primeros intentos no audibles.</strong> Se aumentó el nivel digital de esta frecuencia de forma gradual (+3 dBFS por intento), sin cambiar el volumen físico. Reproduce el nuevo tono cuando estés cómodo; si sigue inaudible al límite, se guardará como límite y no como umbral inventado.</div>':''}
  <div class="soft center"><strong>${active?'Escuchando · 3 segundos':trial.awaiting?'¿Escuchaste el sonido?':'Listo para esta frecuencia'}</strong><p class="small muted">${phase} · ${trial.done}/${MAX_STEPS} niveles examinados</p>${active?`<span class="hold-time" id="holdSeconds">3.0 s</span><div class="hold-meter"><div id="holdProgress"></div></div>`:''}</div>
  ${floorReached?'':(trial.awaiting||active)?`<div class="mini-options"><button class="choice" type="button" data-act="answerYes"><strong>✓ Sí lo escucho</strong><span>Interrumpir y registrar</span></button><button class="choice" type="button" data-act="answerNo"><strong>✕ No lo escucho</strong><span>Interrumpir y registrar</span></button></div>${trial.awaiting&&!active?'<p class="tiny center muted">Puedes repetir el nivel antes de contestar.</p>'+button('▶ Reproducir este nivel','play','btn-ghost full'):''}`:
  button('▶ Reproducir nivel · '+level+' dBFS','play','btn-primary full bigbutton')}
  ${floorReached?`<div class="soft info center"><strong>Se alcanzó ${getFloor(p)} dBFS</strong><p class="small">Si seguías escuchando el tono, regístralo. Eso NO implica reducir automáticamente el EQ.</p>${button('Lo seguía escuchando','endheard','btn-alt full')}${button('No estoy seguro','enduncertain','btn-ghost full')}</div>`:''}
  ${inlineLoudnessMarkup(p)}
- <div class="row wrap" style="margin-top:12px">${button('■ Detener','stopaudio','btn-ghost grow')}${button('Reiniciar frecuencia','retry','btn-ghost grow')}</div><p class="tiny muted center">${getStart(p)} a ${getFloor(p)} dBFS · no son niveles acústicos. No uses el volumen máximo ni lo aumentes para buscar tonos inaudibles.</p></section>`;
+ <div class="row wrap" style="margin-top:12px">${button('← Empezar frecuencia anterior','previous-frequency','btn-alt grow',hasPreviousFrequency(p)?'':'disabled')}${button('■ Detener','stopaudio','btn-ghost grow')}${button('Reiniciar frecuencia','retry','btn-ghost grow')}</div><p class="tiny muted center">${getStart(p)} a ${getFloor(p)} dBFS · no son niveles acústicos. No uses el volumen máximo ni lo aumentes para buscar tonos inaudibles.</p></section>`;
 }
 // Three seconds per tone, explicit yes/no answers. A skipped tap never becomes an audible response.
 function getElapsed(){return tone?.mode==='test'&&audioCtx?Math.max(0,audioCtx.currentTime-tone.start):0}
@@ -931,7 +972,9 @@ async function playTone(check=false,checkSide='both',previewDb=null){
   if(!check&&needsVolumePreview(current)&&!volumeReady){uiAlert('Completa primero la comprobación progresiva de volumen.');return}
   const db=isPreview?previewDb:check?-42:trial.level;
   if(db>maxTestStart(current||temp)||db>DIGITAL_REFERENCE_DBFS||db<TEST_END_DB){uiAlert('Nivel digital fuera del rango permitido para este equipo.');return}
-  if(db>getStart(current||temp)&&!check)return;
+  if(!check&&db>getStart(current||temp)&&
+     !(trial?.phase==='coarse'&&trial?.heard===null&&trial?.initialBoosts>0&&
+       db<=(current.type==='headphones'?-24:Math.max(-24,getStart(current)))))return;
   if(db>=-30&&!check&&!trial.highConsent&&!(needsVolumePreview(current)&&volumeReady)){if(!uiConfirm('Nivel digital alto ('+db+' dBFS). Puede ser demasiado fuerte. Nunca uses el volumen máximo. ¿Quieres continuar a volumen bajo y cómodo?'))return;trial.highConsent=true;}
   const osc=ctx.createOscillator(),gain=ctx.createGain(),pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
   osc.type='sine';osc.frequency.value=freq;
@@ -1253,30 +1296,6 @@ function personalSoundStatus(p,rows=recommend(p)){
   'Umbrales digitales registrados. La curva sigue siendo experimental y requiere comprobación perceptiva.';
  return {grade,tip,measured,good,provisional,tuned,verified,signature:sig,completed,
   hasSweep:!!Object.keys(p.sweepRecords||{}).length,version:PERSONAL_SOUND_VERSION};
-}
-// When the completed threshold test cannot justify a non-zero EQ, make the
-// existing music-based, conservative adjustment workflow the main next step.
-// No made-up gain is calculated from contradictory dBFS thresholds.
-function personalSoundFinishMarkup(p,rows=recommend(p)){
- if(!p||doneCount(p)<plan(p).length)return '';
- const checked=suggestedBalanceBands(p);
- const compared=checked.filter(f=>Array.isArray(p.balanceProof?.[f])&&p.balanceProof[f].some(x=>x?.method==='music-ab-two-rounds')).length;
- const changes=rows.filter(x=>x.gain!==0).length;
- const allNeutral=changes===0,completed=checked.length>0&&compared===checked.length;
- const header=completed?'Tu EQ se ha revisado escuchando música':
-  allNeutral?'Tu test está completo; falta personalizar el sonido':
-  'Termina de comprobar tu ecualizador';
- const explanation=allNeutral?
-  'Las mediciones presentan incertidumbre o diferencias entre oídos. Hear no debe inventar ganancias: por eso el ajuste inicial está en 0 dB. No necesitas repetir todo el examen.':
-  'Los cambios actuales siguen siendo experimentales. Compáralos con tu música para decidir qué bandas prefieres corregir.';
- return '<div class="personal-sound-finish" id="personalSoundFinish" role="region" aria-label="Terminar personalización de sonido">'+
-  '<strong>'+header+'</strong>'+
-  '<p class="small">'+explanation+'</p>'+
-  '<p class="small"><strong>'+compared+'/'+checked.length+' bandas comparadas con música</strong> · '+changes+
-   ' banda(s) con ajustes distintos de cero. Que todas permanezcan neutras también puede ser una decisión válida.</p>'+
-  '<p class="tiny muted">Escucharás dos variantes por banda, dos veces con el orden invertido. Solo tus preferencias coherentes generan pequeños cambios; tus umbrales originales no se modifican. El ajuste físico de otro equipo sigue siendo manual.</p>'+
-  button(completed?'↺ Revisar la personalización':'▶ Terminar mi ecualizador con música','finish-sound','btn-primary full')+
-  '</div>';
 }
 function personalSoundPreviewMark(mode,now=Date.now()){
  if(!current||!['with','without'].includes(mode))return;
@@ -1605,8 +1624,6 @@ function refreshResultsUI(){
  const pref=document.querySelector('#prefRound');if(pref)pref.innerHTML=preferenceMarkup();
  // The proposal and listening verdict depend on the live EQ signature.
  // Updating only the bars left the Apply button and verdict stale after manual edits.
- const finish=$('#personalSoundFinish');
- if(finish){const temp=document.createElement('div');temp.innerHTML=personalSoundFinishMarkup(current,r);if(temp.firstElementChild)finish.replaceWith(temp.firstElementChild)}
  const starter=$('#starterGuide');
  if(starter){const fresh=document.createElement('div');fresh.innerHTML=starterEqMarkup(current,r);if(fresh.firstElementChild)starter.replaceWith(fresh.firstElementChild)}
  const review=$('#personalSoundReview');
@@ -1967,12 +1984,11 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  if(!r.some(x=>x.f===selectedEqFreq))selectedEqFreq=r[0]?.f||null;
  lastRenderedEqSignature=p.id+'|'+r.map(b=>b.f+':'+b.gain).join('|');
  const reliable=coverage.enough&&coverage.candidates>0;
- const status=!coverage.enough?'Cobertura insuficiente para EQ automático; ajustes personales separados.':coverage.candidates===0?'Sin bandas vecinas elegibles para EQ automático: salida neutra, sin inventar corrección.':'Contrastes locales experimentales (v2) + ajustes personales.';
+ const status=!coverage.enough?'Umbrales guardados, pero cobertura limitada para una corrección automática fiable.':coverage.candidates===0?'Umbrales guardados; sin contraste local suficiente para modificar el EQ.':'Contrastes locales experimentales (v2) + ajustes personales.';
  return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">AUDIOCAL · RESULTADOS</p><h1>Tu resultado auditivo</h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
  <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Tu ecualizador · ${p.bands.length} bandas</h2><span class="tag" id="eqChangeCount">${r.filter(x=>x.gain!==0).length} cambios</span></div>
- <p class="small muted">${usable}/${p.bands.length} frecuencias con umbral digital registrado${p.channels==='separate'?' en ambos oídos':''}. Valores actuales en dB, editables y guardados en este perfil.</p>
+ <p class="small muted">${usable}/${p.bands.length} frecuencias con umbral digital estimado${p.channels==='separate'?' para ambos oídos':''}. El EQ inicial es una propuesta conservadora basada en la evidencia disponible; 0 dB significa que no se justifica corregir esa banda, no que hayas fallado el examen.</p>
  ${starterEqMarkup(p,r)}
- ${personalSoundFinishMarkup(p,r)}
  <div class="eq-stage"><div class="tiny muted">TOCA UNA BARRA · DESLIZA PARA VER MÁS →</div><div class="equalizer"><div class="eqgrid">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-label="Editar ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
  <div class="eq-util">${button('⎘ Copiar ajustes','copy','btn-alt')}${button('↓ Guardar PNG','downloadpng','btn-ghost')}${button('↺ Reiniciar','clearmanual','btn-ghost')}</div>
@@ -1986,10 +2002,11 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  ${usable<p.bands.length?`<p class="small muted">${p.bands.length-usable} bandas no tienen ambos umbrales. El test ya conservó los límites observados. Solo repite voluntariamente si quieres mejorar la evidencia. ${button('↺ Repetir bandas sin umbral','retrymissing','btn-ghost')}</p>`:''}
  </div></details>
  <details class="unobtrusive"><summary>Más opciones de ecualización</summary><div class="inner-detail"><div class="row wrap">${button('Cambiar formato de bandas','format','btn-ghost grow')}${button('Descargar TXT','downloadtxt','btn-ghost grow')}</div></div></details>
+ <div class="row wrap">${button('← Repetir frecuencia anterior','previous-frequency','btn-ghost grow',hasPreviousFrequency(p)?'':'disabled')}</div>
  <p id="copyStatus" class="status" role="status"></p></section>
- <div class="results-side"><details class="unobtrusive music-options" id="musicComparison"><summary>🎵 Comparar con música · opcional</summary><div class="inner-detail"><p class="compact-note">Escucha tu EQ frente al original con una canción propia. La comparación es opcional y solo afecta al sonido de esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button>${personalSoundReviewMarkup(p)}</div></details>
+ <div class="results-side"><details class="unobtrusive music-options" id="musicComparison"><summary>🎵 Opcional después del EQ · comparar con música</summary><div class="inner-detail"><p class="compact-note">Escucha tu EQ frente al original con una canción propia. La comparación es opcional y solo afecta al sonido de esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button>${personalSoundReviewMarkup(p)}</div></details>
  <details class="card transfer-card optional-tool"><summary>Aplicar ajustes en otro equipo o app</summary><div class="inner-detail"><div id="transferPanel">${transferMarkup()}</div></div></details>
- <details class="unobtrusive balance-card" id="toneBalance"><summary>🎛️ Terminar mi ecualizador · comparar bandas A/B</summary><div class="inner-detail"><p class="compact-note">Puedes confirmar qué suena mejor con comparaciones de una canción. Estos cambios son opcionales y no alteran las mediciones auditivas.</p><div id="balanceTrainer">${balanceMarkup()}</div></div></details>
+ <details class="unobtrusive balance-card" id="toneBalance"><summary>🎛️ Opcional · refinar bandas con música</summary><div class="inner-detail"><p class="compact-note">Puedes confirmar qué suena mejor con comparaciones de una canción. Estos cambios son opcionales y no alteran las mediciones auditivas.</p><div id="balanceTrainer">${balanceMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>🎧 Personalizar graves, voces y brillo <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="compact-note">Con la canción reproduciéndose, escucha A y B durante varios segundos y elige qué suena mejor. Mantén el volumen fijo.</p><div id="prefRound">${preferenceMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>Seguridad y límites de precisión</summary><div class="inner-detail"><p class="compact-note">Los niveles dBFS de la prueba no miden la presión sonora en el oído. Evita subir niveles para buscar tonos inaudibles y reduce los ajustes si aparece distorsión o molestia. Si ambos oídos comparten ecualización, no se corrigen por separado.</p></div></details></div></div></div>`}
 function deviceIcon(p){return p.type==='car'?'🚗':p.type==='headphones'?'🎧':'🔊'}
@@ -2484,6 +2501,7 @@ case 'retryrecord':if(current&&lastRecordedEntry&&lastResultKind==='unconfirmed'
  }break;
  case 'next':awaitNext=false;floorReached=false;trial=null;sampleNote='';render();break;
 case 'retry':awaitNext=false;floorReached=false;trial=null;sampleNote='';stopTone();render();break;
+case 'previous-frequency':rewindPreviousFrequency();break;
 case 'resettest':if(current&&uiConfirm('Se borrarán las mediciones de este perfil, pero no los demás perfiles.')){current.measures={};current.loudness={};current.loudnessInline={};current.manual={};awaitNext=false;floorReached=false;trial=null;resetChannelCheck();resetVolumePreview();introStep=0;sampleNote='';touch();render()}break;
 case 'transfer-open':transferOpen=true;transferStep=0;transferBandIndex=0;transferStatus='';refreshTransfer();break;
 case 'transfer-close':transferOpen=false;refreshTransfer();break;
@@ -2508,19 +2526,6 @@ case 'starter-apply':if(current){
   if(transferOpen)transferStatus='Cambió el EQ; revisa los controles físicos antes de aplicarlos.';
   touch();render();
  }break;
-}
-case 'finish-sound':if(current){
- const music=$('#musicComparison'),balance=$('#toneBalance');
- if(music)music.open=true;
- if(balance)balance.open=true;
- if(!balanceQueue.length||!current.bands.includes(balanceFreq))resetBalanceSession(current);
- balanceStatus=playerUrl?'Pulsa reproducir, escucha A y B durante al menos dos segundos cada una y elige tu preferencia.':
-  'Carga una canción local y pulsa reproducir; después compara A y B en el panel que se ha abierto.';
- refreshBalanceUI();
- const target=playerUrl?$('#toneBalance'):$('#musicComparison');
- target?.scrollIntoView({behavior:'smooth',block:'start'});
- if(!playerUrl)$('#musicFile')?.focus();else $('#balanceFrequency')?.focus();
- break;
 }
 case 'preview-sound':if(current){
  const panel=$('#musicComparison');if(panel){panel.open=true;panel.scrollIntoView({behavior:'smooth',block:'start'});$('#musicFile')?.focus()}
