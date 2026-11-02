@@ -385,7 +385,17 @@ function nextTrialLevel(t,heard,p){
  if(t.phase==='coarse'){
   if(heard){t.heard=t.level;if(t.level<=floor)return 'stillheard';t.level=Math.max(floor,t.level-12);return 'next';}
   t.missed=t.level;
-  if(t.heard===null)return 'unheard';
+  if(t.heard===null){
+   // A first inaudible presentation is not a complete threshold: step up
+   // the digital tone only after a new user action, never physical volume.
+   const cap=p.type==='headphones'?-24:Math.max(-24,getStart(p));
+   if(t.level<cap&&t.done<MAX_STEPS){
+    t.level=Math.min(cap,t.level+3);
+    t.initialBoosts=(t.initialBoosts||0)+1;
+    return 'next';
+   }
+   return 'unheard';
+  }
   t.phase='refine';
  }else if(t.phase==='refine'){
   if(heard)t.heard=t.level;else t.missed=t.level;
