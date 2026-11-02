@@ -34,6 +34,15 @@ function inlineLoudnessMarkup(p){
   '<p class="tiny muted" id="inlineLoudnessStatus" role="status">'+esc(inlineLoudnessMessage||(saved?'Comparación anterior guardada: '+(saved.offsetDb>=0?'+':'')+saved.offsetDb+' dBFS; puedes continuar el test.':'Primero escucha ambas señales. Esta observación no modifica el EQ.'))+'</p>'+
   '</div></details>';
 }
+function inlineLoudnessSummaryMarkup(p){
+ const entries=Object.entries(p.loudnessInline||{}).filter(([k,x])=>/^\\d+(?:\\.\\d+)?\\|(both|left|right)$/.test(k)&&
+  x?.method===INLINE_LOUDNESS_VERSION&&Number.isInteger(x.offsetDb)&&Math.abs(x.offsetDb)<=6);
+ if(!entries.length)return '';
+ const label=k=>{const [f,side]=k.split('|');return fmt(Number(f))+' · '+(side==='left'?'izquierdo':side==='right'?'derecho':'ambos')};
+ return '<details class="unobtrusive" id="inlineLoudnessResults"><summary>Sonoridad relativa registrada en la misma prueba · '+entries.length+' frecuencias/oídos</summary><div class="inner-detail">'+
+  entries.slice(0,40).map(([k,x])=>'<p class="small"><strong>'+esc(label(k))+'</strong>: '+(x.offsetDb>=0?'+':'')+x.offsetDb+' dBFS respecto a 1 kHz</p>').join('')+
+  '<p class="tiny muted">Comparaciones subjetivas a nivel físico constante. No se traducen directamente a ganancias del ecualizador ni a pérdida auditiva.</p></div></details>';
+}
 function inlineLoudnessRefresh(){
  const panel=$('#inlineLoudnessInner'),entry=inlineLoudnessEntry(current);
  if(!panel||!entry)return;
