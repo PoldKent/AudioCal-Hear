@@ -46,3 +46,14 @@ No usar el test de audición para inferir la respuesta del preamplificador. Se r
 Guardar solamente los perfiles y capturas relevantes, sin nombres personales ni grabaciones privadas: equipo/tipo, versión de Hear, navegador y OS, número de bandas, número de umbrales, capturas antes/después y observaciones de escucha. Reportar incidencias en el [issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26).
 
 **Puerta de publicación:** CI completo en la última revisión + QA visual y de dispositivo real. Mientras falte esa evidencia, mantener el trabajo en PR de desarrollo, no afirmar equivalencia probada con HearID.
+
+
+## Ejecutar una copia local de la beta sin afectar la web publicada
+
+1. Descargar la rama `feat/hear-v2-inline-loudness` del repositorio como ZIP y extraerla en una carpeta nueva. No copiar encima de la instalación habitual.
+2. Abrir una terminal en esa carpeta y ejecutar `python -m http.server 8000` (o `py -m http.server 8000` en Windows). Acceder a `http://localhost:8000` en el navegador.
+3. Para comprobar solo el resultado existente, exportar primero el perfil desde la versión antigua y después importarlo en la copia local. Se guardará en el almacenamiento propio de `localhost`, separado del sitio publicado.
+4. Si se desea usar el micrófono, conceder el permiso solo cuando se solicita explícitamente; rechazarlo no debe impedir completar la prueba auditiva.
+5. Antes de borrar datos del navegador o cambiar de versión, exportar JSON como respaldo. Para detener el servidor local, pulsar Ctrl+C en la terminal.
+
+La versión de desarrollo **no** es una audiometría médica ni una calibración acústica certificada; no aumentar el volumen físico para perseguir frecuencias inaudibles.
