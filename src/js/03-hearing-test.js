@@ -121,7 +121,7 @@ function logMeasure(kind){
  trial=null;stopTone();floorReached=false;awaitNext=false;touch();render();
 }
 function answerTone(heard){
- if(!current||!trial||!trial.awaiting)return;
+ if(!current||!trial||!trial.awaiting||(tone&&tone.mode!=='test'))return;
  if(tone?.mode==='test')trial.listenedSeconds=(trial.listenedSeconds||0)+Math.max(0,Math.min(SECONDS_PER_DB,getElapsed()));
  stopTone();trial.awaiting=false;trial.done++;
  trial.history.push({db:trial.level,heard});
