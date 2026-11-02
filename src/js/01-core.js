@@ -340,7 +340,7 @@ function newTrial(entry){
  // Both passes start without any threshold borrowed from earlier measurements.
  // The second run is a new adaptive search, not a confirmation of pass 1.
  return {id:key(entry.f,entry.side)+'-'+entry.pass,
-  level:getStart(current),phase:'coarse',heard:null,missed:null,
+  level:getStart(current),phase:'coarse',heard:null,missed:null,initialBoosts:0,
   verifyIndex:0,done:0,awaiting:false,highConsent:false,listenedSeconds:0,
   history:[],lastTone:null};
 }
