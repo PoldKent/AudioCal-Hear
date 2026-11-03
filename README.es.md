@@ -6,7 +6,7 @@
 
 **AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite escuchar tonos a diferentes niveles digitales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
 
-**[Abrir versión preliminar actual](https://poldkent.github.io/AudioCal-Hear/)** · [Hoja de ruta Hear 2.0](docs/HEAR-V2-ROADMAP.md) · [QA con dispositivos reales](docs/HEAR-V2-DEVICE-QA.md) · [QA de accesibilidad](docs/HEAR-V2-ACCESSIBILITY-QA.md) · [Historial](CHANGELOG.es.md)
+**[Abrir Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Decisiones de producto](docs/HEAR-V2-PRODUCT-DECISIONS.md) · [Hoja de ruta](docs/HEAR-V2-ROADMAP.md) · [Historial](CHANGELOG.es.md)
 
 > **Código actual: v1.11.0 · versión preliminar Hear 2.0 · noviembre de 2026.** La aplicación publicada en GitHub Pages es un asistente experimental, no una audiometría clínica ni un instrumento acústico calibrado. Las pruebas automatizadas no verifican rutas Bluetooth, niveles físicos de sonido ni respuesta de equipos reales.
 

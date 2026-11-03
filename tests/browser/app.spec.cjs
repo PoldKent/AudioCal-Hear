@@ -643,7 +643,7 @@ test('headphone preparation only requires tone channel confirmation',async({page
  await newProfile(page,'Canales de auriculares');
  await expect(page.locator('#preSweepPanel')).toHaveCount(0);
  await expect(page.locator('#inlineLoudness')).toHaveCount(0);
- await expect(page.locator('#ambientCheck')).toBeVisible();
+ await expect(page.locator('#ambientCheck')).toHaveCount(0);
  await passPreparation(page);
  await expect(page.locator('#levelText')).toContainText('dBFS');
  await noOverflow(page);
@@ -757,7 +757,7 @@ test('completed uncertain hearing test keeps recommendations first and music opt
  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('[data-act="previous-frequency"]').click();
- await expect(page.locator('#ambientCheck')).toBeVisible();
+ await expect(page.locator('#levelText')).toBeVisible();
  const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
  expect(Object.keys(after).length).toBe(Object.keys(before).length-2);
  await noOverflow(page);
@@ -903,46 +903,15 @@ test('the live frequency announcement follows all eight languages without changi
  const after=await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures));
  expect(after).toBe(before);
 });
-test('denied optional microphone access does not hide its result or change hearing evidence',async({page})=>{
- await newProfile(page,'Micrófono denegado');
- await page.locator('#uiLanguage').selectOption('es');
- await page.evaluate(()=>{
-  Object.defineProperty(navigator,'mediaDevices',{
-   configurable:true,
-   value:{getUserMedia:()=>Promise.reject(new Error('Permission denied'))}
-  });
- });
- const before=await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures));
- await page.locator('#ambientCheck > summary').click();
- await page.locator('#ambientCheck [data-act="ambient"]').click();
- await expect(page.locator('#ambientCheck')).toHaveAttribute('open','');
- await expect(page.locator('#ambientStatus')).toContainText('permiso denegado');
- await expect(page.locator('#ambientCheck > summary')).toBeFocused();
- expect(await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures))).toBe(before);
+test('tone-only examination does not display optional microphone sampling',async({page})=>{
+ await newProfile(page,'Solo tonos sin micrófono');
+ await expect(page.locator('#ambientCheck')).toHaveCount(0);
+ await expect(page.locator('[data-act="ambient"]')).toHaveCount(0);
  await passPreparation(page);
- await expect(page.locator('#levelText')).toContainText('dBFS');
+ await expect(page.locator('#levelText')).toBeVisible();
+ await noOverflow(page);
 });
 
-// A suspended AudioContext may resolve after stop/navigation. No stale oscillator may start.
-async function deferAudioResume(page){
- await page.evaluate(()=>{
-  window.__hearOscillatorStarts=0;
-  window.__hearResumePending=false;
-  class DeferredAudioContext{
-   constructor(){this.state='suspended';this.sampleRate=48000;this.currentTime=0;}
-   resume(){window.__hearResumePending=true;return new Promise(resolve=>{
-    window.__hearReleaseResume=()=>{this.state='running';resolve()};
-   });}
-   createOscillator(){window.__hearOscillatorStarts++;throw new Error('Stale oscillator scheduled');}
-  }
-  Object.defineProperty(window,'AudioContext',{configurable:true,value:DeferredAudioContext});
- });
-}
-async function releaseAudioResume(page){
- await expect.poll(()=>page.evaluate(()=>window.__hearResumePending)).toBeTruthy();
- await page.evaluate(()=>{window.__hearReleaseResume();return new Promise(resolve=>setTimeout(resolve,80))});
- expect(await page.evaluate(()=>window.__hearOscillatorStarts)).toBe(0);
-}
 test('stopping a pending audio resume cannot restart headphone calibration tones',async({page})=>{
  await newProfile(page,'Cancelación antes de sonido');
  await deferAudioResume(page);
@@ -975,46 +944,28 @@ test('tone-only results do not start a loudness comparison audio context',async(
  await noOverflow(page);
 });
 
-test('microphone permission granted after leaving setup releases its tracks without sampling',async({page})=>{
- await newProfile(page,'Micrófono tardío');
- await page.locator('#uiLanguage').selectOption('es');
- await page.evaluate(()=>{
-  window.__hearMicStops=0;window.__hearMicRequested=false;
-  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{
-   getUserMedia:()=>new Promise(resolve=>{
-    window.__hearMicRequested=true;
-    window.__hearReleaseMic=()=>resolve({getTracks:()=>[{stop:()=>{window.__hearMicStops++}}]});
-   })
-  }});
+test('tone test never requests microphone permission when navigating',async({page})=>{
+ await page.addInitScript(()=>{
+  window.__micCalls=0;
+  Object.defineProperty(navigator,'mediaDevices',{configurable:true,
+   value:{getUserMedia:()=>{window.__micCalls++;return Promise.reject(new Error('unexpected microphone request'))}}});
  });
- await page.locator('#ambientCheck > summary').click();
- await page.locator('#ambientCheck [data-act="ambient"]').click();
- await expect.poll(()=>page.evaluate(()=>window.__hearMicRequested)).toBeTruthy();
+ await page.reload();
+ await newProfile(page,'Sin permisos');
+ await passPreparation(page);
  await page.locator('[data-nav="results"]').click();
- await page.evaluate(()=>window.__hearReleaseMic());
- await expect.poll(()=>page.evaluate(()=>window.__hearMicStops)).toBe(1);
- await expect(page.locator('#root')).toHaveAttribute('data-page','results');
+ await page.locator('[data-nav="profiles"]').click();
+ expect(await page.evaluate(()=>window.__micCalls)).toBe(0);
 });
 
-test('stopping the examination cancels a pending optional microphone permission',async({page})=>{
- await newProfile(page,'Micrófono cancelado');
- await page.locator('#uiLanguage').selectOption('es');
- await page.evaluate(()=>{
-  window.__hearMicStops=0;window.__hearMicRequested=false;
-  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{
-   getUserMedia:()=>new Promise(resolve=>{
-    window.__hearMicRequested=true;
-    window.__hearReleaseMic=()=>resolve({getTracks:()=>[{stop:()=>{window.__hearMicStops++}}]});
-   })
-  }});
- });
- await page.locator('#ambientCheck > summary').click();
- await page.locator('#ambientCheck [data-act="ambient"]').click();
- await expect.poll(()=>page.evaluate(()=>window.__hearMicRequested)).toBeTruthy();
+test('stop action remains available without microphone permissions or extra tests',async({page})=>{
+ await newProfile(page,'Detención de tonos');
+ await passPreparation(page);
+ await page.locator('[data-act="play"]').click();
  await page.locator('[data-act="stopaudio"]').click();
- await page.evaluate(()=>window.__hearReleaseMic());
- await expect.poll(()=>page.evaluate(()=>window.__hearMicStops)).toBe(1);
- await expect(page.locator('#ambientStatus')).not.toContainText('Comprobando el micrófono');
- const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
- expect(stored.measures).toEqual({});
+ await expect(page.locator('#preSweepPanel')).toHaveCount(0);
+ await expect(page.locator('#ambientCheck')).toHaveCount(0);
+ await expect(page.locator('#inlineLoudness')).toHaveCount(0);
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(saved.measures).toEqual({});
 });
