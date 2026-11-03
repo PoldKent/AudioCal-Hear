@@ -1091,3 +1091,26 @@ test('microphone permission granted after leaving setup releases its tracks with
  await expect.poll(()=>page.evaluate(()=>window.__hearMicStops)).toBe(1);
  await expect(page.locator('#root')).toHaveAttribute('data-page','results');
 });
+
+test('stopping the examination cancels a pending optional microphone permission',async({page})=>{
+ await newProfile(page,'Micrófono cancelado');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.evaluate(()=>{
+  window.__hearMicStops=0;window.__hearMicRequested=false;
+  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{
+   getUserMedia:()=>new Promise(resolve=>{
+    window.__hearMicRequested=true;
+    window.__hearReleaseMic=()=>resolve({getTracks:()=>[{stop:()=>{window.__hearMicStops++}}]});
+   })
+  }});
+ });
+ await page.locator('#ambientCheck > summary').click();
+ await page.locator('#ambientCheck [data-act="ambient"]').click();
+ await expect.poll(()=>page.evaluate(()=>window.__hearMicRequested)).toBeTruthy();
+ await page.locator('[data-act="stopaudio"]').click();
+ await page.evaluate(()=>window.__hearReleaseMic());
+ await expect.poll(()=>page.evaluate(()=>window.__hearMicStops)).toBe(1);
+ await expect(page.locator('#ambientStatus')).not.toContainText('Comprobando el micrófono');
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(stored.measures).toEqual({});
+});

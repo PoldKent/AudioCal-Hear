@@ -169,18 +169,18 @@ function answerTone(heard){
  render();
 }
 async function checkAmbient(){
- if(ambientBusy||document.hidden)return;const requestProfile=current,requestPage=page;ambientBusy=true;ambientStatus='Comprobando el micrófono…';render();
+ if(ambientBusy||document.hidden)return;const requestProfile=current,requestPage=page,requestEpoch=audioStartEpoch;ambientBusy=true;ambientStatus='Comprobando el micrófono…';render();
  let stream=null,ctx=null;
  try{if(!navigator.mediaDevices?.getUserMedia)throw new Error('Micrófono no disponible.');
  stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
- if(document.hidden||current!==requestProfile||page!==requestPage){ambientStatus='';return}
+ if(requestEpoch!==audioStartEpoch||document.hidden||current!==requestProfile||page!==requestPage){ambientStatus='';return}
  ctx=new (window.AudioContext||window.webkitAudioContext)();const src=ctx.createMediaStreamSource(stream),an=ctx.createAnalyser();an.fftSize=2048;src.connect(an);
  const arr=new Float32Array(an.fftSize);let rmsSum=0,seen=0;
- for(let i=0;i<12;i++){await new Promise(r=>setTimeout(r,150));if(document.hidden||current!==requestProfile||page!==requestPage){ambientStatus='';return}an.getFloatTimeDomainData(arr);let v=0;for(const x of arr)v+=x*x;rmsSum+=Math.sqrt(v/arr.length);seen++}
+ for(let i=0;i<12;i++){await new Promise(r=>setTimeout(r,150));if(requestEpoch!==audioStartEpoch||document.hidden||current!==requestProfile||page!==requestPage){ambientStatus='';return}an.getFloatTimeDomainData(arr);let v=0;for(const x of arr)v+=x*x;rmsSum+=Math.sqrt(v/arr.length);seen++}
  const relative=20*Math.log10(Math.max(1e-8,rmsSum/Math.max(1,seen)));
  ambientStatus=relative>-38?'Se detectó actividad relativa en el micrófono: busca un lugar más silencioso si es posible.':'El micrófono detecta poca señal relativa. No garantiza un ambiente acústico calibrado.';
- }catch(e){ambientStatus=document.hidden||current!==requestProfile||page!==requestPage?'':'Comprobación no disponible o permiso denegado. Puedes continuar sin micrófono.'}
- finally{stream?.getTracks().forEach(t=>t.stop());if(ctx)await ctx.close().catch(()=>{});ambientBusy=false;if(!document.hidden&&current===requestProfile&&page===requestPage){render();$('#ambientCheck > summary')?.focus({preventScroll:true})}}
+ }catch(e){ambientStatus=requestEpoch!==audioStartEpoch||document.hidden||current!==requestProfile||page!==requestPage?'':'Comprobación no disponible o permiso denegado. Puedes continuar sin micrófono.'}
+ finally{stream?.getTracks().forEach(t=>t.stop());if(ctx)await ctx.close().catch(()=>{});ambientBusy=false;if(requestEpoch===audioStartEpoch&&!document.hidden&&current===requestProfile&&page===requestPage){render();$('#ambientCheck > summary')?.focus({preventScroll:true})}}
 }
 function parseBands(s){const arr=s.split(/[,;\s]+/).filter(Boolean).map(v=>Number(v));if(arr.length<2||arr.length>31||arr.some(x=>!Number.isFinite(x)||x<20||x>20000)||new Set(arr).size!==arr.length||arr.some((x,i)=>i&&x<=arr[i-1]))return null;return arr}
 function createProfile(){const name=$('#deviceName')?.value.trim()||'Mi equipo '+new Date().toLocaleDateString('es');const min=Number($('#eqMin')?.value),max=Number($('#eqMax')?.value),controlMin=Number($('#controlMin')?.value),controlMax=Number($('#controlMax')?.value);if(!Number.isFinite(min)||!Number.isFinite(max)||min>=0||max<=0||min<-30||max>30){uiAlert('Introduce límites de dB válidos: mínimo negativo y máximo positivo (hasta 30 dB).');return}
