@@ -17,3 +17,10 @@ Estado: **pendiente de ejecutar en dispositivos reales**. Este documento no cert
 Para cada dispositivo anotar modelo, navegador, versión del sistema, lector de pantalla, idioma, fecha, pasos ejecutados, resultado (aprobado/falló/no probado), capturas o vídeo, incidencia y corrección.
 
 **Las suites automáticas** de Node y Playwright no sustituyen estas comprobaciones. El aislamiento real de canales, las rutas Bluetooth, la respuesta acústica y la seguridad del volumen necesitan pruebas con hardware según [issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26).
+
+## Accesibilidad de navegación y prueba auditiva (pendiente de verificación manual)
+
+- Al pulsar una pestaña, el foco del lector debe pasar al título de la sección seleccionada.
+- Durante el test, comprobar que al responder «Sí» o «No» con teclado se mantiene el foco en un control válido para continuar. El cambio de frecuencia debe anunciarse una sola vez, sin recitar toda la pantalla ni interrumpir el tono.
+- Confirmar que el indicador de progreso anuncia su porcentaje y que la frecuencia de prueba es un encabezado navegable.
+- Verificar en TalkBack y VoiceOver reales que los avisos de estado no se pierden ni se duplican. Las pruebas automatizadas solo cubren la estructura y el foco en navegador simulado.

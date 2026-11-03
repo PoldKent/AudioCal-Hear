@@ -949,3 +949,32 @@ test('music EQ bypass is an accessible toggle and remains optional',async({page}
  await expect(toggle).toContainText('EQ ON');
  await noOverflow(page);
 });
+
+// Keyboard/screen-reader workflow: focus survives navigation and adaptive-test redraws.
+test('navigation headings and hearing-test progress are accessible',async({page})=>{
+ await newProfile(page,'Accesibilidad de progreso');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.locator('[data-nav="results"]').click();
+ await expect(page.locator('.result-head h1')).toBeFocused();
+ await page.locator('[data-nav="test"]').click();
+ await expect(page.locator('#root h1')).toBeFocused();
+ await passPreparation(page);
+ await expect(page.locator('#testLiveStatus')).toContainText('Nueva frecuencia:');
+ await expect(page.locator('#testLiveStatus')).toContainText('30 Hz');
+ expect(await page.locator('.frequency').evaluate(el=>el.tagName)).toBe('H2');
+ await expect(page.locator('[role="progressbar"]')).toHaveAttribute('aria-valuemin','0');
+ await expect(page.locator('[role="progressbar"]')).toHaveAttribute('aria-valuemax','100');
+ await expect(page.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow',/^\d+$/);
+ await noOverflow(page);
+});
+test('adaptive test retains an actionable keyboard focus after a heard/not-heard response',async({page})=>{
+ await newProfile(page,'Foco de respuesta');
+ await passPreparation(page);
+ await page.locator('[data-act="play"]').click();
+ const no=page.locator('[data-act="answerNo"]');
+ await expect(no).toBeVisible();
+ await no.focus();
+ await no.press('Enter');
+ await expect(page.locator('[data-act="play"]')).toBeFocused();
+ await expect(page.locator('#testLiveStatus')).toContainText('30 Hz');
+});

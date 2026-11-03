@@ -44,3 +44,18 @@ test('dynamic experimental EQ guidance is translated with embedded numbers prese
  }
 });
 
+
+// Test-localized frequency announcements and retained accessible progress.
+test('adaptive hearing stage has a persistent, narrowly scoped status and a semantic progressbar',()=>{
+ const source=fs.readFileSync('src/js/03-hearing-test.js','utf8');
+ const core=fs.readFileSync('src/js/01-core.js','utf8');
+ const template=fs.readFileSync('src/index.template.html','utf8');
+ assert.match(source,/role="progressbar" aria-label="Progreso del examen"/);
+ assert.match(source,/<h2 class="frequency">/);
+ assert.match(core,/function announceTestStep\(/);
+ assert.match(core,/target\?\.focus\(\{preventScroll:true\}\)/);
+ assert.match(template,/id="testLiveStatus".*aria-live="polite"/);
+ for(const lang of ['en','fr','pt','it','de','zh','ja']){
+  for(const key of ['Nueva frecuencia:','Progreso del examen'])assert.ok(d[lang][key],lang+': '+key);
+ }
+});

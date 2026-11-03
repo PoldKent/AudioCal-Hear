@@ -13,7 +13,7 @@
 2. Ejecutar el barrido previo (opcional) y registrar si hubo zonas audibles o inconclusas. Sin micrófono en auriculares.
 3. Completar el examen adaptativo por oído a volumen constante. Usar la comparación de sonoridad opcional durante una frecuencia, sin interrumpir ni falsear respuestas.
 4. En resultados, verificar recuentos por oído, gráfica de mediciones originales y **una sola** superficie de ecualización. No es obligatorio que haya ajustes distintos de cero si la evidencia es insuficiente.
-5. Pulsar **Aplicar propuesta** cuando exista; editar una banda, guardar PNG/TXT y exportar JSON. Confirmar que las mediciones originales no cambian.
+5. Comprobar que la propuesta conservadora del test **ya aparece aplicada** en el único EQ editable (no existe un segundo botón «Aplicar propuesta»); editar una banda, guardar PNG/TXT y exportar JSON. Confirmar que las mediciones originales no cambian.
 6. Escuchar la misma canción **desde el reproductor interno de Hear** con el EQ activado y desactivado a sonoridad comparable; registrar preferencia mejor/igual/peor, sin forzar una mejora.
 7. Cambiar una banda: comprobar que la opinión anterior deja de considerarse vigente. Recargar, importar perfil y comprobar el estado conservado.
 
@@ -45,7 +45,7 @@ No usar el test de audición para inferir la respuesta del preamplificador. Se r
 ## Evidencia que conviene adjuntar
 Guardar solamente los perfiles y capturas relevantes, sin nombres personales ni grabaciones privadas: equipo/tipo, versión de Hear, navegador y OS, número de bandas, número de umbrales, capturas antes/después y observaciones de escucha. Reportar incidencias en el [issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26).
 
-**Puerta de publicación:** CI completo en la última revisión + QA visual y de dispositivo real. Mientras falte esa evidencia, mantener el trabajo en PR de desarrollo, no afirmar equivalencia probada con HearID.
+**Estado de publicación:** la versión preliminar está publicada en GitHub Pages y pasa CI. La validación acústica y de dispositivos reales es una puerta independiente para declarar el producto verificado; mientras falte, no afirmar equivalencia probada con HearID.
 
 
 ## Ejecutar la versión vigente en un entorno aislado
