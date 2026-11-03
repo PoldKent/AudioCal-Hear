@@ -1,6 +1,27 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 
+// Deterministically test audio cancellation before a suspended AudioContext resumes.
+async function deferAudioResume(page){
+ await page.evaluate(()=>{
+  window.__hearOscillatorStarts=0;
+  window.__hearResumePending=false;
+  class DeferredAudioContext{
+   constructor(){this.state='suspended';this.sampleRate=48000;this.currentTime=0;}
+   resume(){window.__hearResumePending=true;return new Promise(resolve=>{
+    window.__hearReleaseResume=()=>{this.state='running';resolve()};
+   });}
+   createOscillator(){window.__hearOscillatorStarts++;throw new Error('Stale oscillator scheduled');}
+  }
+  Object.defineProperty(window,'AudioContext',{configurable:true,value:DeferredAudioContext});
+ });
+}
+async function releaseAudioResume(page){
+ await expect.poll(()=>page.evaluate(()=>window.__hearResumePending)).toBeTruthy();
+ await page.evaluate(()=>{window.__hearReleaseResume();return new Promise(resolve=>setTimeout(resolve,80))});
+ expect(await page.evaluate(()=>window.__hearOscillatorStarts)).toBe(0);
+}
+
 async function fresh(page) {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
@@ -651,6 +672,7 @@ test('headphone preparation only requires tone channel confirmation',async({page
 
 test('results provide editable EQ without personal sound or A/B requirements',async({page})=>{
  await newProfile(page,'EQ sin música');
+ await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
  await expect(page.locator('#starterGuide')).toContainText('Calculado con tonos');
  await expect(page.locator('[data-eq-band]')).toHaveCount(10);
@@ -757,7 +779,7 @@ test('completed uncertain hearing test keeps recommendations first and music opt
  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('[data-act="previous-frequency"]').click();
- await expect(page.locator('#levelText')).toBeVisible();
+ await passPreparation(page); // Fresh channel confirmation is required on returning to the test.
  const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures);
  expect(Object.keys(after).length).toBe(Object.keys(before).length-2);
  await noOverflow(page);
