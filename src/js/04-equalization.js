@@ -30,67 +30,43 @@ function gather(p){
   return {f,db,quality:'interpolated',derived:true};
  });
 }
-// v2: Local threshold contrasts are an exploratory cue, NOT calibrated EQ.
-// Digital detection levels are neither ear SPL nor normal equal-loudness targets.
-// Never apply measured threshold differences directly as equalizer gains.
-const EQ_ALGORITHM_VERSION='local-contrast-v2-experimental';
+// Simple tone-only EQ. The digital threshold is relative, NOT a calibrated SPL.
+const EQ_ALGORITHM_VERSION='tone-relative-v3-experimental';
 function hasBothChannelThresholds(p,f){
  if(p.channels!=='separate')return true;
  return ['left','right'].every(side=>(p.measures?.[key(f,side)]||[]).some(m=>m?.kind==='heard'&&Number.isFinite(m.db)));
 }
-// This function is shared by the algorithm and result labels.
 function thresholdCoverage(p,data){
  const observed=data.filter(x=>Number.isFinite(x.db)&&!x.derived);
- const measured=observed.filter(x=>hasBothChannelThresholds(p,x.f));
- const complete=measured;
- const eligible=complete.filter(x=>x.quality!=='mixed');
- const required=autoCoverageMinimum(p);
- const candidates=eligible.slice(1,-1).filter((x,i)=>x.f/eligible[i].f<=3.5&&eligible[i+2].f/x.f<=3.5).length;
- const lowConfidence=complete.filter(x=>['uncertain','low','legacy'].includes(x.quality)).length;
- return {observed,measured,complete,eligible,required,enough:eligible.length>=required,candidates,lowConfidence};
+ const eligible=observed.filter(x=>x.quality!=='mixed');
+ return {observed,measured:observed,complete:observed,eligible,required:2,
+  enough:eligible.length>=2,candidates:eligible.length,
+  lowConfidence:observed.filter(x=>['uncertain','low','legacy'].includes(x.quality)).length};
 }
 function estimateThresholdContrast(p,data){
  const {eligible,enough}=thresholdCoverage(p,data);
- const context=normalizeCalibrationContext(p.context,p.type);
+ const baseline=enough?median(eligible.map(x=>x.db)):null;
  return data.map(point=>{
-  const entry={f:point.f,base:0,contrastDb:null,autoReason:'sin datos suficientes',autoConfidence:'none'};
-  if(!enough)return entry;
-  if(!Number.isFinite(point.db)||point.derived)return {...entry,autoReason:'frecuencia no medida directamente'};
-  if(!hasBothChannelThresholds(p,point.f))return {...entry,autoReason:'faltan umbrales de ambos oídos: no corregir automáticamente'};
-  if(point.quality==='mixed')return {...entry,autoReason:'diferencias relevantes entre oídos: sin corrección automática'};
-  if(point.quality==='unmeasurable')return {...entry,autoReason:'sin umbral confirmado'};
-  const idx=eligible.findIndex(x=>x.f===point.f);
-  if(idx<=0||idx===eligible.length-1)return {...entry,autoReason:'banda extrema: no extrapolar'};
-  const lo=eligible[idx-1],hi=eligible[idx+1];
-  if(point.f/lo.f>3.5||hi.f/point.f>3.5)return {...entry,autoReason:'bandas vecinas demasiado separadas'};
-  const blockReason=contextAutoBlockReason(p,point.f,context);
-  if(blockReason)return {...entry,autoReason:blockReason};
-  // Compare digital detection thresholds locally; do not equate dBFS with dB SPL.
-  const ratio=Math.log(point.f/lo.f)/Math.log(hi.f/lo.f);
-  const expected=lo.db+(hi.db-lo.db)*ratio;
-  const deviation=point.db-expected;
-  const verified=[point,lo,hi].every(x=>x.quality==='good');
-  // Inferred/low-confidence thresholds are still real observations, but
-  // have a larger dead zone and a strict +/-1 dB tentative EQ limit.
-  const uncertainty=verified?3:6;
-  const evidence=Math.max(0,Math.abs(deviation)-uncertainty);
-  const maxBoost=p.type==='car'||p.type==='speaker'?1:verified?2:1;
-  const maxCut=verified?2:1;
-  const raw=deviation>=0?Math.min(maxBoost,evidence*.20):-Math.min(maxCut,evidence*.20);
-  const base=roundTo(raw,p.step||1);
-  const autoReason=base===0?'contraste local insuficiente; sin cambio justificable':
-   verified?'desviación local; compensación limitada y experimental':
-   'estimación de confianza limitada; sugerencia provisional de máximo 1 dB';
-  return {f:point.f,base,contrastDb:Number(deviation.toFixed(2)),autoReason,
-   autoConfidence:verified?'medium':'low'};
+  const neutral={f:point.f,base:0,contrastDb:null,autoReason:'sin dos tonos comparables',autoConfidence:'none'};
+  if(!Number.isFinite(point.db)||point.derived)return {...neutral,autoReason:'sin umbral directo; mantener neutro'};
+  if(point.quality==='mixed')return {...neutral,autoReason:'oídos discordantes; mantener neutro el EQ compartido'};
+  if(!enough)return neutral;
+  const delta=point.db-baseline,reliable=point.quality==='good';
+  // Only a fraction of the measured relative contrast becomes a suggested EQ.
+  const raw=Math.sign(delta)*Math.max(0,Math.abs(delta)-(reliable?2:3))*.22;
+  const cap=point.f<80||point.f>=12000?2:3;
+  const base=clamp(roundTo(raw,p.step||1),-cap,cap);
+  return {f:point.f,base,contrastDb:Number(delta.toFixed(2)),
+   autoReason:base?'diferencia percibida entre tonos; ganancia moderada y experimental':'tono próximo a la referencia relativa',
+   autoConfidence:reliable?'medium':'low'};
  });
 }
 function recommend(p){
- const data=gather(p), estimates=estimateThresholdContrast(p,data);
+ const data=gather(p),auto=estimateThresholdContrast(p,data);
  return data.map((point,i)=>{
-  const automatic=estimates[i],manual=Number(p.manual?.[point.f])||0,
-   taste=tasteGain(point.f,cleanTaste(p)),balance=balanceGain(p,point.f);
-  const gain=clamp(roundTo(automatic.base+manual+taste+balance,p.step||1),p.min,p.max);
+  // Old music preferences remain in legacy profiles but do not influence EQ.
+  const automatic=auto[i],manual=Number(p.manual?.[point.f])||0;
+  const gain=clamp(roundTo(automatic.base+manual,p.step||1),p.min,p.max);
   return {...point,...automatic,gain,algorithmVersion:EQ_ALGORITHM_VERSION};
  });
 }
@@ -214,7 +190,7 @@ function thresholdStatus(point){
  if(point.db===null)return 'Sin umbral confirmado';
  if(point.derived)return 'Interpolación; no medido aquí';
  if(point.quality==='good')return 'Repetible en dos búsquedas independientes';
- if(point.quality==='uncertain')return 'Umbral estimado · confianza baja; sin corrección automática';
+ if(point.quality==='uncertain')return 'Umbral estimado · confianza baja; ajuste acotado';
  if(point.quality==='legacy')return 'Segunda pasada histórica: confirmación, no búsqueda independiente';
  if(point.quality==='mixed')return 'Diferencias entre oídos';
  return 'Medición limitada; revisar';
@@ -275,10 +251,10 @@ function renderCalibrationTrace(p,r){
  <div class="trace-part"><h3>2 · Interpretación y fiabilidad</h3><p class="small">${totalDirect} de ${p.bands.length} bandas con umbral directo; ${absent} sin umbral. Las frecuencias estimadas están identificadas en la tabla y no aparecen como puntos medidos en la gráfica.</p>
  <p class="compact-note"><strong>Contexto:</strong> ${esc(calibrationContextLabel(p))}</p>
  <p class="compact-note">${esc(calibrationContextCaution(p))}</p><p class="compact-note"><strong>Efecto real sobre el algoritmo:</strong> ${esc(calibrationContextEqExplanation(p))}</p></div>
- <div class="trace-part"><h3>3 · Corrección automática frente al ajuste final</h3><p class="small muted">Automático: contrastes locales entre frecuencias realmente medidas, con margen de incertidumbre y límites conservadores. No equivale a audiometría ni corrige acústicamente un recinto. EQ final: incorpora ajustes manuales y preferencias si los realizaste; nunca cambia los datos medidos.</p>
+ <div class="trace-part"><h3>3 · Corrección automática frente al ajuste final</h3><p class="small muted">Automático: comparación relativa de los tonos detectados, limitada a ±3 dB (±2 dB en extremos). No equivale a audiometría ni medición SPL. El EQ final incluye solo tus ajustes manuales y conserva los datos medidos.</p>
  <div class="trace-table-scroll"><table class="trace-table"><thead><tr><th scope="col">Banda</th><th scope="col">Dato original</th><th scope="col">Interpretación</th><th scope="col">Automático</th><th scope="col">EQ final</th></tr></thead><tbody>${rows}</tbody></table></div>
  <p class="compact-note"><strong>Escala del ecualizador:</strong> ${esc(unit)} Límites de corrección Hear: ${p.min} a +${p.max} dB. Recorrido físico: ${p.controlMin??p.min} a +${p.controlMax??p.max} ${c.eqScale==='steps'?'posiciones':c.eqScale==='db'?'dB del control':'unidades sin verificar'}. Los números de EQ son ganancias estimadas de procesamiento, no posiciones físicas verificadas del control.</p>
- <p class="tiny muted">Método de corrección: contrastes locales v2, experimental; conserva las medidas originales. Las curvas normales de igual sonoridad no pueden aplicarse directamente a este test digital sin calibración acústica. Una corrección neutral puede ser el único resultado justificable.</p></div></section>`;
+ <p class="tiny muted">Método de corrección: comparación de tonos dentro del mismo examen, experimental; conserva las medidas originales. Si los tonos se detectaron a niveles muy similares, un EQ neutro es coherente. Los dBFS no equivalen a SPL.</p></div></section>`;
 }
 
 
@@ -471,19 +447,19 @@ function starterEqMarkup(p,r){
  const suggested=r.filter(x=>Number.isFinite(x.base)&&x.base!==0);
  const personal=r.some(x=>x.gain!==x.base);
  const uncertain=r.filter(x=>!Number.isFinite(x.db)||x.derived||x.quality==='mixed').length;
- const sound=personalSoundStatus(p,r);
+ const toneCount=r.filter(x=>Number.isFinite(x.db)&&!x.derived).length;
  const picks=suggested.slice(0,5).map(x=>short(x.f)+' '+(x.base>0?'+':'')+x.base+' dB').join(' · ');
  const extra=suggested.length>5?' · '+(suggested.length-5)+' bandas adicionales':'';
  const message=suggested.length?'Punto de partida experimental incluido en el EQ: '+picks+extra+'.':
-  'Punto de partida 0 dB: el examen no justifica correcciones automáticas.';
- const caution=uncertain?' '+uncertain+' bandas con evidencia ausente, interpolada o discrepante no justifican un refuerzo por sí solas.':'';
+  'EQ neutro: los tonos medidos fueron parecidos o faltan datos para compararlos.';
+ const caution=uncertain?' '+uncertain+' bandas sin evidencia directa o con discrepancias se mantienen neutras.':'';
  const note=personal?
   'Hay ajustes personales; las barras, el botón Copiar ajustes, el PNG y la transferencia muestran los valores finales.':
   'Las barras ya incluyen los cambios automáticos; no hay un segundo botón Aplicar. Copiar y PNG usan esos mismos valores.';
  return '<div class="starter-inline" id="starterGuide" aria-label="Propuesta inicial de ecualización">'+
   '<p class="small"><strong>Propuesta del test:</strong> '+esc(message+caution)+'</p>'+
-  '<p class="tiny muted"><strong>Estado del resultado:</strong> '+esc(sound.grade)+' · '+esc(sound.tip)+'</p>'+
-  '<div class="row wrap starter-actions">'+button('▶ Escuchar el resultado','preview-sound','btn-ghost grow')+'</div>'+
+  '<p class="tiny muted"><strong>Calculado con tonos:</strong> '+toneCount+' bandas medidas. La propuesta es relativa y no utiliza canciones.</p>'+
+  
   '<p class="tiny muted" id="starterStatus">'+esc(note)+'</p></div>';
 }
 
@@ -493,7 +469,7 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  lastRenderedEqSignature=p.id+'|'+r.map(b=>b.f+':'+b.gain).join('|');
  return `<div class="results-compact"><section class="hero result-head"><p class="eyebrow">AUDIOCAL · RESULTADOS</p><h1>Tu resultado auditivo</h1><div class="result-profile-picker"><span class="tiny muted">Perfil</span><select class="field" id="resultProfileSelect" aria-label="Seleccionar perfil">${profiles.map(q=>`<option value="${esc(q.id)}" ${q.id===p.id?'selected':''}>${esc(q.name)}</option>`).join('')}</select></div></section>
  <div class="results-grid"><section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Tu ecualizador · ${p.bands.length} bandas</h2><span class="tag" id="eqChangeCount">${r.filter(x=>x.gain!==0).length} cambios</span></div>
- <p class="small muted">${usable}/${p.bands.length} frecuencias con umbral digital estimado${p.channels==='separate'?' para ambos oídos':''}. El EQ inicial es una propuesta conservadora basada en la evidencia disponible; 0 dB significa que no se justifica corregir esa banda, no que hayas fallado el examen.</p>
+ <p class="small muted">${usable}/${p.bands.length} bandas con umbral de tonos. Los valores sugeridos proceden de tus respuestas al examen y puedes copiarlos a tu ecualizador. Sin un umbral confirmado, una banda queda neutra.</p>
  ${starterEqMarkup(p,r)}
  <div class="eq-stage"><div class="tiny muted">Selecciona una banda para editar su ganancia · desliza para ver más →</div><div class="equalizer"><div class="eqgrid" role="group" aria-label="Frecuencias del EQ">${r.map(x=>{const span=Math.max(1,p.max-p.min),center=100*p.max/span,y=100*(p.max-x.gain)/span;return `<button type="button" class="eqband ${x.f===selectedEqFreq?'selected':''}" data-eq-select="${x.f}" data-eq-band="${x.f}" aria-controls="eqEditor" aria-label="Editar banda ${fmt(x.f)}, ${eqMark(x)} decibelios" aria-pressed="${x.f===selectedEqFreq}"><span class="eqval">${eqMark(x)}</span><span class="eqbar"><span class="eqcenter" style="top:${center}%"></span><span class="eqfill" style="top:${Math.min(center,y)}%;height:${Math.max(2,Math.abs(center-y))}%"></span></span><span class="eqlabel">${short(x.f)}</span></button>`}).join('')}</div></div></div>
  ${selectedEqEditor(p,r)}
@@ -502,19 +478,13 @@ function renderResults(){if(!current)return `<section class="hero"><h1>Todavía 
  <details class="unobtrusive" id="technicalResults"><summary>Mediciones del test y fiabilidad · opcional</summary><div class="inner-detail">
  ${renderCalibrationTrace(p,r)}
  ${sweepSummaryMarkup(p)}
- ${inlineLoudnessSummaryMarkup(p)}
  ${evidenceAuditMarkup(p)}
- <details class="unobtrusive loudness-panel" id="loudnessPanel"><summary>Igualación de sonoridad · experimento opcional</summary><div class="inner-detail" id="loudnessInner">${loudnessMarkup(p)}</div></details>
- ${usable<p.bands.length?`<p class="small muted">${p.bands.length-usable} bandas no tienen ambos umbrales. El test ya conservó los límites observados. Solo repite voluntariamente si quieres mejorar la evidencia. ${button('↺ Repetir bandas sin umbral','retrymissing','btn-ghost')}</p>`:''}
+
+ ${usable<p.bands.length?`<p class="small muted">${p.bands.length-usable} bandas sin umbral confirmado quedan neutras. Puedes aplicar el resultado sin repetir el examen.</p>`:''}
  </div></details>
  <div class="row wrap">${button('← Repetir frecuencia anterior','previous-frequency','btn-ghost grow',hasPreviousFrequency(p)?'':'disabled')}</div>
  <p id="copyStatus" class="status" role="status"></p></section>
- <div class="results-side"><details class="unobtrusive music-options" id="musicComparison"><summary>🎵 Opcional después del EQ · comparar con música</summary><div class="inner-detail"><p class="compact-note">Escucha tu EQ frente al original con una canción propia. La comparación es opcional y solo afecta al sonido de esta página.</p><input type="file" accept="audio/*" id="musicFile" class="field" style="font-size:12px;margin-top:10px" aria-label="Elegir canción"><audio id="audioPlayer" controls preload="metadata" style="width:100%;margin:11px 0" aria-label="Reproductor de comparación"></audio><button type="button" class="btn btn-alt full" id="bypassBtn" data-act="bypass" aria-pressed="${!eqBypass}">${eqBypass?'EQ DESACTIVADO · activar':'EQ ACTIVADO · comparar sin EQ'}</button>${personalSoundReviewMarkup(p)}</div></details>
- <details class="card transfer-card optional-tool"><summary>Aplicar ajustes en otro equipo o app</summary><div class="inner-detail"><div id="transferPanel">${transferMarkup()}</div></div></details>
- <details class="unobtrusive music-tools" id="musicTools"><summary>Refinar el sonido con música · opcional</summary><div class="inner-detail">
- <details class="unobtrusive balance-card" id="toneBalance"><summary>🎛️ Opcional · refinar bandas con música</summary><div class="inner-detail"><p class="compact-note">Puedes confirmar qué suena mejor con comparaciones de una canción. Estos cambios son opcionales y no alteran las mediciones auditivas.</p><div id="balanceTrainer">${balanceMarkup()}</div></div></details>
- <details class="unobtrusive"><summary>🎧 Personalizar graves, voces y brillo <span class="tiny muted">Opcional</span></summary><div class="inner-detail"><p class="compact-note">Con la canción reproduciéndose, escucha A y B durante varios segundos y elige qué suena mejor. Mantén el volumen fijo.</p><div id="prefRound">${preferenceMarkup()}</div></div></details>
- </div></details>
+ <div class="results-side"><details class="card transfer-card optional-tool" open><summary>Aplicar ajustes a mi ecualizador</summary><div class="inner-detail"><div id="transferPanel">${transferMarkup()}</div></div></details>
  <details class="unobtrusive"><summary>Seguridad y límites de precisión</summary><div class="inner-detail"><p class="compact-note">Los niveles dBFS de la prueba no miden la presión sonora en el oído. Evita subir niveles para buscar tonos inaudibles y reduce los ajustes si aparece distorsión o molestia. Si ambos oídos comparten ecualización, no se corrigen por separado.</p></div></details></div></div></div>`}
 function deviceIcon(p){return p.type==='car'?'🚗':p.type==='headphones'?'🎧':'🔊'}
 function profileProgress(p){const total=plan(p).length;return total?Math.round(doneCount(p)/total*100):0}

@@ -132,16 +132,7 @@ function contextAutoBlockReason(p,f,c=normalizeCalibrationContext(p?.context,p?.
  return null;
 }
 function calibrationContextEqExplanation(p){
- const c=normalizeCalibrationContext(p?.context,p?.type);
- if(c.provenance==='legacy')return 'Entorno no registrado: no se aplican compensaciones ambientales.';
- const blocked=(p.bands||[]).filter(f=>contextAutoBlockReason(p,f,c));
- if(p.type==='car'&&blocked.length)
-  return 'Efecto real: ventanas abiertas o motor encendido bloquean correcciones automáticas. No se asignan dB a resonancias de cabina.';
- if(p.type==='headphones'&&blocked.length)
-  return 'Efecto real: sellado in-ear sin verificar bloquea correcciones automáticas bajo 250 Hz. ANC y conexión no añaden dB.';
- if(p.type==='speaker')
-  return 'Efecto real: sala, distancia y paredes documentan dónde se probó. No añaden ni restan dB. El contraste del test sigue siendo experimental; para corregir la sala hace falta medición acústica.';
- return 'Efecto real: condiciones registradas para repetir y comparar. No añaden ni restan ganancias ambientales en dB.';
+ return 'El EQ se calcula solo desde tonos del examen. ANC, sala, sellado y condiciones registradas no suman ni restan dB ni bloquean la propuesta.';
 }
 function calibrationContextCaution(p){
  const c=normalizeCalibrationContext(p?.context,p?.type);
