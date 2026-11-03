@@ -28,6 +28,8 @@
 2. Colocar todos los controles a cero, mantener la misma distancia y posición. Repetir el test en otra sesión para comprobar reproducibilidad.
 3. Documentar variaciones debidas al ambiente sin confundirlas con la capacidad auditiva personal.
 
+Para estudiar respuesta de sala/equipo y controles físicos, seguir el [protocolo de medición externo](./HEAR-V2-ACOUSTIC-MEASUREMENT-PROTOCOL.md), aún no ejecutado con hardware.
+
 ## Escenario D — Preamplificador de guitarra SE-4N
 No usar el test de audición para inferir la respuesta del preamplificador. Se requiere un procedimiento específico con señal que atraviese realmente el circuito o una interpretación repetible grabada por interfaz; **pendiente de desarrollo**.
 

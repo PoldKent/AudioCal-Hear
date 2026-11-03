@@ -19,7 +19,7 @@ Las comprobaciones de fuente, integridad de la app y navegador para el commit in
 - **P0:** probar diez bandas por oído en auriculares, siete en vehículo estacionado y cinco en parlantes reales; confirmar ruta Bluetooth, seguridad de volumen, permisos de micrófono, persistencia e importación/exportación ([issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26)).
 - **P0:** reproducir casos de umbrales presentes pero EQ neutro: cobertura, discrepancias entre oídos, calidad de evidencias y ausencia legítima de contraste. No convertir diferencias dBFS directamente en ganancias acústicas.
 - **P1:** comprobar accesibilidad móvil, localización en ocho idiomas y que las opciones de música/refinamiento no interrumpen el flujo principal. Seguir retirando únicamente duplicaciones y código sin referencias verificadas.
-- **P2:** estudiar por separado respuesta de sala/equipo con protocolo físico validado, instrumentos con entrada real y posibles integraciones con APIs documentadas. No prometer aplicaciones universales ni equivalencia HearID sin evidencia.
+- **P2:** [protocolo reproducible de medición del equipo diseñado](./HEAR-V2-ACOUSTIC-MEASUREMENT-PROTOCOL.md) (todavía **sin ensayos físicos**). Estudiar por separado respuesta sala/equipo, instrumentos con entrada real y posibles integraciones con APIs documentadas. No prometer aplicación universal ni equivalencia HearID sin evidencia.
 
 ## Criterio de finalización
 
