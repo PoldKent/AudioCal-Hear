@@ -4,21 +4,23 @@
 
 ### Escucha. Ajusta. Disfruta.
 
-**AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite explorar umbrales auditivos percibidos, comparar preferencias musicales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
+**AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite escuchar tonos a diferentes niveles digitales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
 
 **[Abrir versión preliminar actual](https://poldkent.github.io/AudioCal-Hear/)** · [Hoja de ruta Hear 2.0](docs/HEAR-V2-ROADMAP.md) · [QA con dispositivos reales](docs/HEAR-V2-DEVICE-QA.md) · [QA de accesibilidad](docs/HEAR-V2-ACCESSIBILITY-QA.md) · [Historial](CHANGELOG.es.md)
 
 > **Código actual: v1.11.0 · versión preliminar Hear 2.0 · noviembre de 2026.** La aplicación publicada en GitHub Pages es un asistente experimental, no una audiometría clínica ni un instrumento acústico calibrado. Las pruebas automatizadas no verifican rutas Bluetooth, niveles físicos de sonido ni respuesta de equipos reales.
 
-## Flujo actual de Hear 2.0
+## Flujo actual de Hear 2.0 — solo tonos
 
-1. Configura las bandas reales y un perfil para cada dispositivo. Mantén el volumen físico **bajo, cómodo y constante**.
-2. Confirma izquierda/derecha en auriculares y completa el examen auditivo adaptativo. Los niveles digitales dBFS **no** son presión sonora real dB SPL.
-3. Revisa cobertura y fiabilidad. El **único EQ conservador y editable** ya incorpora la propuesta del test: 0 dB también es correcto sin evidencia suficiente. Copia ajustes, exporta PNG/TXT o consulta la guía opcional de controles físicos.
-4. La comparación con música, las preferencias y la auditoría detallada son **opcionales** y posteriores al resultado.
-5. Exporta un respaldo JSON antes de cambiar de equipo o borrar datos del navegador. Los perfiles se almacenan localmente.
+1. Elige los auriculares, auto o parlantes y **las bandas de tu ecualizador**. No necesitas completar un cuestionario sobre sala, ANC ni música.
+2. Mantén el volumen físico **bajo, cómodo y fijo**. Si pruebas los oídos por separado, confirma sus canales. Responde «Sí lo escucho» / «No lo escucho» a los tonos de las frecuencias.
+3. Al finalizar aparece **un EQ editable con ganancias en dB por banda**, calculadas automáticamente al comparar los umbrales digitales que registraste. Se sugiere solo una fracción de esas diferencias (hasta ±3 dB, ±2 dB en frecuencias extremas); las bandas sin umbral o discordantes permanecen neutras.
+4. **Copia las ganancias**, guarda PNG/TXT o usa la guía de transferencia al ecualizador de tu equipo. Las posiciones físicas requieren conocer su escala: Hear no inventa una equivalencia entre números del control y dB.
+5. Los perfiles y las respuestas a los tonos se conservan. No necesitas cargar música ni repetir pruebas A/B o de sonoridad.
 
-La validación con equipos físicos sigue pendiente en el [issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26).
+**Decisión de producto:** el usuario no tiene que realizar más ensayos físicos o repetir un test terminado para recibir ajustes. Las pruebas con equipos calibrados son investigación interna separada, no requisitos de uso. Consulta [las decisiones vigentes](docs/HEAR-V2-PRODUCT-DECISIONS.md).
+
+**Límite de interpretación:** los dBFS representan amplitud digital, no dB SPL en tu oído. El EQ es una propuesta perceptiva experimental, no una calibración médica, objetiva o universal.
 
 ## Historial de versiones anteriores (v1.9 y previas)
 

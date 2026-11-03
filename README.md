@@ -4,21 +4,23 @@
 
 ### Hear. Adjust. Enjoy.
 
-**AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Explore your perceived hearing thresholds, compare musical preferences and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
+**AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Test your ability to hear tones at different digital levels and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
 **[Open current public preview](https://poldkent.github.io/AudioCal-Hear/)** · [Hear 2.0 roadmap](docs/HEAR-V2-ROADMAP.md) · [Real-device QA](docs/HEAR-V2-DEVICE-QA.md) · [Accessibility QA](docs/HEAR-V2-ACCESSIBILITY-QA.md) · [Changelog](CHANGELOG.md)
 
 > **Current source application: v1.11.0 · Hear 2.0 development preview · November 2026.** The public GitHub Pages version is an experimental listening/EQ assistant, not a clinically validated hearing test or calibrated acoustic instrument. Automated browser tests do **not** prove Bluetooth routing, real-ear audio level, or the frequency response of physical hardware.
 
-## Current Hear 2.0 workflow
+## Current Hear 2.0 workflow — tones only
 
-1. Configure real EQ bands and a separate profile for your device. Keep physical volume **low, comfortable and fixed**.
-2. Confirm left/right headphone channels, then complete the adaptive hearing test. Digital levels in dBFS are **not** physical loudness in dB SPL.
-3. Review measured coverage and confidence, then use the **single conservative editable EQ**. Its result is already on the bars; 0 dB is a valid result when evidence is insufficient. Use Copy, PNG, TXT or the optional manual physical-control guide.
-4. Optionally compare music, explore subjective preferences or review detailed evidence; these tools are **not required** to finish the test.
-5. Export a JSON backup before changing devices or clearing browser storage. Profiles are stored locally.
+1. Choose headphones, car audio or speakers, then **the actual EQ bands**. No music, room or ANC questionnaire is required.
+2. Keep the physical volume **low, comfortable and fixed**. Confirm left/right tone channels if testing ears separately, then answer heard/not-heard for the test tones.
+3. After the last frequency, get **one editable EQ with a gain value for every band**, calculated from the relative digital tone detection levels. The suggested correction uses only a fraction of those differences (up to ±3 dB, or ±2 dB at frequency extremes). Missing or contradictory bands remain neutral.
+4. **Copy the values**, export PNG/TXT, or use the equipment-transfer guide. Physical knob steps need a known scale; Hear does not invent one.
+5. Local profiles preserve tone observations. There is **no music A/B test or additional relative-loudness exercise** in the active flow.
 
-Real-world device validation remains open in [issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26).
+**Product decision:** users are not asked to repeat completed tests or do hardware QA to obtain the EQ. Physical device research is an independent internal task, not an app prerequisite. See the [current product contract](docs/HEAR-V2-PRODUCT-DECISIONS.md).
+
+**Limits:** dBFS is digital amplitude, not sound pressure at the ear. These are experimental perceptual settings, not clinical audiometry or objective acoustic calibration.
 
 ## Historical release notes (v1.9 and earlier)
 

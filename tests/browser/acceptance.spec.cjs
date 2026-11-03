@@ -46,7 +46,11 @@ test('AudioCal Hear acceptance: measured 4/5/7/10 band profiles survive full res
   await expect(page.getByRole('heading',{name:new RegExp('Tu ecualizador · '+config.bands.length+' bandas')})).toHaveCount(1);
   await expect(page.locator('[data-eq-band]')).toHaveCount(config.bands.length);
   await expect(page.locator('#eqCardCanvas')).toHaveCount(0);
-  await expect(page.locator('#starterGuide')).toContainText('estimado');
+  await expect(page.locator('#starterGuide')).toContainText('Propuesta del test');
+  const toneGains=(await page.locator('.eqval').allTextContents()).map(Number);
+  expect(toneGains.some(x=>x!==0),'A completed tone test with contrast should generate a useful EQ').toBe(true);
+  expect(toneGains.every(x=>Math.abs(x)<=3),'Tone-only EQ must stay bounded').toBe(true);
+  await expect(page.locator('#musicComparison')).toHaveCount(0);
   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
   expect(Object.keys(before.measures)).toHaveLength(config.bands.length*config.sides.length);
   expect(before.bands).toEqual(config.bands);

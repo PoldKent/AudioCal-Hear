@@ -1,3 +1,5 @@
+> **Uso interno para desarrollo y validación acústica futura.** No solicitar al usuario que repita estas pruebas: el EQ funcional se entrega a partir de los tonos del examen. Ver [decisiones vigentes](./HEAR-V2-PRODUCT-DECISIONS.md).
+
 # AudioCal Hear 2.0 — validación funcional con equipos reales
 
 **Estado:** protocolo de QA; no es una certificación clínica ni acústica. El flujo de software se prueba automáticamente con perfiles sintéticos; los ensayos con auriculares/personas y dispositivos físicos deben realizarse por separado.
