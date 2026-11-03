@@ -12,6 +12,8 @@ Estado: **pendiente de ejecutar en dispositivos reales**. Este documento no cert
 6. Confirmar que las funciones esenciales siguen disponibles sin subir música: test adaptativo, cambio de frecuencia anterior, EQ editable, copia, PNG, TXT, perfiles y evidencia.
 7. En la comparación de música, comprobar que el control de bypass anuncia tanto el texto como su estado activado/desactivado. No duplicar ecualizadores activos.
 
+Para registrar un ensayo real sin datos personales, utiliza la [plantilla de reporte por dispositivo](./HEAR-V2-REAL-DEVICE-REPORT.md).
+
 ## Registro de resultados
 
 Para cada dispositivo anotar modelo, navegador, versión del sistema, lector de pantalla, idioma, fecha, pasos ejecutados, resultado (aprobado/falló/no probado), capturas o vídeo, incidencia y corrección.

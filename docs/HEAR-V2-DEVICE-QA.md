@@ -42,6 +42,8 @@ No usar el test de audición para inferir la respuesta del preamplificador. Se r
 - [ ] Se han probado Android, iOS/WebKit y escritorio; no hay desplazamiento horizontal inesperado.
 - [ ] No hay audio reproduciéndose después de detener/salir, y las pistas del micrófono se liberan.
 
+Utiliza la [plantilla de registro por dispositivo](./HEAR-V2-REAL-DEVICE-REPORT.md) para guardar resultados verificables sin publicar datos sensibles.
+
 ## Evidencia que conviene adjuntar
 Guardar solamente los perfiles y capturas relevantes, sin nombres personales ni grabaciones privadas: equipo/tipo, versión de Hear, navegador y OS, número de bandas, número de umbrales, capturas antes/después y observaciones de escucha. Reportar incidencias en el [issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26).
 
