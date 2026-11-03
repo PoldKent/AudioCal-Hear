@@ -15,7 +15,7 @@ test('result and screen reader labels are explicitly translated',()=>{
 test('optional results remain and root does not announce every EQ adjustment',()=>{
  const source=fs.readFileSync('src/js/04-equalization.js','utf8');
  const template=fs.readFileSync('src/index.template.html','utf8');
- for(const id of ['musicTools','toneBalance','eqCardSection','prefRound'])assert.ok(source.includes('id="'+id+'"'),id);
+ for(const id of ['eqCardSection','technicalResults','transferPanel'])assert.ok(source.includes('id="'+id+'"'),id);
  assert.match(source,/downloadtxt/);
  assert.match(source,/aria-describedby="eqSelectedNote"/);
  assert.match(source,/aria-pressed/);

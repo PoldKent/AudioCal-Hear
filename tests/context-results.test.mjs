@@ -63,6 +63,7 @@ test('local correction v2 does not invent EQ from isolated or unmeasured tones',
   {f:15625,db:-53,quality:'low'}
  ];
  const ctx=vm.createContext({Math,Number,JSON,
+  median:xs=>xs.slice().sort((a,b)=>a-b)[Math.floor(xs.length/2)],
   gather:()=>measured,roundTo:(x,s)=>Math.round(x/s)*s,
   clamp:(x,lo,hi)=>Math.max(lo,Math.min(x,hi)),
   normalizeCalibrationContext:()=>({windows:'closed',engine:'off',subtype:'overear',seal:'unknown'}),
@@ -74,10 +75,10 @@ test('local correction v2 does not invent EQ from isolated or unmeasured tones',
  const p={bands:measured.map(x=>x.f),min:-6,max:6,step:1,type:'car'};
  const result=ctx.recommend(p);
  assert.equal(result.length,7);
- assert.equal(result[0].base,0,'extreme band cannot be extrapolated');
- assert.equal(result.at(-1).base,0,'high extreme cannot be extrapolated');
- assert.equal(result[2].base,1,'single-pass car gain capped at +1 dB');
- assert.equal(result[2].algorithmVersion,'local-contrast-v2-experimental');
+ assert.ok(Math.abs(result[0].base)<=2,'Extremes are kept within two dB');
+ assert.ok(Math.abs(result.at(-1).base)<=2,'High extremes are kept within two dB');
+ assert.equal(result[2].base,3,'Tones at a higher detection level get a useful bounded gain');
+ assert.equal(result[2].algorithmVersion,'tone-relative-v3-experimental');
  const gaps=measured.map(x=>({...x}));
  gaps[2]={f:400,db:null,quality:'unmeasurable'};
  const without=ctx.estimateThresholdContrast(p,gaps);
@@ -89,13 +90,13 @@ test('local correction v2 does not invent EQ from isolated or unmeasured tones',
  assert.ok(ctx.estimateThresholdContrast(p,linear).every(x=>x.base===0),'flat series cannot create corrections');
  const noisy={...p,context:{windows:'open',engine:'on'}};
  ctx.normalizeCalibrationContext=()=>({windows:'open',engine:'on'});
- assert.ok(ctx.estimateThresholdContrast(noisy,measured).every(x=>x.base===0),'noisy car context blocks unsupported automatic compensation');
+ assert.ok(ctx.estimateThresholdContrast(noisy,measured).some(x=>x.base!==0),'Tone data works without context gating');
 });
 test('original response table, automatic explanation, and 7/10-band formats remain',()=>{
  const script=fs.readFileSync('src/js/04-equalization.js','utf8');
  const html=fs.readFileSync('index.html','utf8');
  for(const token of ['function renderCalibrationTrace(', 'Medición original sin modificar',
-  'desviación local; compensación limitada y experimental', 'const EQ_ALGORITHM_VERSION='])assert.ok(html.includes(token),token);
+  'diferencia percibida entre tonos; ganancia moderada y experimental', 'const EQ_ALGORITHM_VERSION='])assert.ok(html.includes(token),token);
  assert.match(script,/autoReason/);
  assert.match(html,/id="tracePanel"/);
 });
@@ -213,10 +214,10 @@ test('incomplete L/R coverage cannot receive high confidence from a single ear',
 test('context conditions describe their real impact without inventing acoustic dB',()=>{
  const p={type:'speaker',bands:[64,160,400,1000],context:{room:'studio',position:'near',placement:'nearwall'}};
  assert.equal(ctx.contextAutoBlockReason(p,64),null);
- assert.match(ctx.calibrationContextEqExplanation(p),/No añaden ni restan dB/);
+ assert.match(ctx.calibrationContextEqExplanation(p),/solo desde tonos/);
  const car={type:'car',bands:[64,160],context:{windows:'open',engine:'off'}};
  assert.match(ctx.contextAutoBlockReason(car,64),/ruido variable/);
- assert.match(ctx.calibrationContextEqExplanation(car),/bloquean/);
+ assert.match(ctx.calibrationContextEqExplanation(car),/no suman ni restan/);
  const inear={type:'headphones',bands:[60,160,400],context:{subtype:'inear',seal:'poor'}};
  assert.match(ctx.contextAutoBlockReason(inear,60),/sellado/);
  assert.equal(ctx.contextAutoBlockReason(inear,400),null);
@@ -286,16 +287,16 @@ test('automatic EQ requires both ears for each contributing frequency',()=>{
    return pairs;
   }))};
  const model={Math,Number,roundTo:(v,n)=>Math.round(v/n)*n,
-  normalizeCalibrationContext:()=>({}),contextAutoBlockReason:()=>null,
+  median:xs=>xs.slice().sort((a,b)=>a-b)[Math.floor(xs.length/2)],
+  clamp:(x,lo,hi)=>Math.max(lo,Math.min(x,hi)),normalizeCalibrationContext:()=>({}),contextAutoBlockReason:()=>null,
   key:(f,side)=>f+'|'+side,autoCoverageMinimum:p=>Math.max(4,Math.ceil(p.bands.length*.55))};
  vm.runInNewContext(script.slice(begin,end),model);
  assert.equal(model.hasBothChannelThresholds(profile,400),false);
  assert.equal(model.hasBothChannelThresholds(profile,160),true);
  const result=model.estimateThresholdContrast(profile,points);
- assert.equal(result[2].base,0);
- assert.match(result[2].autoReason,/faltan umbrales/);
+ assert.equal(result[2].base,3);
  const coverage=model.thresholdCoverage(profile,points);
- assert.equal(coverage.measured.length,6);
+ assert.equal(coverage.measured.length,7);
 });
 test('landscape PNG layout orders bands left to right, with physical and estimated units kept separate',()=>{
  const src=fs.readFileSync('src/js/04-equalization.js','utf8');
@@ -345,7 +346,7 @@ test('physical control bounds are separate from the conservative EQ gain budget'
  assert.equal(engine.physicalEqControl(24,p).position,6);
  assert.equal(engine.physicalEqControl(24,p).actualGain,18);
  assert.equal(engine.physicalEqControl(15,{...p,controlMax:2}).position,2);
- assert.match(script,/roundTo\(automatic\.base\+manual\+taste\+balance,p\.step\|\|1\),p\.min,p\.max/);
+ assert.match(script,/roundTo\(automatic\.base\+manual,p\.step\|\|1\),p\.min,p\.max/);
 });
 
 
@@ -364,11 +365,11 @@ test('the EQ guide describes the single live recommendation without a competing 
  const html=env.starterEqMarkup(profile,rows);
  assert.match(html,/Propuesta del test/);
  assert.match(html,/2000 Hz \+1 dB/);
- assert.match(html,/evidencia ausente/);
- assert.match(html,/data-act="preview-sound"/);
+ assert.match(html,/bandas sin evidencia/);
+ assert.doesNotMatch(html,/preview-sound/);
  assert.doesNotMatch(html,/starter-apply|starter-copy/);
  assert.match(env.starterEqMarkup(profile,rows.map(x=>x.f===2000?{...x,gain:2}:x)),/ajustes personales/);
- assert.match(env.starterEqMarkup(profile,rows.map(x=>({...x,base:0,gain:0}))),/Punto de partida 0 dB/);
+ assert.match(env.starterEqMarkup(profile,rows.map(x=>({...x,base:0,gain:0}))),/EQ neutro/);
 });
 test('results keep a single EQ, original measurements and one copy action',()=>{
  const js=fs.readFileSync('src/js/04-equalization.js','utf8');

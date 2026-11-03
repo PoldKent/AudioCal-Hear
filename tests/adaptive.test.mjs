@@ -219,7 +219,7 @@ test('device-aware digital ceilings and staged preview never start at 0 by defau
 
 test('full-band default and optional independent validation are present',()=>{
  assert.match(source,/testMode:'complete',testStart:TEST_START_DB/);
- assert.match(fs.readFileSync('src/js/02-setup.js','utf8'),/Validación avanzada · opcional/);
+ assert.match(fs.readFileSync('src/js/02-setup.js','utf8'),/No necesitas canciones ni pruebas A\/B/);
  assert.match(fs.readFileSync('src/js/03-hearing-test.js','utf8'),/PREPARACIÓN · UN SOLO PASO/);
 });
 test('saved estimates preserve bounds, disagreements and actual listening time',()=>{

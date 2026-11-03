@@ -57,8 +57,8 @@ test('EQ recommendation remains independent from upload and A/B music',()=>{
  assert.match(eq,/function starterEqMarkup\(p,r\)/);
  assert.doesNotMatch(eq,/function starterEqProposal\(p\)/);
  assert.match(eq,/\$\{starterEqMarkup\(p,r\)\}/);
- assert.match(eq,/id="musicComparison"/);
- assert.match(eq,/Opcional después del EQ/);
+ assert.doesNotMatch(eq.slice(eq.indexOf('function renderResults(){'),eq.indexOf('function deviceIcon(')),/id="musicComparison"/);
+ assert.doesNotMatch(eq.slice(eq.indexOf('function renderResults(){'),eq.indexOf('function deviceIcon(')),/Opcional después del EQ/);
  assert.doesNotMatch(eq,/personalSoundFinishMarkup\(p,r\)/);
  assert.doesNotMatch(interaction,/case 'finish-sound'/);
  assert.match(interaction,/case 'previous-frequency':rewindPreviousFrequency\(\)/);

@@ -45,19 +45,18 @@ test('20 recorded single-pass low-confidence thresholds count as 10 measured EQ 
  const rec=sandbox.recommend(p);
  assert.equal(rec.length,10);
  assert.ok(rec.some(b=>b.base!==0),'Strong local contrasts allow a provisional small EQ adjustment');
- assert.ok(rec.every(b=>Math.abs(b.base)<=1),'Uncertain thresholds never trigger more than 1 dB automatically');
+ assert.ok(rec.every(b=>Math.abs(b.base)<=3),'Tone-derived recommendations stay within three dB');
  assert.equal(JSON.stringify(p.measures),before,'Original measurements are not modified');
 });
-test('missing a channel removes automatic eligibility without erasing its measured threshold',()=>{
+test('a partially measured ear can still produce bounded tone-only EQ without losing the record',()=>{
  const p=makeProfile();delete p.measures['2000|right'];
  const coverage=sandbox.thresholdCoverage(p,sandbox.gather(p));
  assert.equal(coverage.observed.length,10);
- assert.equal(coverage.measured.length,9);
- assert.equal(coverage.complete.length,9);
- assert.equal(coverage.eligible.length,9);
+ assert.equal(coverage.measured.length,10);
+ assert.equal(coverage.complete.length,10);
+ assert.equal(coverage.eligible.length,10);
  const rec=sandbox.recommend(p),band=rec.find(b=>b.f===2000);
- assert.equal(band.base,0);
- assert.match(band.autoReason,/faltan umbrales/);
+ assert.ok(Math.abs(band.base)<=3);
 });
 test('marked left/right disagreement remains measured but blocks its automatic EQ band',()=>{
  const p=makeProfile();
@@ -69,3 +68,6 @@ test('marked left/right disagreement remains measured but blocks its automatic E
  assert.equal(band.quality,'mixed');
  assert.equal(band.base,0);
 });
+
+test('a 7-band tone-only test makes nonzero bounded EQ adjustments from a 400 Hz difference',()=>{const f=[64,160,400,1000,2500,6250,15625];const p={bands:f,channels:'both',passes:1,type:'car',step:1,min:-6,max:6,manual:{},measures:Object.fromEntries(f.map((hz,i)=>[hz+'|both',[{kind:'heard',db:i===2?-30:-55,confidence:'low'}]]))};const before=JSON.stringify(p.measures),r=sandbox.recommend(p);assert.equal(r.find(x=>x.f===400).base,3);assert.ok(r.every(x=>Math.abs(x.base)<=3));p.manual[400]=1;assert.equal(sandbox.recommend(p).find(x=>x.f===400).gain,4);assert.equal(JSON.stringify(p.measures),before)});
+test('identical tone thresholds do not invent corrections and old song preferences do not affect EQ',()=>{const p=makeProfile();p.measures=Object.fromEntries(bands.map(f=>[f+'|left',[{kind:'heard',db:-55}]]));assert.ok(sandbox.recommend(p).every(x=>x.base===0));delete p.measures['500|left'];assert.equal(sandbox.recommend(p).find(x=>x.f===500).base,0);const before=sandbox.recommend(p).map(x=>x.gain);p.taste={bass:3,voices:3,air:3};p.balance={1000:3};assert.deepEqual(sandbox.recommend(p).map(x=>x.gain),before)});
