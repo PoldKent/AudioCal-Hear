@@ -423,7 +423,7 @@ let lastAnnouncedTestStep='';
 function announceTestStep(){
  const node=$('#testLiveStatus');if(!node)return;
  const entry=page==='test'&&current&&introStep>=3?plan(current)[firstMissing(current)]:null;
- const id=entry?current.id+'|'+entry.f+'|'+entry.side+'|'+entry.pass:'';
+ const id=entry?current.id+'|'+entry.f+'|'+entry.side+'|'+entry.pass+'|'+language:'';
  if(id===lastAnnouncedTestStep)return;
  lastAnnouncedTestStep=id;
  if(!entry){node.textContent='';return}
@@ -432,9 +432,9 @@ function announceTestStep(){
 }
 function render(){
  const wasTest=page==='test',active=el.contains(document.activeElement)?document.activeElement:null,activeAction=active?.dataset?.act||null;
- const keptOpen=page==='results'&&el.dataset.page==='results'?Array.from(el.querySelectorAll('details[open][id]')).map(x=>x.id):[];if(page==='test'&&current&&firstMissing(current)<0)page='results';if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
+ const keptOpen=page===el.dataset.page?Array.from(el.querySelectorAll('details[open][id]')).map(x=>x.id):[];if(page==='test'&&current&&firstMissing(current)<0)page='results';if(page==='results'&&playerAudio&&playerAudio!==$('#audioPlayer')){try{playerAudio.pause()}catch(e){}}document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===page);b.setAttribute('aria-current',b.dataset.nav===page?'page':'false')});
  el.dataset.page=page;
- el.innerHTML=page==='setup'?renderSetup():page==='test'?renderTest():page==='results'?renderResults():renderProfiles();if(page==='results')for(const id of keptOpen){const node=document.getElementById(id);if(node?.tagName==='DETAILS')node.open=true;}
+ el.innerHTML=page==='setup'?renderSetup():page==='test'?renderTest():page==='results'?renderResults():renderProfiles();for(const id of keptOpen){const node=document.getElementById(id);if(node?.tagName==='DETAILS')node.open=true;}
  if(page==='test'&&tone?.mode==='test')startVisualizer();if(page==='results'&&current){const newPlayer=$('#audioPlayer');if(playerAudio!==newPlayer){try{playerAudio?.pause()}catch(e){}try{playerSource?.disconnect()}catch(e){}filters.forEach(f=>{try{f.disconnect()}catch(e){}});try{playerPreamp?.disconnect()}catch(e){}try{playerOutput?.disconnect()}catch(e){}playerPreamp=null;playerOutput=null;playerSource=null;filters=[];playerAudio=newPlayer;if(playerUrl)playerAudio.src=playerUrl;attachPlayerEvents(playerAudio)}updatePlayerFilters();refreshEqCard()}
  localize(document.body);
  // Keep keyboard focus on an equivalent control when a tone response redraws the screen.

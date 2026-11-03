@@ -960,7 +960,8 @@ test('navigation headings and hearing-test progress are accessible',async({page}
  await expect(page.locator('#root h1')).toBeFocused();
  await passPreparation(page);
  await expect(page.locator('#testLiveStatus')).toContainText('Nueva frecuencia:');
- await expect(page.locator('#testLiveStatus')).toContainText('30 Hz');
+ const currentFrequency=(await page.locator('.frequency').innerText()).trim();
+ await expect(page.locator('#testLiveStatus')).toContainText(currentFrequency);
  expect(await page.locator('.frequency').evaluate(el=>el.tagName)).toBe('H2');
  await expect(page.locator('[role="progressbar"]')).toHaveAttribute('aria-valuemin','0');
  await expect(page.locator('[role="progressbar"]')).toHaveAttribute('aria-valuemax','100');
@@ -976,5 +977,41 @@ test('adaptive test retains an actionable keyboard focus after a heard/not-heard
  await no.focus();
  await no.press('Enter');
  await expect(page.locator('[data-act="play"]')).toBeFocused();
- await expect(page.locator('#testLiveStatus')).toContainText('30 Hz');
+ await expect(page.locator('#testLiveStatus')).toContainText((await page.locator('.frequency').innerText()).trim());
+});
+
+test('the live frequency announcement follows all eight languages without changing measured data',async({page})=>{
+ await newProfile(page,'Accesibilidad idiomas del tono');
+ await passPreparation(page);
+ const freq=(await page.locator('.frequency').innerText()).trim();
+ const before=await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures));
+ const prefixes={es:'Nueva frecuencia:',en:'New frequency:',fr:'Nouvelle fréquence',
+  pt:'Nova frequência:',it:'Nuova frequenza:',de:'Neue Frequenz:',zh:'新频率：',ja:'新しい周波数：'};
+ for(const [locale,prefix] of Object.entries(prefixes)){
+  await page.locator('#uiLanguage').selectOption(locale);
+  await expect(page.locator('#testLiveStatus')).toContainText(prefix);
+  await expect(page.locator('#testLiveStatus')).toContainText(freq);
+  await expect(page.locator('#testLiveStatus')).not.toContainText('undefined');
+ }
+ const after=await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures));
+ expect(after).toBe(before);
+});
+test('denied optional microphone access does not hide its result or change hearing evidence',async({page})=>{
+ await newProfile(page,'Micrófono denegado');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.evaluate(()=>{
+  Object.defineProperty(navigator,'mediaDevices',{
+   configurable:true,
+   value:{getUserMedia:()=>Promise.reject(new Error('Permission denied'))}
+  });
+ });
+ const before=await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures));
+ await page.locator('#ambientCheck > summary').click();
+ await page.locator('#ambientCheck [data-act="ambient"]').click();
+ await expect(page.locator('#ambientCheck')).toHaveAttribute('open','');
+ await expect(page.locator('#ambientStatus')).toContainText('permiso denegado');
+ await expect(page.locator('#ambientCheck > summary')).toBeFocused();
+ expect(await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0].measures))).toBe(before);
+ await passPreparation(page);
+ await expect(page.locator('#levelText')).toContainText('dBFS');
 });

@@ -10,7 +10,7 @@ function renderIntro(){
  ${needsPreview?`<div class="soft info"><strong>Comprobación gradual de nivel avanzado</strong><p class="small">Escucha cada referencia con el amplificador inicialmente bajo y confirma únicamente si fue cómoda y sin distorsión. Este control es necesario cuando solicitas niveles digitales altos para auto o parlantes.</p><p class="small">${volumeReady?'Referencias completadas':('Referencia '+(volumePreviewIndex+1)+' / '+previewSteps.length+': '+previewLevel+' dBFS')}</p>${volumeReady?'':button('▶ Reproducir referencia','previewlevel','btn-alt full')}${volumeReady?'':button('Confirmar nivel cómodo →','confirmlevel','btn-ghost full',volumePreviewPlayed?'':'disabled')}</div>`:
  `<div class="row wrap">${button('▶ Escuchar tono de referencia','check','btn-alt grow')}${button('■ Detener','stopaudio','btn-ghost grow')}</div>`}
  ${sweepPanelMarkup(p)}
- <details class="unobtrusive"><summary>Comprobación ambiental con micrófono · opcional</summary><div class="inner-detail"><p class="small muted">${ambientStatus||'Puedes continuar sin micrófono; la prueba no requiere permisos ni mide dB SPL calibrados.'}</p>${button(ambientBusy?'Analizando…':'Comprobar ruido relativo','ambient','btn-alt full',ambientBusy?'disabled':'')}</div></details>
+ <details class="unobtrusive" id="ambientCheck"><summary>Comprobación ambiental con micrófono · opcional</summary><div class="inner-detail"><p class="small muted" id="ambientStatus" role="status">${ambientStatus||'Puedes continuar sin micrófono; la prueba no requiere permisos ni mide dB SPL calibrados.'}</p>${button(ambientBusy?'Analizando…':'Comprobar ruido relativo','ambient','btn-alt full',ambientBusy?'disabled':'')}</div></details>
  ${button('Comenzar examen completo →','introNext','btn-primary full bigbutton')}
  </section>`;
 }
@@ -178,7 +178,7 @@ async function checkAmbient(){
  const relative=20*Math.log10(Math.max(1e-8,rmsSum/Math.max(1,seen)));
  ambientStatus=relative>-38?'Se detectó actividad relativa en el micrófono: busca un lugar más silencioso si es posible.':'El micrófono detecta poca señal relativa. No garantiza un ambiente acústico calibrado.';
  }catch(e){ambientStatus='Comprobación no disponible o permiso denegado. Puedes continuar sin micrófono.'}
- finally{stream?.getTracks().forEach(t=>t.stop());if(ctx)await ctx.close().catch(()=>{});ambientBusy=false;render()}
+ finally{stream?.getTracks().forEach(t=>t.stop());if(ctx)await ctx.close().catch(()=>{});ambientBusy=false;render();$('#ambientCheck > summary')?.focus({preventScroll:true})}
 }
 function parseBands(s){const arr=s.split(/[,;\s]+/).filter(Boolean).map(v=>Number(v));if(arr.length<2||arr.length>31||arr.some(x=>!Number.isFinite(x)||x<20||x>20000)||new Set(arr).size!==arr.length||arr.some((x,i)=>i&&x<=arr[i-1]))return null;return arr}
 function createProfile(){const name=$('#deviceName')?.value.trim()||'Mi equipo '+new Date().toLocaleDateString('es');const min=Number($('#eqMin')?.value),max=Number($('#eqMax')?.value),controlMin=Number($('#controlMin')?.value),controlMax=Number($('#controlMax')?.value);if(!Number.isFinite(min)||!Number.isFinite(max)||min>=0||max<=0||min<-30||max>30){uiAlert('Introduce límites de dB válidos: mínimo negativo y máximo positivo (hasta 30 dB).');return}
