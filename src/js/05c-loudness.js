@@ -64,9 +64,9 @@ async function playLoudnessSample(which,integrated=false){
  if(db>LOUDNESS_REFERENCE_DBFS+LOUDNESS_OFFSET_LIMIT||db<LOUDNESS_REFERENCE_DBFS-LOUDNESS_OFFSET_LIMIT)return;
  try{
   if(integrated&&trial)trial.awaiting=false;
-  stopTone();if(playerAudio)playerAudio.pause();
+  stopTone();const startEpoch=audioStartEpoch;if(playerAudio)playerAudio.pause();
   const ctx=await ensureAudio();
-  if(current!==profile||
+  if(startEpoch!==audioStartEpoch||document.hidden||current!==profile||
    (integrated?(page!=='test'||introStep!==3||key(inlineLoudnessEntry(profile)?.f,inlineLoudnessEntry(profile)?.side)!==comparisonKey):
     (page!=='results'||loudnessSelectedBand(profile)!==f)))return;
   if(frequency>=ctx.sampleRate/2){update('Esta frecuencia supera la capacidad digital del dispositivo.');return}

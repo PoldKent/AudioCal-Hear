@@ -1015,3 +1015,79 @@ test('denied optional microphone access does not hide its result or change heari
  await passPreparation(page);
  await expect(page.locator('#levelText')).toContainText('dBFS');
 });
+
+// A suspended AudioContext may resolve after stop/navigation. No stale oscillator may start.
+async function deferAudioResume(page){
+ await page.evaluate(()=>{
+  window.__hearOscillatorStarts=0;
+  window.__hearResumePending=false;
+  class DeferredAudioContext{
+   constructor(){this.state='suspended';this.sampleRate=48000;this.currentTime=0;}
+   resume(){window.__hearResumePending=true;return new Promise(resolve=>{
+    window.__hearReleaseResume=()=>{this.state='running';resolve()};
+   });}
+   createOscillator(){window.__hearOscillatorStarts++;throw new Error('Stale oscillator scheduled');}
+  }
+  Object.defineProperty(window,'AudioContext',{configurable:true,value:DeferredAudioContext});
+ });
+}
+async function releaseAudioResume(page){
+ await expect.poll(()=>page.evaluate(()=>window.__hearResumePending)).toBeTruthy();
+ await page.evaluate(()=>{window.__hearReleaseResume();return new Promise(resolve=>setTimeout(resolve,80))});
+ expect(await page.evaluate(()=>window.__hearOscillatorStarts)).toBe(0);
+}
+test('stopping a pending audio resume cannot restart headphone calibration tones',async({page})=>{
+ await newProfile(page,'Cancelación antes de sonido');
+ await deferAudioResume(page);
+ await page.locator('[data-act="checkleft"]').click();
+ await expect.poll(()=>page.evaluate(()=>window.__hearResumePending)).toBeTruthy();
+ await page.locator('[data-act="stopaudio"]').click();
+ await releaseAudioResume(page);
+ await expect(page.locator('[data-act="confirmleft"]')).toBeDisabled();
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(stored.measures).toEqual({});
+});
+test('leaving the preparation screen cancels a pending frequency sweep',async({page})=>{
+ await page.locator('[data-device="car"]').click();
+ await page.locator('#deviceName').fill('Barrido cancelado');
+ await page.locator('[data-act="create"]').click();
+ await deferAudioResume(page);
+ await page.locator('[data-act="sweep-start"]').click();
+ await expect.poll(()=>page.evaluate(()=>window.__hearResumePending)).toBeTruthy();
+ await page.locator('[data-nav="results"]').click();
+ await releaseAudioResume(page);
+ await expect(page.locator('#root')).toHaveAttribute('data-page','results');
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(Object.keys(stored.sweepRecords||{})).toHaveLength(0);
+});
+test('stopping pending relative-loudness playback cannot schedule a late tone',async({page})=>{
+ await newProfile(page,'Sonoridad cancelada');
+ await page.locator('[data-nav="results"]').click();
+ await deferAudioResume(page);
+ await page.locator('[data-loudness="reference"]').evaluate(el=>el.click());
+ await expect.poll(()=>page.evaluate(()=>window.__hearResumePending)).toBeTruthy();
+ await page.locator('[data-loudness="stop"]').evaluate(el=>el.click());
+ await releaseAudioResume(page);
+ const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
+ expect(Object.keys(stored.loudness||{})).toHaveLength(0);
+});
+test('microphone permission granted after leaving setup releases its tracks without sampling',async({page})=>{
+ await newProfile(page,'Micrófono tardío');
+ await page.locator('#uiLanguage').selectOption('es');
+ await page.evaluate(()=>{
+  window.__hearMicStops=0;window.__hearMicRequested=false;
+  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{
+   getUserMedia:()=>new Promise(resolve=>{
+    window.__hearMicRequested=true;
+    window.__hearReleaseMic=()=>resolve({getTracks:()=>[{stop:()=>{window.__hearMicStops++}}]});
+   })
+  }});
+ });
+ await page.locator('#ambientCheck > summary').click();
+ await page.locator('#ambientCheck [data-act="ambient"]').click();
+ await expect.poll(()=>page.evaluate(()=>window.__hearMicRequested)).toBeTruthy();
+ await page.locator('[data-nav="results"]').click();
+ await page.evaluate(()=>window.__hearReleaseMic());
+ await expect.poll(()=>page.evaluate(()=>window.__hearMicStops)).toBe(1);
+ await expect(page.locator('#root')).toHaveAttribute('data-page','results');
+});

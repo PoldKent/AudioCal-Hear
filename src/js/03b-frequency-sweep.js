@@ -151,9 +151,9 @@ async function startSweep(){
  sweepStarting=true;sweepNotice='';render();
  let stream=null,mic=null;
  try{
-  stopTone();if(playerAudio)playerAudio.pause();
+  stopTone();const startEpoch=audioStartEpoch;if(playerAudio)playerAudio.pause();
   const ctx=await ensureAudio();
-  if(current!==p||page!=='test'||introStep!==0)return;
+  if(startEpoch!==audioStartEpoch||document.hidden||current!==p||page!=='test'||introStep!==0)return;
   const nyquist=ctx.sampleRate/2;
   const high=Math.min(limits.max,Math.floor(nyquist*.84));
   if(high<=limits.min)throw Error('Frecuencia de muestreo insuficiente.');
@@ -161,7 +161,7 @@ async function startSweep(){
    try{
     if(!navigator.mediaDevices?.getUserMedia)throw Error('No disponible');
     stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
-    if(current!==p||page!=='test'||introStep!==0)return;
+    if(startEpoch!==audioStartEpoch||document.hidden||current!==p||page!=='test'||introStep!==0)return;
     const source=ctx.createMediaStreamSource(stream),analyser=ctx.createAnalyser();
     analyser.fftSize=4096;source.connect(analyser);
     const data=new Float32Array(analyser.frequencyBinCount);
@@ -172,6 +172,7 @@ async function startSweep(){
      for(let j=0;j<data.length;j++)baseline[j]+=Number.isFinite(data[j])?data[j]:-120;
      count++;
      await new Promise(ok=>setTimeout(ok,80));
+     if(startEpoch!==audioStartEpoch||document.hidden||current!==p||page!=='test'||introStep!==0)return;
     }
     for(let j=0;j<baseline.length;j++)baseline[j]/=count;
     mic={stream,source,analyser,data,baseline};
@@ -180,7 +181,7 @@ async function startSweep(){
     sweepNotice='Micrófono no disponible. El barrido continuará solo con tus respuestas.';
    }
   }
-  if(current!==p||page!=='test'||introStep!==0)return;
+  if(startEpoch!==audioStartEpoch||document.hidden||current!==p||page!=='test'||introStep!==0)return;
   const osc=ctx.createOscillator(),gain=ctx.createGain();
   const pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
   if(side!=='both'&&!pan)throw Error('El navegador no permite separar los canales.');
