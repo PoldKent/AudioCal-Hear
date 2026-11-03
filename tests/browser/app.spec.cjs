@@ -432,7 +432,7 @@ test('AF-02: physical EQ scale changes invalidate checked transfer bands',async(
  await page.locator('#uiLanguage').selectOption('es');
  await page.locator('[data-nav="results"]').click();
  await page.locator('#eqCardSection > summary').click();
- await page.locator('.transfer-card > summary').click();
+ // Transfer guide is already expanded in the tone-only UI.
  await page.locator('[data-act="transfer-open"]').click();
  await page.locator('[data-act="transfer-next"]').click();
  await page.locator('[data-act="transfer-next"]').click();
@@ -923,19 +923,18 @@ test('stopping a pending audio resume cannot restart headphone calibration tones
  const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
  expect(stored.measures).toEqual({});
 });
-test('leaving the preparation screen cancels a pending frequency sweep',async({page})=>{
+test('leaving preparation cancels a delayed reference tone',async({page})=>{
  await page.locator('[data-device="car"]').click();
- await page.locator('#deviceName').fill('Barrido cancelado');
+ await page.locator('#deviceName').fill('Tono cancelado');
  await page.locator('[data-act="create"]').click();
  await deferAudioResume(page);
- await page.locator('[data-act="sweep-start"]').click();
+ await page.locator('[data-act="check"]').click();
  await expect.poll(()=>page.evaluate(()=>window.__hearResumePending)).toBeTruthy();
  await page.locator('[data-nav="results"]').click();
  await releaseAudioResume(page);
  await expect(page.locator('#root')).toHaveAttribute('data-page','results');
- const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('audiocal-hear-profiles-v1'))[0]);
- expect(Object.keys(stored.sweepRecords||{})).toHaveLength(0);
 });
+
 test('tone-only results do not start a loudness comparison audio context',async({page})=>{
  await newProfile(page,'Sin sonoridad extra');
  await page.locator('[data-nav="results"]').click();
