@@ -6,11 +6,23 @@
 
 **AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite explorar umbrales auditivos percibidos, comparar preferencias musicales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
 
-**[Abrir AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Pre-release v1.9.0](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.9.0) · [Auditoría](AUDIT.es.md) · [Notas de mantenimiento](RELEASE_NOTES_v1.8.1.md) · [Historial de cambios](CHANGELOG.es.md) · [Notas de lanzamiento](RELEASE_NOTES.md)
+**[Abrir versión preliminar actual](https://poldkent.github.io/AudioCal-Hear/)** · [Hoja de ruta Hear 2.0](docs/HEAR-V2-ROADMAP.md) · [QA con dispositivos reales](docs/HEAR-V2-DEVICE-QA.md) · [QA de accesibilidad](docs/HEAR-V2-ACCESSIBILITY-QA.md) · [Historial](CHANGELOG.es.md)
 
-> **Versión preliminar pública · v1.9.0 · octubre de 2026.** La aplicación está disponible para probarla; no está validada como examen médico de audición ni calibración acústica objetiva.
+> **Código actual: v1.11.0 · versión preliminar Hear 2.0 · noviembre de 2026.** La aplicación publicada en GitHub Pages es un asistente experimental, no una audiometría clínica ni un instrumento acústico calibrado. Las pruebas automatizadas no verifican rutas Bluetooth, niveles físicos de sonido ni respuesta de equipos reales.
 
-## Nuevo en v1.9 — guía para aplicar tus ajustes
+## Flujo actual de Hear 2.0
+
+1. Configura las bandas reales y un perfil para cada dispositivo. Mantén el volumen físico **bajo, cómodo y constante**.
+2. Confirma izquierda/derecha en auriculares y completa el examen auditivo adaptativo. Los niveles digitales dBFS **no** son presión sonora real dB SPL.
+3. Revisa cobertura y fiabilidad. El **único EQ conservador y editable** ya incorpora la propuesta del test: 0 dB también es correcto sin evidencia suficiente. Copia ajustes, exporta PNG/TXT o consulta la guía opcional de controles físicos.
+4. La comparación con música, las preferencias y la auditoría detallada son **opcionales** y posteriores al resultado.
+5. Exporta un respaldo JSON antes de cambiar de equipo o borrar datos del navegador. Los perfiles se almacenan localmente.
+
+La validación con equipos físicos sigue pendiente en el [issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26).
+
+## Historial de versiones anteriores (v1.9 y previas)
+
+### Nuevo en v1.9 — guía para aplicar tus ajustes
 
 Se conserva **cargar tu propia canción** para escuchar el A/B ecualizado en AudioCal. La nueva opción **Aplicar mis ajustes** te guía para llevar los valores manualmente a Spotify, YouTube Music o al ecualizador del automóvil, auriculares o parlantes. Elige el destino, confirma sus frecuencias y límites, y sigue las instrucciones banda por banda. Los valores aproximados se identifican y las bandas sin equivalencia fiable no se modifican. AudioCal no puede cambiar por sí mismo otras aplicaciones. [Ver notas bilingües](RELEASE_NOTES_v1.9.0.md).
 

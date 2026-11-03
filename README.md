@@ -6,11 +6,23 @@
 
 **AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Explore your perceived hearing thresholds, compare musical preferences and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
-**[Launch AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [v1.9.0 pre-release](https://github.com/PoldKent/AudioCal-Hear/releases/tag/v1.9.0) · [Code audit](AUDIT.md) · [Maintenance release notes](RELEASE_NOTES_v1.8.1.md) · [Latest changes](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md)
+**[Open current public preview](https://poldkent.github.io/AudioCal-Hear/)** · [Hear 2.0 roadmap](docs/HEAR-V2-ROADMAP.md) · [Real-device QA](docs/HEAR-V2-DEVICE-QA.md) · [Accessibility QA](docs/HEAR-V2-ACCESSIBILITY-QA.md) · [Changelog](CHANGELOG.md)
 
-> **Public preview · v1.9.0 · October 2026.** The application is available for testing, not validated as a medical hearing test or objective acoustic calibration.
+> **Current source application: v1.11.0 · Hear 2.0 development preview · November 2026.** The public GitHub Pages version is an experimental listening/EQ assistant, not a clinically validated hearing test or calibrated acoustic instrument. Automated browser tests do **not** prove Bluetooth routing, real-ear audio level, or the frequency response of physical hardware.
 
-## New in v1.9 — transfer EQ settings step by step
+## Current Hear 2.0 workflow
+
+1. Configure real EQ bands and a separate profile for your device. Keep physical volume **low, comfortable and fixed**.
+2. Confirm left/right headphone channels, then complete the adaptive hearing test. Digital levels in dBFS are **not** physical loudness in dB SPL.
+3. Review measured coverage and confidence, then use the **single conservative editable EQ**. Its result is already on the bars; 0 dB is a valid result when evidence is insufficient. Use Copy, PNG, TXT or the optional manual physical-control guide.
+4. Optionally compare music, explore subjective preferences or review detailed evidence; these tools are **not required** to finish the test.
+5. Export a JSON backup before changing devices or clearing browser storage. Profiles are stored locally.
+
+Real-world device validation remains open in [issue #26](https://github.com/PoldKent/AudioCal-Hear/issues/26).
+
+## Historical release notes (v1.9 and earlier)
+
+### New in v1.9 — transfer EQ settings step by step
 
 Keep using **your own music file** for true A/B equalization in AudioCal. The new **Apply my EQ settings** assistant helps you manually set up Spotify, YouTube Music, or the EQ built into your headphones, speakers or car. Select the destination, confirm actual center frequencies and gain limits, then follow each band's instructions. Approximate mappings are labeled, unreliable matches are left unchanged. No third-party app is modified automatically. [Read the bilingual guide](RELEASE_NOTES_v1.9.0.md).
 

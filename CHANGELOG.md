@@ -2,6 +2,14 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## Hear 2.0 development preview — 2026-11-02
+
+- Consolidated earlier feature branches into a single `main` and removed 27 obsolete branches; no lost or hidden EQ algorithms are to be reintroduced.
+- Results now show one conservative, editable EQ with optional music refinement, manual equipment transfer, evidence audit and text/image exports.
+- Added eight-language result localization updates, accessible keyboard controls, a scoped screen-reader test-frequency announcement and semantic progress indicator.
+- Updated browser regressions for mobile/WebKit/desktop, kept raw hearing thresholds and profile storage unchanged.
+- **Still not validated with physical hardware:** Bluetooth routing, left/right acoustic isolation, calibrated SPL or device frequency response. See [device QA](docs/HEAR-V2-DEVICE-QA.md).
+
 ## v1.9.0 — 2026-10-31
 
 - Added **Apply my EQ settings**: manual guided transfer to Spotify, YouTube Music and headphones/speaker/car equalizers.

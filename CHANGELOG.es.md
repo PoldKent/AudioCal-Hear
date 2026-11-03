@@ -2,6 +2,14 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## Hear 2.0 — versión preliminar de desarrollo · 2026-11-02
+
+- Se consolidaron las mejoras en `main` y se eliminaron 27 ramas obsoletas sin fusionar de nuevo algoritmos antiguos de EQ.
+- Resultados con un único EQ conservador y editable, refinamiento musical opcional, transferencia manual, auditoría de evidencia y exportación de texto e imagen.
+- Se ampliaron las traducciones de resultados en ocho idiomas y la accesibilidad de teclado, lectores de pantalla, anuncios de frecuencia y progreso del examen.
+- Pruebas automatizadas de navegador en móvil/WebKit/escritorio; se conservan los umbrales originales y los perfiles existentes.
+- **Pendiente en hardware real:** rutas Bluetooth, separación auditiva de canales, nivel SPL medido y respuesta de equipos. Ver [guía de dispositivos](docs/HEAR-V2-DEVICE-QA.md).
+
 ## v1.9.0 — 2026-10-31
 
 - Nuevo asistente **Aplicar mis ajustes** para trasladar manualmente el EQ a Spotify, YouTube Music, auriculares, parlantes o automóvil.
