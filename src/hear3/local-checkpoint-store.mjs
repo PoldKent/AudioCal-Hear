@@ -165,8 +165,15 @@ export function createLocalCheckpointStore({
     const data = current();
     const revision = (data.best?.revision ?? 0) + 1;
     const raw = encoded(revision, checkpoint);
-    ensure(raw.length <= 131072, 'Checkpoint exceeds the permitted local snapshot size');
     volatileRecord = { revision, checkpoint: copy(checkpoint) };
+    // Do not drop the latest progress merely because the durable snapshot
+    // exceeds the per-slot size budget. Keep a temporary, exportable copy.
+    if (raw.length > 131072) {
+      return {
+        durability: 'volatile', persistedOnDevice: false, exportAvailable: true,
+        warning: 'Checkpoint is too large for local persistence. This session is temporary; export a backup before closing.',
+      };
+    }
 
     // If *no* valid device/tab copy survives but corrupt data exists, do not
     // erase possible recovery evidence. Keep only a volatile/exportable copy.
