@@ -36,7 +36,7 @@
 ## Lo que NO queda validado/completo
 
 - **Solo hay integración en el piloto interno de audio**; no se ha implementado una UI de producción ni una migración de resultados previos. No reemplaza el almacenamiento existente de Hear 2.0.
-- No es un respaldo integral de dispositivos, perfiles ni historial D-051; exporta un checkpoint individual, **sin importación** todavía.
+- No es un respaldo integral de dispositivos, perfiles ni historial D-051. La importación **de un checkpoint individual** se añadió al piloto en el incremento siguiente, documentado en [09-p0-importacion-checkpoints.md](09-p0-importacion-checkpoints.md); la importación/exportación completa de todos los perfiles y resultados sigue pendiente.
 - No ofrece en esta fase un mecanismo transaccional entre pestañas simultáneas, sincronización en la nube, cifrado ni recuperación de datos manipulados maliciosamente.
 - No implementa por sí solo offline ni garantiza que un navegador conserve datos. No activa telemetría ni procesamiento remoto.
 - Pendientes: pruebas con cuotas y modo privado en navegadores reales, fallos de cierre forzado, recuperación multidispositivo, esquema de evolución, restauración completa, control de referencias compartidas y eliminación global.
