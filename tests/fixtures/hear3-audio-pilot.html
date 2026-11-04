@@ -41,6 +41,16 @@
       <button type="button" data-action="delete" data-testid="delete">Eliminar checkpoint de este perfil</button>
     </div>
     <p id="recovery" role="status" data-testid="recovery">Sin copia anterior para recuperar.</p>
+    <h2>Importación local de respaldo · piloto</h2>
+    <p>Elige un archivo JSON exportado por Hear 3.0. Primero se revisará su
+    contenido; <strong>no reemplazará datos sin confirmación</strong>.</p>
+    <label for="backup-file">Archivo de respaldo</label>
+    <input id="backup-file" data-testid="backup-file" type="file" accept=".json,application/json">
+    <div class="controls">
+      <button type="button" data-action="inspect" data-testid="inspect">Revisar respaldo</button>
+      <button type="button" data-action="import" data-testid="import" disabled>Confirmar importación</button>
+    </div>
+    <p id="import-preview" role="status" data-testid="import-preview">Sin respaldo revisado.</p>
     <div class="controls">
       <button type="button" data-action="route" data-testid="route">Simular cambio de salida</button>
       <button type="button" data-action="confirm" data-testid="confirm" disabled>Confirmar salida comprobada</button>
@@ -51,6 +61,9 @@
   </main>
   <script type="module">
     import { createCheckpointedHear3AudioSession } from '../../src/hear3/checkpointed-audio-session.mjs';
+    import { createLocalCheckpointStore } from '../../src/hear3/local-checkpoint-store.mjs';
+    import { createCheckpointBackupTransfer, MAX_CHECKPOINT_BACKUP_CHARS }
+      from '../../src/hear3/checkpoint-backup-transfer.mjs';
 
     const buttons = Object.fromEntries([...document.querySelectorAll('button[data-action]')]
       .map(button => [button.dataset.action, button]));
@@ -60,12 +73,21 @@
     const persistenceEl = document.getElementById('persistence');
     const storageWarningEl = document.getElementById('storage-warning');
     const recoveryEl = document.getElementById('recovery');
+    const importPreviewEl = document.getElementById('import-preview');
+    const backupFileEl = document.getElementById('backup-file');
     let lastError = '';
     let waiting = false;
     let nextToneId = 0;
+    let importPreview = null;
+    let activityStarted = false;
+    const profileId = 'hear3-browser-pilot';
+    const checkpointStore = createLocalCheckpointStore({ profileId });
+    const transfer = createCheckpointBackupTransfer({
+      store: checkpointStore, profileId, minDbfs: -85, maxDbfs: -50,
+    });
     const controller = createCheckpointedHear3AudioSession({
-      profileId: 'hear3-browser-pilot', routeId: 'default',
-      minDbfs: -85, maxDbfs: -50,
+      profileId, routeId: 'default', minDbfs: -85, maxDbfs: -50,
+      checkpointStore,
     });
     function render() {
       const state = controller.getSession();
@@ -93,11 +115,26 @@
       buttons.confirm.disabled = state.status !== 'paused' || !state.routeCheckRequired;
       buttons.resume.disabled = state.status !== 'paused' || state.routeCheckRequired;
       buttons.finish.disabled = state.status !== 'ready' || waiting;
+      buttons.inspect.disabled = waiting || activityStarted;
+      buttons.import.disabled = waiting || activityStarted || importPreview === null;
+      backupFileEl.disabled = waiting || activityStarted;
+      importPreviewEl.textContent = importPreview
+        ? 'Respaldo válido: ' + importPreview.observations + ' respuestas; ' +
+          (importPreview.replacesExisting ? 'reemplazará el checkpoint existente. ' : 'sin checkpoint anterior. ') +
+          'Estado tras recuperación: ' + importPreview.restoredStatus + '. ' + importPreview.warning
+        : 'Sin respaldo revisado.';
     }
 
     async function action(name) {
       lastError = '';
       try {
+        if (!['inspect', 'import', 'export', 'delete'].includes(name)) {
+          activityStarted = true;
+          if (importPreview) {
+            transfer.discard();
+            importPreview = null;
+          }
+        }
         if (name === 'start') {
           waiting = true;
           render();
@@ -135,8 +172,31 @@
         } else if (name === 'delete') {
           if (window.confirm('¿Borrar solamente el checkpoint de este perfil?')) {
             const outcome = controller.clearCheckpoint({ confirmed: true });
+            transfer.discard();
+            importPreview = null;
             if (!outcome.cleared) lastError = outcome.warning;
           }
+        } else if (name === 'inspect') {
+          if (activityStarted) throw new Error('Recarga el piloto antes de importar sobre una sesión iniciada.');
+          const file = backupFileEl.files?.[0];
+          if (!file || file.size > MAX_CHECKPOINT_BACKUP_CHARS * 4) {
+            throw new Error('Selecciona un archivo JSON de respaldo con tamaño admitido.');
+          }
+          importPreview = null;
+          transfer.discard();
+          const content = await file.text();
+          importPreview = transfer.preview(content);
+        } else if (name === 'import') {
+          if (activityStarted || !importPreview) throw new Error('Revisa primero un respaldo antes de importar.');
+          const replace = importPreview.replacesExisting;
+          if (replace && !window.confirm('Se reemplazará el checkpoint de este perfil. ¿Confirmas?')) return;
+          const stored = transfer.commit({ userInitiated: true, confirmReplace: replace });
+          importPreview = null;
+          await controller.recover({ userInitiated: true });
+          activityStarted = true;
+          // On storage failure the recovered data remains available in RAM
+          // in this same pilot, without reloading or claiming persistence.
+          if (!stored.persistedOnDevice) lastError = stored.warning ?? 'La copia no quedó persistida.';
         }
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error);
@@ -149,12 +209,19 @@
       button.addEventListener('click', () => { void action(name); });
     }
 
+    backupFileEl.addEventListener('change', () => {
+      transfer.discard();
+      importPreview = null;
+      render();
+    });
+
     // Test-only observability. No results are transmitted or persisted.
     window.hear3Pilot = Object.freeze({
       snapshot: () => controller.getSession(),
       persistence: () => controller.getPersistence(),
       proposal: () => controller.getRecoveryProposal(),
       exportedCheckpoint: () => controller.exportCheckpoint(),
+      importPreview: () => importPreview,
       error: () => lastError,
     });
     render();

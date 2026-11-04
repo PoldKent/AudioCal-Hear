@@ -17,6 +17,7 @@ const allowedFiles = new Map([
   ['/src/hear3/audio-session-controller.mjs', 'src/hear3/audio-session-controller.mjs'],
   ['/src/hear3/checkpointed-audio-session.mjs', 'src/hear3/checkpointed-audio-session.mjs'],
   ['/src/hear3/local-checkpoint-store.mjs', 'src/hear3/local-checkpoint-store.mjs'],
+  ['/src/hear3/checkpoint-backup-transfer.mjs', 'src/hear3/checkpoint-backup-transfer.mjs'],
   ['/src/hear3/web-audio-adapter.mjs', 'src/hear3/web-audio-adapter.mjs'],
   ['/src/hear3/sweep-planner.mjs', 'src/hear3/sweep-planner.mjs'],
   ['/src/hear3/sweep-audio-runner.mjs', 'src/hear3/sweep-audio-runner.mjs'],
