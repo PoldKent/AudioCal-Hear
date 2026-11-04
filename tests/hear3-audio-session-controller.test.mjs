@@ -95,3 +95,27 @@ test('lifecycle interruption stops and requires manual continuation', async () =
   assert.equal(f.controller.getSession().status, 'paused');
   assert.equal(f.controller.getSession().routeCheckRequired, true);
 });
+
+test('obsolete async start never stops a newer resumed tone', async () => {
+  const resolvers = [];
+  let stops = 0;
+  const c = createHear3AudioSession({
+    profileId: 'device', minDbfs: -80, maxDbfs: -35,
+    adapterFactory: () => ({
+      playTone: () => new Promise(resolve => resolvers.push(resolve)),
+      stop: () => { stops++; },
+      dispose: async () => {},
+    }),
+  });
+  const old = c.startTone({ toneId: 'old', frequencyHz: 500, digitalLevelDbfs: -50 });
+  c.interrupt();
+  c.resume();
+  const newest = c.startTone({ toneId: 'new', frequencyHz: 700, digitalLevelDbfs: -60 });
+  resolvers[1]({ started: true, toneId: 'new' });
+  assert.equal((await newest).started, true);
+  const stopsBefore = stops;
+  resolvers[0]({ started: false, reason: 'cancelled' });
+  assert.equal((await old).reason, 'obsolete');
+  assert.equal(stops, stopsBefore, 'old completion cannot silence the newest playback');
+  assert.equal(c.answer('heard').observations[0].toneId, 'new');
+});
