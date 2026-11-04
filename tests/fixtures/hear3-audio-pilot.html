@@ -154,6 +154,7 @@
       snapshot: () => controller.getSession(),
       persistence: () => controller.getPersistence(),
       proposal: () => controller.getRecoveryProposal(),
+      exportedCheckpoint: () => controller.exportCheckpoint(),
       error: () => lastError,
     });
     render();
