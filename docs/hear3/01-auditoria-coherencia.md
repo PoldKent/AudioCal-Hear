@@ -57,4 +57,4 @@ El cuestionario de Hear 3.0 incluye las decisiones **D-001 a D-063, todas regist
 
 **Las 63 decisiones se han localizado. No se encontró una contradicción lógica que obligue a cambiar una respuesta previamente aprobada**, pero sí restricciones de alcance que precisan una matriz de aceptación y varios bloqueos técnicos. Las decisiones D-039, D-040, D-047, D-037, D-044 y D-063 dependen de validaciones que todavía no pueden darse por superadas. D-001 carece de prioridad y D-002–D-007 solo tienen prioridad global.
 
-**Estado de esta auditoría:** propuesta completa para revisión, pendiente de aprobación explícita. No modifica las decisiones de GitHub ni autoriza cambios de código.
+**Estado actualizado:** auditoría y alcance aprobados globalmente el 04/11/2026. El inicio técnico por etapas fue autorizado; la auditoría conserva las decisiones originales sin alterarlas.
