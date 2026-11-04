@@ -74,3 +74,12 @@ test('empty source is a valid empty read-only view',()=>{
   assert.deepEqual(v.profiles,[]);
   assert.equal(v.migratedV3Results,0);
 });
+
+test('history viewer supports official Hear 2.0 JSON exports without inventing thresholds',()=>{
+  const raw=JSON.stringify({app:'AudioCal Hear',version:1,profiles:[data()]});
+  const view=summarizeLegacyV2History(raw);
+  assert.equal(view.profileCount,1);
+  assert.equal(view.profiles[0].historicalRecordCount,4);
+  assert.equal(view.migratedV3Results,0);
+  assert.equal(view.profiles[0].observations[0].source,'legacy-v2-unverified');
+});
