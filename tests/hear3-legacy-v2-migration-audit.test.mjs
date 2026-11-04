@@ -87,7 +87,7 @@ test('V2 audit rejects malformed or unknown band layout rather than discarding r
 
 test('V2 audit rejects bad profile JSON and metadata, without storage side effects',()=>{
   assert.throws(()=>auditLegacyV2Profiles('{invalid'),/Invalid V2 profile JSON/);
-  assert.throws(()=>auditLegacyV2Profiles(JSON.stringify({profiles:[]})),/list invalid/);
+  assert.throws(()=>auditLegacyV2Profiles(JSON.stringify({profiles:[]})),/Unrecognized V2 profile source format/);
   const bad=profile();delete bad.id;
   assert.throws(()=>auditLegacyV2Profiles(JSON.stringify([bad])),/stable id/);
 });
@@ -116,4 +116,30 @@ test('archive declares exact historical storage source without overwriting legac
   assert.equal(archive.integrity.algorithm,'fnv1a32');
   assert.ok(archive.sourceText.includes('"measures"'));
   assert.equal(out.candidateCatalog.results.length,0);
+});
+
+test('real Hear 2.0 official JSON export is inspected without losing the original envelope',()=>{
+  const source=JSON.stringify({app:'AudioCal Hear',version:1,profiles:[profile()]},null,2);
+  const out=auditLegacyV2Profiles(source);
+  assert.equal(out.preview.sourceFormat,'hear2-official-export-v1');
+  assert.equal(out.preview.profileCount,1);
+  assert.equal(out.preview.migratedResults,0);
+  const verified=verifyLegacyV2Archive(out.originalArchive);
+  assert.equal(verified.sourceText,source);
+  assert.equal(verified.inputKind,'hear2-official-export-v1');
+  assert.equal(JSON.parse(verified.sourceText).app,'AudioCal Hear');
+});
+
+test('archived source kind is protected against accidental corruption',()=>{
+  const exportJSON=JSON.stringify({app:'AudioCal Hear',version:1,profiles:[profile()]});
+  const out=auditLegacyV2Profiles(exportJSON);
+  const bad=JSON.parse(out.originalArchive);
+  bad.inputKind='local-storage-array';
+  assert.throws(()=>verifyLegacyV2Archive(JSON.stringify(bad)),/Archive origin/);
+});
+
+test('official export from a different application or version is rejected, not silently coerced',()=>{
+  const p=[profile()];
+  assert.throws(()=>auditLegacyV2Profiles(JSON.stringify({app:'Other',version:1,profiles:p})),/Unrecognized/);
+  assert.throws(()=>auditLegacyV2Profiles(JSON.stringify({app:'AudioCal Hear',version:3,profiles:p})),/Unrecognized/);
 });
