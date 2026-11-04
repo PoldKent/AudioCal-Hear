@@ -62,7 +62,7 @@ test('no autoplay: a sweep needs start and schedules a bounded logarithmic oscil
   assert.deepEqual(f.calls.filter(c => c[0] === 'frequency-end').map(c => c[1]), [6400]);
   assert.equal(f.calls.find(c => c[0] === 'pan')[1], -1);
   assert.equal(f.calls.find(c => c[0] === 'osc.start')[1], 10.02);
-  assert.equal(f.calls.find(c => c[0] === 'osc.stop')[1], 40.02);
+  assert.ok(Math.abs(f.calls.find(c => c[0] === 'osc.stop')[1] - 40.02) < 1e-9);
   assert.ok(f.calls.some(c => c[0] === 'ramp-gain' && Math.abs(c[1] - 0.001) < 1e-12));
   runner.stop();
 });
