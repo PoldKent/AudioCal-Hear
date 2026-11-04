@@ -4,7 +4,7 @@
  * threshold, a validated V3 audiogram, or an automatic graphic EQ result.
  * The source itself is NEVER altered and no data is sent remotely.
  */
-import { auditLegacyV2Profiles } from './legacy-v2-migration-audit.mjs';
+import { auditLegacyV2Profiles, parseLegacyV2Source } from './legacy-v2-migration-audit.mjs';
 
 const CHANNELS = new Set(['both', 'left', 'right']);
 const KINDS = new Set(['heard', 'unheard', 'stillheard', 'timeout', 'skipped', 'unconfirmed']);
@@ -18,7 +18,7 @@ function countMap(value) { return isObject(value) ? Object.keys(value).length : 
  */
 export function summarizeLegacyV2History(rawProfilesText) {
   const audited = auditLegacyV2Profiles(rawProfilesText);
-  const profiles = JSON.parse(rawProfilesText);
+  const profiles = parseLegacyV2Source(rawProfilesText).profiles;
   const perProfile = profiles.map((p, index) => {
     const rawMeasures = isObject(p.measures) ? p.measures : {};
     const observations = [];
