@@ -104,23 +104,30 @@ export function createHear3AudioSession({
     return pause({ type: 'ROUTE_CHANGED', routeId });
   }
 
-  function confirmRoute() {
+  function confirmRoute({ userConfirmed = false } = {}) {
     assertLive();
-    session = transitionSession(session, { type: 'CONFIRM_ROUTE', confirmed: true });
+    session = transitionSession(session, { type: 'CONFIRM_ROUTE', confirmed: userConfirmed === true });
     return getSession();
   }
 
-  function resume() {
+  function resume({ userInitiated = false } = {}) {
     assertLive();
-    session = transitionSession(session, { type: 'RESUME', userInitiated: true });
+    session = transitionSession(session, { type: 'RESUME', userInitiated: userInitiated === true });
     // Never start an oscillator merely because a session resumed.
     return getSession();
   }
 
   function finish() {
     assertLive();
+    if (session.status === 'playing') {
+      pause({ type: 'INTERRUPT', routeMayHaveChanged: false });
+      throw new Error('Finish only from ready state');
+    }
+    const completed = transitionSession(session, { type: 'FINISH' });
+    epoch++;
+    audibleToneId = null;
     adapter.stop();
-    session = transitionSession(session, { type: 'FINISH' });
+    session = completed;
     return getSession();
   }
 
