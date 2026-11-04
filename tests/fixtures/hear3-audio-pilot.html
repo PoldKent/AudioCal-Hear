@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hear 3.0 · piloto interno de audio</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif }
+    body { max-width: 42rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5 }
+    .controls { display: flex; flex-wrap: wrap; gap: .7rem; margin: 1rem 0 }
+    button { min-height: 2.75rem; padding: .6rem .9rem; font: inherit }
+    button:focus-visible { outline: 3px solid currentColor; outline-offset: 3px }
+    .warning { border: 1px solid; padding: .8rem; border-radius: .5rem }
+    #error { min-height: 1.5rem }
+    @media(prefers-reduced-motion:reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Hear 3.0 — piloto interno de audio</h1>
+    <p class="warning"><strong>Solo pruebas de desarrollo.</strong> No es una prueba auditiva validada.
+      Mantén el volumen físico bajo y fijo. Los niveles dBFS no indican dB SPL ni seguridad acústica.
+      No se reproducirá ningún tono sin pulsar «Reproducir». Detén el sonido ante molestias.</p>
+    <p><strong>Frecuencia:</strong> 440 Hz. <strong>Nivel digital:</strong> −60 dBFS.
+      <strong>Duración máxima:</strong> 3 segundos.</p>
+    <p id="status" role="status" aria-live="polite" data-testid="status">Iniciando...</p>
+    <p id="observations" data-testid="observations">Respuestas registradas: 0</p>
+    <p id="error" role="alert" data-testid="error"></p>
+    <div class="controls">
+      <button type="button" data-action="start" data-testid="start">Reproducir tono</button>
+      <button type="button" data-action="heard" data-testid="heard" disabled>Lo escucho</button>
+      <button type="button" data-action="not-heard" data-testid="not-heard" disabled>No lo escucho</button>
+      <button type="button" data-action="pause" data-testid="pause" disabled>Pausar y silenciar</button>
+    </div>
+    <h2>Pruebas de recuperación</h2>
+    <div class="controls">
+      <button type="button" data-action="route" data-testid="route">Simular cambio de salida</button>
+      <button type="button" data-action="confirm" data-testid="confirm" disabled>Confirmar salida comprobada</button>
+      <button type="button" data-action="resume" data-testid="resume" disabled>Reanudar manualmente</button>
+      <button type="button" data-action="finish" data-testid="finish" disabled>Finalizar</button>
+    </div>
+    <p>El cambio de salida simulado comprueba el control de estado; no demuestra que el navegador detecte cambios de hardware.</p>
+  </main>
+  <script type="module">
+    import { createHear3AudioSession } from '../../src/hear3/audio-session-controller.mjs';
+
+    const buttons = Object.fromEntries([...document.querySelectorAll('button[data-action]')]
+      .map(button => [button.dataset.action, button]));
+    const statusEl = document.getElementById('status');
+    const errorEl = document.getElementById('error');
+    const observationsEl = document.getElementById('observations');
+    let lastError = '';
+    let waiting = false;
+    let nextToneId = 0;
+    const controller = createHear3AudioSession({
+      profileId: 'hear3-browser-pilot', routeId: 'default',
+      minDbfs: -85, maxDbfs: -50,
+    });
+    function render() {
+      const state = controller.getSession();
+      const status = state.status === 'playing' ? (waiting ? 'Preparando tono' : 'Reproduciendo tono')
+        : state.status === 'paused' ? 'Pausado: requiere reanudación manual'
+        : state.status === 'completed' ? 'Examen finalizado' : 'Listo para reproducir';
+      if (statusEl.textContent !== status) statusEl.textContent = status;
+      observationsEl.textContent = 'Respuestas registradas: ' + state.observations.length;
+      errorEl.textContent = lastError;
+      buttons.start.disabled = waiting || state.status !== 'ready';
+      buttons.heard.disabled = waiting || state.status !== 'playing';
+      buttons['not-heard'].disabled = buttons.heard.disabled;
+      buttons.pause.disabled = !['playing','ready'].includes(state.status);
+      buttons.route.disabled = state.status === 'completed';
+      buttons.confirm.disabled = state.status !== 'paused' || !state.routeCheckRequired;
+      buttons.resume.disabled = state.status !== 'paused' || state.routeCheckRequired;
+      buttons.finish.disabled = state.status !== 'ready' || waiting;
+    }
+
+    async function action(name) {
+      lastError = '';
+      try {
+        if (name === 'start') {
+          waiting = true;
+          render();
+          try {
+            await controller.startTone({
+              toneId: 'pilot-' + (++nextToneId),
+              frequencyHz: 440, digitalLevelDbfs: -60,
+              channel: 'joint', durationSeconds: 3,
+            });
+          } finally {
+            waiting = false;
+          }
+        } else if (name === 'heard' || name === 'not-heard') {
+          controller.answer(name === 'heard' ? 'heard' : 'not-heard');
+        } else if (name === 'pause') {
+          controller.interrupt();
+        } else if (name === 'route') {
+          controller.routeChanged('simulated-route');
+        } else if (name === 'confirm') {
+          controller.confirmRoute({ userConfirmed: true });
+        } else if (name === 'resume') {
+          controller.resume({ userInitiated: true });
+        } else if (name === 'finish') {
+          controller.finish();
+        }
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : String(error);
+      } finally {
+        render();
+      }
+    }
+
+    for (const [name, button] of Object.entries(buttons)) {
+      button.addEventListener('click', () => { void action(name); });
+    }
+
+    // Test-only observability. No results are transmitted or persisted.
+    window.hear3Pilot = Object.freeze({
+      snapshot: () => controller.getSession(),
+      error: () => lastError,
+    });
+    render();
+    // Refresh when the Web Audio "ended" event fires asynchronously.
+    const ticker = window.setInterval(render, 120);
+    window.addEventListener('pagehide', () => window.clearInterval(ticker), { once: true });
+  </script>
+</body>
+</html>
