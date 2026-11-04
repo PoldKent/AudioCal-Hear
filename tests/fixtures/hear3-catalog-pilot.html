@@ -16,7 +16,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <main>
 <h1>Hear 3.0 — piloto interno de respaldo del catálogo</h1>
 <p class="warning"><strong>Desarrollo únicamente.</strong> Sin audio, cuentas ni sincronización. Este piloto
-no convierte ni modifica los perfiles de Hear 2.0. El respaldo solo incluye los datos del catálogo V3.</p>
+ofrece una migración opcional y conservadora desde Hear 2.0. No borra ni modifica sus datos originales; las mediciones históricas quedan en un archivo aparte y aún no se convierten a resultados V3.</p>
 <p id="summary" data-testid="summary" role="status">Cargando…</p>
 <p id="durability" data-testid="durability" role="status"></p>
 <button type="button" id="download" data-testid="download">Exportar catálogo V3 (JSON)</button>
@@ -33,15 +33,27 @@ no convierte ni modifica los perfiles de Hear 2.0. El respaldo solo incluye los 
 <button type="button" id="commit" data-testid="commit" disabled>Confirmar importación</button>
 </div>
 <p id="description" data-testid="description" role="status">Todavía no se ha revisado ningún archivo.</p>
+<h2>Migración conservadora de Hear 2.0 (experimental)</h2>
+<p class="warning">Primero revisa los perfiles antiguos y exporta el archivo completo de respaldo V2. La migración solo trasladará equipos y frecuencias; las mediciones y configuraciones anteriores se conservan en el archivo, sin transformarse en resultados V3.</p>
+<button type="button" id="legacy-preview" data-testid="legacy-preview">Revisar perfiles Hear 2.0</button>
+<button type="button" id="legacy-export" data-testid="legacy-export" disabled>Exportar archivo original V2</button>
+<button type="button" id="legacy-import" data-testid="legacy-import" disabled>Importar solo metadatos compatibles</button>
+<p id="legacy-description" data-testid="legacy-description" role="status">Aún no se han revisado los datos de Hear 2.0.</p>
 <p id="error" data-testid="error" role="alert"></p>
 </main>
 <script type="module">
 import {createHear3CatalogStore,createHear3CatalogBackupTransfer,MAX_CATALOG_JSON_CHARS}
  from '../../src/hear3/catalog-backup-store.mjs';
+import { createHear2MigrationTransfer, LEGACY_V2_SOURCE_KEY, LEGACY_V2_ACTIVE_KEY }
+ from '../../src/hear3/legacy-v2-migration.mjs';
 const store=createHear3CatalogStore();
 const transfer=createHear3CatalogBackupTransfer({store});
+const legacyTransfer=createHear2MigrationTransfer({store,readLegacy:()=>({
+ profilesRaw:localStorage.getItem(LEGACY_V2_SOURCE_KEY)??'',
+ activeProfileId:localStorage.getItem(LEGACY_V2_ACTIVE_KEY)??'',
+})});
 const $=id=>document.getElementById(id);
-let preview=null;
+let preview=null,legacyPreview=null,legacyArchiveExportAttempted=false;
 function render() {
  const loaded=store.load(),counts=loaded.catalog;
  $('summary').textContent='Catálogo V3: '+counts.devices.length+' dispositivos, '+
@@ -50,6 +62,13 @@ function render() {
  (loaded.persistedOnDevice?' (escritura local verificada)':' (sin persistencia de dispositivo confirmada)')+
  (loaded.warnings?.length?' · '+loaded.warnings.join(' '):'');
  $('commit').disabled=!preview;
+ $('legacy-export').disabled=!legacyPreview;
+ $('legacy-import').disabled=!legacyPreview||!legacyArchiveExportAttempted;
+ $('legacy-description').textContent=legacyPreview?
+  'Perfiles antiguos: '+legacyPreview.sourceProfiles+'; perfiles V3 compatibles: '+legacyPreview.mappedProfiles+
+  '; resultados históricos convertidos: 0; observaciones originales que permanecen en archivo V2: '+
+  legacyPreview.unmigratedMeasurementRecords+'. '+legacyPreview.warning:
+  'Aún no se han revisado los datos de Hear 2.0.';
  $('description').textContent=preview?
   'Respaldo: '+preview.devices+' dispositivos, '+preview.profiles+
   ' perfiles, '+preview.results+' resultados. Al finalizar: '+preview.outputResults+
@@ -88,6 +107,35 @@ $('download').addEventListener('click',()=>{
   a.href=url;a.download='hear3-catalog-backup.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
  }catch(e){$('error').textContent=e.message;}
+});
+$('legacy-preview').addEventListener('click',()=>{
+ $('error').textContent='';legacyPreview=null;legacyArchiveExportAttempted=false;
+ try{legacyPreview=legacyTransfer.preview();}
+ catch(e){$('error').textContent=e.message;}
+ finally{render();}
+});
+$('legacy-export').addEventListener('click',()=>{
+ $('error').textContent='';
+ try{
+  const blob=new Blob([legacyTransfer.exportLegacyArchive()],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='hear2-unaltered-backup.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  // This only means the download was requested, not confirmed on disk.
+  legacyArchiveExportAttempted=true;
+ }catch(e){$('error').textContent=e.message;}
+ finally{render();}
+});
+$('legacy-import').addEventListener('click',()=>{
+ $('error').textContent='';
+ try{
+  if(!legacyArchiveExportAttempted)throw Error('Exporta primero el respaldo V2.');
+  if(!confirm('¿Confirmas que guardaste aparte el archivo V2 y deseas importar SOLO equipos y bandas, SIN resultados históricos?'))return;
+  const result=legacyTransfer.commit({userInitiated:true,confirmBackupExported:true});
+  legacyPreview=null;legacyArchiveExportAttempted=false;
+  if(!result.persistedOnDevice)$('error').textContent=result.warning||'Datos en memoria temporal.';
+ }catch(e){$('error').textContent=e.message;}
+ finally{render();}
 });
 // Test-only local inspection. No mutation methods or network functions.
 window.hear3CatalogPilot=Object.freeze({snapshot:()=>store.load()});
