@@ -57,7 +57,7 @@ flowchart TD
 5. `feat/eq-transfer`: un EQ, editor, copias/exports/guías y compatibilidad validada.
 6. `feat/local-data`: schema/versionado, respaldo, errores, offline y privacidad.
 7. `feat/hear3-ui`: diseño responsive, navegación, accesibilidad y progreso.
-8. `test/release-gates`: regresión, hardening, beta y reversión. **No crear estas ramas/PR todavía.**
+8. `test/release-gates`: regresión, hardening, beta y reversión. **Abrir ramas/PR de forma incremental, con comprobaciones y revisión; el primer PR es de contratos.**
 
 ## Matriz inicial de validación (a confirmar tras inventario)
 
