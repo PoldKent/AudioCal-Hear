@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hear 3.0 — auditoría de perfiles V2 (piloto interno)</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:light dark}
+body{max-width:44rem;margin:2rem auto;padding:0 1rem;line-height:1.5}
+button,input{font:inherit;min-height:2.75rem;box-sizing:border-box}
+button{display:block;width:100%;max-width:100%;margin:.65rem 0;padding:.65rem .85rem;touch-action:manipulation}
+input{display:block;width:100%;max-width:100%;margin:.5rem 0 1rem}
+button:focus-visible,input:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+.warning{border:1px solid;padding:.8rem;border-radius:.4rem}
+</style>
+</head>
+<body>
+<main>
+<h1>Hear 3.0 — revisión de perfiles antiguos</h1>
+<p class="warning"><strong>Piloto de migración de solo lectura.</strong>
+ No borra ni modifica perfiles Hear 2.0, no traslada resultados V2 al catálogo V3 y no transmite datos.
+ Una copia exacta del origen puede descargarse; el archivo no es una copia autenticada ni cifrada.</p>
+<div>
+ <button type="button" id="read" data-testid="read">Revisar perfiles V2 guardados aquí</button>
+</div>
+<p><label for="file">O revisar un JSON V2 exportado previamente</label>
+<input id="file" data-testid="file" type="file" accept=".json,application/json"></p>
+<button type="button" id="inspect" data-testid="inspect">Revisar archivo V2</button>
+<p id="summary" data-testid="summary" role="status">No se han examinado datos históricos.</p>
+<p id="warning" data-testid="warning" role="status"></p>
+<p id="error" data-testid="error" role="alert"></p>
+<button type="button" id="export" data-testid="export" disabled>Descargar copia exacta de origen V2</button>
+</main>
+<script type="module">
+import {
+ auditLegacyV2Profiles,LEGACY_V2_PROFILE_KEY,LEGACY_V2_ACTIVE_KEY,
+ MAX_LEGACY_V2_TEXT_LENGTH,
+} from '../../src/hear3/legacy-v2-migration-audit.mjs';
+const $=id=>document.getElementById(id);
+let audit=null;
+function reset(){audit=null;$('export').disabled=true;$('summary').textContent='No se han examinado datos históricos.';$('warning').textContent='';}
+function review(raw,activeId=''){
+ reset();
+ const result=auditLegacyV2Profiles(raw,{activeId});
+ audit=result;
+ $('summary').textContent='Perfiles V2: '+result.preview.profileCount+
+  '. Candidatos de dispositivo V3: '+result.preview.candidateDevices+
+  '. Resultados de medición trasladados: '+result.preview.migratedResults+'.';
+ const archived=result.preview.profiles.filter(p=>p.archivedOnlyFields.length).length;
+ $('warning').textContent=archived+
+  ' perfiles contienen campos conservados solo en el respaldo V2. '+
+  result.preview.warning;
+ $('export').disabled=false;
+}
+$('read').addEventListener('click',()=>{
+ $('error').textContent='';
+ try {
+  const text=localStorage.getItem(LEGACY_V2_PROFILE_KEY);
+  const activeId=localStorage.getItem(LEGACY_V2_ACTIVE_KEY)??'';
+  if(text===null)throw Error('No se encontraron perfiles V2 guardados en este navegador.');
+  review(text,activeId);
+ }catch(e){reset();$('error').textContent=e.message;}
+});
+$('inspect').addEventListener('click',async()=>{
+ $('error').textContent='';
+ try {
+  const file=$('file').files?.[0];
+  if(!file || file.size>MAX_LEGACY_V2_TEXT_LENGTH*4)
+   throw Error('Selecciona un JSON V2 dentro del tamaño permitido.');
+  review(await file.text(),'');
+ }catch(e){reset();$('error').textContent=e.message;}
+});
+$('file').addEventListener('change',reset);
+$('export').addEventListener('click',()=>{
+ if(!audit)return;
+ const blob=new Blob([audit.originalArchive],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download='hear3-archivo-exacto-origen-v2.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+// Test-only: preview without exposing source or filesystem operations.
+window.hear3LegacyPilot=Object.freeze({
+ snapshot:()=>audit?.preview??null,
+ archive:()=>audit?.originalArchive??null,
+});
+</script>
+</body>
+</html>
