@@ -45,7 +45,7 @@ test('pending audio cannot be answered or replayed after interruption', async ()
   f.resolvePending({ started: false, reason: 'cancelled' });
   assert.equal((await start).reason, 'obsolete');
   assert.equal(f.controller.getSession().status, 'paused');
-  f.controller.resume();
+  f.controller.resume({ userInitiated: true });
   assert.equal(f.controller.getSession().status, 'ready');
   assert.equal(f.controller.getSession().observations.length, 0);
 });
@@ -55,9 +55,11 @@ test('route change needs confirmation and never automatically plays', async () =
   await f.controller.startTone(f.tone);
   f.controller.routeChanged('new-device');
   assert.equal(f.controller.getSession().routeCheckRequired, true);
-  assert.throws(() => f.controller.resume(), /Route check/);
-  f.controller.confirmRoute();
-  f.controller.resume();
+  assert.throws(() => f.controller.resume({ userInitiated: true }), /Route check/);
+  assert.throws(() => f.controller.confirmRoute(), /Explicit route confirmation/);
+  f.controller.confirmRoute({ userConfirmed: true });
+  assert.throws(() => f.controller.resume(), /Explicit user action/);
+  f.controller.resume({ userInitiated: true });
   assert.equal(f.controller.getSession().status, 'ready');
   assert.equal(f.calls.filter(c => c[0] === 'play').length, 1);
 });
@@ -109,7 +111,7 @@ test('obsolete async start never stops a newer resumed tone', async () => {
   });
   const old = c.startTone({ toneId: 'old', frequencyHz: 500, digitalLevelDbfs: -50 });
   c.interrupt();
-  c.resume();
+  c.resume({ userInitiated: true });
   const newest = c.startTone({ toneId: 'new', frequencyHz: 700, digitalLevelDbfs: -60 });
   resolvers[1]({ started: true, toneId: 'new' });
   assert.equal((await newest).started, true);
@@ -118,4 +120,15 @@ test('obsolete async start never stops a newer resumed tone', async () => {
   assert.equal((await old).reason, 'obsolete');
   assert.equal(stops, stopsBefore, 'old completion cannot silence the newest playback');
   assert.equal(c.answer('heard').observations[0].toneId, 'new');
+});
+
+test('finish while playing interrupts instead of leaving a false answer possible', async () => {
+  const f = fixture();
+  await f.controller.startTone(f.tone);
+  assert.throws(() => f.controller.finish(), /Finish only from ready/);
+  assert.equal(f.controller.getSession().status, 'paused');
+  assert.deepEqual(f.controller.getSession().invalidatedToneIds, ['t1']);
+  assert.throws(() => f.controller.answer('heard'), /before the tone/);
+  f.controller.resume({ userInitiated: true });
+  assert.equal(f.controller.finish().status, 'completed');
 });
