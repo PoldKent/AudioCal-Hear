@@ -8,7 +8,6 @@ import { auditLegacyV2Profiles } from './legacy-v2-migration-audit.mjs';
 
 const CHANNELS = new Set(['both', 'left', 'right']);
 const KINDS = new Set(['heard', 'unheard', 'stillheard', 'timeout', 'skipped', 'unconfirmed']);
-const own = (obj,k) => Object.prototype.hasOwnProperty.call(obj,k);
 function isObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 function countMap(value) { return isObject(value) ? Object.keys(value).length : 0; }
 
