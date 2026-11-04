@@ -65,19 +65,39 @@ function summarizeProfile(profile,index){
     potentiallyHistoric,unknownFields};
 }
 
+/**
+ * The real Hear 2.0 app stores an array locally, but exports files as:
+ * { app: 'AudioCal Hear', version: 1, profiles: [...] }.
+ * Parse both without rewriting either source representation.
+ */
+export function parseLegacyV2Source(rawText){
+  check(typeof rawText==='string' && rawText.length>0 &&
+    rawText.length<=MAX_LEGACY_V2_TEXT_LENGTH,'Invalid V2 source size');
+  let source;
+  try{source=JSON.parse(rawText)}catch{throw Error('Invalid V2 profile JSON');}
+  let profiles, inputKind;
+  if(Array.isArray(source)){
+    profiles=source; inputKind='local-storage-array';
+  }else if(obj(source) && source.app==='AudioCal Hear' &&
+    source.version===1 && Array.isArray(source.profiles)){
+    profiles=source.profiles; inputKind='hear2-official-export-v1';
+  }else throw Error('Unrecognized V2 profile source format');
+  check(profiles.length<=200,'V2 profile list invalid or exceeds 200');
+  return {profiles,inputKind};
+}
+
 /** All raw V2 bytes are preserved inside the export, not normalized away. */
 export function exportUnmodifiedLegacyV2Archive(rawProfilesText,{activeId=''}={}){
-  check(typeof rawProfilesText==='string' && rawProfilesText.length>0 &&
-    rawProfilesText.length<=MAX_LEGACY_V2_TEXT_LENGTH,'Invalid V2 source size');
+  const {inputKind}=parseLegacyV2Source(rawProfilesText);
   check(typeof activeId==='string' && activeId.length<=100,'Invalid V2 active profile');
   return JSON.stringify({
     format:LEGACY_V2_ARCHIVE_FORMAT,
     originalStorageKey:LEGACY_V2_PROFILE_KEY,
     originalActiveKey:LEGACY_V2_ACTIVE_KEY,
-    sourceText:rawProfilesText,activeId,
+    inputKind,sourceText:rawProfilesText,activeId,
     integrity:{
       algorithm:'fnv1a32',
-      value:checkpointFingerprint(JSON.stringify({sourceText:rawProfilesText,activeId})),
+      value:checkpointFingerprint(JSON.stringify({sourceText:rawProfilesText,activeId,inputKind})),
     },
   },null,2);
 }
@@ -93,12 +113,18 @@ export function verifyLegacyV2Archive(archiveText){
     && typeof archive.activeId==='string' && archive.activeId.length<=100
     && archive.integrity?.algorithm==='fnv1a32'
     && Object.keys(archive).every(k=>[
-      'format','originalStorageKey','originalActiveKey','sourceText','activeId','integrity',
+      'format','originalStorageKey','originalActiveKey','inputKind','sourceText','activeId','integrity',
     ].includes(k)), 'Unrecognized V2 source archive');
-  check(archive.integrity.value===checkpointFingerprint(JSON.stringify({
-    sourceText:archive.sourceText,activeId:archive.activeId,
-  })),'Damaged V2 source archive');
-  return {sourceText:archive.sourceText,activeId:archive.activeId};
+  const parsed=parseLegacyV2Source(archive.sourceText);
+  if(archive.inputKind!==undefined){
+    check(archive.inputKind===parsed.inputKind,'Archive origin does not match its source');
+  }
+  const unsigned=archive.inputKind===undefined
+    ? {sourceText:archive.sourceText,activeId:archive.activeId}
+    : {sourceText:archive.sourceText,activeId:archive.activeId,inputKind:archive.inputKind};
+  check(archive.integrity.value===checkpointFingerprint(JSON.stringify(unsigned)),
+    'Damaged V2 source archive');
+  return {sourceText:archive.sourceText,activeId:archive.activeId,inputKind:parsed.inputKind};
 }
 
 /**
@@ -107,12 +133,8 @@ export function verifyLegacyV2Archive(archiveText){
  * This module does not write to either storage format or import the candidate.
  */
 export function auditLegacyV2Profiles(rawProfilesText,{activeId=''}={}){
-  check(typeof rawProfilesText==='string' && rawProfilesText.length>0 &&
-    rawProfilesText.length<=MAX_LEGACY_V2_TEXT_LENGTH,'Invalid V2 source size');
-  let source;
-  try{source=JSON.parse(rawProfilesText)}catch{throw Error('Invalid V2 profile JSON');}
-  check(Array.isArray(source) && source.length<=200,'V2 profile list invalid or exceeds 200');
-  const checked=source.map(summarizeProfile);
+  const {profiles,inputKind}=parseLegacyV2Source(rawProfilesText);
+  const checked=profiles.map(summarizeProfile);
   const ids=new Set();
   for(const p of checked){
     check(!ids.has(p.sourceId),'Duplicate V2 profile id: migration blocked');
@@ -128,7 +150,7 @@ export function auditLegacyV2Profiles(rawProfilesText,{activeId=''}={}){
     activeProfileId:active?.profile.id??null,
   });
   const preview={
-    sourceFormat:LEGACY_V2_PROFILE_KEY,
+    sourceFormat:inputKind,
     profileCount:checked.length,
     candidateDevices:catalog.devices.length,
     candidateProfiles:catalog.profiles.length,
