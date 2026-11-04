@@ -250,3 +250,83 @@ test('P0 corrupted checkpoint is visible as damaged but never auto-restored', as
   await expect(page.getByTestId('storage-warning')).toContainText('damaged');
   expect(await page.evaluate(() => window.__hear3FakeAudio.nodes.length)).toBe(0);
 });
+
+
+test('P0 backup file can be inspected and restored without audio autoplay', async ({ page }) => {
+  await installDeterministicWebAudio(page);
+  await page.goto(PILOT);
+  await page.getByTestId('start').click();
+  await page.getByTestId('heard').click();
+  const exported = await page.evaluate(() => window.hear3Pilot.exportedCheckpoint());
+  expect(JSON.parse(exported).integrity.algorithm).toBe('fnv1a32');
+  await page.reload();
+  page.once('dialog', d => d.accept());
+  await page.getByTestId('delete').click();
+  await expect(page.getByTestId('recover')).toBeDisabled();
+  const nodesBefore = await page.evaluate(() => window.__hear3FakeAudio.nodes.length);
+  await page.getByTestId('backup-file').setInputFiles({
+    name: 'checkpoint-hear3.json', mimeType: 'application/json', buffer: Buffer.from(exported),
+  });
+  await page.getByTestId('inspect').click();
+  await expect(page.getByTestId('import-preview')).toContainText('Respaldo válido: 1 respuestas');
+  await expect(page.getByTestId('import')).toBeEnabled();
+  await page.getByTestId('import').click();
+  await expect(page.getByTestId('status')).toContainText('Pausado');
+  await expect(page.getByTestId('observations')).toHaveText('Respuestas registradas: 1');
+  await expect(page.getByTestId('resume')).toBeDisabled();
+  expect(await page.evaluate(() => window.__hear3FakeAudio.nodes.length)).toBe(nodesBefore);
+});
+
+test('P0 backup replacement requires confirmation and preserves existing until accepted', async ({ page }) => {
+  await installDeterministicWebAudio(page);
+  await page.goto(PILOT);
+  await page.getByTestId('start').click();
+  await page.getByTestId('not-heard').click();
+  const exported = await page.evaluate(() => window.hear3Pilot.exportedCheckpoint());
+  await page.reload();
+  await page.getByTestId('backup-file').setInputFiles({
+    name: 'checkpoint-hear3.json', mimeType: 'application/json', buffer: Buffer.from(exported),
+  });
+  await page.getByTestId('inspect').click();
+  await expect(page.getByTestId('import-preview')).toContainText('reemplazará el checkpoint existente');
+  page.once('dialog', d => d.dismiss());
+  await page.getByTestId('import').click();
+  await expect(page.getByTestId('status')).toHaveText('Listo para reproducir');
+  await expect(page.getByTestId('import')).toBeEnabled();
+  page.once('dialog', d => d.accept());
+  await page.getByTestId('import').click();
+  await expect(page.getByTestId('status')).toContainText('Pausado');
+  await expect(page.getByTestId('observations')).toHaveText('Respuestas registradas: 1');
+});
+
+test('P0 damaged backup is rejected before it can overwrite a local checkpoint', async ({ page }) => {
+  await installDeterministicWebAudio(page);
+  await page.goto(PILOT);
+  await page.getByTestId('start').click();
+  await page.getByTestId('heard').click();
+  const damaged = await page.evaluate(() => {
+    const data = JSON.parse(window.hear3Pilot.exportedCheckpoint());
+    data.checkpoint.observations[0].response = 'not-heard';
+    return JSON.stringify(data);
+  });
+  await page.reload();
+  await page.getByTestId('backup-file').setInputFiles({
+    name: 'damaged.json', mimeType: 'application/json', buffer: Buffer.from(damaged),
+  });
+  await page.getByTestId('inspect').click();
+  await expect(page.getByTestId('error')).toContainText('checksum mismatch');
+  await expect(page.getByTestId('import')).toBeDisabled();
+  await expect(page.getByTestId('recover')).toBeEnabled();
+  expect((await page.evaluate(() => JSON.parse(window.hear3Pilot.exportedCheckpoint())))
+    .checkpoint.observations[0].response).toBe('heard');
+});
+
+test('P0 backup import is disabled once an active exam has new activity', async ({ page }) => {
+  await installDeterministicWebAudio(page);
+  await page.goto(PILOT);
+  await page.getByTestId('start').click();
+  await page.getByTestId('heard').click();
+  await expect(page.getByTestId('inspect')).toBeDisabled();
+  await expect(page.getByTestId('import')).toBeDisabled();
+  await expect(page.getByTestId('backup-file')).toBeDisabled();
+});
