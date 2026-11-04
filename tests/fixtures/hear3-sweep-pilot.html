@@ -66,6 +66,7 @@ for(const [name,button] of Object.entries(buttons)){
      pending=true;render();
      try {
        await runner.start({
+         userInitiated:true,
          plan:sweepPlan,digitalLevelDbfs:-60,
          authorizedDigitalRangeDbfs:{minDbfs:-85,maxDbfs:-42},
          channel:'joint',
