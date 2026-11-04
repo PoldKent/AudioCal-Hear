@@ -5,12 +5,15 @@ import { createWebAudioToneAdapter } from '../src/hear3/web-audio-adapter.mjs';
 function createFakeContext({ pendingResume = false, panning = true } = {}) {
   const calls = [];
   const nodes = [];
+  const listeners = new Map();
   let resolveResume;
   const ctx = {
     state: pendingResume ? 'suspended' : 'running',
     sampleRate: 48000,
     currentTime: 10,
     destination: {},
+    addEventListener: (name, fn) => listeners.set(name, fn),
+    removeEventListener: (name, fn) => { if (listeners.get(name) === fn) listeners.delete(name); },
     createOscillator() {
       const osc = {
         type: null, onended: null,
@@ -45,7 +48,7 @@ function createFakeContext({ pendingResume = false, panning = true } = {}) {
     },
     async close() { this.state = 'closed'; calls.push(['close']); },
   };
-  return { ctx, calls, nodes, resolvePending: () => resolveResume?.() };
+  return { ctx, calls, nodes, listeners, resolvePending: () => resolveResume?.() };
 }
 const args = (overrides = {}) => ({
   toneId: 'a1', frequencyHz: 1000, digitalLevelDbfs: -45,
@@ -142,4 +145,26 @@ test('visibility and pagehide events silence active audio and listeners detach o
   assert.deepEqual(interruptions, ['hidden', 'pagehide']);
   await a.dispose();
   assert.equal(listeners.size, 0);
+});
+
+
+test('P0 discrete tone is silenced on AudioContext suspension and reports interruption', async () => {
+  const f = createFakeContext();
+  const interruptions = [];
+  const adapter = createWebAudioToneAdapter({
+    createContext: () => f.ctx,
+    onInterrupted: e => interruptions.push(e.reason),
+  });
+  await adapter.playTone(args({ channel: 'joint' }));
+  assert.equal(adapter.getStatus().activeToneId, 'a1');
+  assert.equal(adapter.getStatus().contextState, 'running');
+  assert.equal(adapter.getStatus().visible, true);
+  f.ctx.state = 'suspended';
+  f.listeners.get('statechange')();
+  assert.equal(adapter.getStatus().activeToneId, null);
+  assert.equal(adapter.getStatus().contextState, 'suspended');
+  assert.deepEqual(interruptions, ['context-suspended']);
+  assert.ok(f.calls.some(c => c[0] === 'gain.set' && c[1] === 0));
+  await adapter.dispose();
+  assert.equal(f.listeners.size, 0);
 });
