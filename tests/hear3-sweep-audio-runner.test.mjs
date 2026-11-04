@@ -5,10 +5,13 @@ import { createSweepAudioRunner, PROTOTYPE_SWEEP_MAX_DBFS } from '../src/hear3/s
 
 function fakeAudio({ suspended = false, stereo = true, sampleRate = 48000 } = {}) {
   const calls = [], nodes = [];
+  const listeners = new Map();
   let resolveResume;
   const ctx = {
     currentTime: 10, sampleRate, destination: {},
     state: suspended ? 'suspended' : 'running',
+    addEventListener: (name, fn) => listeners.set(name, fn),
+    removeEventListener: (name, fn) => { if (listeners.get(name) === fn) listeners.delete(name); },
     createOscillator() {
       const node = {
         frequency: {
@@ -48,7 +51,7 @@ function fakeAudio({ suspended = false, stereo = true, sampleRate = 48000 } = {}
     },
     async close() { this.state = 'closed'; calls.push(['ctx.close']); },
   };
-  return { ctx, calls, nodes, resumeNow: () => resolveResume?.() };
+  return { ctx, calls, nodes, listeners, resumeNow: () => resolveResume?.() };
 }
 const range = { minDbfs: -85, maxDbfs: -35 };
 const plan = () => createSweepPlan({ minHz: 100, maxHz: 6400, durationSeconds: 30 });
@@ -57,7 +60,7 @@ test('no autoplay: a sweep needs start and schedules a bounded logarithmic oscil
   const f = fakeAudio();
   const runner = createSweepAudioRunner({ createContext: () => f.ctx });
   assert.equal(f.nodes.length, 0);
-  assert.equal((await runner.start({ plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range, channel: 'left' })).started, true);
+  assert.equal((await runner.start({ userInitiated: true, plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range, channel: 'left' })).started, true);
   assert.deepEqual(f.calls.filter(c => c[0] === 'frequency-start').map(c => c[1]), [100]);
   assert.deepEqual(f.calls.filter(c => c[0] === 'frequency-end').map(c => c[1]), [6400]);
   assert.equal(f.calls.find(c => c[0] === 'pan')[1], -1);
@@ -70,7 +73,7 @@ test('no autoplay: a sweep needs start and schedules a bounded logarithmic oscil
 test('reports preserve user provenance and estimate frequency from audio elapsed time', async () => {
   const f = fakeAudio();
   const runner = createSweepAudioRunner({ createContext: () => f.ctx });
-  await runner.start({ plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
+  await runner.start({ userInitiated: true, plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
   f.ctx.currentTime = 15.02;
   const heard = runner.recordResponse(true);
   assert.equal(heard.heard, true);
@@ -89,8 +92,8 @@ test('reports preserve user provenance and estimate frequency from audio elapsed
 test('exceeding preauthorized or prototype levels stops an active sweep without replacement', async () => {
   const f = fakeAudio();
   const runner = createSweepAudioRunner({ createContext: () => f.ctx });
-  await runner.start({ plan: plan(), digitalLevelDbfs: -65, authorizedDigitalRangeDbfs: range });
-  await assert.rejects(runner.start({ plan: plan(), digitalLevelDbfs: -25, authorizedDigitalRangeDbfs: range }), /level exceeds/);
+  await runner.start({ userInitiated: true, plan: plan(), digitalLevelDbfs: -65, authorizedDigitalRangeDbfs: range });
+  await assert.rejects(runner.start({ userInitiated: true, plan: plan(), digitalLevelDbfs: -25, authorizedDigitalRangeDbfs: range }), /level exceeds/);
   assert.equal(runner.snapshot().status, 'idle');
   assert.equal(f.calls.filter(c => c[0] === 'osc.start').length, 1);
   assert.equal(f.calls.filter(c => c[0] === 'osc.stop').at(-1)[1], 10);
@@ -100,11 +103,11 @@ test('exceeding preauthorized or prototype levels stops an active sweep without 
 test('duration and Nyquist restrictions are checked with the actual audio hardware sample rate', async () => {
   const f = fakeAudio({ sampleRate: 16000 });
   const runner = createSweepAudioRunner({ createContext: () => f.ctx });
-  await assert.rejects(runner.start({
+  await assert.rejects(runner.start({ userInitiated: true,
     plan: createSweepPlan({ minHz: 100, maxHz: 8000, durationSeconds: 20 }),
     digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range,
   }), /Nyquist/);
-  await assert.rejects(runner.start({
+  await assert.rejects(runner.start({ userInitiated: true,
     plan: createSweepPlan({ minHz: 100, maxHz: 7000, durationSeconds: 60 }),
     digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range,
   }), /duration exceeds/);
@@ -114,7 +117,7 @@ test('duration and Nyquist restrictions are checked with the actual audio hardwa
 test('suspended AudioContext is cancelled during asynchronous resume before audio starts', async () => {
   const f = fakeAudio({ suspended: true });
   const runner = createSweepAudioRunner({ createContext: () => f.ctx });
-  const result = runner.start({ plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
+  const result = runner.start({ userInitiated: true, plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
   runner.stop();
   f.resumeNow();
   assert.deepEqual(await result, { started: false, reason: 'cancelled' });
@@ -125,7 +128,7 @@ test('end-of-sweep preserves subjective reports but never calculates thresholds'
   const f = fakeAudio();
   const ended = [];
   const runner = createSweepAudioRunner({ createContext: () => f.ctx, onEnded: e => ended.push(e) });
-  await runner.start({ plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
+  await runner.start({ userInitiated: true, plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
   f.ctx.currentTime = 15.02;
   runner.recordResponse(true);
   f.nodes[0].onended();
@@ -141,7 +144,7 @@ test('only actual playback may receive a response; rejects duplicate timestamps 
   const f = fakeAudio();
   const runner = createSweepAudioRunner({ createContext: () => f.ctx });
   assert.throws(() => runner.recordResponse(true), /No active sweep/);
-  await runner.start({ plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
+  await runner.start({ userInitiated: true, plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
   assert.throws(() => runner.recordResponse(true), /outside the playback interval/);
   f.ctx.currentTime = 13.02;
   assert.throws(() => runner.recordResponse('yes'), /must be explicit/);
@@ -165,7 +168,7 @@ test('route and visibility-like interruptions silence and preserve only partial 
     visibilityTarget: target, lifecycleTarget: target, isVisible: () => visible,
     onInterrupted: e => interrupted.push(e.reason),
   });
-  await runner.start({ plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
+  await runner.start({ userInitiated: true, plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
   f.ctx.currentTime = 11.02;
   runner.recordResponse(true);
   visible = false;
@@ -175,7 +178,7 @@ test('route and visibility-like interruptions silence and preserve only partial 
   assert.equal(runner.lastResult().reports.length, 1);
   assert.equal(f.calls.filter(c => c[0] === 'osc.stop').at(-1)[1], 11.02);
   visible = true;
-  await runner.start({ plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
+  await runner.start({ userInitiated: true, plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
   listeners.get('pagehide')();
   assert.deepEqual(interrupted, ['hidden', 'pagehide']);
   await runner.dispose();
@@ -186,12 +189,12 @@ test('route and visibility-like interruptions silence and preserve only partial 
 test('separate left/right requires a panner and disposal prevents replay', async () => {
   const f = fakeAudio({ stereo: false });
   const runner = createSweepAudioRunner({ createContext: () => f.ctx });
-  await assert.rejects(runner.start({
+  await assert.rejects(runner.start({ userInitiated: true,
     plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range, channel: 'left',
   }), /Independent channels/);
   assert.equal(f.nodes.length, 0);
   await runner.dispose();
-  await assert.rejects(runner.start({
+  await assert.rejects(runner.start({ userInitiated: true,
     plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range,
   }), /disposed/);
 });
@@ -200,7 +203,7 @@ test('partial Web Audio construction failure cleans up and preserves root error'
   const f = fakeAudio();
   f.ctx.createGain = () => { throw new Error('Gain node unavailable'); };
   const runner = createSweepAudioRunner({ createContext: () => f.ctx });
-  await assert.rejects(runner.start({
+  await assert.rejects(runner.start({ userInitiated: true,
     plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range,
   }), /Gain node unavailable/);
   assert.equal(runner.snapshot().status, 'idle');
@@ -210,11 +213,61 @@ test('partial Web Audio construction failure cleans up and preserves root error'
 test('external edits to diagnostic snapshots cannot mutate recorded reports', async () => {
   const f = fakeAudio();
   const runner = createSweepAudioRunner({ createContext: () => f.ctx });
-  await runner.start({ plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
+  await runner.start({ userInitiated: true, plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range });
   f.ctx.currentTime = 12.02;
   runner.recordResponse(true);
   runner.stop();
   const mutableCopy = runner.snapshot().lastResult;
   mutableCopy.reports[0].heard = false;
   assert.equal(runner.lastResult().reports[0].heard, true);
+});
+
+
+test('P0 requires explicit start even if a caller invokes the runner programmatically', async () => {
+  const f = fakeAudio();
+  const runner = createSweepAudioRunner({ createContext: () => f.ctx });
+  const args = { plan: plan(), digitalLevelDbfs: -60, authorizedDigitalRangeDbfs: range };
+  await assert.rejects(runner.start(args), /Explicit user action/);
+  assert.equal(f.nodes.length, 0);
+  await runner.start({ ...args, userInitiated: true });
+  await assert.rejects(runner.start(args), /Explicit user action/);
+  assert.equal(runner.snapshot().status, 'idle');
+  assert.equal(f.calls.filter(c => c[0] === 'osc.stop').at(-1)[1], 10);
+});
+
+test('P0 context suspension interrupts and stops the sweep without accepting measurements', async () => {
+  const f = fakeAudio();
+  const interrupted = [];
+  const runner = createSweepAudioRunner({
+    createContext: () => f.ctx,
+    onInterrupted: e => interrupted.push(e.reason),
+  });
+  await runner.start({
+    userInitiated: true, plan: plan(), digitalLevelDbfs: -60,
+    authorizedDigitalRangeDbfs: range,
+  });
+  f.ctx.state = 'suspended';
+  f.listeners.get('statechange')();
+  assert.equal(runner.lastResult().status, 'interrupted');
+  assert.equal(runner.lastResult().reason, 'context-suspended');
+  assert.deepEqual(interrupted, ['context-suspended']);
+  assert.throws(() => runner.recordResponse(true), /No active sweep/);
+  assert.equal(runner.lastResult().thresholdInferences, 0);
+  await runner.dispose();
+  assert.equal(f.listeners.size, 0);
+});
+
+test('P0 refuses to record a response after the output context suspends before statechange', async () => {
+  const f = fakeAudio();
+  const runner = createSweepAudioRunner({ createContext: () => f.ctx });
+  await runner.start({
+    userInitiated: true, plan: plan(), digitalLevelDbfs: -60,
+    authorizedDigitalRangeDbfs: range,
+  });
+  f.ctx.currentTime = 11.02;
+  f.ctx.state = 'suspended';
+  assert.throws(() => runner.recordResponse(true), /no longer playing/);
+  assert.equal(runner.lastResult().status, 'interrupted');
+  assert.equal(runner.lastResult().reports.length, 0);
+  assert.equal(f.calls.filter(c => c[0] === 'osc.stop').at(-1)[1], 11.02);
 });
