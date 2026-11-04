@@ -27,6 +27,7 @@ button:focus-visible,input:focus-visible{outline:3px solid currentColor;outline-
 <button type="button" id="inspect" data-testid="inspect">Revisar archivo V2</button>
 <p id="summary" data-testid="summary" role="status">No se han examinado datos históricos.</p>
 <p id="warning" data-testid="warning" role="status"></p>
+<section aria-label="Historial V2 no validado"><h2>Resumen histórico de solo lectura</h2><p>Estos registros antiguos no son umbrales auditivos ni resultados de EQ V3.</p><div id="legacy-history" data-testid="legacy-history"></div></section>
 <p id="error" data-testid="error" role="alert"></p>
 <button type="button" id="export" data-testid="export" disabled>Descargar copia exacta de origen V2</button>
 </main>
@@ -35,13 +36,16 @@ import {
  auditLegacyV2Profiles,LEGACY_V2_PROFILE_KEY,LEGACY_V2_ACTIVE_KEY,
  MAX_LEGACY_V2_TEXT_LENGTH,
 } from '../../src/hear3/legacy-v2-migration-audit.mjs';
+import {summarizeLegacyV2History} from '../../src/hear3/legacy-v2-history-view.mjs';
 const $=id=>document.getElementById(id);
-let audit=null;
-function reset(){audit=null;$('export').disabled=true;$('summary').textContent='No se han examinado datos históricos.';$('warning').textContent='';}
+let audit=null,history=null;
+function reset(){audit=null;history=null;$('legacy-history').replaceChildren();$('export').disabled=true;$('summary').textContent='No se han examinado datos históricos.';$('warning').textContent='';}
 function review(raw,activeId=''){
  reset();
  const result=auditLegacyV2Profiles(raw,{activeId});
+ const historic=summarizeLegacyV2History(raw);
  audit=result;
+ history=historic;
  $('summary').textContent='Perfiles V2: '+result.preview.profileCount+
   '. Candidatos de dispositivo V3: '+result.preview.candidateDevices+
   '. Resultados de medición trasladados: '+result.preview.migratedResults+'.';
@@ -49,6 +53,18 @@ function review(raw,activeId=''){
  $('warning').textContent=archived+
   ' perfiles contienen campos conservados solo en el respaldo V2. '+
   result.preview.warning;
+ for(const p of historic.profiles){
+  const section=document.createElement('section'),title=document.createElement('h3'),description=document.createElement('p');
+  title.textContent=p.name+' ('+p.deviceType+')';
+  description.textContent='Registros V2: '+p.historicalRecordCount+
+   '. Sin clasificar: '+p.unclassifiedRecordCount+
+   '. Canales: '+(p.channels.join(', ')||'ninguno')+
+   '. Barridos registrados: '+p.sweepCount+
+   '. Bandas con ajuste manual heredado: '+p.legacyAdjustmentBandCounts.manual+
+   '. No se han calculado umbrales V3.';
+  section.append(title,description);
+  $('legacy-history').append(section);
+ }
  $('export').disabled=false;
 }
 $('read').addEventListener('click',()=>{
@@ -81,6 +97,7 @@ $('export').addEventListener('click',()=>{
 window.hear3LegacyPilot=Object.freeze({
  snapshot:()=>audit?.preview??null,
  archive:()=>audit?.originalArchive??null,
+ history:()=>history,
 });
 </script>
 </body>
