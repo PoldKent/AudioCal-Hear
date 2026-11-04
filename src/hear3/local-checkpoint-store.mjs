@@ -156,6 +156,7 @@ export function createLocalCheckpointStore({
     }
     return {
       checkpoint: data.best ? copy(data.best.checkpoint) : null,
+      revision: data.best?.revision ?? null,
       durability: data.best?.durability ?? 'none',
       persistedOnDevice: data.best?.durability === 'device-local',
       warnings,
