@@ -27,26 +27,36 @@ permissions:
 
 jobs:
   browser-test:
+    name: Browser tests / ${{ matrix.project }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - android-9x21-chromium
+          - iphone-webkit
+          - desktop-4x3
+          - desktop-21x9
+    # Match the pinned test runner with preinstalled Chromium, WebKit and OS
+    # dependencies; avoids repeated timeout/cancellation during apt installs.
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
     timeout-minutes: 22
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+      - name: Confirm container runtime
+        run: node --version && npm --version
       - name: Install pinned test runner (not a runtime app dependency)
         run: npm install --no-save --ignore-scripts @playwright/test@1.56.1
-      - name: Install desktop/mobile browser engines
-        run: npx playwright install --with-deps chromium webkit
       - name: Verify generated standalone HTML
         run: npm run check:build
-      - name: Run Android-emulated, iPhone-WebKit, and desktop UI tests
-        run: npm run test:browser
+      - name: Run ${{ matrix.project }} browser UI tests
+        run: npm run test:browser -- --project="${{ matrix.project }}"
       - name: Upload failure screenshots, traces and reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-ui-debug
+          name: browser-ui-debug-${{ matrix.project }}
           path: |
             test-results/
             playwright-report/

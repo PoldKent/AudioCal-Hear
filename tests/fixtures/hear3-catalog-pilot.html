@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hear 3.0 · catálogo y respaldo · piloto aislado</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif}
+body{max-width:42rem;margin:2rem auto;padding:0 1rem;line-height:1.55}
+button,input,select{font:inherit;min-height:2.75rem;box-sizing:border-box}
+/* Make the pilot touch-safe on narrow Android viewport: adjacent inline
+   controls had overlapping hit targets in Playwright mobile regression. */
+button{display:block;width:100%;max-width:100%;margin:.65rem 0;padding:.65rem .85rem;touch-action:manipulation}
+input,select{display:block;width:100%;max-width:100%;margin:.45rem 0 .9rem}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid currentColor;outline-offset:2px}
+.warning{border:1px solid;padding:.75rem;border-radius:.5rem}
+</style>
+</head>
+<body>
+<main>
+<h1>Hear 3.0 — piloto interno de respaldo del catálogo</h1>
+<p class="warning"><strong>Desarrollo únicamente.</strong> Sin audio, cuentas ni sincronización. Este piloto
+no convierte ni modifica los perfiles de Hear 2.0. El respaldo solo incluye los datos del catálogo V3.</p>
+<p id="summary" data-testid="summary" role="status">Cargando…</p>
+<p id="durability" data-testid="durability" role="status"></p>
+<button type="button" id="download" data-testid="download">Exportar catálogo V3 (JSON)</button>
+<h2>Importar respaldo</h2>
+<label for="file">Archivo JSON local</label>
+<input id="file" data-testid="file" type="file" accept=".json,application/json">
+<label for="mode">Modo de importación</label>
+<select id="mode" data-testid="mode">
+<option value="merge-new">Agregar registros nuevos, sin sobrescribir</option>
+<option value="replace">Reemplazar catálogo completo (requiere confirmación)</option>
+</select>
+<div>
+<button type="button" id="preview" data-testid="preview">Revisar respaldo</button>
+<button type="button" id="commit" data-testid="commit" disabled>Confirmar importación</button>
+</div>
+<p id="description" data-testid="description" role="status">Todavía no se ha revisado ningún archivo.</p>
+<p id="error" data-testid="error" role="alert"></p>
+</main>
+<script type="module">
+import {createHear3CatalogStore,createHear3CatalogBackupTransfer,MAX_CATALOG_JSON_CHARS}
+ from '../../src/hear3/catalog-backup-store.mjs';
+const store=createHear3CatalogStore();
+const transfer=createHear3CatalogBackupTransfer({store});
+const $=id=>document.getElementById(id);
+let preview=null;
+function render() {
+ const loaded=store.load(),counts=loaded.catalog;
+ $('summary').textContent='Catálogo V3: '+counts.devices.length+' dispositivos, '+
+ counts.profiles.length+' perfiles, '+counts.results.length+' resultados.';
+ $('durability').textContent='Almacenamiento: '+loaded.durability+
+ (loaded.persistedOnDevice?' (escritura local verificada)':' (sin persistencia de dispositivo confirmada)')+
+ (loaded.warnings?.length?' · '+loaded.warnings.join(' '):'');
+ $('commit').disabled=!preview;
+ $('description').textContent=preview?
+  'Respaldo: '+preview.devices+' dispositivos, '+preview.profiles+
+  ' perfiles, '+preview.results+' resultados. Al finalizar: '+preview.outputResults+
+  ' resultados. '+(preview.replacesExisting?'Requiere confirmar el reemplazo completo.':'Sin reemplazo de identificadores existentes.')+
+  ' '+preview.warning:
+  'Todavía no se ha revisado ningún archivo.';
+}
+async function inspect() {
+ preview=null;
+ transfer.discard();
+ const file=$('file').files?.[0];
+ if(!file||file.size>MAX_CATALOG_JSON_CHARS*4)throw Error('Elige un archivo JSON dentro del límite permitido.');
+ const text=await file.text();
+ preview=transfer.preview(text,{mode:$('mode').value});
+}
+$('preview').addEventListener('click',async()=>{
+ $('error').textContent='';
+ try{await inspect();}catch(e){$('error').textContent=e.message;}finally{render();}
+});
+$('commit').addEventListener('click',()=>{
+ $('error').textContent='';
+ try{
+  if(!preview)throw Error('Revisa primero el respaldo.');
+  if(preview.replacesExisting&&!confirm('¿Reemplazar TODOS los registros del catálogo Hear 3.0?'))return;
+  const r=transfer.commit({userInitiated:true,confirmReplace:preview.replacesExisting});
+  preview=null;
+  if(!r.persistedOnDevice)$('error').textContent=r.warning||'Datos temporales: exporta una copia.';
+ }catch(e){$('error').textContent=e.message;}finally{render();}
+});
+$('file').addEventListener('change',()=>{transfer.discard();preview=null;render();});
+$('mode').addEventListener('change',()=>{transfer.discard();preview=null;render();});
+$('download').addEventListener('click',()=>{
+ try {
+  const blob=new Blob([store.exportBackup()],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='hear3-catalog-backup.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }catch(e){$('error').textContent=e.message;}
+});
+// Test-only local inspection. No mutation methods or network functions.
+window.hear3CatalogPilot=Object.freeze({snapshot:()=>store.load()});
+render();
+</script>
+</body>
+</html>
