@@ -24,6 +24,7 @@ const allowedFiles = new Map([
   ['/src/hear3/catalog-contract.mjs', 'src/hear3/catalog-contract.mjs'],
   ['/src/hear3/catalog-backup-store.mjs', 'src/hear3/catalog-backup-store.mjs'],
   ['/src/hear3/legacy-v2-migration-audit.mjs', 'src/hear3/legacy-v2-migration-audit.mjs'],
+  ['/src/hear3/legacy-v2-history-view.mjs', 'src/hear3/legacy-v2-history-view.mjs'],
   ['/src/hear3/web-audio-adapter.mjs', 'src/hear3/web-audio-adapter.mjs'],
   ['/src/hear3/sweep-planner.mjs', 'src/hear3/sweep-planner.mjs'],
   ['/src/hear3/sweep-audio-runner.mjs', 'src/hear3/sweep-audio-runner.mjs'],
