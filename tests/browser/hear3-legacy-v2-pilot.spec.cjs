@@ -59,3 +59,28 @@ test('P0 V2 archive is read-only, and historical measurement never becomes a V3 
  expect(preview.profiles[0].archivedOnlyFields).toContain('measures');
  expect(preview.profiles[0].archivedOnlyFields).toContain('manual');
 });
+
+test('P0 legacy history view shows evidence counts without invented V3 thresholds or audio',async({page})=>{
+ await page.goto(PILOT);
+ await page.evaluate(p=>localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify([p])),profile());
+ await page.getByTestId('read').click();
+ await expect(page.getByTestId('legacy-history')).toContainText('Registros V2: 1');
+ await expect(page.getByTestId('legacy-history')).toContainText('No se han calculado umbrales V3');
+ const data=await page.evaluate(()=>window.hear3LegacyPilot.history());
+ expect(data.migratedV3Results).toBe(0);
+ expect(data.profiles[0].historicalRecordCount).toBe(1);
+ expect(data.profiles[0].observations[0].source).toBe('legacy-v2-unverified');
+ expect(data.profiles[0].observations[0].thresholdDb).toBeUndefined();
+ expect(await page.evaluate(()=>localStorage.getItem('hear3:catalog:v1:0'))).toBeNull();
+});
+
+test('P0 legacy labels are rendered as text and cannot execute source HTML',async({page})=>{
+ await page.goto(PILOT);
+ const p=profile();
+ p.name='<img src=x onerror="window.__legacyInjected=1">';
+ await page.evaluate(value=>localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify([value])),p);
+ await page.getByTestId('read').click();
+ await expect(page.getByTestId('legacy-history')).toContainText('<img src=x');
+ expect(await page.getByTestId('legacy-history').locator('img').count()).toBe(0);
+ expect(await page.evaluate(()=>Boolean(window.__legacyInjected))).toBe(false);
+});
