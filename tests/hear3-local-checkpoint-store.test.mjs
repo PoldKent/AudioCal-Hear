@@ -55,7 +55,9 @@ test('two copy slots recover last good version after later accidental corruption
   const corrupted = JSON.parse(device.getItem(key));
   corrupted.checkpoint.observations[0].response = 'not-heard';
   device.setItem(key, JSON.stringify(corrupted));
-  const recovered = store.load();
+  // A fresh browser session has no in-memory copy of the damaged latest write.
+  const reloaded = createLocalCheckpointStore({ profileId: 'headphones', deviceStorage: device, tabStorage: null });
+  const recovered = reloaded.load();
   assert.equal(recovered.checkpoint.observations.length, 0);
   assert.ok(recovered.warnings.some(w => w.includes('damaged')));
 });
