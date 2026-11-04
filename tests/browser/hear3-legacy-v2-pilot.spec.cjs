@@ -74,3 +74,43 @@ test('P0 official Hear 2.0 JSON export retains exact file bytes in archive',asyn
  expect(await page.evaluate(()=>window.hear3LegacyPilot.snapshot().migratedResults)).toBe(0);
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBeNull();
 });
+
+test('P0 legacy history view shows evidence counts without invented V3 thresholds or audio',async({page})=>{
+ await page.goto(PILOT);
+ await page.evaluate(p=>localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify([p])),profile());
+ await page.getByTestId('read').click();
+ await expect(page.getByTestId('legacy-history')).toContainText('Registros V2: 1');
+ await expect(page.getByTestId('legacy-history')).toContainText('No se han calculado umbrales V3');
+ const data=await page.evaluate(()=>window.hear3LegacyPilot.history());
+ expect(data.migratedV3Results).toBe(0);
+ expect(data.profiles[0].historicalRecordCount).toBe(1);
+ expect(data.profiles[0].observations[0].source).toBe('legacy-v2-unverified');
+ expect(data.profiles[0].observations[0].thresholdDb).toBeUndefined();
+ expect(await page.evaluate(()=>localStorage.getItem('hear3:catalog:v1:0'))).toBeNull();
+});
+
+test('P0 legacy labels are rendered as text and cannot execute source HTML',async({page})=>{
+ await page.goto(PILOT);
+ const p=profile();
+ p.name='<img src=x onerror="window.__legacyInjected=1">';
+ await page.evaluate(value=>localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify([value])),p);
+ await page.getByTestId('read').click();
+ await expect(page.getByTestId('legacy-history')).toContainText('<img src=x');
+ expect(await page.getByTestId('legacy-history').locator('img').count()).toBe(0);
+ expect(await page.evaluate(()=>Boolean(window.__legacyInjected))).toBe(false);
+});
+
+test('P0 official export history view keeps V2 records marked unverified',async({page})=>{
+ await page.goto(PILOT);
+ const original=JSON.stringify({app:'AudioCal Hear',version:1,profiles:[profile()]});
+ await page.getByTestId('file').setInputFiles({
+  name:'AudioCal_Hear_perfiles.json',mimeType:'application/json',
+  buffer:Buffer.from(original),
+ });
+ await page.getByTestId('inspect').click();
+ await expect(page.getByTestId('legacy-history')).toContainText('Registros V2: 1');
+ const snapshot=await page.evaluate(()=>window.hear3LegacyPilot.history());
+ expect(snapshot.profiles[0].observations[0].source).toBe('legacy-v2-unverified');
+ expect(snapshot.migratedV3Results).toBe(0);
+ expect(JSON.parse(await page.evaluate(()=>window.hear3LegacyPilot.archive())).sourceText).toBe(original);
+});
