@@ -13,7 +13,10 @@ async function fakeAudio(page) {
         this.sampleRate = 48000;
         this.destination = {};
         window.__sweepFake.ctx = this;
+        this.listeners = new Map();
       }
+      addEventListener(name, fn) { this.listeners.set(name, fn); }
+      removeEventListener(name, fn) { if (this.listeners.get(name) === fn) this.listeners.delete(name); }
       createOscillator() {
         const node = {
           frequency: {
@@ -126,4 +129,26 @@ test('real browser Web Audio can be started and stopped explicitly in Chromium',
   await page.getByTestId('stop').click();
   await expect(page.getByTestId('status')).toHaveText('Barrido interrumpido');
   expect((await page.evaluate(() => window.hear3SweepPilot.lastResult())).thresholdInferences).toBe(0);
+});
+
+
+test('P0 browser suspension immediately interrupts and rejects further perception reports', async ({ page }) => {
+  await fakeAudio(page);
+  await page.goto(PILOT);
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('status')).toHaveText('Reproduciendo barrido');
+  await page.evaluate(() => {
+    const ctx = window.__sweepFake.ctx;
+    ctx.currentTime = 13.02;
+    ctx.state = 'suspended';
+    ctx.listeners.get('statechange')?.();
+  });
+  await expect(page.getByTestId('status')).toHaveText('Barrido interrumpido');
+  await expect(page.getByTestId('heard')).toBeDisabled();
+  const data = await page.evaluate(() => window.hear3SweepPilot.lastResult());
+  expect(data.status).toBe('interrupted');
+  expect(data.reason).toBe('context-suspended');
+  expect(data.reports).toHaveLength(0);
+  const calls = await page.evaluate(() => window.__sweepFake.calls);
+  expect(calls.some(c => c[0] === 'osc.stop' && c[1] === 13.02)).toBeTruthy();
 });
