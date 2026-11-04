@@ -4,12 +4,15 @@
  */
 import { createSession, transitionSession } from './session-contract.mjs';
 import { createWebAudioToneAdapter } from './web-audio-adapter.mjs';
+import { normalizeRecoveredSession } from './local-checkpoint-store.mjs';
 
 export function createHear3AudioSession({
   profileId, routeId = null, minDbfs, maxDbfs,
   adapterFactory = createWebAudioToneAdapter,
+  restoredSession = null,
 } = {}) {
-  let session = createSession({ profileId, routeId, minDbfs, maxDbfs });
+  const fresh = createSession({ profileId, routeId, minDbfs, maxDbfs });
+  let session = restoredSession === null ? fresh : normalizeRecoveredSession(restoredSession, { profileId, minDbfs, maxDbfs });
   let disposed = false;
   let epoch = 0;
   let audibleToneId = null;
