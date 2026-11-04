@@ -97,6 +97,7 @@ export function createWebAudioToneAdapter({
       context = createContext();
       assert(context && typeof context.createOscillator === 'function'
         && typeof context.createGain === 'function', 'Required Web Audio features unavailable');
+      context.addEventListener?.('statechange', handleContextStateChange);
     }
     const ctx = context;
     if (ctx.state !== 'running') {
@@ -155,7 +156,12 @@ export function createWebAudioToneAdapter({
   }
 
   function getStatus() {
-    return Object.freeze({ disposed, activeToneId: active?.toneId ?? null });
+    return Object.freeze({
+      disposed,
+      activeToneId: active?.toneId ?? null,
+      contextState: context?.state ?? 'uninitialized',
+      visible: isVisible(),
+    });
   }
 
   async function dispose() {
@@ -164,6 +170,7 @@ export function createWebAudioToneAdapter({
     stop();
     const old = context;
     context = null;
+    old?.removeEventListener?.('statechange', handleContextStateChange);
     visibilityTarget?.removeEventListener?.('visibilitychange', handleVisibility);
     lifecycleTarget?.removeEventListener?.('pagehide', handlePageHide);
     if (old && typeof old.close === 'function' && old.state !== 'closed') {
@@ -171,6 +178,11 @@ export function createWebAudioToneAdapter({
     }
   }
 
+  const handleContextStateChange = () => {
+    if (disposed || !active || context?.state === 'running') return;
+    stop();
+    try { onInterrupted({ reason: 'context-suspended' }); } catch { /* audio already stopped */ }
+  };
   const handleVisibility = () => {
     if (!isVisible() && !disposed) { stop(); onInterrupted({ reason: 'hidden' }); }
   };

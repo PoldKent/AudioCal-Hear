@@ -81,6 +81,15 @@ export function createHear3AudioSession({
     if (session.status !== 'playing' || !session.currentTone || audibleToneId !== session.currentTone.toneId) {
       throw new Error('Cannot record a response before the tone has started');
     }
+    // The UI's last known playing state is insufficient if Web Audio has
+    // just suspended (e.g. Bluetooth route/call) before a statechange event.
+    // Reject the response rather than treating silence as hearing evidence.
+    const playback = adapter.getStatus?.();
+    if (playback && (playback.activeToneId !== session.currentTone.toneId
+      || playback.contextState !== 'running' || playback.visible === false)) {
+      pause({ type: 'INTERRUPT', routeMayHaveChanged: playback.contextState !== 'running' });
+      throw new Error('Audio playback is no longer verified; response discarded');
+    }
     // Silence before recording a response; invalid answers also fail closed.
     epoch++;
     audibleToneId = null;
