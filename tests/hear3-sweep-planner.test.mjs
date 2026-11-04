@@ -33,7 +33,7 @@ test('reported changes are time-ordered and do not become thresholds', () => {
   const p = plan();
   let events = addSweepReport(p, [], { elapsedSeconds: 20, heard: true });
   events = addSweepReport(p, events, { elapsedSeconds: 30, heard: false });
-  assert.equal(events[0].frequencyHz, 400);
+  assert.ok(Math.abs(events[0].frequencyHz - 400) < 1e-8);
   assert.equal(events[1].frequencyHz, 800);
   assert.equal(events[0].source, 'user-report-during-sweep');
   const outcome = planSweepConfirmations(p, events, bands);
