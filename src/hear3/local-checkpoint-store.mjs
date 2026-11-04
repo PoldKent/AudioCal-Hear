@@ -18,7 +18,8 @@ function defaultStorage(name) {
 }
 function copy(value) { return JSON.parse(JSON.stringify(value)); }
 
-function fingerprint(str) {
+export function checkpointFingerprint(str) {
+  ensure(typeof str === 'string', 'Checksum input must be text');
   let hash = 0x811c9dc5;
   for (let i = 0; i < str.length; i++) {
     hash = Math.imul(hash ^ str.charCodeAt(i), 0x01000193) >>> 0;
@@ -98,14 +99,14 @@ export function normalizeRecoveredSession(checkpoint, { profileId, minDbfs, maxD
 function encoded(revision, checkpoint) {
   const signed = { format: CHECKPOINT_FORMAT, revision, checkpoint };
   const bytes = JSON.stringify(signed);
-  return JSON.stringify({ ...signed, checksum: fingerprint(bytes) });
+  return JSON.stringify({ ...signed, checksum: checkpointFingerprint(bytes) });
 }
 function decoded(raw, profileId) {
   const obj = JSON.parse(raw);
   ensure(obj?.format === CHECKPOINT_FORMAT && Number.isSafeInteger(obj.revision)
     && obj.revision >= 1, 'Unknown checkpoint envelope');
   const checkpoint = sessionCopy(obj.checkpoint, profileId);
-  ensure(obj.checksum === fingerprint(JSON.stringify({
+  ensure(obj.checksum === checkpointFingerprint(JSON.stringify({
     format: obj.format, revision: obj.revision, checkpoint: obj.checkpoint,
   })), 'Checkpoint integrity mismatch');
   return { revision: obj.revision, checkpoint };
@@ -209,8 +210,13 @@ export function createLocalCheckpointStore({
     const state = load();
     ensure(state.checkpoint, 'No checkpoint to export');
     return JSON.stringify({
-      format: CHECKPOINT_FORMAT, exportedAt: new Date().toISOString(),
+      format: CHECKPOINT_FORMAT,
+      exportedAt: new Date().toISOString(),
       checkpoint: state.checkpoint,
+      integrity: {
+        algorithm: 'fnv1a32',
+        value: checkpointFingerprint(JSON.stringify(state.checkpoint)),
+      },
     }, null, 2);
   }
   function clear({ confirmed = false } = {}) {
