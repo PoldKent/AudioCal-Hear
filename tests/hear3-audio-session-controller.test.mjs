@@ -132,3 +132,27 @@ test('finish while playing interrupts instead of leaving a false answer possible
   f.controller.resume({ userInitiated: true });
   assert.equal(f.controller.finish().status, 'completed');
 });
+
+
+test('P0 unreported context suspension invalidates the tone rather than accepting a false response', async () => {
+  let contextState = 'running';
+  let stopped = 0;
+  const c = createHear3AudioSession({
+    profileId: 'device', minDbfs: -80, maxDbfs: -35,
+    adapterFactory: () => ({
+      playTone: async ({ toneId }) => ({ started: true, toneId }),
+      stop: () => { stopped++; },
+      getStatus: () => ({ activeToneId: 't1', contextState, visible: true }),
+      dispose: async () => {},
+    }),
+  });
+  await c.startTone({ toneId: 't1', frequencyHz: 700, digitalLevelDbfs: -55 });
+  contextState = 'suspended';
+  assert.throws(() => c.answer('not-heard'), /no longer verified/);
+  const state = c.getSession();
+  assert.equal(state.status, 'paused');
+  assert.equal(state.routeCheckRequired, true);
+  assert.deepEqual(state.invalidatedToneIds, ['t1']);
+  assert.deepEqual(state.observations, []);
+  assert.ok(stopped > 0);
+});
