@@ -27,12 +27,14 @@ export function createWebAudioToneAdapter({
   createContext = defaultCreateContext,
   isVisible = defaultIsVisible,
   onToneEnded = () => {},
+  onInterrupted = () => {},
   visibilityTarget = typeof document === 'undefined' ? null : document,
   lifecycleTarget = typeof window === 'undefined' ? null : window,
 } = {}) {
   assert(typeof createContext === 'function', 'Invalid context factory');
   assert(typeof isVisible === 'function', 'Invalid visibility callback');
   assert(typeof onToneEnded === 'function', 'Invalid onToneEnded callback');
+  assert(typeof onInterrupted === 'function', 'Invalid onInterrupted callback');
 
   let context = null;
   let active = null;
@@ -169,8 +171,12 @@ export function createWebAudioToneAdapter({
     }
   }
 
-  const handleVisibility = () => { if (!isVisible()) stop(); };
-  const handlePageHide = () => stop();
+  const handleVisibility = () => {
+    if (!isVisible() && !disposed) { stop(); onInterrupted({ reason: 'hidden' }); }
+  };
+  const handlePageHide = () => {
+    if (!disposed) { stop(); onInterrupted({ reason: 'pagehide' }); }
+  };
   visibilityTarget?.addEventListener?.('visibilitychange', handleVisibility);
   lifecycleTarget?.addEventListener?.('pagehide', handlePageHide);
 
