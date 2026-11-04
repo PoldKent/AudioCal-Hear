@@ -129,7 +129,8 @@ test('visibility and pagehide events silence active audio and listeners detach o
     removeEventListener: (name, fn) => { if (listeners.get(name) === fn) listeners.delete(name); },
   };
   let visible = true;
-  const a = createWebAudioToneAdapter({ createContext: () => f.ctx, isVisible: () => visible, visibilityTarget: target, lifecycleTarget: target });
+  const interruptions = [];
+  const a = createWebAudioToneAdapter({ createContext: () => f.ctx, isVisible: () => visible, visibilityTarget: target, lifecycleTarget: target, onInterrupted: e => interruptions.push(e.reason) });
   await a.playTone(args({ channel: 'joint' }));
   visible = false;
   listeners.get('visibilitychange')();
@@ -138,6 +139,7 @@ test('visibility and pagehide events silence active audio and listeners detach o
   await a.playTone(args({ channel: 'joint', toneId: 'a2' }));
   listeners.get('pagehide')();
   assert.equal(a.getStatus().activeToneId, null);
+  assert.deepEqual(interruptions, ['hidden', 'pagehide']);
   await a.dispose();
   assert.equal(listeners.size, 0);
 });
