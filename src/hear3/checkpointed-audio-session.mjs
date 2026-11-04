@@ -72,7 +72,7 @@ export function createCheckpointedHear3AudioSession({
 
   function getRecoveryProposal() {
     ensureLive();
-    if (touched) return { available: false, warning: 'This session already has new activity.' };
+    if (touched) return { available: false, observationCount: 0, warnings: [], warning: 'This session already has new activity.' };
     const data = store.load();
     pending = data;
     return {
