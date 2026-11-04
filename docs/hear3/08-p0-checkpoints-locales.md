@@ -4,7 +4,7 @@
 
 ## Implementado en esta primera iteración
 
-- `src/hear3/local-checkpoint-store.mjs` almacena solo un punto de recuperación por ID de perfil, sin enviar información a ningún servidor.
+- `src/hear3/local-checkpoint-store.mjs` almacena solo un punto de recuperación por ID de perfil, sin enviar información a ningún servidor. Las copias persistentes tienen un presupuesto de 128 KiB por registro: si se excede, el estado más reciente sigue **exportable de forma temporal** sin afirmar que se guardó de manera duradera.
 - Guarda **dos copias alternas** y verifica la escritura por lectura de vuelta. Una suma de comprobación FNV-1a detecta alteraciones accidentales de un registro, **no es criptografía, cifrado, autenticación ni defensa contra manipulación maliciosa**.
 - Un registro de examen en reproducción siempre se restaura como **pausado**, con el tono inacabado invalidado y comprobación de salida obligatoria; no reanuda sonidos automáticamente.
 - Conserva observaciones directas verificables con `heard/not-heard` dentro de límites digitales; descarta por diseño fotos, imágenes y metadatos no incluidos en el esquema.
@@ -21,7 +21,7 @@
 
 ## Pruebas automáticas
 
-`node --test tests/hear3-local-checkpoint-store.test.mjs` cubre recuperación de copias válidas, daño intencional de la versión reciente, cuota de almacenamiento, privacidad, exportación temporal, falta de persistencia, exclusión de metadatos privados, eliminación selectiva y bloqueo de evidencia falsa.
+`node --test tests/hear3-local-checkpoint-store.test.mjs` cubre recuperación de copias válidas, daño intencional de la versión reciente, cuota de almacenamiento, privacidad, exportación temporal, falta de persistencia, exclusión de metadatos privados, eliminación selectiva y bloqueo de evidencia falsa y degradación temporal exportable si se supera el tamaño de un checkpoint.
 
 ## Integración adicional en este PR
 
