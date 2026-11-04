@@ -84,3 +84,18 @@ test('P0 legacy labels are rendered as text and cannot execute source HTML',asyn
  expect(await page.getByTestId('legacy-history').locator('img').count()).toBe(0);
  expect(await page.evaluate(()=>Boolean(window.__legacyInjected))).toBe(false);
 });
+
+test('P0 official export history view keeps V2 records marked unverified',async({page})=>{
+ await page.goto(PILOT);
+ const original=JSON.stringify({app:'AudioCal Hear',version:1,profiles:[profile()]});
+ await page.getByTestId('file').setInputFiles({
+  name:'AudioCal_Hear_perfiles.json',mimeType:'application/json',
+  buffer:Buffer.from(original),
+ });
+ await page.getByTestId('inspect').click();
+ await expect(page.getByTestId('legacy-history')).toContainText('Registros V2: 1');
+ const snapshot=await page.evaluate(()=>window.hear3LegacyPilot.history());
+ expect(snapshot.profiles[0].observations[0].source).toBe('legacy-v2-unverified');
+ expect(snapshot.migratedV3Results).toBe(0);
+ expect(JSON.parse(await page.evaluate(()=>window.hear3LegacyPilot.archive())).sourceText).toBe(original);
+});
