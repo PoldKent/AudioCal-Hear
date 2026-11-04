@@ -175,3 +175,78 @@ test('P0 browser statechange interrupts a discrete tone and requires manual reco
   await expect(page.getByTestId('start')).toBeDisabled();
   await expect(page.getByTestId('observations')).toHaveText('Respuestas registradas: 0');
 });
+
+
+test('P0 checkpoint recovery never autoplays after a browser reload', async ({ page }) => {
+  await installDeterministicWebAudio(page);
+  await page.goto(PILOT);
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('heard')).toBeEnabled();
+  await page.getByTestId('heard').click();
+  await expect(page.getByTestId('persistence')).toContainText('device-local');
+  await page.reload();
+  await expect(page.getByTestId('status')).toHaveText('Listo para reproducir');
+  await expect(page.getByTestId('recover')).toBeEnabled();
+  await expect(page.getByTestId('recovery')).toContainText('1 respuestas');
+  expect(await page.evaluate(() => window.__hear3FakeAudio.nodes.length)).toBe(0);
+  await page.getByTestId('recover').click();
+  await expect(page.getByTestId('status')).toContainText('Pausado');
+  await expect(page.getByTestId('observations')).toHaveText('Respuestas registradas: 1');
+  await expect(page.getByTestId('resume')).toBeDisabled();
+  await page.getByTestId('confirm').click();
+  await page.getByTestId('resume').click();
+  await expect(page.getByTestId('status')).toHaveText('Listo para reproducir');
+  expect(await page.evaluate(() => window.__hear3FakeAudio.nodes.length)).toBe(0);
+});
+
+test('P0 unreplied active tone is invalidated on reload and cannot become a false answer', async ({ page }) => {
+  await installDeterministicWebAudio(page);
+  await page.goto(PILOT);
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('status')).toHaveText('Reproduciendo tono');
+  await page.reload();
+  await expect(page.getByTestId('recover')).toBeEnabled();
+  await page.getByTestId('recover').click();
+  await expect(page.getByTestId('status')).toContainText('Pausado');
+  const snapshot = await page.evaluate(() => window.hear3Pilot.snapshot());
+  expect(snapshot.observations).toHaveLength(0);
+  expect(snapshot.invalidatedToneIds).toHaveLength(1);
+  expect(snapshot.currentTone).toBeNull();
+  expect(snapshot.routeCheckRequired).toBe(true);
+  expect(await page.evaluate(() => window.__hear3FakeAudio.nodes.length)).toBe(0);
+});
+
+test('P0 blocked browser storage is honestly shown as volatile and remains exportable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(Storage.prototype, 'setItem', {
+      configurable: true,
+      value() { throw new DOMException('Storage blocked', 'QuotaExceededError'); },
+    });
+  });
+  await installDeterministicWebAudio(page);
+  await page.goto(PILOT);
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('heard')).toBeEnabled();
+  await page.getByTestId('heard').click();
+  await expect(page.getByTestId('persistence')).toContainText('volatile');
+  await expect(page.getByTestId('persistence')).toContainText('sin persistencia');
+  await expect(page.getByTestId('storage-warning')).toContainText('may be lost');
+  await expect(page.getByTestId('export')).toBeEnabled();
+  const exported = await page.evaluate(() => JSON.parse(window.hear3Pilot.exportedCheckpoint()));
+  expect(exported.format).toBe('hear3-exam-checkpoint-v1');
+  expect(exported.checkpoint.observations).toHaveLength(1);
+  expect(exported.checkpoint.observations[0].response).toBe('heard');
+});
+
+test('P0 corrupted checkpoint is visible as damaged but never auto-restored', async ({ page }) => {
+  await installDeterministicWebAudio(page);
+  await page.goto(PILOT);
+  await page.evaluate(() => window.localStorage.setItem(
+    'hear3:exam-checkpoint:hear3-browser-pilot:0', 'intentionally corrupted checkpoint',
+  ));
+  await page.reload();
+  await expect(page.getByTestId('status')).toHaveText('Listo para reproducir');
+  await expect(page.getByTestId('recover')).toBeDisabled();
+  await expect(page.getByTestId('storage-warning')).toContainText('damaged');
+  expect(await page.evaluate(() => window.__hear3FakeAudio.nodes.length)).toBe(0);
+});

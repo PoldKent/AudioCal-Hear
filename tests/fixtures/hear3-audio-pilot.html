@@ -25,6 +25,8 @@
       <strong>Duración máxima:</strong> 3 segundos.</p>
     <p id="status" role="status" aria-live="polite" data-testid="status">Iniciando...</p>
     <p id="observations" data-testid="observations">Respuestas registradas: 0</p>
+    <p id="persistence" role="status" data-testid="persistence">Persistencia: sin escritura</p>
+    <p id="storage-warning" role="status" data-testid="storage-warning"></p>
     <p id="error" role="alert" data-testid="error"></p>
     <div class="controls">
       <button type="button" data-action="start" data-testid="start">Reproducir tono</button>
@@ -34,6 +36,12 @@
     </div>
     <h2>Pruebas de recuperación</h2>
     <div class="controls">
+      <button type="button" data-action="recover" data-testid="recover" disabled>Recuperar progreso local</button>
+      <button type="button" data-action="export" data-testid="export" disabled>Exportar checkpoint JSON</button>
+      <button type="button" data-action="delete" data-testid="delete">Eliminar checkpoint de este perfil</button>
+    </div>
+    <p id="recovery" role="status" data-testid="recovery">Sin copia anterior para recuperar.</p>
+    <div class="controls">
       <button type="button" data-action="route" data-testid="route">Simular cambio de salida</button>
       <button type="button" data-action="confirm" data-testid="confirm" disabled>Confirmar salida comprobada</button>
       <button type="button" data-action="resume" data-testid="resume" disabled>Reanudar manualmente</button>
@@ -42,17 +50,20 @@
     <p>El cambio de salida simulado comprueba el control de estado; no demuestra que el navegador detecte cambios de hardware.</p>
   </main>
   <script type="module">
-    import { createHear3AudioSession } from '../../src/hear3/audio-session-controller.mjs';
+    import { createCheckpointedHear3AudioSession } from '../../src/hear3/checkpointed-audio-session.mjs';
 
     const buttons = Object.fromEntries([...document.querySelectorAll('button[data-action]')]
       .map(button => [button.dataset.action, button]));
     const statusEl = document.getElementById('status');
     const errorEl = document.getElementById('error');
     const observationsEl = document.getElementById('observations');
+    const persistenceEl = document.getElementById('persistence');
+    const storageWarningEl = document.getElementById('storage-warning');
+    const recoveryEl = document.getElementById('recovery');
     let lastError = '';
     let waiting = false;
     let nextToneId = 0;
-    const controller = createHear3AudioSession({
+    const controller = createCheckpointedHear3AudioSession({
       profileId: 'hear3-browser-pilot', routeId: 'default',
       minDbfs: -85, maxDbfs: -50,
     });
@@ -63,6 +74,16 @@
         : state.status === 'completed' ? 'Examen finalizado' : 'Listo para reproducir';
       if (statusEl.textContent !== status) statusEl.textContent = status;
       observationsEl.textContent = 'Respuestas registradas: ' + state.observations.length;
+      const persistence = controller.getPersistence();
+      const proposal = controller.getRecoveryProposal();
+      persistenceEl.textContent = 'Persistencia: ' + persistence.durability
+        + (persistence.persistedOnDevice ? ' (escritura local verificada)' : ' (sin persistencia de dispositivo verificada)');
+      storageWarningEl.textContent = [persistence.warning, ...proposal.warnings].filter(Boolean).join(' ');
+      recoveryEl.textContent = proposal.available
+        ? 'Copia recuperable: ' + proposal.observationCount + ' respuestas. Se restaurará pausada; comprueba la salida.'
+        : 'Sin copia anterior para recuperar.';
+      buttons.recover.disabled = !proposal.available || state.status !== 'ready' || waiting;
+      buttons.export.disabled = persistence.durability === 'none' && !proposal.available;
       errorEl.textContent = lastError;
       buttons.start.disabled = waiting || state.status !== 'ready';
       buttons.heard.disabled = waiting || state.status !== 'playing';
@@ -101,6 +122,21 @@
           controller.resume({ userInitiated: true });
         } else if (name === 'finish') {
           controller.finish();
+        } else if (name === 'recover') {
+          await controller.recover({ userInitiated: true });
+        } else if (name === 'export') {
+          const blob = new Blob([controller.exportCheckpoint()], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = 'hear3-checkpoint-pilot.json';
+          anchor.click();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } else if (name === 'delete') {
+          if (window.confirm('¿Borrar solamente el checkpoint de este perfil?')) {
+            const outcome = controller.clearCheckpoint({ confirmed: true });
+            if (!outcome.cleared) lastError = outcome.warning;
+          }
         }
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error);
@@ -116,6 +152,9 @@
     // Test-only observability. No results are transmitted or persisted.
     window.hear3Pilot = Object.freeze({
       snapshot: () => controller.getSession(),
+      persistence: () => controller.getPersistence(),
+      proposal: () => controller.getRecoveryProposal(),
+      exportedCheckpoint: () => controller.exportCheckpoint(),
       error: () => lastError,
     });
     render();
