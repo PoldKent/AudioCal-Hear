@@ -91,10 +91,11 @@ export function createSweepAudioRunner({
     return Boolean(current);
   }
 
-  async function start({ plan, digitalLevelDbfs, authorizedDigitalRangeDbfs, channel = 'joint' } = {}) {
+  async function start({ plan, digitalLevelDbfs, authorizedDigitalRangeDbfs, channel = 'joint', userInitiated = false } = {}) {
     ensure(!disposed, 'Sweep runner is disposed');
     // An invalid new request must never leave the former oscillator playing.
     stop('replaced');
+    ensure(userInitiated === true, 'Explicit user action is required to start a sweep');
     const epoch = pendingEpoch;
     const range = authorizedDigitalRangeDbfs;
     ensure(range && Number.isFinite(range.minDbfs) && Number.isFinite(range.maxDbfs) &&
@@ -116,6 +117,7 @@ export function createSweepAudioRunner({
       context = createContext();
       ensure(context?.createOscillator && context.createGain && context.destination,
         'Required Web Audio nodes unavailable');
+      context.addEventListener?.('statechange', onContextStateChange);
     }
     const ctx = context;
     // Defend against forged plans and the real output sample rate, not merely
@@ -197,6 +199,11 @@ export function createSweepAudioRunner({
   function recordResponse(heard) {
     ensure(!disposed && active, 'No active sweep');
     ensure(typeof heard === 'boolean', 'Sweep response must be explicit');
+    if (active.ctx.state !== 'running' || !isVisible()) {
+      stop('audio-context-or-visibility-lost');
+      try { onInterrupted({ reason: 'audio-context-or-visibility-lost' }); } catch { /* already silenced */ }
+      throw new Error('Sweep is no longer playing through a visible running audio context');
+    }
     const elapsedSeconds = Math.round((active.ctx.currentTime - active.startTime) * 1e6) / 1e6;
     ensure(elapsedSeconds >= 0 && elapsedSeconds <= active.plan.durationSeconds,
       'Sweep response outside the playback interval');
@@ -213,18 +220,27 @@ export function createSweepAudioRunner({
     lifecycleTarget?.removeEventListener?.('pagehide', onPageHide);
     const ctx = context;
     context = null;
+    ctx?.removeEventListener?.('statechange', onContextStateChange);
     if (ctx?.close && ctx.state !== 'closed') await ctx.close();
   }
 
+  function onContextStateChange() {
+    if (disposed || !active || context?.state === 'running') return;
+    if (stop('context-suspended')) {
+      try { onInterrupted({ reason: 'context-suspended' }); } catch { /* already silenced */ }
+    }
+  }
   function onVisibility() {
     if (disposed || isVisible()) return;
-    stop('hidden');
-    onInterrupted({ reason: 'hidden' });
+    if (stop('hidden')) {
+      try { onInterrupted({ reason: 'hidden' }); } catch { /* already silenced */ }
+    }
   }
   function onPageHide() {
     if (disposed) return;
-    stop('pagehide');
-    onInterrupted({ reason: 'pagehide' });
+    if (stop('pagehide')) {
+      try { onInterrupted({ reason: 'pagehide' }); } catch { /* already silenced */ }
+    }
   }
 
   visibilityTarget?.addEventListener?.('visibilitychange', onVisibility);
