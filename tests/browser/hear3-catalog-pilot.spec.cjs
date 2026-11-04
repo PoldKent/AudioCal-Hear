@@ -116,7 +116,6 @@ test('P0 catalog pilot does not create Web Audio or touch legacy Hear 2.0 profil
  expect(await page.evaluate(()=>typeof window.hear3Pilot)).toBe('undefined');
 });
 
-
 async function seedLegacyV2(page, profiles) {
  await page.evaluate(profiles => {
   localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify(profiles));

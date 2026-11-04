@@ -6,8 +6,11 @@
 <style>
 :root{color-scheme:light dark;font-family:system-ui,sans-serif}
 body{max-width:42rem;margin:2rem auto;padding:0 1rem;line-height:1.55}
-button,input,select{font:inherit;min-height:2.5rem}
-button{margin:.35rem .35rem .35rem 0;padding:.5rem .75rem}
+button,input,select{font:inherit;min-height:2.75rem;box-sizing:border-box}
+/* Make the pilot touch-safe on narrow Android viewport: adjacent inline
+   controls had overlapping hit targets in Playwright mobile regression. */
+button{display:block;width:100%;max-width:100%;margin:.65rem 0;padding:.65rem .85rem;touch-action:manipulation}
+input,select{display:block;width:100%;max-width:100%;margin:.45rem 0 .9rem}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid currentColor;outline-offset:2px}
 .warning{border:1px solid;padding:.75rem;border-radius:.5rem}
 </style>

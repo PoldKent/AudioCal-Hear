@@ -172,3 +172,10 @@ test('31-band legacy EQ metadata remains real and unverified, never assumed docu
   assert.deepEqual(mapped.map(x=>x.frequencyHz),bands);
   assert.ok(mapped.every(x=>x.verification==='unverified'));
 });
+
+
+test('numeric string frequencies are not silently coerced into V3 bands',()=>{
+  const f=setup([legacyProfile('strings',{bands:['125','250','500']})]);
+  assert.throws(()=>f.transfer.preview(),/invalid or unsorted EQ frequencies/);
+  assert.equal(f.store.load().catalog.devices.length,0);
+});

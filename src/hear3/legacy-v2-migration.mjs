@@ -30,8 +30,8 @@ function summarizeLegacy(rawProfiles) {
       'Legacy profile '+(index+1)+' has an unsupported device category');
     ensure(Array.isArray(profile.bands)&&profile.bands.length>=2&&profile.bands.length<=31,
       'Legacy profile '+(index+1)+' has an invalid EQ band count');
-    const bands=profile.bands.map(Number);
-    ensure(bands.every((f,i)=>Number.isFinite(f)&&f>=20&&f<=20000&&
+    const bands=[...profile.bands];
+    ensure(bands.every((f,i)=>typeof f==='number'&&Number.isFinite(f)&&f>=20&&f<=20000&&
       (i===0||f>bands[i-1])), 'Legacy profile '+(index+1)+' has invalid or unsorted EQ frequencies');
     const rawMeasures=validObject(profile.measures)?Object.values(profile.measures):[];
     const measureGroups=rawMeasures.filter(Array.isArray).length;
