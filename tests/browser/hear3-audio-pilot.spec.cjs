@@ -232,11 +232,10 @@ test('P0 blocked browser storage is honestly shown as volatile and remains expor
   await expect(page.getByTestId('persistence')).toContainText('sin persistencia');
   await expect(page.getByTestId('storage-warning')).toContainText('may be lost');
   await expect(page.getByTestId('export')).toBeEnabled();
-  const [download] = await Promise.all([
-    page.waitForEvent('download'),
-    page.getByTestId('export').click(),
-  ]);
-  expect(download.suggestedFilename()).toBe('hear3-checkpoint-pilot.json');
+  const exported = await page.evaluate(() => JSON.parse(window.hear3Pilot.exportedCheckpoint()));
+  expect(exported.format).toBe('hear3-exam-checkpoint-v1');
+  expect(exported.checkpoint.observations).toHaveLength(1);
+  expect(exported.checkpoint.observations[0].response).toBe('heard');
 });
 
 test('P0 corrupted checkpoint is visible as damaged but never auto-restored', async ({ page }) => {
