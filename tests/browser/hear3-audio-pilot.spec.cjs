@@ -13,7 +13,11 @@ async function installDeterministicWebAudio(page) {
         this.sampleRate = 48000;
         this.currentTime = 10;
         this.destination = {};
+        this.listeners = new Map();
+        window.__hear3FakeAudio.ctx = this;
       }
+      addEventListener(name, fn) { this.listeners.set(name, fn); }
+      removeEventListener(name, fn) { if (this.listeners.get(name) === fn) this.listeners.delete(name); }
       createOscillator() {
         const node = {
           frequency: { setValueAtTime: (...args) => calls.push(['frequency', ...args]) },
@@ -140,4 +144,34 @@ test('pilot can start actual Web Audio in Chromium after a user gesture', async 
   await page.getByTestId('not-heard').click();
   await expect(page.getByTestId('status')).toHaveText('Listo para reproducir');
   expect((await page.evaluate(() => window.hear3Pilot.snapshot())).observations).toHaveLength(1);
+});
+
+
+test('P0 discrete tone cannot record a response after suspension before the browser notifies statechange', async ({ page }) => {
+  await installDeterministicWebAudio(page);
+  await page.goto(PILOT);
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('status')).toHaveText('Reproduciendo tono');
+  await page.evaluate(() => { window.__hear3FakeAudio.ctx.state = 'suspended'; });
+  await page.getByTestId('not-heard').click();
+  await expect(page.getByTestId('status')).toContainText('Pausado');
+  await expect(page.getByTestId('observations')).toHaveText('Respuestas registradas: 0');
+  const data = await page.evaluate(() => window.hear3Pilot.snapshot());
+  expect(data.invalidatedToneIds).toHaveLength(1);
+  expect(data.routeCheckRequired).toBe(true);
+});
+
+test('P0 browser statechange interrupts a discrete tone and requires manual recovery', async ({ page }) => {
+  await installDeterministicWebAudio(page);
+  await page.goto(PILOT);
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('status')).toHaveText('Reproduciendo tono');
+  await page.evaluate(() => {
+    const ctx = window.__hear3FakeAudio.ctx;
+    ctx.state = 'suspended';
+    ctx.listeners.get('statechange')?.();
+  });
+  await expect(page.getByTestId('status')).toContainText('Pausado');
+  await expect(page.getByTestId('start')).toBeDisabled();
+  await expect(page.getByTestId('observations')).toHaveText('Respuestas registradas: 0');
 });
