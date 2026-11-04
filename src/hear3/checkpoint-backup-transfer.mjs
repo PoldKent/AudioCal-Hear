@@ -56,6 +56,7 @@ function baseline(store) {
     loaded,
     digest: checkpointFingerprint(JSON.stringify({
       checkpoint: loaded.checkpoint ?? null,
+      revision: loaded.revision ?? null,
       durability: loaded.durability ?? 'none',
       persistedOnDevice: loaded.persistedOnDevice === true,
       warnings: loaded.warnings ?? [],
