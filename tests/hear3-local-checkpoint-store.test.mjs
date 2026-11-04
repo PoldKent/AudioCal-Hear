@@ -159,3 +159,21 @@ test('photos, unknown metadata and raw scan objects are not serialized into chec
   assert.equal(fullStorage.includes('PRIVATE_IMAGE_DATA'), false);
   assert.equal(store.load().checkpoint.photo, undefined);
 });
+
+
+test('oversize checkpoint remains exportable in memory rather than silently losing the newest progress', () => {
+  const device = new MemoryStorage();
+  const store = createLocalCheckpointStore({ profileId: 'headphones', deviceStorage: device, tabStorage: null });
+  const big = session();
+  big.observations = Array.from({ length: 2000 }, (_, i) => ({
+    toneId: 'frequency-' + i,
+    frequencyHz: 1000, digitalLevelDbfs: -55,
+    channel: 'joint', response: 'heard', provenance: 'user-response',
+  }));
+  const result = store.save(big);
+  assert.equal(result.durability, 'volatile');
+  assert.equal(result.persistedOnDevice, false);
+  assert.match(result.warning, /too large/);
+  assert.equal(device.data.size, 0);
+  assert.equal(JSON.parse(store.exportCheckpoint()).checkpoint.observations.length, 2000);
+});
