@@ -81,6 +81,20 @@ function sessionCopy(session, profileId) {
   };
 }
 
+/**
+ * Rehydrate a verified checkpoint only into the exact digital bounds of the
+ * current exam. This step never asserts acoustic output compatibility.
+ * The caller must perform a manual route check before using RESUME.
+ */
+export function normalizeRecoveredSession(checkpoint, { profileId, minDbfs, maxDbfs } = {}) {
+  const normalized = sessionCopy(checkpoint, profileId);
+  ensure(Number.isFinite(minDbfs) && Number.isFinite(maxDbfs)
+    && normalized.authorizedDigitalRangeDbfs.minDbfs === minDbfs
+    && normalized.authorizedDigitalRangeDbfs.maxDbfs === maxDbfs,
+    'Recovered checkpoint digital bounds differ from this session');
+  return normalized;
+}
+
 function encoded(revision, checkpoint) {
   const signed = { format: CHECKPOINT_FORMAT, revision, checkpoint };
   const bytes = JSON.stringify(signed);
