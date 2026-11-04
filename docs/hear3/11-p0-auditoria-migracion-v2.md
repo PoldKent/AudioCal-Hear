@@ -8,6 +8,8 @@ El código operativo de Hear 2.0 utiliza las claves de almacenamiento local:
 - `audiocal-hear-profiles-v1`: array de perfiles con nombres, categoría de equipo, frecuencias y campos históricos de mediciones (`measures`), barridos (`sweepRecords`), escucha relativa (`loudness`), ediciones manuales (`manual`), controles y balance, contextos, modos/prioridades e historial temporal.
 - `audiocal-hear-active-v1`: identificador del perfil activo.
 
+**Formato de exportación oficial confirmado en Hear 2.0:** los archivos descargables utilizan `{ "app": "AudioCal Hear", "version": 1, "profiles": [...] }`, mientras que la clave de `localStorage` contiene directamente un array. El auditor acepta ambos formatos y conserva **el texto original exacto**, incluyendo el envoltorio oficial cuando existe. La procedencia queda identificada como `local-storage-array` o `hear2-official-export-v1` y protegida por el checksum de daño accidental.
+
 El perfil antiguo no constituye por sí solo un dispositivo V3 verificado, y las estructuras de mediciones no son intercambiables con observaciones V3 autenticadas. Transformar automáticamente `measures` o `manual` en resultados de EQ V3 implicaría inventar equivalencias, confianza o procedencia.
 
 ## Implementación de este PR
@@ -17,7 +19,7 @@ El perfil antiguo no constituye por sí solo un dispositivo V3 verificado, y las
 - Enumera por perfil todos los campos que solo se conservan en el archivo original, incluyendo mediciones, preferencias, contexto, balance y datos desconocidos.
 - `exportUnmodifiedLegacyV2Archive` guarda el texto fuente V2 **exacto**, la clave de origen y la selección activa dentro de un JSON con verificación FNV-1a para corrupción accidental. `verifyLegacyV2Archive` permite recuperar exactamente el texto fuente original.
 - Piloto de navegador interno `tests/fixtures/hear3-legacy-v2-pilot.html` permite revisar perfiles V2 ya existentes o seleccionar un JSON de origen, listar la cobertura y descargar una copia exacta. La página no muestra ningún botón de escritura o importación en el catálogo. No se modifica ni `audiocal-hear-profiles-v1` ni `hear3:catalog:v1`.
-- Pruebas Node y Playwright que comprueban conservación de datos, rechazo de errores, registros históricos no convertidos y ausencia de escritura.
+- Pruebas Node y Playwright que comprueban ambos formatos reales de entrada, conservación exacta del JSON, rechazo de errores, registros históricos no convertidos y ausencia de escritura.
 
 ## Puerta para migración V2→V3 completa
 

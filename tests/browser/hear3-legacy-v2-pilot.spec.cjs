@@ -60,6 +60,21 @@ test('P0 V2 archive is read-only, and historical measurement never becomes a V3 
  expect(preview.profiles[0].archivedOnlyFields).toContain('manual');
 });
 
+test('P0 official Hear 2.0 JSON export retains exact file bytes in archive',async({page})=>{
+ await page.goto(PILOT);
+ const source=JSON.stringify({app:'AudioCal Hear',version:1,profiles:[profile()]},null,2);
+ await page.getByTestId('file').setInputFiles({
+  name:'AudioCal_Hear_perfiles.json',mimeType:'application/json',buffer:Buffer.from(source),
+ });
+ await page.getByTestId('inspect').click();
+ await expect(page.getByTestId('summary')).toContainText('Perfiles V2: 1');
+ const archive=await page.evaluate(()=>JSON.parse(window.hear3LegacyPilot.archive()));
+ expect(archive.sourceText).toBe(source);
+ expect(archive.inputKind).toBe('hear2-official-export-v1');
+ expect(await page.evaluate(()=>window.hear3LegacyPilot.snapshot().migratedResults)).toBe(0);
+ expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBeNull();
+});
+
 test('P0 legacy history view shows evidence counts without invented V3 thresholds or audio',async({page})=>{
  await page.goto(PILOT);
  await page.evaluate(p=>localStorage.setItem('audiocal-hear-profiles-v1',JSON.stringify([p])),profile());
