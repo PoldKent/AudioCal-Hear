@@ -53,7 +53,7 @@ export function createWebAudioToneAdapter({
       } catch { /* stop oscillator and disconnect below */ }
       try { entry.osc.stop(entry.ctx.currentTime); } catch { /* may have ended */ }
     }
-    entry.osc.onended = null;
+    if (entry.osc) entry.osc.onended = null;
     disconnectQuietly(entry.osc);
     disconnectQuietly(entry.pan);
     disconnectQuietly(entry.gain);
