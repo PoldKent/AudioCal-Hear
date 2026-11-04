@@ -52,11 +52,12 @@ export function createCheckpointedHear3AudioSession({
 
   function update(action) {
     ensureLive();
-    const result = action();
     touched = true;
     pending = null;
-    attemptSave();
-    return result;
+    // Even a rejected transition may have safely interrupted an active tone
+    // (e.g. FINISH while playing). Save that fail-closed pause as well.
+    try { return action(); }
+    finally { attemptSave(); }
   }
 
   function getSession() {
