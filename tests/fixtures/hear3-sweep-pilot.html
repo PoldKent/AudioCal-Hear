@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hear 3.0 — piloto de barrido</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:light dark}
+body{max-width:40rem;margin:2rem auto;padding:0 1rem;line-height:1.5}
+button{font:inherit;min-height:2.75rem;padding:.6rem 1rem;margin:.3rem}
+button:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+.warning{border:1px solid currentColor;border-radius:.5rem;padding:.7rem}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Hear 3.0 — barrido experimental interno</h1>
+<p class="warning"><strong>Solo desarrollo.</strong> No es un examen auditivo calibrado.
+Mantén el volumen físico bajo y fijo. Detén inmediatamente ante incomodidad.
+El nivel −60 dBFS no indica presión acústica dB SPL ni seguridad real.</p>
+<p><strong>Recorrido:</strong> 125–2000 Hz · 20 segundos como máximo · −60 dBFS · ambos canales.</p>
+<p id="status" role="status" aria-live="polite" data-testid="status">Iniciando...</p>
+<p id="report-count" data-testid="report-count">Respuestas del barrido: 0</p>
+<p id="problem" role="alert" data-testid="error"></p>
+<div>
+<button type="button" data-id="start" data-testid="start">Iniciar barrido</button>
+<button type="button" data-id="heard" data-testid="heard" disabled>Lo escucho</button>
+<button type="button" data-id="not-heard" data-testid="not-heard" disabled>No lo escucho</button>
+<button type="button" data-id="stop" data-testid="stop" disabled>Detener sonido</button>
+</div>
+<p>Los cambios percibidos durante el barrido son orientativos. Se necesitan tonos individuales de confirmación.</p>
+</main>
+<script type="module">
+import { createSweepPlan } from '../../src/hear3/sweep-planner.mjs';
+import { createSweepAudioRunner } from '../../src/hear3/sweep-audio-runner.mjs';
+
+const $ = id => document.querySelector('[data-testid="'+id+'"]');
+const buttons = Object.fromEntries([...document.querySelectorAll('[data-id]')].map(x=>[x.dataset.id,x]));
+const sweepPlan = createSweepPlan({ minHz:125, maxHz:2000, durationSeconds:20 });
+let pending=false, lastError='';
+let runner;
+function render(){
+ const active=runner.snapshot();
+ const last=runner.lastResult();
+ const label=active.status==='playing'?'Reproduciendo barrido':
+   pending?'Preparando barrido':last?.status==='interrupted'?'Barrido interrumpido':
+   last?.status==='completed'?'Barrido terminado':'Listo para comenzar';
+ $('status').textContent=label;
+ $('report-count').textContent='Respuestas del barrido: '+(active.status==='playing'?active.reports.length:(last?.reports.length??0));
+ $('error').textContent=lastError;
+ buttons.start.disabled=pending||active.status==='playing';
+ buttons.heard.disabled=active.status!=='playing';
+ buttons['not-heard'].disabled=active.status!=='playing';
+ buttons.stop.disabled=active.status!=='playing'&&!pending;
+}
+runner=createSweepAudioRunner({
+  onEnded:()=>render(),
+  onInterrupted:()=>render(),
+});
+for(const [name,button] of Object.entries(buttons)){
+ button.addEventListener('click',async()=>{
+  lastError='';
+  try{
+   if(name==='start'){
+     pending=true;render();
+     try {
+       await runner.start({
+         plan:sweepPlan,digitalLevelDbfs:-60,
+         authorizedDigitalRangeDbfs:{minDbfs:-85,maxDbfs:-42},
+         channel:'joint',
+       });
+     }finally{pending=false}
+   }else if(name==='heard'||name==='not-heard'){
+     runner.recordResponse(name==='heard');
+   }else if(name==='stop'){
+     runner.stop('manual');
+   }
+  }catch(e){lastError=e instanceof Error?e.message:String(e)}
+  render();
+ });
+}
+window.hear3SweepPilot=Object.freeze({
+ status:()=>runner.snapshot(),
+ lastResult:()=>runner.lastResult(),
+});
+const interval=setInterval(render,120);
+window.addEventListener('pagehide',()=>clearInterval(interval),{once:true});
+render();
+</script>
+</body>
+</html>
