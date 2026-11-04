@@ -1,0 +1,33 @@
+name: Hear 3.0 contracts
+
+on:
+  pull_request:
+    paths:
+      - 'src/hear3/**'
+      - 'tests/hear3-*.test.mjs'
+      - '.github/workflows/hear3-contracts.yml'
+      - 'tools/build.mjs'
+      - 'src/js/**'
+      - 'src/index.template.html'
+      - 'src/styles.css'
+      - 'src/translations.json'
+      - 'index.html'
+  push:
+    branches:
+      - 'hear3/**'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Build integrity and Node tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check generated HTML and test suite
+        run: npm run verify
