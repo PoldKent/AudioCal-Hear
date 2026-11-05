@@ -155,8 +155,10 @@ export function createHear3ResumableAdaptiveExam({
   touched=true;
   check(typeof store.clear==='function','Checkpoint deletion is unavailable');
   const cleared=store.clear({confirmed:true});
-  lastSavedState=null;
-  revision=0;
+  // A read-only render immediately after deletion must never recreate the
+  // just-deleted checkpoint. Only a subsequent deliberate state change saves.
+  lastSavedState=JSON.stringify(bundle());
+  revision=cleared.cleared?0:store.load().revision;
   persistence={durability:cleared.cleared?'none':'unverified',
    persistedOnDevice:false,warning:cleared.warning??null};
   return cleared;
