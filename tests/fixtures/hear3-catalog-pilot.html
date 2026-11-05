@@ -23,6 +23,10 @@ ofrece una migración opcional y conservadora desde Hear 2.0. No borra ni modifi
 <p id="summary" data-testid="summary" role="status">Cargando…</p>
 <p id="durability" data-testid="durability" role="status"></p>
 <button type="button" id="download" data-testid="download">Exportar catálogo V3 (JSON)</button>
+<h2>Último resultado del perfil activo (solo lectura)</h2>
+<p>Esta vista no modifica resultados, no inicia sonido y no valida acústicamente el equipo.</p>
+<button type="button" id="history-show" data-testid="history-show">Consultar último resultado</button>
+<p id="history-result" data-testid="history-result" role="status">Todavía no se ha consultado el historial.</p>
 <h2>Importar respaldo</h2>
 <label for="file">Archivo JSON local</label>
 <input id="file" data-testid="file" type="file" accept=".json,application/json">
@@ -47,10 +51,12 @@ ofrece una migración opcional y conservadora desde Hear 2.0. No borra ni modifi
 <script type="module">
 import {createHear3CatalogStore,createHear3CatalogBackupTransfer,MAX_CATALOG_JSON_CHARS}
  from '../../src/hear3/catalog-backup-store.mjs';
+import { createHear3CatalogHistoryReader } from '../../src/hear3/catalog-history-reader.mjs';
 import { createHear2MigrationTransfer, LEGACY_V2_SOURCE_KEY, LEGACY_V2_ACTIVE_KEY }
  from '../../src/hear3/legacy-v2-migration.mjs';
 const store=createHear3CatalogStore();
 const transfer=createHear3CatalogBackupTransfer({store});
+const historyReader=createHear3CatalogHistoryReader({store});
 const legacyTransfer=createHear2MigrationTransfer({store,readLegacy:()=>({
  profilesRaw:localStorage.getItem(LEGACY_V2_SOURCE_KEY)??'',
  activeProfileId:localStorage.getItem(LEGACY_V2_ACTIVE_KEY)??'',
@@ -109,6 +115,24 @@ $('download').addEventListener('click',()=>{
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear3-catalog-backup.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }catch(e){$('error').textContent=e.message;}
+});
+$('history-show').addEventListener('click',()=>{
+ $('error').textContent='';
+ try {
+  const history=historyReader.read();
+  if(history.status==='no-active-profile'){
+   $('history-result').textContent='No hay perfil activo. Selecciona primero un perfil guardado.';
+  } else if(history.status==='no-results'){
+   $('history-result').textContent='El perfil '+history.profile.name+' no tiene resultados anteriores.';
+  } else {
+   const r=history.latestResult;
+   $('history-result').textContent='Perfil '+history.profile.name+
+    ' · Equipo '+history.device.name+' · Resultado '+r.id+' · Estado '+r.status+
+    ' · Fecha '+new Date(r.capturedAt).toISOString()+
+    ' · EQ original: '+r.originalEq.length+' bandas · EQ editado: '+r.currentEq.length+
+    ' bandas. Datos experimentales no calibrados; reproducción automática: no.';
+  }
  }catch(e){$('error').textContent=e.message;}
 });
 $('legacy-preview').addEventListener('click',()=>{
