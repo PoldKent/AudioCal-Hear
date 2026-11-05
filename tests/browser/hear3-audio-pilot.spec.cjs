@@ -330,3 +330,28 @@ test('P0 backup import is disabled once an active exam has new activity', async 
   await expect(page.getByTestId('import')).toBeDisabled();
   await expect(page.getByTestId('backup-file')).toBeDisabled();
 });
+
+
+test('D-055/D-056 devicechange silences the tone and refuses to resume until route is confirmed',async({page})=>{
+ await page.addInitScript(()=>{
+  const source=new EventTarget();
+  Object.defineProperty(navigator,'mediaDevices',{configurable:true,get:()=>source});
+  window.__hear3DeviceEvents=source;
+ });
+ await installDeterministicWebAudio(page);
+ await page.goto(PILOT);
+ await page.getByTestId('start').click();
+ await expect(page.getByTestId('status')).toHaveText('Reproduciendo tono');
+ await page.evaluate(()=>window.__hear3DeviceEvents.dispatchEvent(new Event('devicechange')));
+ await expect(page.getByTestId('status')).toContainText('Pausado');
+ await expect(page.getByTestId('resume')).toBeDisabled();
+ await expect(page.getByTestId('observations')).toHaveText('Respuestas registradas: 0');
+ const s=await page.evaluate(()=>window.hear3Pilot.snapshot());
+ expect(s.routeCheckRequired).toBe(true);
+ expect(s.invalidatedToneIds).toContain('pilot-tone-1');
+ await page.getByTestId('confirm').click();
+ await expect(page.getByTestId('resume')).toBeEnabled();
+ await page.getByTestId('resume').click();
+ await expect(page.getByTestId('status')).toHaveText('Listo para reproducir');
+ expect(await page.evaluate(()=>window.__hear3FakeAudio.nodes.length)).toBe(1);
+});
