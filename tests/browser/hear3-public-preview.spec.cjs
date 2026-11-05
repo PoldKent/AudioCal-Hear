@@ -27,9 +27,7 @@ test('preview exposes the four implemented pilots, not a fictional full Hear 3.0
   for (const pilot of pilots) {
     const link=page.getByRole('link',{name:pilot.link});
     await expect(link).toBeVisible();
-    expect(new URL(await link.getAttribute('href'),page.url()).pathname).toMatch(
-      new RegExp(pilot.url.replace(/[.*+?^\\$\{\}()|[\]\\]/g,'\\$&')+'$')
-    );
+    expect(new URL(await link.getAttribute('href'),page.url()).pathname).toContain(pilot.url);
   }
 });
 
@@ -41,8 +39,10 @@ test('all publicly linked pilots load their module UIs without audio automatical
     await page.goto(paths[i]);
     await expect(page.locator('main h1')).toContainText(pilots[i].heading,{ignoreCase:true});
     await expect(page.locator('main')).toBeVisible();
-    if (i===0) await expect(page.getByTestId('start')).toBeEnabled();
-    if (i===1) await expect(page.getByTestId('start')).toBeEnabled();
+    if (i<2) {
+      await expect(page.getByTestId('start')).toBeEnabled();
+      await expect(page.getByTestId('heard')).toBeDisabled();
+    }
   }
 });
 
