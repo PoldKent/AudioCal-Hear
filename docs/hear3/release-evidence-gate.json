@@ -1,0 +1,531 @@
+{
+  "schemaVersion": 1,
+  "format": "hear3-release-evidence-gate-v1",
+  "issue": "https://github.com/PoldKent/AudioCal-Hear/issues/30",
+  "asOf": "2026-11-05",
+  "stableReleaseClaim": false,
+  "note": "Prototype means incomplete engineering evidence only. No clinical/acoustic validity is asserted. P2/P3 do not block the P0 gate.",
+  "decisions": [
+    {
+      "id": "D-001",
+      "priority": "P0",
+      "title": "Comparaciones inteligentes dentro del test de tonos",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-002",
+      "priority": "P0",
+      "title": "Ritmo adaptativo",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-003",
+      "priority": "P0",
+      "title": "Respuesta y cancelación inmediata",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-004",
+      "priority": "P0",
+      "title": "Repeticiones contradictorias con consentimiento",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-005",
+      "priority": "P0",
+      "title": "Comparación contextual inteligente",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-006",
+      "priority": "P0",
+      "title": "Exploración digital progresiva bajo límites autorizados",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-007",
+      "priority": "P0",
+      "title": "Controles contextuales en el examen",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-008",
+      "priority": "P0",
+      "title": "Barrido continuo de frecuencias",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-009",
+      "priority": "P0",
+      "title": "Comparación de sonoridad entre tonos",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-010",
+      "priority": "P0",
+      "title": "Música A/B y preferencias personales",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-011",
+      "priority": "P2",
+      "title": "Micrófono y medición del entorno",
+      "status": "deferred",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-012",
+      "priority": "P3",
+      "title": "Cuestionarios del equipo y entorno",
+      "status": "deferred",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-013",
+      "priority": "P2",
+      "title": "Segunda pasada de verificación",
+      "status": "deferred",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-014",
+      "priority": "P0",
+      "title": "Modo rápido frente a modo completo",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-015",
+      "priority": "P0",
+      "title": "Gráficos, resultados técnicos y auditoría",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-016",
+      "priority": "P0",
+      "title": "Identidad visual",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-017",
+      "priority": "P0",
+      "title": "Colores y apariencia",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-018",
+      "priority": "P0",
+      "title": "Organización de pantallas",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-019",
+      "priority": "P0",
+      "title": "Primera pantalla",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-020",
+      "priority": "P0",
+      "title": "Configuración previa",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-021",
+      "priority": "P0",
+      "title": "Observación adicional literal del usuario",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-022",
+      "priority": "P0",
+      "title": "Animaciones y feedback",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-023",
+      "priority": "P0",
+      "title": "Resultados",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-024",
+      "priority": "P0",
+      "title": "Diseño del ecualizador",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-025",
+      "priority": "P0",
+      "title": "Celular y escritorio",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-026",
+      "priority": "P0",
+      "title": "Accesibilidad, texto e idiomas",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-027",
+      "priority": "P0",
+      "title": "Errores y ayuda",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-028",
+      "priority": "P0",
+      "title": "Orden adaptativo de las frecuencias",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-029",
+      "priority": "P0",
+      "title": "Integración del barrido de frecuencias",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-030",
+      "priority": "P0",
+      "title": "Función del barrido continuo",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-031",
+      "priority": "P0",
+      "title": "Duración inteligente de tonos individuales",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-032",
+      "priority": "P0",
+      "title": "Ajuste adaptativo de intensidad digital",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-033",
+      "priority": "P0",
+      "title": "Confirmación y confianza de los umbrales",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-034",
+      "priority": "P0",
+      "title": "Resolución de frecuencias difíciles o inconclusas",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-035",
+      "priority": "P0",
+      "title": "Pruebas de canales y oídos según dispositivo",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-036",
+      "priority": "P0",
+      "title": "Comparaciones perceptivas integradas sin pasos manuales extra",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-037",
+      "priority": "P0",
+      "title": "Límites digitales y seguridad según dispositivo",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-038",
+      "priority": "P0",
+      "title": "Finalización del examen inteligente",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-039",
+      "priority": "P0",
+      "title": "Selección del algoritmo de ecualización",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-040",
+      "priority": "P0",
+      "title": "Investigación de límites de ganancia del EQ",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-041",
+      "priority": "P0",
+      "title": "Bandas incompletas y resultado final del EQ",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-042",
+      "priority": "P0",
+      "title": "Perfiles inteligentes y alcance de dispositivos",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-043",
+      "priority": "P0",
+      "title": "Formatos y distribución de bandas del EQ",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-044",
+      "priority": "P0",
+      "title": "Reconocimiento de bandas y frecuencias del EQ",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-045",
+      "priority": "P0",
+      "title": "Conversión de dB a pasos o posiciones físicas",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-046",
+      "priority": "P0",
+      "title": "Redondeo inteligente y restricciones físicas del EQ",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-047",
+      "priority": "P0",
+      "title": "Un único EQ conjunto y síntesis de mediciones por oído/canal",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-048",
+      "priority": "P0",
+      "title": "Transferencia inteligente del EQ a equipos y aplicaciones",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-049",
+      "priority": "P0",
+      "title": "Copia y exportación universal del EQ y PNG",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-050",
+      "priority": "P0",
+      "title": "Edición integrada, restauración y sincronización del EQ",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-051",
+      "priority": "P0",
+      "title": "Gestión de dispositivos, perfiles, historial y respaldo local",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-052",
+      "priority": "P0",
+      "title": "EQ gráfico y guía manual para dispositivos paramétricos",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-053",
+      "priority": "P0",
+      "title": "Validación transparente de compatibilidad sin pruebas técnicas obligatorias",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-054",
+      "priority": "P0",
+      "title": "Recuperación inteligente del examen",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-055",
+      "priority": "P0",
+      "title": "Gestión inteligente de selección y cambios de salida de audio",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-056",
+      "priority": "P0",
+      "title": "Protección ante interrupciones observables de audio y reanudación segura",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-057",
+      "priority": "P0",
+      "title": "Compatibilidad inteligente progresiva y requisitos mínimos de audio",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-058",
+      "priority": "P0",
+      "title": "Accesibilidad integral de la interfaz y del examen",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-059",
+      "priority": "P0",
+      "title": "Privacidad local de resultados, perfiles e imágenes",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-060",
+      "priority": "P0",
+      "title": "Resiliencia inteligente, integridad local y funcionamiento offline",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-061",
+      "priority": "P0",
+      "title": "Diagnóstico técnico local, revisable y compartido solo con autorización",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-062",
+      "priority": "P0",
+      "title": "Rendimiento inteligente de audio y optimización adaptativa de interfaz",
+      "status": "prototype",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "D-063",
+      "priority": "P0",
+      "title": "Validación integral y condición de publicación estable",
+      "status": "prototype",
+      "verifiedEvidence": []
+    }
+  ],
+  "audits": [
+    {
+      "id": "physical-android",
+      "description": "Android real, salida y control de volumen bajo, pausas y restauración",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "physical-ios",
+      "description": "iPhone/Safari físico, audio, Safari offline, suspensión y accesibilidad",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "physical-desktop",
+      "description": "Equipo de escritorio real con navegador y dispositivo de audio documentados",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "physical-bluetooth-route",
+      "description": "Ruta Bluetooth/auriculares y cambio audible de salida y llamadas",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "physical-headphones-lr",
+      "description": "Separación por oído y rutas L/R reales cuando corresponda",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "physical-levels",
+      "description": "Verificación de límites acústicos y protocolo de seguridad física",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "perceptual-comparison",
+      "description": "Eficacia de dos tonos consecutivos e incertidumbre con personas y equipos",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "eq-calibration",
+      "description": "Modelo EQ, límites/headroom y transferencia física contrastados",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "accessibility-wcag",
+      "description": "Auditoría WCAG 2.2 AA con teclado y tecnologías asistivas reales",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "offline-storage",
+      "description": "Pérdida de red, espacio/cuota, persistencia real y restauración de versión",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "privacy-images",
+      "description": "Tratamiento/retención de fotografías, borrado e importación de datos",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "migration-legacy",
+      "description": "Migración V2 completa y reversible con muestras verificadas",
+      "status": "pending",
+      "verifiedEvidence": []
+    },
+    {
+      "id": "rollback-production",
+      "description": "Reversión real ensayada y documentada",
+      "status": "pending",
+      "verifiedEvidence": []
+    }
+  ]
+}
