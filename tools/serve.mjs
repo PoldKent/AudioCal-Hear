@@ -17,6 +17,7 @@ const allowedFiles = new Map([
   ['/tests/fixtures/hear3-catalog-pilot.html', 'tests/fixtures/hear3-catalog-pilot.html'],
   ['/tests/fixtures/hear3-legacy-v2-pilot.html', 'tests/fixtures/hear3-legacy-v2-pilot.html'],
   ['/tests/fixtures/hear3-sweep-pilot.html', 'tests/fixtures/hear3-sweep-pilot.html'],
+  ['/tests/fixtures/hear3-integrated-exam-pilot.html', 'tests/fixtures/hear3-integrated-exam-pilot.html'],
   ['/src/hear3/session-contract.mjs', 'src/hear3/session-contract.mjs'],
   ['/src/hear3/audio-session-controller.mjs', 'src/hear3/audio-session-controller.mjs'],
   ['/src/hear3/checkpointed-audio-session.mjs', 'src/hear3/checkpointed-audio-session.mjs'],
@@ -32,6 +33,7 @@ const allowedFiles = new Map([
   ['/src/hear3/legacy-v2-history-view.mjs', 'src/hear3/legacy-v2-history-view.mjs'],
   ['/src/hear3/web-audio-adapter.mjs', 'src/hear3/web-audio-adapter.mjs'],
   ['/src/hear3/sweep-planner.mjs', 'src/hear3/sweep-planner.mjs'],
+  ['/src/hear3/adaptive-discrete-exam.mjs', 'src/hear3/adaptive-discrete-exam.mjs'],
   ['/src/hear3/sweep-audio-runner.mjs', 'src/hear3/sweep-audio-runner.mjs'],
 ]);
 const server = http.createServer((req, res) => {

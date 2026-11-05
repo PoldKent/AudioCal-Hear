@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 const pilots = [
   { link: 'Abrir piloto de tonos', url: '/tests/fixtures/hear3-audio-pilot.html', heading: 'piloto interno de audio' },
   { link: 'Abrir piloto de barrido', url: '/tests/fixtures/hear3-sweep-pilot.html', heading: 'barrido experimental interno' },
+  { link: 'Abrir piloto integrado', url: '/tests/fixtures/hear3-integrated-exam-pilot.html', heading: 'barrido → tonos de confirmación' },
   { link: 'Abrir piloto de catálogo', url: '/tests/fixtures/hear3-catalog-pilot.html', heading: 'piloto interno de respaldo' },
   { link: 'Abrir visor de historial V2', url: '/tests/fixtures/hear3-legacy-v2-pilot.html', heading: 'revisión de perfiles antiguos' },
 ];
@@ -20,10 +21,10 @@ test('Hear 3.0 public preview is linked from the real app without replacing Hear
   expect(noOverflow).toBe(true);
 });
 
-test('preview exposes the four implemented pilots, not a fictional full Hear 3.0 exam', async ({page}) => {
+test('preview exposes the five available experimental pilots, not a fictional full Hear 3.0 exam', async ({page}) => {
   await page.goto('/hear3-preview/');
-  await expect(page.getByText('todavía no forman un examen Hear 3.0 completo')).toBeVisible();
-  await expect(page.locator('#pilotos article')).toHaveCount(4);
+  await expect(page.getByText('todavía no constituyen un examen Hear 3.0 validado o completo')).toBeVisible();
+  await expect(page.locator('#pilotos article')).toHaveCount(5);
   for (const pilot of pilots) {
     const link=page.getByRole('link',{name:pilot.link});
     await expect(link).toBeVisible();
@@ -34,7 +35,7 @@ test('preview exposes the four implemented pilots, not a fictional full Hear 3.0
 test('all publicly linked pilots load their module UIs without audio automatically starting', async ({page}) => {
   await page.goto('/hear3-preview/');
   const paths=await page.locator('#pilotos article a').evaluateAll(links=>links.map(x=>x.href));
-  expect(paths).toHaveLength(4);
+  expect(paths).toHaveLength(5);
   for (let i=0;i<paths.length;i++) {
     await page.goto(paths[i]);
     await expect(page.locator('main h1')).toContainText(pilots[i].heading,{ignoreCase:true});
