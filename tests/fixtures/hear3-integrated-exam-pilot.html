@@ -12,7 +12,12 @@ button:focus-visible{outline:3px solid currentColor;outline-offset:3px}
 .controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
 button{width:100%}.notice{border:1px solid;border-radius:.6rem;padding:.85rem;margin:1rem 0}
 progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bottom:1.2rem;margin-bottom:1.5rem}
-#frequency{font-weight:850;font-size:clamp(2rem,6vw,3rem)}#dbfs{font-weight:750}
+#frequency,#sweep-frequency{font-weight:850;font-size:clamp(2rem,6vw,3rem)}
+#dbfs,#sweep-level{font-weight:750}
+.sweep-readouts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin:.8rem 0}
+.sweep-readouts p{margin:.2rem 0}
+.sweep-readouts output{display:block;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+@media(max-width:360px){.sweep-readouts{grid-template-columns:1fr}}
 [role="alert"]{min-height:1.5rem}
 @media(max-width:360px){.controls{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
@@ -30,6 +35,14 @@ progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bo
 <p>Recorrido 125–2.000 Hz · máximo 20 s · −60 dBFS · ambos canales.
  Las respuestas durante el barrido son informativas, no umbrales.</p>
 <p id="sweep-status" role="status" data-testid="sweep-status">Sin iniciar</p>
+<div class="sweep-readouts" aria-label="Indicadores técnicos de barrido">
+<p><strong>Frecuencia digital programada:</strong>
+<output id="sweep-frequency" data-testid="sweep-frequency" aria-live="off">—</output></p>
+<p><strong>Nivel de señal digital:</strong>
+<output id="sweep-level" data-testid="sweep-level" aria-live="off">—</output></p>
+</div>
+<p>Tiempo restante orientativo: <output id="sweep-remaining" data-testid="sweep-remaining" aria-live="off">—</output>.
+Estos valores muestran el programa digital, no la frecuencia acústica realmente emitida, ni si lo escuchas.</p>
 <label for="sweep-progress">Progreso temporal orientativo del barrido</label>
 <progress id="sweep-progress" max="20" value="0"></progress>
 <div class="controls">
@@ -129,7 +142,8 @@ He comprobado la salida y el volumen físico bajo antes de reanudar</label>
 <p><a href="../../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
 </main>
 <script type="module">
-import {createSweepPlan,planSweepConfirmations} from '../../src/hear3/sweep-planner.mjs';
+import {createSweepPlan,planSweepConfirmations,frequencyAtSweepTime}
+ from '../../src/hear3/sweep-planner.mjs';
 import {createSweepAudioRunner} from '../../src/hear3/sweep-audio-runner.mjs';
 import {createHear3AdaptiveProgressStore} from '../../src/hear3/adaptive-progress-store.mjs';
 import {createHear3ResumableAdaptiveExam} from '../../src/hear3/resumable-adaptive-exam.mjs';
@@ -171,6 +185,12 @@ function render(){
   prev?.status==='interrupted'?'Barrido interrumpido; sin confirmación automática':'Listo para comenzar';
  $('sweep-progress').value=s.status==='playing'?s.elapsedSeconds:
   prev?.status==='completed'?20:0;
+ const sweeping=s.status==='playing';
+ $('sweep-frequency').textContent=sweeping?
+  Math.round(frequencyAtSweepTime(s.plan,s.elapsedSeconds))+' Hz':'—';
+ $('sweep-level').textContent=sweeping?s.levelDbfs+' dBFS':'—';
+ $('sweep-remaining').textContent=sweeping?
+  Math.ceil(Math.max(0,s.plan.durationSeconds-s.elapsedSeconds))+' s':'—';
  $('sweep-count').textContent='Observaciones informativas: '+
   (s.status==='playing'?s.reports.length:prev?.reports?.length??0);
  setEnabled('sweep-start',!exam&&!sweepStarting&&s.status!=='playing');
