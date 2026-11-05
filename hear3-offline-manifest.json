@@ -9,6 +9,7 @@
     "src/hear3/adaptive-progress-store.mjs",
     "src/hear3/audio-capability-preflight.mjs",
     "src/hear3/audio-session-controller.mjs",
+    "src/hear3/bounded-eq-engine.mjs",
     "src/hear3/catalog-backup-store.mjs",
     "src/hear3/catalog-contract.mjs",
     "src/hear3/catalog-history-reader.mjs",
