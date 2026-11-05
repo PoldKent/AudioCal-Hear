@@ -26,10 +26,11 @@ progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bo
 <body>
 <main>
 <h1>Hear 3.0 · barrido → tonos de confirmación</h1>
-<p class="notice"><strong>Piloto de desarrollo, no examen clínico ni ecualizador terminado.</strong>
+<p class="notice"><strong>Piloto de desarrollo, no examen clínico ni EQ validado.</strong>
  Mantén el volumen físico bajo, cómodo y fijo. Detén el sonido ante molestias.
  Los niveles dBFS no miden presión sonora (dB SPL) ni prueban seguridad acústica.
- Cada reproducción requiere una acción explícita. Ningún resultado produce aún ganancias de EQ.</p>
+ Cada reproducción requiere una acción explícita. El EQ matemático provisional que aparece
+ al finalizar no se aplicará automáticamente ni está calibrado para tu equipo.</p>
 <p id="audio-preflight" data-testid="audio-preflight" role="status">
 Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automáticamente.</p>
 <section aria-labelledby="sweep-heading">
@@ -110,15 +111,35 @@ He comprobado la salida y el volumen físico bajo antes de reanudar</label>
 <section aria-labelledby="summary-heading">
 <h2 id="summary-heading">4. Evidencia y límites</h2>
 <p>Este piloto registra lo escuchado/no escuchado; muestra intervalos subjetivos o
- bandas inconclusas. No inventa un umbral auditivo ni calcula una ganancia EQ.</p>
+ bandas inconclusas. No inventa un umbral auditivo. Cuando se finaliza explícitamente
+ el examen conjunto, genera un EQ matemático de contraste relativo, con topes
+ y origen identificados por banda. <strong>No está calibrado acústicamente.</strong></p>
 <div id="result" data-testid="result" role="status">Sin resultados confirmados.</div>
 </section>
+<section aria-labelledby="eq-heading">
+<h2 id="eq-heading">5. EQ matemático provisional · una sola curva conjunta</h2>
+<p class="notice">Las ganancias indicadas son hipótesis experimentales derivadas de
+ tus respuestas subjetivas con señales en dBFS. No miden una pérdida auditiva,
+ no verifican clipping, no certifican el equipo ni el nivel de presión acústica.
+ <strong>No ajustes ni apliques automáticamente estas ganancias a un equipo físico
+ sin validar sus controles, respuesta y headroom.</strong> Las bandas sin evidencia
+ quedan neutras, salvo estimaciones identificadas y estrictamente acotadas entre
+ dos bandas vecinas con evidencia suficiente.</p>
+<p id="eq-status" data-testid="eq-status" role="status">
+Finaliza el examen de tonos para calcular una curva EQ provisional.</p>
+<div id="eq-rows" data-testid="eq-rows" aria-label="Ganancias EQ provisionales por banda"></div>
+<p id="eq-headroom" data-testid="eq-headroom">
+La preamplificación y el headroom no están verificados.</p>
+<button type="button" id="eq-export" data-testid="eq-export" disabled>
+Descargar curva EQ experimental JSON para revisión (no preset de dispositivo)</button>
+</section>
 <section aria-labelledby="archive-heading">
-<h2 id="archive-heading">5. Guardar respuestas en el historial V3</h2>
+<h2 id="archive-heading">6. Guardar respuestas en el historial V3</h2>
 <p>Cuando el examen haya finalizado puedes archivar las respuestas reales como un
- <strong>registro experimental inconcluso</strong>. No se creará un umbral clínico
- ni un ecualizador. La información se guarda en este navegador y la copia de
- respaldo debe exportarse desde el catálogo V3 por separado.</p>
+ <strong>registro experimental inconcluso</strong>. El EQ provisional calculado
+ se puede descargar aparte, pero <strong>no se guarda como EQ validado</strong>
+ en el catálogo. No se crea ningún umbral clínico. Las respuestas se guardan
+ aquí y el respaldo del catálogo V3 se exporta por separado.</p>
 <label for="archive-device">Nombre del equipo que deseas registrar</label>
 <input id="archive-device" data-testid="archive-device" type="text" maxlength="120" value="Equipo del piloto"
  autocomplete="off">
@@ -154,6 +175,7 @@ import {createHear3ReadThrottle} from '../../src/hear3/read-throttle.mjs';
 import {createHear3ResumableAdaptiveExam} from '../../src/hear3/resumable-adaptive-exam.mjs';
 import {createHear3CatalogStore} from '../../src/hear3/catalog-backup-store.mjs';
 import {createHear3AdaptiveCatalogArchive} from '../../src/hear3/adaptive-catalog-archive.mjs';
+import {calculateHear3BoundedJointEq} from '../../src/hear3/bounded-eq-engine.mjs';
 import {createHear3ContextualToneComparison,planHear3ContradictionComparison}
  from '../../src/hear3/contextual-tone-comparison.mjs';
 
