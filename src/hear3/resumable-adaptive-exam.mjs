@@ -119,17 +119,24 @@ export function createHear3ResumableAdaptiveExam({
   return {restored:true,state,persistence:clone(persistence)};
  }
  async function playNext(args){
-  ensureLive();touched=true;
-  let operation;
-  try{operation=exam.playNext(args);}catch(error){attemptSave();throw error;}
-  attemptSave();
+  ensureLive();
+  const before=JSON.stringify(bundle());
+  const operation=exam.playNext(args);
+  if(JSON.stringify(bundle())!==before){touched=true;attemptSave();}
   try{return await operation;}
-  finally{attemptSave();}
+  finally{
+   if(JSON.stringify(bundle())!==before){touched=true;attemptSave();}
+  }
  }
  function update(action){
-  ensureLive();touched=true;
+  ensureLive();
+  const before=JSON.stringify(bundle());
   try{return action();}
-  finally{attemptSave();}
+  finally{
+   // A rejected/disabled user action must not clobber an older recoverable
+   // checkpoint just because the user clicked the wrong button.
+   if(JSON.stringify(bundle())!==before){touched=true;attemptSave();}
+  }
  }
  function answer(response){return update(()=>exam.answer(response));}
  function confirmContradiction(args){return update(()=>exam.confirmContradiction(args));}
