@@ -16,7 +16,9 @@ const COPY=(value)=>JSON.parse(JSON.stringify(value));
 function bool(value){return value===true;}
 function readableFeature(fn){try{return bool(fn());}catch{return false;}}
 function capabilities(env){
- const ac=env?.AudioContext??env?.webkitAudioContext;
+ let ac;
+ try{ac=env?.AudioContext??env?.webkitAudioContext;}
+ catch{ac=null;}
  const proto=typeof ac==='function'?ac.prototype:null;
  return {
   secureContext:bool(env?.isSecureContext),
