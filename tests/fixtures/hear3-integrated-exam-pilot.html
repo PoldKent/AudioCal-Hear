@@ -86,6 +86,33 @@ He comprobado la salida y el volumen físico bajo antes de reanudar</label>
  bandas inconclusas. No inventa un umbral auditivo ni calcula una ganancia EQ.</p>
 <div id="result" data-testid="result" role="status">Sin resultados confirmados.</div>
 </section>
+<section aria-labelledby="archive-heading">
+<h2 id="archive-heading">5. Guardar respuestas en el historial V3</h2>
+<p>Cuando el examen haya finalizado puedes archivar las respuestas reales como un
+ <strong>registro experimental inconcluso</strong>. No se creará un umbral clínico
+ ni un ecualizador. La información se guarda en este navegador y la copia de
+ respaldo debe exportarse desde el catálogo V3 por separado.</p>
+<label for="archive-device">Nombre del equipo que deseas registrar</label>
+<input id="archive-device" data-testid="archive-device" type="text" maxlength="120" value="Equipo del piloto"
+ autocomplete="off">
+<label for="archive-profile">Nombre del perfil de prueba</label>
+<input id="archive-profile" data-testid="archive-profile" type="text" maxlength="120" value="Perfil experimental"
+ autocomplete="off">
+<label for="archive-category">Categoría del equipo (no verificada automáticamente)</label>
+<select id="archive-category" data-testid="archive-category">
+<option value="headphones">Auriculares</option>
+<option value="speaker">Parlantes</option>
+<option value="car">Sistema de automóvil</option>
+<option value="application">Aplicación</option>
+<option value="interface">Interfaz de audio</option>
+</select>
+<div class="controls">
+<button type="button" id="archive-preview" data-testid="archive-preview" disabled>Revisar guardado V3</button>
+<button type="button" id="archive-commit" data-testid="archive-commit" disabled>Confirmar guardado V3</button>
+</div>
+<p id="archive-status" data-testid="archive-status" role="status">Primero termina el examen de tonos. No se guarda EQ.</p>
+<p><a href="hear3-catalog-pilot.html">Consultar catálogo e historial V3</a></p>
+</section>
 <p id="error" data-testid="error" role="alert"></p>
 <p><a href="../../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
 </main>
@@ -94,6 +121,8 @@ import {createSweepPlan,planSweepConfirmations} from '../../src/hear3/sweep-plan
 import {createSweepAudioRunner} from '../../src/hear3/sweep-audio-runner.mjs';
 import {createHear3AdaptiveProgressStore} from '../../src/hear3/adaptive-progress-store.mjs';
 import {createHear3ResumableAdaptiveExam} from '../../src/hear3/resumable-adaptive-exam.mjs';
+import {createHear3CatalogStore} from '../../src/hear3/catalog-backup-store.mjs';
+import {createHear3AdaptiveCatalogArchive} from '../../src/hear3/adaptive-catalog-archive.mjs';
 
 const $=id=>document.getElementById(id);
 const bands=[125,250,500,1000,2000].map(f=>({id:'band-'+f,frequencyHz:f}));
@@ -102,6 +131,8 @@ const levelRange={minDbfs:-80,maxDbfs:-42};
 const sweepRunner=createSweepAudioRunner({onEnded:render,onInterrupted:render});
 const profileId='hear3-integrated-pilot';
 const progressStore=createHear3AdaptiveProgressStore({profileId});
+const catalogStore=createHear3CatalogStore();
+let archiveTransfer=null,archiveMessage='Primero termina el examen de tonos. No se guarda EQ.';
 let exam=null,planning=false,sweepStarting=false;
 function createExam(plan){
  return createHear3ResumableAdaptiveExam({plan,profileId,
@@ -134,6 +165,10 @@ function render(){
  setEnabled('recover-exam',!exam&&Boolean(local.checkpoint));
  setEnabled('export-exam',Boolean(local.checkpoint));
  setEnabled('delete-exam',Boolean(local.checkpoint));
+ setEnabled('archive-preview',Boolean(exam&&exam.snapshot().status==='completed'&&
+  exam.getSession().status==='completed'));
+ setEnabled('archive-commit',Boolean(archiveTransfer));
+ $('archive-status').textContent=archiveMessage;
  const durability=exam?.getPersistence();
  $('recovery-status').textContent=local.checkpoint
   ?'Copia local disponible ('+local.durability+'). '+
@@ -251,6 +286,44 @@ $('delete-exam').addEventListener('click',()=>run(()=>{
  const result=exam?exam.clearCheckpoint({confirmed:true}):progressStore.clear({confirmed:true});
  if(!result.cleared)throw Error(result.warning??'La eliminación no pudo verificarse.');
 }));
+function discardArchive(){
+ archiveTransfer?.discard();
+ archiveTransfer=null;
+ archiveMessage='Cualquier cambio necesita una nueva vista previa, sin guardar datos.';
+ render();
+}
+for(const id of ['archive-device','archive-profile','archive-category']){
+ $(id).addEventListener('input',discardArchive);
+ $(id).addEventListener('change',discardArchive);
+}
+$('archive-preview').addEventListener('click',()=>run(()=>{
+ archiveTransfer=null;
+ if(!exam)throw Error('No existe examen finalizado.');
+ if(typeof crypto==='undefined'||typeof crypto.randomUUID!=='function')
+  throw Error('Se requiere un origen seguro para generar identificadores únicos.');
+ const transfer=createHear3AdaptiveCatalogArchive({catalogStore,exam});
+ const preview=transfer.preview({
+  deviceId:'v3-device-'+crypto.randomUUID(),
+  profileId:'v3-profile-'+crypto.randomUUID(),
+  resultId:'v3-result-'+crypto.randomUUID(),
+  deviceName:$('archive-device').value.trim(),
+  profileName:$('archive-profile').value.trim(),
+  category:$('archive-category').value,
+ });
+ archiveTransfer=transfer;
+ archiveMessage='Se guardarán '+preview.subjectiveResponses+
+  ' respuestas, '+preview.bands+' bandas en estado inconcluso. '+
+  'Ganancias EQ: 0. Revisa categoría y nombre antes de confirmar.';
+}));
+$('archive-commit').addEventListener('click',()=>run(()=>{
+ if(!archiveTransfer)throw Error('Revisa antes las respuestas y el alcance del guardado.');
+ if(!confirm('¿Guardar las respuestas experimentales como un nuevo dispositivo y perfil V3, sin EQ ni diagnóstico?'))return;
+ const result=archiveTransfer.commit({userInitiated:true,confirmed:true});
+ archiveTransfer=null;
+ archiveMessage=result.persistedOnDevice
+  ?'Historial V3 guardado localmente. Estado: inconcluso. No se generó EQ.'
+  :'La escritura en almacenamiento permanente NO está verificada. Exporta un respaldo local. '+(result.warning??'');
+}));
 window.hear3IntegratedPilot=Object.freeze({
  snapshot:()=>exam?.snapshot()??null,
  sweep:()=>sweepRunner.snapshot(),
@@ -260,7 +333,8 @@ const ticker=setInterval(render,120);
 window.addEventListener('pagehide',()=>{
  clearInterval(ticker);
  sweepRunner.stop('pagehide');
- exam?.interrupt({routeMayHaveChanged:true});
+ if(exam&&exam.getSession().status!=='completed')
+  exam.interrupt({routeMayHaveChanged:true});
 },{once:true});
 render();
 </script>
