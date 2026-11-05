@@ -12,7 +12,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 
 export function createHear3AdaptiveDiscreteExam({
   plan,sessionController,initialDbfs,maxTrialsPerBand=7,
-  coarseStepDb=6,durationSeconds=3,channel='joint',
+  coarseStepDb=6,durationSeconds=3,channel='joint',restoredProgress=null,
 }={}) {
   check(plan?.interpretation==='preliminary-sweep-navigation-only'
     && Array.isArray(plan.initialOrder) && plan.initialOrder.length>=2
@@ -23,7 +23,8 @@ export function createHear3AdaptiveDiscreteExam({
     && typeof sessionController.interrupt==='function'
     && typeof sessionController.resume==='function', 'Verified audio-session controller required');
   const base=sessionController.getSession();
-  check(base?.status==='ready' && base?.authorizedDigitalRangeDbfs,
+  check((restoredProgress===null?base?.status==='ready':
+    ['paused','completed'].includes(base?.status)) && base?.authorizedDigitalRangeDbfs,
     'Start with a ready, authorized audio session');
   const limits=clone(base.authorizedDigitalRangeDbfs);
   check(finite(limits.minDbfs)&&finite(limits.maxDbfs)&&limits.minDbfs<=limits.maxDbfs
@@ -49,6 +50,122 @@ export function createHear3AdaptiveDiscreteExam({
   let position=0,sequence=0,phase='ready',nextDbfs=initialDbfs;
   let activeTone=null,requestEpoch=0,contradiction=null;
   const taken=new Set();
+
+  const PROGRESS_FORMAT='hear3-adaptive-discrete-progress-v1';
+  const planBands=plan.initialOrder.map(b=>({id:b.id,frequencyHz:b.frequencyHz}));
+  const progressOptions={initialDbfs,maxTrialsPerBand,coarseStepDb,durationSeconds,channel};
+
+  function exportProgress(){
+    syncControllerStatus();
+    return clone({
+      format:PROGRESS_FORMAT,profileId:base.profileId,
+      authorizedDigitalRangeDbfs:limits,
+      planBands,sweepReportCount:plan.reportCount,options:progressOptions,
+      position,sequence,phase,nextDbfs,contradiction,bands,
+      thresholdsEstimated:0,eqGainsCalculated:0,
+    });
+  }
+
+  function applyRestoredProgress(raw){
+    check(raw&&raw.format===PROGRESS_FORMAT&&raw.profileId===base.profileId,
+      'Recovered adaptive progress has an unknown format or profile');
+    const p=clone(raw);
+    check(JSON.stringify(p.authorizedDigitalRangeDbfs)===JSON.stringify(limits),
+      'Recovered adaptive progress exceeds or changes authorized digital bounds');
+    check(JSON.stringify(p.options)===JSON.stringify(progressOptions),
+      'Recovered adaptive settings do not match current authorized settings');
+    check(JSON.stringify(p.planBands)===JSON.stringify(planBands)&&
+      p.sweepReportCount===plan.reportCount,
+      'Recovered adaptive plan does not match this exam');
+    check(p.thresholdsEstimated===0&&p.eqGainsCalculated===0,
+      'Recovered progress cannot claim clinical thresholds or EQ gains');
+    check(Number.isSafeInteger(p.position)&&p.position>=0&&p.position<=bands.length,
+      'Invalid saved adaptive position');
+    check(Number.isSafeInteger(p.sequence)&&p.sequence>=0&&p.sequence<=100000,
+      'Invalid saved tone sequence');
+    check(['ready','starting','playing','paused','awaiting-confirmation','completed']
+      .includes(p.phase),'Invalid saved adaptive phase');
+    check(Array.isArray(p.bands)&&p.bands.length===bands.length,
+      'Invalid recovered band count');
+    check((p.position===bands.length)===(p.phase==='completed'),
+      'Recovered band coverage and completion phase disagree');
+    check(p.position===bands.length ? p.nextDbfs===null :
+      finite(p.nextDbfs)&&p.nextDbfs>=limits.minDbfs&&p.nextDbfs<=limits.maxDbfs,
+      'Invalid saved next digital level');
+    check(p.contradiction==null || (typeof p.contradiction==='object'&&
+      finite(p.contradiction.retryDbfs)&&
+      p.contradiction.retryDbfs>=limits.minDbfs&&
+      p.contradiction.retryDbfs<=limits.maxDbfs),
+      'Invalid saved contradiction level');
+    check((p.phase==='awaiting-confirmation')===(p.contradiction!==null),
+      'Saved contradiction and confirmation phase disagree');
+    const recorded=[];
+    const ids=new Set();
+    let highest=0;
+    for(let i=0;i<bands.length;i++){
+      const original=bands[i],b=p.bands[i];
+      check(b&&b.id===original.id&&b.frequencyHz===original.frequencyHz&&
+        ['pending','inconclusive','bounded-subjective-interval'].includes(b.status)&&
+        typeof b.verificationAsked==='boolean'&&
+        ['inconclusive','low','medium'].includes(b.confidence)&&
+        Array.isArray(b.observations)&&b.observations.length<=maxTrialsPerBand,
+        'Invalid saved band status or observations');
+      check((i<p.position)===(b.status!=='pending'),
+        'Recovered band coverage is inconsistent');
+      const hears=[],misses=[];
+      for(const observation of b.observations){
+        check(observation&&typeof observation.toneId==='string'&&
+          /^hear3-[1-9][0-9]*$/.test(observation.toneId)&&
+          !ids.has(observation.toneId),'Invalid or duplicate saved tone');
+        ids.add(observation.toneId);
+        highest=Math.max(highest,Number(observation.toneId.slice(6)));
+        check(Number.isSafeInteger(highest)&&highest<=p.sequence&&
+          observation.frequencyHz===b.frequencyHz&&
+          finite(observation.digitalLevelDbfs)&&
+          observation.digitalLevelDbfs>=limits.minDbfs&&
+          observation.digitalLevelDbfs<=limits.maxDbfs&&
+          observation.channel===channel&&
+          ['heard','not-heard'].includes(observation.response)&&
+          observation.provenance==='user-response',
+          'Recovered observation is incompatible with authorized audio');
+        (observation.response==='heard'?hears:misses).push(observation.digitalLevelDbfs);
+        recorded.push(observation);
+      }
+      if(b.status==='bounded-subjective-interval'){
+        const lower=misses.length?Math.max(...misses):null;
+        const upper=hears.length?Math.min(...hears):null;
+        check(lower!==null&&upper!==null&&lower<upper&&
+          b.intervalDbfs?.notHeardAtDbfs===lower&&
+          b.intervalDbfs?.heardAtDbfs===upper&&
+          b.confidence===(b.observations.length>=4?'medium':'low'),
+          'Recovered interval is not supported by recorded responses');
+      }else{
+        check(b.intervalDbfs===null&&b.confidence==='inconclusive',
+          'Inconclusive or pending band cannot claim an interval');
+      }
+      if(i>p.position)check(b.observations.length===0&&!b.verificationAsked,
+        'Future bands cannot contain recorded observations');
+    }
+    const session=sessionController.getSession();
+    check(JSON.stringify(session.observations)===JSON.stringify(recorded),
+      'Adaptive progress and verified audio-session evidence disagree');
+    if(p.contradiction!==null){
+      const last=p.bands[p.position]?.observations.at(-1);
+      check(last&&last.digitalLevelDbfs===p.contradiction.retryDbfs,
+        'Saved contradiction does not match its final response');
+    }
+    check(session.status!=='completed'||p.phase==='completed',
+      'Completed audio session conflicts with adaptive progress');
+    for(let i=0;i<bands.length;i++)Object.assign(bands[i],clone(p.bands[i]));
+    position=p.position;sequence=p.sequence;nextDbfs=p.nextDbfs;
+    contradiction=p.contradiction;
+    // Recovered sessions are never already audible, not even if their
+    // checkpoint was captured while an oscillator was active.
+    phase=session.status==='completed'?'completed':'paused';
+    activeTone=null;requestEpoch++;
+    for(const id of ids)taken.add(id);
+  }
+  if(restoredProgress!==null)applyRestoredProgress(restoredProgress);
 
   function syncControllerStatus() {
     const data=sessionController.getSession();
@@ -89,7 +206,8 @@ export function createHear3AdaptiveDiscreteExam({
     const coherent=quietestHeard!==null&&loudestNotHeard!==null&&loudestNotHeard<quietestHeard;
     band.status=status==='bounded-subjective-interval'&&coherent?status:'inconclusive';
     // This is a *bracket of user reports*, not an inferred audiometric threshold.
-    band.intervalDbfs=coherent?{notHeardAtDbfs:loudestNotHeard,heardAtDbfs:quietestHeard}:null;
+    band.intervalDbfs=band.status==='bounded-subjective-interval'&&coherent
+      ?{notHeardAtDbfs:loudestNotHeard,heardAtDbfs:quietestHeard}:null;
     band.confidence=band.status==='bounded-subjective-interval'
       ?(band.observations.length>=4?'medium':'low'):'inconclusive';
     position++;
@@ -223,12 +341,13 @@ export function createHear3AdaptiveDiscreteExam({
   function resume({userInitiated=false}={}){
     check(phase==='paused'&&userInitiated===true,'Explicit action required to resume');
     sessionController.resume({userInitiated:true});
-    phase='ready';activeTone=null;
+    phase=position>=bands.length?'completed':contradiction?'awaiting-confirmation':'ready';
+    activeTone=null;
     return snapshot();
   }
   function finish(){
     check(phase==='completed','All bands must be reviewed before finishing');
     return sessionController.finish();
   }
-  return Object.freeze({snapshot,playNext,answer,confirmContradiction,interrupt,confirmRoute,resume,finish});
+  return Object.freeze({snapshot,exportProgress,playNext,answer,confirmContradiction,interrupt,confirmRoute,resume,finish});
 }

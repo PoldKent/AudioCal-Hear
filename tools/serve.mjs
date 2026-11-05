@@ -34,6 +34,8 @@ const allowedFiles = new Map([
   ['/src/hear3/web-audio-adapter.mjs', 'src/hear3/web-audio-adapter.mjs'],
   ['/src/hear3/sweep-planner.mjs', 'src/hear3/sweep-planner.mjs'],
   ['/src/hear3/adaptive-discrete-exam.mjs', 'src/hear3/adaptive-discrete-exam.mjs'],
+  ['/src/hear3/adaptive-progress-store.mjs', 'src/hear3/adaptive-progress-store.mjs'],
+  ['/src/hear3/resumable-adaptive-exam.mjs', 'src/hear3/resumable-adaptive-exam.mjs'],
   ['/src/hear3/sweep-audio-runner.mjs', 'src/hear3/sweep-audio-runner.mjs'],
 ]);
 const server = http.createServer((req, res) => {
