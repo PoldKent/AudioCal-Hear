@@ -102,6 +102,25 @@ const legacyTransfer=createHear2MigrationTransfer({store,readLegacy:()=>{
 }});
 const $=id=>document.getElementById(id);
 let preview=null,legacyPreview=null,legacyArchiveExportAttempted=false;
+let mutationInProgress=false;
+const blockedDuringWrite=['file','mode','preview','commit','delete-kind',
+ 'delete-target','delete-cascade','delete-preview','delete-commit',
+ 'legacy-source','legacy-file','legacy-preview','legacy-export','legacy-import'];
+function disableDuringWrite(busy){
+ for(const id of blockedDuringWrite)$(id).disabled=busy;
+ $('summary').setAttribute('aria-busy',String(busy));
+}
+async function serializeMutation(fn){
+ if(mutationInProgress)throw Error('Otra escritura del catálogo está en curso.');
+ mutationInProgress=true;
+ disableDuringWrite(true);
+ try{return await writer.run(fn);}
+ finally{
+  mutationInProgress=false;
+  disableDuringWrite(false);
+  render();
+ }
+}
 const coordinationWarning='Escrituras compartidas coordinadas mediante Web Locks cuando está disponible; otras pestañas o código sin ese protocolo no garantizan atomicidad.';
 function renderDeleteOptions(catalog){
  const kind=$('delete-kind').value;
@@ -165,7 +184,7 @@ $('commit').addEventListener('click',async()=>{
  try{
   if(!preview)throw Error('Revisa primero el respaldo.');
   if(preview.replacesExisting&&!confirm('¿Reemplazar TODOS los registros del catálogo Hear 3.0?'))return;
-  const {response:r}=await writer.run(()=>transfer.commit({userInitiated:true,confirmReplace:preview.replacesExisting}));
+  const {response:r}=await serializeMutation(()=>transfer.commit({userInitiated:true,confirmReplace:preview.replacesExisting}));
   preview=null;
   if(!r.persistedOnDevice)$('error').textContent=r.warning||'Datos temporales: exporta una copia.';
  }catch(e){$('error').textContent=e.message;}finally{render();}
@@ -205,7 +224,7 @@ $('delete-commit').addEventListener('click',async()=>{
    scope.removedProfiles+' perfiles y '+scope.removedResults+' resultados V3 de este navegador?'))return;
   if(scope.requiresSeparateCascadeConfirmation &&
     !confirm('Confirmación adicional: se eliminarán también registros relacionados. ¿Continuar?'))return;
-  const {response:saved}=await writer.run(()=>deletion.commit({userInitiated:true,confirmed:true,
+  const {response:saved}=await serializeMutation(()=>deletion.commit({userInitiated:true,confirmed:true,
    confirmCascade:scope.requiresSeparateCascadeConfirmation}));
   deletionProposal=null;
   if(!saved.persistedOnDevice)$('error').textContent=
@@ -278,14 +297,17 @@ $('legacy-import').addEventListener('click',async()=>{
  try{
   if(!legacyArchiveExportAttempted)throw Error('Exporta primero el respaldo V2.');
   if(!confirm('¿Confirmas que guardaste aparte el archivo V2 y deseas importar SOLO equipos y bandas, SIN resultados históricos?'))return;
-  const {response:result}=await writer.run(()=>legacyTransfer.commit({userInitiated:true,confirmBackupExported:true}));
+  const {response:result}=await serializeMutation(()=>legacyTransfer.commit({userInitiated:true,confirmBackupExported:true}));
   legacyPreview=null;legacyArchiveExportAttempted=false;
   if(!result.persistedOnDevice)$('error').textContent=result.warning||'Datos en memoria temporal.';
  }catch(e){$('error').textContent=e.message;}
  finally{render();}
 });
 // Test-only local inspection. No mutation methods or network functions.
-window.hear3CatalogPilot=Object.freeze({snapshot:()=>store.load()});
+window.hear3CatalogPilot=Object.freeze({
+ snapshot:()=>store.load(),
+ isMutationPending:()=>mutationInProgress,
+});
 render();
 </script>
 </body>
