@@ -23,6 +23,7 @@ const allowedFiles = new Map([
   ['/src/hear3/device-profile-contract.mjs', 'src/hear3/device-profile-contract.mjs'],
   ['/src/hear3/catalog-contract.mjs', 'src/hear3/catalog-contract.mjs'],
   ['/src/hear3/catalog-backup-store.mjs', 'src/hear3/catalog-backup-store.mjs'],
+  ['/src/hear3/catalog-history-reader.mjs', 'src/hear3/catalog-history-reader.mjs'],
   ['/src/hear3/legacy-v2-migration.mjs', 'src/hear3/legacy-v2-migration.mjs'],
   ['/src/hear3/legacy-v2-migration-audit.mjs', 'src/hear3/legacy-v2-migration-audit.mjs'],
   ['/src/hear3/legacy-v2-history-view.mjs', 'src/hear3/legacy-v2-history-view.mjs'],
