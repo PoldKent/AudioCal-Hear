@@ -17,6 +17,7 @@ const allowedFiles = new Map([
   ['/hear3-offline-sw.js', 'hear3-offline-sw.js'],
   ['/src/hear3/offline-optin.mjs', 'src/hear3/offline-optin.mjs'],
   ['/src/hear3/audio-capability-preflight.mjs', 'src/hear3/audio-capability-preflight.mjs'],
+  ['/src/hear3/read-throttle.mjs', 'src/hear3/read-throttle.mjs'],
   ['/hear3-privacy/', 'hear3-privacy/index.html'],
   ['/hear3-privacy/index.html', 'hear3-privacy/index.html'],
   ['/hear3-diagnostics/', 'hear3-diagnostics/index.html'],

@@ -23,6 +23,7 @@
     "src/hear3/local-checkpoint-store.mjs",
     "src/hear3/local-diagnostics.mjs",
     "src/hear3/offline-optin.mjs",
+    "src/hear3/read-throttle.mjs",
     "src/hear3/resumable-adaptive-exam.mjs",
     "src/hear3/scoped-storage-cleanup.mjs",
     "src/hear3/session-contract.mjs",
