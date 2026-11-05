@@ -62,17 +62,20 @@ export function createHear3AdaptiveProgressStore({
   return {revision:parsed.revision,bundle:validate(parsed.bundle)};
  }
  function inspect(storage, durability){
-  const records=[],warnings=[];
-  if(!storage)return {records,warnings};
+  const records=[],warnings=[],damagedSlots=[];
+  if(!storage)return {records,warnings,damagedSlots};
   for(let slot=0;slot<2;slot++){
    let raw;
    try{raw=storage.getItem(prefix+slot);}
    catch{warnings.push('Storage is blocked ('+durability+').');break;}
    if(raw==null)continue;
    try{records.push({...decode(raw),durability});}
-   catch{warnings.push('Damaged local snapshot slot '+slot+' ('+durability+'); ignored.');}
+   catch{
+    damagedSlots.push(slot);
+    warnings.push('Damaged local snapshot slot '+slot+' ('+durability+'); preserved.');
+   }
   }
-  return {records,warnings};
+  return {records,warnings,damagedSlots};
  }
  function current(){
   const device=inspect(deviceStorage,'device-local');
@@ -80,7 +83,8 @@ export function createHear3AdaptiveProgressStore({
   const records=[...device.records,...tab.records,...(volatile?[{...volatile,durability:'volatile'}]:[])];
   records.sort((a,b)=>b.revision-a.revision||
     (a.durability==='device-local'?-1:b.durability==='device-local'?1:0));
-  return {best:records[0]??null,warnings:[...device.warnings,...tab.warnings]};
+  return {best:records[0]??null,warnings:[...device.warnings,...tab.warnings],
+   byScope:{'device-local':device,'tab-session':tab}};
  }
  function load(){
   const result=current();
@@ -94,26 +98,33 @@ export function createHear3AdaptiveProgressStore({
  }
  function save(bundle,{expectedRevision=null}={}){
   const safe=validate(bundle);
-  const state=load();
-  check(expectedRevision===null||expectedRevision===state.revision,
+  const state=current();
+  const currentRevision=state.best?.revision??0;
+  check(expectedRevision===null||expectedRevision===currentRevision,
    'Adaptive checkpoint changed since it was read; review before saving');
-  const revision=state.revision+1;
+  const revision=currentRevision+1;
   // Validate size before touching any stored checkpoint.
   const raw=encode(revision,safe);
   volatile={revision,bundle:safe};
-  const slot=String(revision%2);
   for(const [storage,durability] of [[deviceStorage,'device-local'],[tabStorage,'tab-session']]){
    if(!storage)continue;
+   const scoped=state.byScope[durability];
+   // Never silently replace bytes that failed integrity checks, even when
+   // the other slot is still usable. Prefer the non-damaged slot instead.
+   const slot=[revision%2,(revision+1)%2].find(i=>!scoped.damagedSlots.includes(i));
+   if(slot===undefined)continue;
    try{
     storage.setItem(prefix+slot,raw);
     check(storage.getItem(prefix+slot)===raw,'Saved checkpoint could not be verified');
     return {revision,durability,persistedOnDevice:durability==='device-local',
-     warning:durability==='device-local'?null:
-      'Only tab-session storage is verified; export a copy before closing the tab.'};
+     warning:scoped.damagedSlots.length
+      ?'A damaged checkpoint slot was preserved, leaving reduced redundancy. Export a backup.'
+      :durability==='device-local'?null:
+       'Only tab-session storage is verified; export a copy before closing the tab.'};
    }catch{/* retain volatile and try another local scope */}
   }
   return {revision,durability:'volatile',persistedOnDevice:false,
-   warning:'The adaptive checkpoint is only in memory; progress may be lost.'};
+   warning:'The adaptive checkpoint is only in memory; blocked or damaged local slots were not overwritten. Export a backup.'};
  }
  function clear({confirmed=false}={}){
   check(confirmed===true,'Explicit checkpoint deletion confirmation required');
