@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hear 3.0 · Comprobación manual de canales en auriculares</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:light dark}
+body{max-width:45rem;margin:1.5rem auto;padding:0 1rem 3rem;line-height:1.55}
+button,select,input{font:inherit}button{min-height:48px;padding:.7rem .9rem}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin:1rem 0}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+.notice{border:1px solid;border-radius:.7rem;padding:.8rem;margin:1rem 0}
+label{display:block;margin:.7rem 0}
+select{min-height:44px;max-width:100%}
+@media(max-width:360px){.controls{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Hear 3.0 · Verificación subjetiva de canales L/R</h1>
+<p class="notice"><strong>Piloto experimental, no calibración.</strong>
+ Esta pantalla NO certifica físicamente una salida de audio, la separación real de auriculares,
+ la presión sonora dB SPL ni la seguridad auditiva. Mantén el volumen físico bajo, cómodo y fijo,
+ detén ante cualquier molestia. Los dos tonos digitales se reproducen únicamente cuando
+ los solicitas. Esta comprobación NO activa automáticamente un examen por oído.</p>
+<label for="device">Tipo de equipo que estás comprobando</label>
+<select id="device" data-testid="device">
+<option value="headphones">Auriculares / audífonos</option>
+<option value="speaker">Altavoces / parlantes</option>
+<option value="car">Sistema de automóvil</option>
+</select>
+<p id="check-status" data-testid="check-status" role="status" aria-live="polite">
+Todavía no se ha comprobado ningún canal.</p>
+<p>La prueba comienza con el canal izquierdo y después requiere un nuevo clic
+para el derecho. Cada comprobación usa un tono de 500 Hz, −60 dBFS y 1,25 s.
+Ese número es una señal digital, no volumen físico. Antes de cada reproducción
+confirma que has comprobado la salida y el volumen físico.</p>
+<label><input id="route" data-testid="route" type="checkbox">
+He comprobado el equipo seleccionado y la salida que quiero utilizar.</label>
+<label><input id="low-volume" data-testid="low-volume" type="checkbox">
+He fijado un volumen físico bajo y cómodo; detendré el sonido si me molesta.</label>
+<div class="controls">
+<button type="button" id="play" data-testid="play" disabled>Reproducir canal izquierdo</button>
+<button type="button" id="stop" data-testid="stop" disabled>Detener y descartar comprobación</button>
+</div>
+<h2>¿De qué lado percibiste el tono?</h2>
+<p>Responde únicamente después de finalizar la reproducción. «No lo sé»,
+«ambos» o una respuesta distinta al lado solicitado conservan el
+<strong>modo conjunto</strong> sin atribuir una medición a un oído.</p>
+<div class="controls">
+<button type="button" id="heard-left" data-testid="heard-left" disabled>Izquierdo</button>
+<button type="button" id="heard-right" data-testid="heard-right" disabled>Derecho</button>
+<button type="button" id="heard-both" data-testid="heard-both" disabled>Ambos</button>
+<button type="button" id="heard-none" data-testid="heard-none" disabled>Ninguno</button>
+<button type="button" id="heard-uncertain" data-testid="heard-uncertain" disabled>No estoy seguro</button>
+<button type="button" id="retry" data-testid="retry">Volver a comprobar desde el inicio</button>
+</div>
+<p id="result" data-testid="result" role="status">Sin resultados de verificación.</p>
+<p id="error" data-testid="error" role="alert"></p>
+<p><a href="../../hear3-preview/">Volver a la vista previa de Hear 3.0</a>.
+ El examen integrado sigue usando el modo conjunto, incluso tras
+ dos respuestas correctas en esta comprobación.</p>
+</main>
+<script type="module">
+import {createHear3ManualChannelCheck}
+ from '../../src/hear3/manual-channel-verification.mjs';
+const $=id=>document.getElementById(id);
+const controller=createHear3ManualChannelCheck({onChange:render});
+const sides=['heard-left','heard-right','heard-both','heard-none','heard-uncertain'];
+function render(){
+ const s=controller.snapshot();
+ const ready=s.deviceType==='headphones'&&
+  ['idle','ready-next'].includes(s.state);
+ const eligible=ready&&$('route').checked&&$('low-volume').checked;
+ $('play').disabled=!eligible;
+ $('play').textContent=s.nextExpectedChannel==='right'?'Reproducir canal derecho':'Reproducir canal izquierdo';
+ $('stop').disabled=!['playing','awaiting-response'].includes(s.state);
+ const responding=s.state==='awaiting-response';
+ for(const id of sides)$(id).disabled=!responding;
+ $('check-status').textContent=s.state==='joint-only'
+  ?'Este tipo de equipo utiliza el modo conjunto: no se habilita una prueba por oído.'
+  :s.state==='playing'
+   ?'Reproduciendo tono digital en el canal '+(s.nextExpectedChannel==='left'?'izquierdo':'derecho')+'.'
+  :responding?'Tono finalizado. Indica el lado en que lo percibiste.'
+  :s.state==='ready-next'?'Primera respuesta registrada. Verifica de nuevo equipo y volumen antes del canal derecho.'
+  :s.state==='completed'?'Comprobación terminada. Consulta el resultado subjetivo.'
+  :s.state==='interrupted'?'Comprobación interrumpida. No se conservó una verificación parcial.'
+  :'Preparado para comprobar el canal izquierdo, tras confirmar volumen y salida.';
+ $('result').textContent=s.perEarReviewCandidate
+  ?'Ambas respuestas coinciden con los canales digitales solicitados. Es solo un indicio subjetivo para una futura evaluación L/R; no demuestra separación física ni habilita un examen por oído.'
+  :s.state==='completed'
+   ?'No se pudo confirmar subjetivamente la separación solicitada. Continúa con modo conjunto o repite voluntariamente.'
+  :'Modo conjunto por defecto. Respuestas válidas: '+s.observations.length+'. No se atribuyen resultados a un oído.';
+}
+async function action(fn){
+ $('error').textContent='';
+ try{await fn();}catch(error){$('error').textContent=error?.message??'No se pudo completar la comprobación';}
+ finally{render();}
+}
+$('route').addEventListener('change',render);
+$('low-volume').addEventListener('change',render);
+$('device').addEventListener('change',()=>action(()=>{
+ $('route').checked=false;$('low-volume').checked=false;
+ controller.setDeviceType($('device').value);
+}));
+$('play').addEventListener('click',()=>action(async()=>{
+ const started=await controller.playNext({
+  userInitiated:true,lowPhysicalVolumeConfirmed:$('low-volume').checked,
+  outputChecked:$('route').checked,
+ });
+ $('route').checked=false;$('low-volume').checked=false;
+ if(!started.started)throw Error('La reproducción fue interrumpida o no pudo iniciarse.');
+}));
+$('stop').addEventListener('click',()=>action(()=>controller.interrupt('user-stop')));
+for(const [id,side] of [
+ ['heard-left','left'],['heard-right','right'],['heard-both','both'],
+ ['heard-none','none'],['heard-uncertain','uncertain'],
+])$(id).addEventListener('click',()=>action(()=>controller.answer(side)));
+$('retry').addEventListener('click',()=>action(()=>{
+ $('route').checked=false;$('low-volume').checked=false;
+ controller.restart({userInitiated:true});
+}));
+window.hear3ChannelPilot=Object.freeze({snapshot:()=>controller.snapshot()});
+window.addEventListener('pagehide',()=>{void controller.dispose();},{once:true});
+render();
+</script>
+</body>
+</html>
