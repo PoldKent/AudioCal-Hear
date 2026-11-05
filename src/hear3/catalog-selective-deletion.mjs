@@ -63,7 +63,7 @@ export function createHear3CatalogDeletion({store}={}) {
     proposed=null;
     const snapshot=store.load();
     const decision=previewRemoval(snapshot.catalog,{kind,id,cascade});
-    proposed={token:tokenOf(snapshot),next:decision.catalog,scope:decision.preview};
+    proposed={token:tokenOf(snapshot),revision:snapshot.revision,next:decision.catalog,scope:decision.preview};
     return Object.freeze(copy(decision.preview));
   }
   function commit({userInitiated=false,confirmed=false,confirmCascade=false}={}) {
@@ -79,7 +79,7 @@ export function createHear3CatalogDeletion({store}={}) {
     // Consume the preview before calling storage; a failed write cannot
     // make it safe to reuse the stale, formerly approved proposal.
     proposed=null;
-    const saved=store.save(copy(selected.next));
+    const saved=store.save(copy(selected.next),{expectedRevision:selected.revision});
     return Object.freeze({
       deleted:true,...selected.scope,
       revision:saved.revision,durability:saved.durability,

@@ -198,7 +198,7 @@ export function createHear3CatalogBackupTransfer({store}={}) {
     const replacement=mode==='replace';
     const catalog=replacement?backup.catalog:combineWithoutOverwrite(current.catalog,backup.catalog);
     const existingCount=current.catalog.devices.length+current.catalog.profiles.length+current.catalog.results.length;
-    proposed={catalog,token,mode,needsConfirm:replacement&&existingCount>0};
+    proposed={catalog,token,revision:current.revision,mode,needsConfirm:replacement&&existingCount>0};
     return Object.freeze({
       mode,existingCount,replacesExisting:proposed.needsConfirm,
       devices:backup.catalog.devices.length,profiles:backup.catalog.profiles.length,
@@ -219,7 +219,7 @@ export function createHear3CatalogBackupTransfer({store}={}) {
     check(!pending.needsConfirm || confirmReplace===true,
       'Replacing an existing catalog requires separate confirmation');
     proposed=null;
-    const result=store.save(clone(pending.catalog));
+    const result=store.save(clone(pending.catalog),{expectedRevision:pending.revision});
     return {
       imported:true,
       mode:pending.mode,
