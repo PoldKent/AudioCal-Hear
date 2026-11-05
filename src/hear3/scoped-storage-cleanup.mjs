@@ -15,10 +15,11 @@ const V2_KEYS=new Set([
  'audiocal-hear-profiles-v1','audiocal-hear-active-v1','audiocal-language-v1',
 ]);
 const V3_KEYS=new Set(['hear3:catalog:v1:0','hear3:catalog:v1:1']);
+const V2_VAULT_KEYS=new Set(['hear3:v2-history:v1:0','hear3:v2-history:v1:1']);
 const EXAM_KEY=/^hear3:(?:exam-checkpoint|adaptive-progress):[A-Za-z0-9._-]{1,96}:[01]$/;
 const check=(x,message)=>{if(!x)throw Error(message);};
 function nameBelongs(key,scope){
- const isV3=V3_KEYS.has(key)||EXAM_KEY.test(key);
+ const isV3=V3_KEYS.has(key)||V2_VAULT_KEYS.has(key)||EXAM_KEY.test(key);
  return isV3||(scope==='all-hear'&&V2_KEYS.has(key));
 }
 function storageDefault(name){
@@ -57,6 +58,7 @@ function identity(state){
 const summarize=records=>({
  v2:records.filter(x=>V2_KEYS.has(x.key)).length,
  v3Catalog:records.filter(x=>V3_KEYS.has(x.key)).length,
+ v3LegacyHistoryVault:records.filter(x=>V2_VAULT_KEYS.has(x.key)).length,
  v3Exams:records.filter(x=>EXAM_KEY.test(x.key)).length,
  count:records.length,
 });
