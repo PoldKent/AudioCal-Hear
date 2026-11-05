@@ -24,6 +24,7 @@
     "src/hear3/legacy-v2-migration.mjs",
     "src/hear3/legacy-v2-migration-audit.mjs",
     "src/hear3/local-checkpoint-store.mjs",
+    "src/hear3/offline-optin.mjs",
     "src/hear3/resumable-adaptive-exam.mjs",
     "src/hear3/scoped-storage-cleanup.mjs",
     "src/hear3/session-contract.mjs",
