@@ -101,7 +101,6 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
    'Explicit unique device, profile and result IDs are required');
   check(new Set([deviceId,profileId,resultId]).size===3,'Archive entity IDs must differ');
   const evidence=evidenceFromExam(exam);
-  check(Number.isSafeInteger(now())&&now()>=0,'Invalid archive timestamp');
   const time=now();
   check(Number.isSafeInteger(time)&&time>=0,'Invalid archive timestamp');
   const current=catalogStore.load();
