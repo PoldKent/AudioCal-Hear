@@ -19,7 +19,7 @@
 
 D-061 no está plenamente cerrado. El diagnóstico actual es **solo un formulario de capacidades técnicas y códigos informados**: no identifica automáticamente todas las interrupciones, no prueba el estado físico del equipo, no ejecuta auditorías de accesibilidad ni registra el motivo completo del error. La remisión específica a un destinatario con autorización y limpieza de metadatos externos también sigue sujeta a un diseño y prueba de privacidad.
 
-Esta página nueva no figura en el manifiesto offline estático v1 de Hear 3.0; acceder por primera vez requiere conexión. No registrar un worker o descargar scripts automáticamente para aparentar compatibilidad offline.
+Desde la ampliación D-060 de la caché optativa, la página y el módulo de diagnóstico aparecen en el manifiesto estático de Hear 3.0. Solo quedan disponibles offline **después** de que el usuario active o actualice voluntariamente los recursos y se verifique la caché; no se registra un worker ni se descarga código automáticamente por abrir el diagnóstico. Safari/iOS físico y cuotas permanecen sin validar.
 
 **D-063=C permanece pendiente** y el diagnóstico no debe describirse como validación de seguridad acústica ni prueba clínica.
 
