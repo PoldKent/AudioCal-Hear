@@ -114,7 +114,9 @@ export function createHear3ResumableAdaptiveExam({
    warning:'Recovered in silence. Recheck physical volume and output; confirm the route before resuming.'};
   // Important: do not save or play a tone simply because the user viewed
   // or recovered an older checkpoint; resume is a separate manual action.
-  return {restored:true,state:snapshot(),persistence:clone(persistence)};
+  const state=exam.snapshot();
+  lastSavedState=JSON.stringify(bundle());
+  return {restored:true,state,persistence:clone(persistence)};
  }
  async function playNext(args){
   ensureLive();touched=true;
