@@ -8,6 +8,7 @@
  */
 import { emptyHear3Catalog, validateHear3Catalog } from './catalog-contract.mjs';
 import { checkpointFingerprint } from './local-checkpoint-store.mjs';
+import { parseLegacyV2Source } from './legacy-v2-migration-audit.mjs';
 
 export const LEGACY_V2_SOURCE_KEY = 'audiocal-hear-profiles-v1';
 export const LEGACY_V2_ACTIVE_KEY = 'audiocal-hear-active-v1';
@@ -69,11 +70,14 @@ function prepare(rawProfilesText,activeId,baseline) {
   ensure(typeof rawProfilesText==='string'&&rawProfilesText.length>0&&
     rawProfilesText.length<=MAX_LEGACY_V2_CHARS, 'Legacy source is missing or exceeds size limit');
   ensure(typeof activeId==='string'&&activeId.length<=1000,'Invalid legacy active profile id');
-  let parsed;
-  try { parsed=JSON.parse(rawProfilesText); }
-  catch { throw Error('Invalid legacy Hear 2.0 JSON; original remains untouched'); }
-  ensure(Array.isArray(parsed)&&parsed.length<=200,
-    'Legacy profile collection cannot be imported without manual review');
+  let parsed,inputKind;
+  try {
+    const source=parseLegacyV2Source(rawProfilesText);
+    parsed=source.profiles;
+    inputKind=source.inputKind;
+  } catch(error) {
+    throw Error('Invalid legacy Hear 2.0 source; original remains untouched: '+error.message);
+  }
   const details=summarizeLegacy(parsed);
   const base=validateHear3Catalog(baseline);
   const existingProfiles=new Set(base.profiles.map(p=>p.id));
@@ -111,6 +115,7 @@ function prepare(rawProfilesText,activeId,baseline) {
     catalog,
     archive,
     report:{
+      sourceFormat:inputKind,
       sourceProfiles:details.length,
       mappedDevices:details.length,
       mappedProfiles:details.length,
