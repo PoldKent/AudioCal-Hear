@@ -58,6 +58,7 @@ test('P0 cannot delete a profile with results without explicit cascade and two c
  const onDialog=async d=>{dialogs.push(d.message());await d.accept();};
  page.on('dialog',onDialog);
  await page.getByTestId('delete-commit').click();
+ await expect(page.getByTestId('summary')).toContainText('2 dispositivos, 1 perfiles, 1 resultados');
  page.off('dialog',onDialog);
  expect(dialogs.length).toBe(2);
  const snap=await page.evaluate(()=>window.hear3CatalogPilot.snapshot());

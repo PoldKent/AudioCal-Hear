@@ -77,7 +77,8 @@ test('P0 replacing a full catalog asks for separate affirmative confirmation',as
  expect((await page.evaluate(()=>window.hear3CatalogPilot.snapshot())).catalog.devices[0].id).toBe('d-one');
  page.once('dialog',dialog=>dialog.accept());
  await page.getByTestId('commit').click();
- expect((await page.evaluate(()=>window.hear3CatalogPilot.snapshot())).catalog.devices[0].id).toBe('d-two');
+ await expect.poll(()=>page.evaluate(()=>
+  window.hear3CatalogPilot.snapshot().catalog.devices[0].id)).toBe('d-two');
 });
 
 test('P0 damaged backup checksum rejects import before any local changes',async({page})=>{

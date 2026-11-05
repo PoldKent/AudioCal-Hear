@@ -17,6 +17,7 @@
     "src/hear3/checkpoint-backup-transfer.mjs",
     "src/hear3/checkpointed-audio-session.mjs",
     "src/hear3/contextual-tone-comparison.mjs",
+    "src/hear3/coordinated-catalog-writer.mjs",
     "src/hear3/device-profile-contract.mjs",
     "src/hear3/eq-control-quantization.mjs",
     "src/hear3/eq-digital-transfer-model.mjs",
