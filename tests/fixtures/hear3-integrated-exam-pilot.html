@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hear 3.0 — piloto integrado barrido y tonos de confirmación</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif}
+body{max-width:46rem;margin:1.2rem auto;padding:0 1rem 3rem;line-height:1.55}
+h1{font-size:clamp(1.6rem,5vw,2.2rem)}button{font:inherit;min-height:2.75rem;padding:.65rem .85rem;touch-action:manipulation}
+button:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
+button{width:100%}.notice{border:1px solid;border-radius:.6rem;padding:.85rem;margin:1rem 0}
+progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bottom:1.2rem;margin-bottom:1.5rem}
+#frequency{font-weight:850;font-size:clamp(2rem,6vw,3rem)}#dbfs{font-weight:750}
+[role="alert"]{min-height:1.5rem}
+@media(max-width:360px){.controls{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Hear 3.0 · barrido → tonos de confirmación</h1>
+<p class="notice"><strong>Piloto de desarrollo, no examen clínico ni ecualizador terminado.</strong>
+ Mantén el volumen físico bajo, cómodo y fijo. Detén el sonido ante molestias.
+ Los niveles dBFS no miden presión sonora (dB SPL) ni prueban seguridad acústica.
+ Cada reproducción requiere una acción explícita. Ningún resultado produce aún ganancias de EQ.</p>
+<section aria-labelledby="sweep-heading">
+<h2 id="sweep-heading">1. Exploración de frecuencias</h2>
+<p>Recorrido 125–2.000 Hz · máximo 20 s · −60 dBFS · ambos canales.
+ Las respuestas durante el barrido son informativas, no umbrales.</p>
+<p id="sweep-status" role="status" data-testid="sweep-status">Sin iniciar</p>
+<label for="sweep-progress">Progreso temporal orientativo del barrido</label>
+<progress id="sweep-progress" max="20" value="0"></progress>
+<div class="controls">
+<button type="button" id="sweep-start" data-testid="sweep-start">Iniciar barrido</button>
+<button type="button" id="sweep-stop" data-testid="sweep-stop" disabled>Detener barrido</button>
+<button type="button" id="sweep-heard" data-testid="sweep-heard" disabled>Lo escucho en esta zona</button>
+<button type="button" id="sweep-not" data-testid="sweep-not" disabled>No lo escucho aquí</button>
+</div>
+<p id="sweep-count" role="status" data-testid="sweep-count">Observaciones informativas: 0</p>
+</section>
+<section aria-labelledby="tones-heading">
+<h2 id="tones-heading">2. Tonos individuales de confirmación</h2>
+<p>Al finalizar el barrido, puedes iniciar un recorrido ordenado de las bandas.
+ El nivel digital se adapta a tus respuestas dentro de los límites autorizados, sin elevar
+ el volumen físico. Las contradicciones requieren confirmación antes de repetir.</p>
+<button type="button" id="plan" data-testid="plan" disabled>Preparar tonos desde el barrido finalizado</button>
+<p id="tone-status" role="status" aria-live="polite" data-testid="tone-status">Esperando barrido</p>
+<p><strong>Frecuencia:</strong> <span id="frequency" data-testid="frequency">—</span></p>
+<p><strong>Nivel digital:</strong> <span id="dbfs" data-testid="dbfs">—</span></p>
+<label for="tone-progress">Progreso estimado del tono (no representa salida física)</label>
+<progress id="tone-progress" max="3000" value="0"></progress>
+<p id="coverage" data-testid="coverage">Bandas confirmadas: 0</p>
+<p id="contradiction" role="status" data-testid="contradiction"></p>
+<div class="controls">
+<button type="button" id="tone-next" data-testid="tone-next" disabled>Reproducir siguiente tono</button>
+<button type="button" id="tone-stop" data-testid="tone-stop" disabled>Detener y pausar</button>
+<button type="button" id="tone-heard" data-testid="tone-heard" disabled>Lo escucho</button>
+<button type="button" id="tone-not" data-testid="tone-not" disabled>No lo escucho</button>
+<button type="button" id="tone-confirm" data-testid="tone-confirm" disabled>Confirmar repetición</button>
+<button type="button" id="tone-skip" data-testid="tone-skip" disabled>Conservar como inconclusa</button>
+<button type="button" id="tone-resume" data-testid="tone-resume" disabled>Reanudar manualmente</button>
+<button type="button" id="tone-finish" data-testid="tone-finish" disabled>Finalizar y ver resumen</button>
+</div>
+</section>
+<section aria-labelledby="summary-heading">
+<h2 id="summary-heading">3. Evidencia y límites</h2>
+<p>Este piloto registra lo escuchado/no escuchado; muestra intervalos subjetivos o
+ bandas inconclusas. No inventa un umbral auditivo ni calcula una ganancia EQ.</p>
+<div id="result" data-testid="result" role="status">Sin resultados confirmados.</div>
+</section>
+<p id="error" data-testid="error" role="alert"></p>
+<p><a href="../../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
+</main>
+<script type="module">
+import {createSweepPlan,planSweepConfirmations} from '../../src/hear3/sweep-planner.mjs';
+import {createSweepAudioRunner} from '../../src/hear3/sweep-audio-runner.mjs';
+import {createHear3AudioSession} from '../../src/hear3/audio-session-controller.mjs';
+import {createHear3AdaptiveDiscreteExam} from '../../src/hear3/adaptive-discrete-exam.mjs';
+
+const $=id=>document.getElementById(id);
+const bands=[125,250,500,1000,2000].map(f=>({id:'band-'+f,frequencyHz:f}));
+const sweepPlan=createSweepPlan({minHz:125,maxHz:2000,durationSeconds:20});
+const levelRange={minDbfs:-80,maxDbfs:-42};
+const sweepRunner=createSweepAudioRunner({onEnded:render,onInterrupted:render});
+let exam=null,toneSession=null,planning=false,sweepStarting=false;
+let toneStartVisual=0;
+const buttons=['sweep-start','sweep-stop','sweep-heard','sweep-not','plan',
+ 'tone-next','tone-stop','tone-heard','tone-not','tone-confirm','tone-skip',
+ 'tone-resume','tone-finish'];
+function setEnabled(id,enabled){$(id).disabled=!enabled;}
+function render(){
+ const s=sweepRunner.snapshot();
+ const prev=sweepRunner.lastResult();
+ $('sweep-status').textContent=s.status==='playing'?'Barrido en reproducción':
+  sweepStarting?'Preparando barrido':prev?.status==='completed'?'Barrido finalizado':
+  prev?.status==='interrupted'?'Barrido interrumpido; sin confirmación automática':'Listo para comenzar';
+ $('sweep-progress').value=s.status==='playing'?s.elapsedSeconds:
+  prev?.status==='completed'?20:0;
+ $('sweep-count').textContent='Observaciones informativas: '+
+  (s.status==='playing'?s.reports.length:prev?.reports?.length??0);
+ setEnabled('sweep-start',!exam&&!sweepStarting&&s.status!=='playing');
+ setEnabled('sweep-stop',s.status==='playing'||sweepStarting);
+ setEnabled('sweep-heard',s.status==='playing');
+ setEnabled('sweep-not',s.status==='playing');
+ setEnabled('plan',!exam&&prev?.status==='completed'&&s.status!=='playing'&&!sweepStarting&&!planning);
+ if(!exam)return;
+ const data=exam.snapshot();
+ const current=data.bands.find(b=>b.id===data.currentBandId);
+ $('tone-status').textContent=data.status==='completed'?'Todos los tonos planificados están revisados':
+  data.status==='paused'?'Pausado: requiere reanudación explícita':
+  data.status==='awaiting-confirmation'?'Contradicción: confirma o conserva inconclusa':
+  data.status==='playing'?'Tono en reproducción':
+  data.status==='starting'?'Preparando tono':'Listo para el siguiente tono';
+ $('coverage').textContent='Bandas revisadas: '+data.completedBands+' de '+data.totalBands;
+ $('frequency').textContent=current?current.frequencyHz+' Hz':'—';
+ $('dbfs').textContent=data.status==='playing'?
+  (current?.frequencyHz??'')+' Hz / '+(toneSession?.getSession().currentTone?.digitalLevelDbfs??'—')+' dBFS':
+  data.nextDigitalLevelDbfs===null?'—':data.nextDigitalLevelDbfs+' dBFS';
+ $('contradiction').textContent=data.contradictionExplanation??'';
+ const elapsed=data.status==='playing'?Math.min(3000,performance.now()-toneStartVisual):0;
+ $('tone-progress').value=elapsed;
+ setEnabled('tone-next',data.status==='ready');
+ setEnabled('tone-stop',['starting','playing','ready'].includes(data.status));
+ setEnabled('tone-heard',data.status==='playing');
+ setEnabled('tone-not',data.status==='playing');
+ setEnabled('tone-confirm',data.status==='awaiting-confirmation');
+ setEnabled('tone-skip',data.status==='awaiting-confirmation');
+ setEnabled('tone-resume',data.status==='paused');
+ setEnabled('tone-finish',data.status==='completed'&&toneSession?.getSession().status==='ready');
+ const list=document.createElement('ul');
+ for(const b of data.bands){
+  if(b.status==='pending')continue;
+  const li=document.createElement('li');
+  li.textContent=b.frequencyHz+' Hz: '+(b.status==='bounded-subjective-interval'
+    ?'intervalo subjetivo '+b.intervalDbfs.notHeardAtDbfs+' a '+
+     b.intervalDbfs.heardAtDbfs+' dBFS ('+b.confidence+')'
+    :'inconclusa')+'; '+b.observations.length+' respuestas.';
+  list.append(li);
+ }
+ const result=$('result');
+ if(list.childElementCount)result.replaceChildren(list);
+ else result.textContent='Sin resultados confirmados.';
+}
+async function run(action){
+ $('error').textContent='';
+ try{await action();}
+ catch(e){$('error').textContent=e?.message??String(e);}
+ finally{render();}
+}
+$('sweep-start').addEventListener('click',()=>run(async()=>{
+ if(exam)throw Error('El examen de tonos ya se inició.');
+ sweepStarting=true;render();
+ try{await sweepRunner.start({
+  userInitiated:true,plan:sweepPlan,digitalLevelDbfs:-60,
+  authorizedDigitalRangeDbfs:levelRange,channel:'joint',
+ });}
+ finally{sweepStarting=false;}
+}));
+$('sweep-stop').addEventListener('click',()=>run(()=>sweepRunner.stop('manual')));
+$('sweep-heard').addEventListener('click',()=>run(()=>sweepRunner.recordResponse(true)));
+$('sweep-not').addEventListener('click',()=>run(()=>sweepRunner.recordResponse(false)));
+$('plan').addEventListener('click',()=>run(async()=>{
+ const result=sweepRunner.lastResult();
+ if(result?.status!=='completed')throw Error('Completa primero el barrido.');
+ planning=true;
+ try{
+  const confirmations=planSweepConfirmations(sweepPlan,result.reports,bands);
+  toneSession=createHear3AudioSession({profileId:'hear3-integrated-pilot',
+    minDbfs:levelRange.minDbfs,maxDbfs:levelRange.maxDbfs});
+  exam=createHear3AdaptiveDiscreteExam({plan:confirmations,sessionController:toneSession,
+    initialDbfs:-60,maxTrialsPerBand:7,coarseStepDb:6,durationSeconds:3});
+ } finally{planning=false;}
+}));
+$('tone-next').addEventListener('click',()=>run(async()=>{
+ if(!exam)throw Error('Primero completa el barrido');
+ const res=await exam.playNext({userInitiated:true});
+ if(!res.started)throw Error('El audio no se inició o fue interrumpido.');
+ toneStartVisual=performance.now();
+}));
+$('tone-heard').addEventListener('click',()=>run(()=>exam.answer('heard')));
+$('tone-not').addEventListener('click',()=>run(()=>exam.answer('not-heard')));
+$('tone-stop').addEventListener('click',()=>run(()=>exam.interrupt()));
+$('tone-confirm').addEventListener('click',()=>run(()=>exam.confirmContradiction({userConfirmed:true})));
+$('tone-skip').addEventListener('click',()=>run(()=>exam.confirmContradiction({userConfirmed:false})));
+$('tone-resume').addEventListener('click',()=>run(()=>exam.resume({userInitiated:true})));
+$('tone-finish').addEventListener('click',()=>run(()=>exam.finish()));
+window.hear3IntegratedPilot=Object.freeze({
+ snapshot:()=>exam?.snapshot()??null,
+ sweep:()=>sweepRunner.snapshot(),
+ sweepResult:()=>sweepRunner.lastResult(),
+});
+const ticker=setInterval(render,120);
+window.addEventListener('pagehide',()=>{
+ clearInterval(ticker);
+ sweepRunner.stop('pagehide');
+ toneSession?.interrupt({routeMayHaveChanged:true});
+},{once:true});
+render();
+</script>
+</body>
+</html>
