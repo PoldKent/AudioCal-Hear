@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071321">
+  <meta name="description" content="Explora los pilotos técnicos disponibles de Hear 3.0: tonos, barrido, respaldos y consulta del historial. Vista previa experimental, no validada acústicamente.">
+  <title>Hear 3.0 · Vista previa experimental | AudioCal Hear</title>
+  <style>
+    :root{color-scheme:dark;--bg:#071321;--surface:#102337;--surface2:#132c42;--line:#31506a;--text:#edf7ff;--muted:#b8ccdc;--cyan:#65d9fa;--gold:#ffd178;--green:#86ddc6}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}
+    body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 55% -15%,#205172 0%,var(--bg) 57%);font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
+    a{color:var(--cyan);text-underline-offset:3px}
+    a:focus-visible{outline:3px solid var(--gold);outline-offset:5px;border-radius:6px}
+    .wrap{width:min(1060px,100%);margin:auto;padding:0 24px}
+    .skip{position:absolute;top:-70px;left:12px;background:var(--gold);color:#1c1c1c;padding:10px;z-index:3}.skip:focus{top:12px}
+    header{border-bottom:1px solid #254258a8}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 0;flex-wrap:wrap}
+    .brand{display:inline-flex;align-items:center;gap:11px;color:var(--text);text-decoration:none;font-weight:790;letter-spacing:.2px}
+    .logo{display:grid;place-items:center;width:39px;height:39px;border-radius:13px;background:linear-gradient(145deg,#0e8ab9,#73e9ed);color:#072331}
+    .back{font-size:.91rem;font-weight:650}
+    .hero{padding:64px 0 48px}
+    .eyebrow{font-size:.77rem;text-transform:uppercase;letter-spacing:.16em;font-weight:800;color:var(--cyan)}
+    h1{margin:13px 0 16px;font-size:clamp(2.4rem,7vw,4.5rem);letter-spacing:-.055em;line-height:1.08}
+    h1 span{color:var(--gold)}h2{line-height:1.22;letter-spacing:-.025em}
+    .lead{color:#d3e3ee;max-width:760px;font-size:clamp(1rem,2vw,1.2rem);margin:0 0 24px}
+    .status{display:inline-flex;align-items:center;gap:8px;border:1px solid #427c81;background:#103b44;padding:8px 12px;border-radius:999px;color:#d2fff5;font-size:.82rem;font-weight:750}
+    .status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green)}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+    .action{display:inline-flex;min-height:48px;align-items:center;justify-content:center;padding:11px 18px;border-radius:12px;text-decoration:none;font-weight:770;border:1px solid #4f7996}
+    .action.primary{background:var(--gold);color:#241d12;border-color:var(--gold)}
+    .action.secondary{background:#132d42;color:var(--text)}
+    .notice{border:1px solid #927744;background:#3c3020;padding:18px 20px;border-radius:16px;margin:0 0 42px;color:#ffe8be}
+    .notice strong{display:block;margin-bottom:5px}.notice p{margin:0;color:#ffe8be}
+    .section-title{margin:8px 0 9px;font-size:clamp(1.5rem,3.6vw,2rem)}
+    .section-intro{margin:0 0 24px;color:var(--muted);max-width:750px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .tile{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:19px;background:linear-gradient(180deg,#142e46,var(--surface));padding:24px}
+    .kicker{font-size:.73rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--green)}
+    .tile h3{font-size:1.31rem;line-height:1.27;letter-spacing:-.02em;margin:12px 0 9px}
+    .tile p{color:var(--muted);margin:0 0 20px;flex:1}
+    .tile a{font-weight:780;align-self:flex-start}
+    .features{padding:43px 0 50px}
+    .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:26px}
+    .fact{border-top:1px solid var(--line);padding-top:16px}
+    .fact strong{display:block;color:var(--text);margin-bottom:5px}.fact span{color:var(--muted);font-size:.89rem}
+    .end{border-top:1px solid var(--line);padding:26px 0 42px;color:var(--muted);font-size:.89rem}
+    .end a{margin-right:16px}
+    @media(max-width:640px){.wrap{padding:0 17px}.hero{padding:39px 0 32px}.grid,.facts{grid-template-columns:1fr}.tile{padding:21px}.notice{padding:16px}.top{padding:16px 0}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+<a href="#main" class="skip">Saltar al contenido</a>
+<header><div class="wrap top">
+  <a class="brand" href="../" aria-label="Volver a AudioCal Hear"><span class="logo" aria-hidden="true">◉</span><span>AudioCal <span style="color:var(--cyan)">Hear</span></span></a>
+  <a class="back" href="../">Volver a la aplicación actual</a>
+</div></header>
+<main class="wrap" id="main">
+  <section class="hero" aria-labelledby="title">
+    <span class="status">Vista previa pública · En desarrollo</span>
+    <div class="eyebrow" style="margin-top:22px">Hear 3.0 / avance técnico</div>
+    <h1 id="title">La próxima forma de <span>escuchar mejor.</span></h1>
+    <p class="lead">Explora las funciones ya implementadas como pilotos independientes: pruebas de tono y barrido, recuperación local, perfiles y respaldos. Cada módulo puede probarse por separado; todavía no forman un examen Hear 3.0 completo.</p>
+    <div class="actions">
+      <a class="action primary" href="#pilotos">Explorar los pilotos</a>
+      <a class="action secondary" href="../">Abrir Hear actual</a>
+    </div>
+  </section>
+
+  <aside class="notice" aria-label="Aviso de seguridad">
+    <strong>Es una vista previa experimental, no un producto clínico ni una versión estable.</strong>
+    <p>Los tonos no están calibrados en dB SPL; dBFS solo describe el nivel digital. Si usas los pilotos de sonido, mantén el volumen físico bajo y fijo, y detén la reproducción ante cualquier molestia. Ningún piloto inicia audio sin una acción explícita. No conviertas estas observaciones en un diagnóstico auditivo.</p>
+  </aside>
+
+  <section id="pilotos" aria-labelledby="pilotos-title">
+    <h2 class="section-title" id="pilotos-title">Qué puedes probar hoy</h2>
+    <p class="section-intro">Son prototipos funcionales aislados y cubiertos por pruebas automatizadas. Los resultados y la compatibilidad con dispositivos físicos todavía requieren validación adicional.</p>
+    <div class="grid">
+      <article class="tile">
+        <div class="kicker">Audio · Experimental</div>
+        <h3>Tonos, interrupción y recuperación</h3>
+        <p>Prueba un tono individual, responde mientras suena, detén la reproducción y explora los checkpoints, la exportación y la recuperación local sin reproducción automática.</p>
+        <a href="../tests/fixtures/hear3-audio-pilot.html">Abrir piloto de tonos</a>
+      </article>
+      <article class="tile">
+        <div class="kicker">Exploración · Experimental</div>
+        <h3>Barrido continuo</h3>
+        <p>Escucha un barrido de muestra entre 125 y 2000 Hz, registra observaciones subjetivas y detén el sonido. No calcula umbrales auditivos ni ganancias del ecualizador.</p>
+        <a href="../tests/fixtures/hear3-sweep-pilot.html">Abrir piloto de barrido</a>
+      </article>
+      <article class="tile">
+        <div class="kicker">Datos · Piloto local</div>
+        <h3>Catálogo, perfiles y respaldos V3</h3>
+        <p>Explora copias estructuradas de dispositivos, perfiles e historial, importación con vista previa y consentimiento, y recuperación del resultado del perfil activo. El legado V2 permanece separado.</p>
+        <a href="../tests/fixtures/hear3-catalog-pilot.html">Abrir piloto de catálogo</a>
+      </article>
+      <article class="tile">
+        <div class="kicker">Compatibilidad · Solo lectura</div>
+        <h3>Revisar el historial de Hear 2.0</h3>
+        <p>Inspecciona perfiles guardados o un JSON exportado, consulta un resumen de los datos históricos y descarga una copia del origen sin convertir mediciones en resultados V3.</p>
+        <a href="../tests/fixtures/hear3-legacy-v2-pilot.html">Abrir visor de historial V2</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="features" aria-labelledby="limits-title">
+    <h2 class="section-title" id="limits-title">Qué sigue en desarrollo</h2>
+    <p class="section-intro">La integración barrido → tonos adaptativos, el algoritmo EQ con evidencia, la interfaz definitiva, la migración histórica completa, accesibilidad, funcionamiento offline y validación acústica real. La publicación estable exige superar todos los P0 y el criterio D-063.</p>
+    <div class="facts">
+      <div class="fact"><strong>Tu Hear actual se conserva</strong><span>Esta vista previa no reemplaza la aplicación principal ni modifica automáticamente sus perfiles V2.</span></div>
+      <div class="fact"><strong>Datos en el navegador</strong><span>Los pilotos no incorporan cuentas ni sincronización en la nube. El almacenamiento local puede borrarse; exporta copias cuando sea necesario.</span></div>
+      <div class="fact"><strong>Progreso auditable</strong><span>Las 63 decisiones del producto y las condiciones de validación siguen documentadas en GitHub.</span></div>
+    </div>
+  </section>
+</main>
+<footer class="end"><div class="wrap"><a href="../">Hear actual</a><a href="https://github.com/PoldKent/AudioCal-Hear/issues/30">Decisiones D-001–D-063</a><span>AudioCal Hear 3.0 · Vista previa experimental</span></div></footer>
+</body>
+</html>
