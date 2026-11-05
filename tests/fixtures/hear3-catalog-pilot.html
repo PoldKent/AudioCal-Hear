@@ -27,6 +27,21 @@ ofrece una migración opcional y conservadora desde Hear 2.0. No borra ni modifi
 <p>Esta vista no modifica resultados, no inicia sonido y no valida acústicamente el equipo.</p>
 <button type="button" id="history-show" data-testid="history-show">Consultar último resultado</button>
 <p id="history-result" data-testid="history-result" role="status">Todavía no se ha consultado el historial.</p>
+<h2>Eliminar datos V3 seleccionados</h2>
+<p>Esta acción afecta únicamente al catálogo V3 de este navegador. No elimina copias JSON descargadas,
+perfiles V2, checkpoints ni otros datos del sitio. Si eliges borrar un perfil o equipo relacionado
+con resultados, tendrás que autorizar también la eliminación de esos registros.</p>
+<label for="delete-kind">Tipo de dato</label>
+<select id="delete-kind" data-testid="delete-kind">
+<option value="result">Resultado</option><option value="profile">Perfil</option><option value="device">Equipo</option>
+</select>
+<label for="delete-target">Registro específico</label>
+<select id="delete-target" data-testid="delete-target"></select>
+<label><input id="delete-cascade" data-testid="delete-cascade" type="checkbox">
+Permitir borrar los registros dependientes, solo después de verlos y confirmar</label>
+<button type="button" id="delete-preview" data-testid="delete-preview">Revisar eliminación</button>
+<button type="button" id="delete-commit" data-testid="delete-commit" disabled>Confirmar eliminación seleccionada</button>
+<p id="delete-summary" data-testid="delete-summary" role="status">Ninguna eliminación revisada.</p>
 <h2>Importar respaldo</h2>
 <label for="file">Archivo JSON local</label>
 <input id="file" data-testid="file" type="file" accept=".json,application/json">
@@ -52,19 +67,43 @@ ofrece una migración opcional y conservadora desde Hear 2.0. No borra ni modifi
 import {createHear3CatalogStore,createHear3CatalogBackupTransfer,MAX_CATALOG_JSON_CHARS}
  from '../../src/hear3/catalog-backup-store.mjs';
 import { createHear3CatalogHistoryReader } from '../../src/hear3/catalog-history-reader.mjs';
+import { createHear3CatalogDeletion } from '../../src/hear3/catalog-selective-deletion.mjs';
 import { createHear2MigrationTransfer, LEGACY_V2_SOURCE_KEY, LEGACY_V2_ACTIVE_KEY }
  from '../../src/hear3/legacy-v2-migration.mjs';
 const store=createHear3CatalogStore();
 const transfer=createHear3CatalogBackupTransfer({store});
 const historyReader=createHear3CatalogHistoryReader({store});
+const deletion=createHear3CatalogDeletion({store});
+let deletionProposal=null;
 const legacyTransfer=createHear2MigrationTransfer({store,readLegacy:()=>({
  profilesRaw:localStorage.getItem(LEGACY_V2_SOURCE_KEY)??'',
  activeProfileId:localStorage.getItem(LEGACY_V2_ACTIVE_KEY)??'',
 })});
 const $=id=>document.getElementById(id);
 let preview=null,legacyPreview=null,legacyArchiveExportAttempted=false;
+function renderDeleteOptions(catalog){
+ const kind=$('delete-kind').value;
+ const collection={result:catalog.results,profile:catalog.profiles,device:catalog.devices}[kind];
+ const select=$('delete-target'),selected=select.value;
+ select.replaceChildren();
+ for(const item of collection){
+  const option=document.createElement('option');option.value=item.id;
+  option.textContent=item.name??(item.id+' · '+item.status);
+  select.append(option);
+ }
+ if(collection.some(item=>item.id===selected))select.value=selected;
+ $('delete-preview').disabled=collection.length===0;
+ $('delete-commit').disabled=!deletionProposal;
+ $('delete-summary').textContent=deletionProposal?
+  'Se eliminarán '+deletionProposal.removedDevices+' equipos, '+deletionProposal.removedProfiles+
+  ' perfiles y '+deletionProposal.removedResults+' resultados. '+
+  (deletionProposal.activeProfileCleared?'El perfil activo quedará sin seleccionar. ':'')+
+  (deletionProposal.requiresSeparateCascadeConfirmation?'Hay registros dependientes: confirmación adicional obligatoria.':''):
+  'Ninguna eliminación revisada.';
+}
 function render() {
  const loaded=store.load(),counts=loaded.catalog;
+ renderDeleteOptions(counts);
  $('summary').textContent='Catálogo V3: '+counts.devices.length+' dispositivos, '+
  counts.profiles.length+' perfiles, '+counts.results.length+' resultados.';
  $('durability').textContent='Almacenamiento: '+loaded.durability+
@@ -116,6 +155,39 @@ $('download').addEventListener('click',()=>{
   a.href=url;a.download='hear3-catalog-backup.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
  }catch(e){$('error').textContent=e.message;}
+});
+function discardDeletion() {
+ deletion.discard();deletionProposal=null;render();
+}
+$('delete-kind').addEventListener('change',discardDeletion);
+$('delete-target').addEventListener('change',discardDeletion);
+$('delete-cascade').addEventListener('change',discardDeletion);
+$('delete-preview').addEventListener('click',()=>{
+ $('error').textContent='';deletionProposal=null;
+ try{
+  deletionProposal=deletion.preview({
+   kind:$('delete-kind').value,id:$('delete-target').value,
+   cascade:$('delete-cascade').checked,
+  });
+ }catch(e){$('error').textContent=e.message;}
+ finally{render();}
+});
+$('delete-commit').addEventListener('click',()=>{
+ $('error').textContent='';
+ try{
+  if(!deletionProposal)throw Error('Revisa primero el alcance del borrado.');
+  const scope=deletionProposal;
+  if(!confirm('¿Eliminar exactamente '+scope.removedDevices+' equipos, '+
+   scope.removedProfiles+' perfiles y '+scope.removedResults+' resultados V3 de este navegador?'))return;
+  if(scope.requiresSeparateCascadeConfirmation &&
+    !confirm('Confirmación adicional: se eliminarán también registros relacionados. ¿Continuar?'))return;
+  const saved=deletion.commit({userInitiated:true,confirmed:true,
+   confirmCascade:scope.requiresSeparateCascadeConfirmation});
+  deletionProposal=null;
+  if(!saved.persistedOnDevice)$('error').textContent=
+   'La eliminación NO quedó confirmada en almacenamiento permanente. Exporta un respaldo y revisa los datos locales.';
+ }catch(e){$('error').textContent=e.message;}
+ finally{render();}
 });
 $('history-show').addEventListener('click',()=>{
  $('error').textContent='';
