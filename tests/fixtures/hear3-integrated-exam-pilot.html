@@ -129,7 +129,7 @@ He comprobado la salida y el volumen físico bajo antes de reanudar</label>
 Finaliza el examen de tonos para calcular una curva EQ provisional.</p>
 <div id="eq-rows" data-testid="eq-rows" aria-label="Ganancias EQ provisionales por banda"></div>
 <p id="eq-headroom" data-testid="eq-headroom">
-La preamplificación y el headroom no están verificados.</p>
+La preamplificación y el headroom no están verificados en el dispositivo.</p>
 <button type="button" id="eq-export" data-testid="eq-export" disabled>
 Descargar curva EQ experimental JSON para revisión (no preset de dispositivo)</button>
 </section>
@@ -176,6 +176,8 @@ import {createHear3ResumableAdaptiveExam} from '../../src/hear3/resumable-adapti
 import {createHear3CatalogStore} from '../../src/hear3/catalog-backup-store.mjs';
 import {createHear3AdaptiveCatalogArchive} from '../../src/hear3/adaptive-catalog-archive.mjs';
 import {calculateHear3BoundedJointEq} from '../../src/hear3/bounded-eq-engine.mjs';
+import {modelHear3GraphicEqDigitalTransfer}
+ from '../../src/hear3/eq-digital-transfer-model.mjs';
 import {createHear3ContextualToneComparison,planHear3ContradictionComparison}
  from '../../src/hear3/contextual-tone-comparison.mjs';
 
@@ -198,9 +200,9 @@ const progressReader=createHear3ReadThrottle({read:()=>progressStore.load(),inte
 const catalogStore=createHear3CatalogStore();
 let archiveTransfer=null,archiveMessage='Primero termina el examen de tonos. No se guarda EQ.';
 let exam=null,planning=false,sweepStarting=false;
-let eqDraft=null,renderedEq=undefined;
+let eqDraft=null,eqDigitalModel=null,eqDigitalModelError=null,renderedEq=undefined;
 function updateEqDraft(){
- eqDraft=null;
+ eqDraft=null;eqDigitalModel=null;eqDigitalModelError=null;
  if(!exam)return;
  const evidence=exam.snapshot(),session=exam.getSession();
  if(evidence.status==='completed'&&session.status==='completed'){
@@ -208,6 +210,17 @@ function updateEqDraft(){
    examSnapshot:evidence,sessionSnapshot:session,
    deviceCategory:$('archive-category').value,
   });
+  try{
+   // Fixed-reference digital model, not the actual sample rate/Q of an
+   // attached device. Does not construct an AudioContext or start sound.
+   eqDigitalModel=modelHear3GraphicEqDigitalTransfer({
+    eqDraft,sampleRateHz:48000,
+   });
+  }catch(error){
+   // Preserve the justified source EQ even if a particular DSP model
+   // is incompatible. Never silently output a physical device preset.
+   eqDigitalModelError=error?.message??'No se pudo modelar este filtro digital.';
+  }
  }
 }
 function renderEq(){
@@ -218,7 +231,7 @@ function renderEq(){
  root.replaceChildren();
  if(!eqDraft){
   $('eq-status').textContent='Finaliza el examen de tonos para calcular una curva EQ provisional.';
-  $('eq-headroom').textContent='La preamplificación y el headroom no están verificados.';
+  $('eq-headroom').textContent='Sin estudio DSP. La preamplificación y el headroom físicos no están verificados.';
   return;
  }
  $('eq-status').textContent='Modelo experimental: '+eqDraft.selectedMethod+
@@ -239,9 +252,18 @@ function renderEq(){
   list.append(li);
  }
  root.append(list);
- $('eq-headroom').textContent='Suma nominal de realces: '+
-  eqDraft.nominalPositiveGainSumDb+
-  ' dB. Preamplificación: no establecida. No se han simulado filtros reales ni comprobado clipping, headroom o dB SPL.';
+ const digital=eqDigitalModel;
+ $('eq-headroom').textContent=digital
+  ?'Referencia DSP NO calibrada: cascada biquad peaking Q='+digital.referenceQ+
+   ', '+digital.referenceSampleRateHz+' Hz asumidos. Pico de respuesta compleja: '+
+   digital.modeledPeakMagnitudeDb+' dB; norma L1 parcial: '+
+   digital.partialImpulseL1Db+' dB. Atenuación sugerida SOLO para el modelo digital: '+
+   (digital.suggestedReferencePreampDb===null?'no disponible: excede el presupuesto':
+    digital.suggestedReferencePreampDb+' dB')+
+   '. Horizonte '+digital.finiteHorizonSamples+
+   ' muestras, entrada limitada a ±1, estado inicial cero. NO certifica picos entre muestras, DSP del equipo, dB SPL ni headroom físico; nunca se aplicará automáticamente.'
+  :'Modelado DSP no disponible: '+(eqDigitalModelError??'sin datos')+
+   '. La curva original permanece solo para revisión; sin preamplificación autorizada.';
 }
 let comparisonCounter=0;
 const comparisonReports=[];
@@ -481,7 +503,10 @@ for(const id of ['archive-device','archive-profile','archive-category']){
 $('archive-category').addEventListener('change',()=>run(()=>updateEqDraft()));
 $('eq-export').addEventListener('click',()=>run(()=>{
  if(!eqDraft)throw Error('No existe todavía un EQ provisional que revisar.');
- const blob=new Blob([JSON.stringify(eqDraft,null,2)],{type:'application/json'});
+ const blob=new Blob([JSON.stringify({
+  ...eqDraft,digitalReferenceModel:eqDigitalModel,
+  digitalReferenceModelError:eqDigitalModelError,
+ },null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob);
  const a=document.createElement('a');
  a.href=url;a.download='hear3-eq-matematico-no-validado.json';a.click();
@@ -522,6 +547,7 @@ window.hear3IntegratedPilot=Object.freeze({
  comparison:()=>comparison.snapshot(),
  comparisonReports:()=>comparisonReports.map(r=>({...r})),
  eqDraft:()=>eqDraft?structuredClone(eqDraft):null,
+ eqDigitalModel:()=>eqDigitalModel?structuredClone(eqDigitalModel):null,
 });
 const ticker=setInterval(render,120);
 window.addEventListener('pagehide',()=>{
