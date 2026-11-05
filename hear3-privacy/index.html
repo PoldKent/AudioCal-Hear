@@ -34,7 +34,7 @@ td:last-child{text-align:right;font-variant-numeric:tabular-nums}
  o desde <a href="../">Hear 2.0</a> cuando la función correspondiente esté disponible.</p>
 <label for="scope">Qué datos quieres eliminar</label>
 <select id="scope" data-testid="scope">
-<option value="v3-only">Solo V3: catálogo y checkpoints experimentales</option>
+<option value="v3-only">Solo V3: catálogo, checkpoints y copia histórica V2 importada</option>
 <option value="all-hear">Todos los datos conocidos de Hear 2.0 y Hear 3.0, incluido idioma</option>
 </select>
 <button id="inspect" type="button" data-testid="inspect">Revisar alcance, sin borrar nada</button>
@@ -96,7 +96,7 @@ $('inspect').addEventListener('click',()=>{
   $('required-phrase').textContent=proposal.confirmationPhrase;
   $('preview-status').textContent=proposal.includesHear2
    ?'Incluye las tres claves V2 auditadas y las claves V3 conocidas. Se eliminará también el idioma guardado.'
-   :'Solo incluye el catálogo y los checkpoints V3 conocidos. Conserva los perfiles y el idioma V2.';
+   :'Incluye el catálogo, los checkpoints V3 y copias históricas V2 importadas en Hear3. Conserva el origen y el idioma V2.';
   $('warnings').textContent=proposal.warnings.join(' ')+(proposal.unreadableScopes
    ?' No se permitirá el borrado sin revisar todos los almacenes.' : '');
  }catch(error){
@@ -109,7 +109,7 @@ $('commit').addEventListener('click',()=>{
  const target=proposal;
  const message=target.includesHear2
   ?'¿Borrar las claves conocidas de Hear 2.0 y V3 mostradas en la vista previa? Es irreversible y afecta a perfiles antiguos.'
-  :'¿Borrar únicamente el catálogo y los checkpoints V3 mostrados en la vista previa?';
+  :'¿Borrar únicamente el catálogo, checkpoints y copia histórica importada V3 mostrados en la vista previa?';
  if(!confirm(message))return;
  $('action-status').textContent='';
  try{
