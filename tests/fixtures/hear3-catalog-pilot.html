@@ -364,6 +364,8 @@ $('legacy-vault-save').addEventListener('click',async()=>{
   if(!legacyVaultPreview||!legacyVaultExportAttempted)
    throw Error('Revisa y descarga primero una copia portable del historial V2 completo.');
   if(!confirm('¿Guardar todos los datos originales V2 como archivo local separado, SIN convertirlos en pruebas clínicas V3?'))return;
+  if(legacyVaultPreview.replacesExisting &&
+    !confirm('Hay un historial V2 completo anterior: ¿REEMPLAZAR ESA COPIA LOCAL? Conserva antes el respaldo descargado.'))return;
   const {response:saved}=await writer.run(()=>legacyHistoryVault.commit({
    userInitiated:true,confirmed:true,confirmSourceBackupExported:true,
    confirmOverwrite:legacyVaultPreview.replacesExisting,
