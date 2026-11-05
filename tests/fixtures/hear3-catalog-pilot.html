@@ -57,6 +57,16 @@ Permitir borrar los registros dependientes, solo después de verlos y confirmar<
 <p id="description" data-testid="description" role="status">Todavía no se ha revisado ningún archivo.</p>
 <h2>Migración conservadora de Hear 2.0 (experimental)</h2>
 <p class="warning">Primero revisa los perfiles antiguos y exporta el archivo completo de respaldo V2. La migración solo trasladará equipos y frecuencias; las mediciones y configuraciones anteriores se conservan en el archivo, sin transformarse en resultados V3.</p>
+<label for="legacy-source">Origen de los perfiles Hear 2.0</label>
+<select id="legacy-source" data-testid="legacy-source">
+<option value="browser">Datos V2 existentes en este navegador</option>
+<option value="file">Archivo JSON V2 exportado previamente</option>
+</select>
+<label for="legacy-file">Archivo oficial Hear 2.0 o matriz JSON de perfiles V2</label>
+<input id="legacy-file" data-testid="legacy-file" type="file" accept=".json,application/json">
+<p>El archivo se revisa únicamente aquí: nunca reemplaza los datos V2 locales.
+ Si confirmas la migración, se importarán solo dispositivos y frecuencias verificadas;
+ el archivo original completo debe conservarse aparte.</p>
 <button type="button" id="legacy-preview" data-testid="legacy-preview">Revisar perfiles Hear 2.0</button>
 <button type="button" id="legacy-export" data-testid="legacy-export" disabled>Exportar archivo original V2</button>
 <button type="button" id="legacy-import" data-testid="legacy-import" disabled>Importar solo metadatos compatibles</button>
@@ -75,10 +85,19 @@ const transfer=createHear3CatalogBackupTransfer({store});
 const historyReader=createHear3CatalogHistoryReader({store});
 const deletion=createHear3CatalogDeletion({store});
 let deletionProposal=null;
-const legacyTransfer=createHear2MigrationTransfer({store,readLegacy:()=>({
- profilesRaw:localStorage.getItem(LEGACY_V2_SOURCE_KEY)??'',
- activeProfileId:localStorage.getItem(LEGACY_V2_ACTIVE_KEY)??'',
-})});
+let legacyFileRaw=null;
+const legacyTransfer=createHear2MigrationTransfer({store,readLegacy:()=>{
+ if($('legacy-source').value==='file'){
+  if(legacyFileRaw===null)throw Error('Selecciona y revisa primero un archivo V2.');
+  // The official export file has no independently verified active-profile ID.
+  // Do not infer an active profile from its contents.
+  return {profilesRaw:legacyFileRaw,activeProfileId:''};
+ }
+ return {
+  profilesRaw:localStorage.getItem(LEGACY_V2_SOURCE_KEY)??'',
+  activeProfileId:localStorage.getItem(LEGACY_V2_ACTIVE_KEY)??'',
+ };
+}});
 const $=id=>document.getElementById(id);
 let preview=null,legacyPreview=null,legacyArchiveExportAttempted=false;
 function renderDeleteOptions(catalog){
@@ -113,7 +132,7 @@ function render() {
  $('legacy-export').disabled=!legacyPreview;
  $('legacy-import').disabled=!legacyPreview||!legacyArchiveExportAttempted;
  $('legacy-description').textContent=legacyPreview?
-  'Perfiles antiguos: '+legacyPreview.sourceProfiles+'; perfiles V3 compatibles: '+legacyPreview.mappedProfiles+
+  'Origen V2: '+legacyPreview.sourceFormat+'. Perfiles antiguos: '+legacyPreview.sourceProfiles+'; perfiles V3 compatibles: '+legacyPreview.mappedProfiles+
   '; resultados históricos convertidos: 0; observaciones originales que permanecen en archivo V2: '+
   legacyPreview.unmigratedMeasurementRecords+'. '+legacyPreview.warning:
   'Aún no se han revisado los datos de Hear 2.0.';
@@ -207,11 +226,35 @@ $('history-show').addEventListener('click',()=>{
   }
  }catch(e){$('error').textContent=e.message;}
 });
-$('legacy-preview').addEventListener('click',()=>{
- $('error').textContent='';legacyPreview=null;legacyArchiveExportAttempted=false;
- try{legacyPreview=legacyTransfer.preview();}
- catch(e){$('error').textContent=e.message;}
- finally{render();}
+function discardLegacyPreview(){
+ legacyTransfer.discard();
+ legacyPreview=null;legacyArchiveExportAttempted=false;legacyFileRaw=null;
+ render();
+}
+$('legacy-source').addEventListener('change',discardLegacyPreview);
+$('legacy-file').addEventListener('change',discardLegacyPreview);
+$('legacy-preview').addEventListener('click',async()=>{
+ $('error').textContent='';
+ legacyTransfer.discard();
+ legacyPreview=null;legacyArchiveExportAttempted=false;legacyFileRaw=null;
+ const sourceMode=$('legacy-source').value;
+ const file=$('legacy-file').files?.[0];
+ try{
+  if(sourceMode==='file'){
+   if(!file||file.size===0||file.size>4194304*4)
+    throw Error('Selecciona un JSON V2 dentro del tamaño permitido.');
+   const text=await file.text();
+   if($('legacy-source').value!==sourceMode||
+    $('legacy-file').files?.[0]!==file)
+    throw Error('La selección V2 cambió durante la lectura; vuelve a revisar.');
+   legacyFileRaw=text;
+  }
+  legacyPreview=legacyTransfer.preview();
+ }catch(e){
+  legacyTransfer.discard();
+  legacyPreview=null;legacyFileRaw=null;
+  $('error').textContent=e.message;
+ }finally{render();}
 });
 $('legacy-export').addEventListener('click',()=>{
  $('error').textContent='';
