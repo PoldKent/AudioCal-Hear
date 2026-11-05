@@ -7,11 +7,12 @@ import {createSweepPlan,planSweepConfirmations} from '../src/hear3/sweep-planner
 const bands=[{id:'bass',frequencyHz:125},{id:'mid',frequencyHz:1000}];
 const sweep=createSweepPlan({minHz:125,maxHz:2000,durationSeconds:20});
 function fixture({defer=false}={}){
- let active=null,contextState='running',resolveStart=null;
+ let active=null,contextState='running',resolveStart=null,lifecycle=null;
  const calls=[];
  const controller=createHear3AudioSession({
   profileId:'headphones-experimental',minDbfs:-80,maxDbfs:-42,
-  adapterFactory:()=>{
+  adapterFactory:(callbacks)=>{
+   lifecycle=callbacks;
    return {
     async playTone(tone){
       calls.push(['start',tone]);
@@ -28,7 +29,8 @@ function fixture({defer=false}={}){
  const plan=planSweepConfirmations(sweep,[],bands);
  const exam=createHear3AdaptiveDiscreteExam({plan,sessionController:controller,
   initialDbfs:-60,coarseStepDb:6,maxTrialsPerBand:7,durationSeconds:2});
- return {exam,controller,calls,setContext:v=>contextState=v,release:()=>resolveStart?.()};
+ return {exam,controller,calls,setContext:v=>contextState=v,release:()=>resolveStart?.(),
+  expire:id=>lifecycle?.onToneEnded({toneId:id})};
 }
 async function reply(f,response) {
  const p=await f.exam.playNext({userInitiated:true});
@@ -159,4 +161,19 @@ test('final output covers every band and can be explicitly finished without assi
  assert.equal(final.thresholdsEstimated,0);
  assert.equal(final.eqGainsCalculated,0);
  assert.equal(f.exam.finish().status,'completed');
+});
+
+test('asynchronously expired tone pauses the coordinator and requires explicit resume',async()=>{
+ const f=fixture();
+ const start=await f.exam.playNext({userInitiated:true});
+ assert.equal(start.started,true);
+ f.expire(start.tone.toneId);
+ const s=f.exam.snapshot();
+ assert.equal(s.status,'paused');
+ assert.equal(s.bands[0].observations.length,0);
+ await assert.rejects(f.exam.playNext({userInitiated:true}),/eligible tone/);
+ const resumed=f.exam.resume({userInitiated:true});
+ assert.equal(resumed.status,'ready');
+ assert.equal(resumed.nextDigitalLevelDbfs,-60);
+ assert.equal(f.exam.snapshot().thresholdsEstimated,0);
 });
