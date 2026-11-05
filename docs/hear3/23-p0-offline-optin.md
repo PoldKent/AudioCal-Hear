@@ -13,7 +13,8 @@
 ## Pruebas y aceptación técnica
 
 - Node: integridad y existencia del manifiesto; rechazo de rutas fuera del piloto, duplicados, recorrido de directorios, límites; capacidades disponibles; cache verificada; fallback sin declaraciones falsas; aislamiento de datos ajenos.
-- Playwright: visita a la vista previa sin registro ni sonido; instalación tras click, verificación de todos los recursos, navegación sin red por la vista previa, el piloto integrado y privacidad; retirada de la caché V3 sin borrar perfiles V2 ni caches de otras aplicaciones.
+- Playwright: visita a la vista previa sin registro ni sonido; instalación tras click y verificación de todos los recursos en navegadores compatibles; navegación sin red por la vista previa, el piloto integrado y privacidad en emulaciones **Chromium**; retirada de la caché V3 sin borrar perfiles V2 ni caches de otras aplicaciones.
+- **Limitación específica comprobada:** Playwright WebKit en el runner de CI devolvió `WebKit encountered an internal error` al navegar tras `BrowserContext.setOffline(true)`, incluso después de una instalación y lectura de caché verificadas. La prueba automatizada de **navegación sin red se omite expresamente en WebKit**, no se etiqueta como aprobada. Las comprobaciones de cache/registro siguen activas cuando las APIs existen. La navegación offline real en Safari/iOS está pendiente de un dispositivo físico y corresponde a `physical-ios` y `offline-storage` en D-063.
 - Las pruebas de navegador se ejecutan por matriz Android Chromium 9×21, iPhone WebKit, desktop 4:3 y 21:9. La compatibilidad depende de las APIs expuestas y, si falta una API esencial, el control no debe prometer offline. Los emuladores no reemplazan ensayos físicos de almacenamiento/cuota y Bluetooth.
 - La ruta GitHub Pages vive debajo del prefijo del repositorio; localhost usa `/`. Las URL se construyen relativas al alcance efectivo, sin hardcodear una raíz incorrecta para Pages.
 
