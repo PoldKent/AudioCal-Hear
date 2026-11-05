@@ -78,10 +78,11 @@ test('large but valid images downscale preserving aspect and close decoded bitma
  assert.equal(out.summary.outputHeight,480);
 });
 test('change/clear invalidates asynchronous in-flight decode, no stale URL',async()=>{
- let resolve;
- const f=fixture({decodeImage:()=>new Promise(r=>{resolve=r;})});
+ let resolve,entered;
+ const started=new Promise(r=>{entered=r;});
+ const f=fixture({decodeImage:()=>{entered();return new Promise(r=>{resolve=r;});}});
  const pending=f.c.inspect(input(),{userInitiated:true});
- await Promise.resolve();await Promise.resolve();
+ await started;
  f.c.clear();
  resolve({width:2,height:2,close(){}});
  await assert.rejects(pending,/changed/);
