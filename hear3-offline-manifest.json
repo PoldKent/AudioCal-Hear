@@ -18,6 +18,7 @@
     "src/hear3/checkpointed-audio-session.mjs",
     "src/hear3/contextual-tone-comparison.mjs",
     "src/hear3/device-profile-contract.mjs",
+    "src/hear3/eq-digital-transfer-model.mjs",
     "src/hear3/legacy-v2-history-view.mjs",
     "src/hear3/legacy-v2-migration-audit.mjs",
     "src/hear3/legacy-v2-migration.mjs",
