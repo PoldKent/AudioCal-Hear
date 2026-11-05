@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hear 3.0 · Diagnóstico técnico local</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:light dark}
+body{margin:0 auto;padding:1rem 1rem 3rem;max-width:46rem;line-height:1.55}
+button,select,textarea{font:inherit;min-height:44px}
+button{padding:.6rem 1rem;margin:.5rem .5rem .5rem 0;touch-action:manipulation}
+textarea{width:100%;min-height:14rem;resize:vertical;font:13px/1.5 ui-monospace,monospace}
+label{display:block;margin:.5rem 0}
+button:focus-visible,select:focus-visible,textarea:focus-visible,
+input:focus-visible,a:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+.warning{border:1px solid;border-radius:.7rem;padding:.8rem}
+fieldset{border:1px solid #888;padding:.75rem}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Hear 3.0 · Diagnóstico técnico local</h1>
+<p class="warning"><strong>Información técnica no clínica.</strong>
+ Esta página solo examina disponibilidad de funciones del navegador, sin iniciar audio,
+ acceder a tus respuestas auditivas ni leer perfiles, fotografías o archivos.
+ No envía datos por Internet. Revisa el texto antes de copiarlo o descargarlo y comparte
+ únicamente con quien decidas. Las capacidades declaradas no certifican sonido físico, SPL,
+ compatibilidad completa ni accesibilidad WCAG.</p>
+<fieldset>
+<legend>Contenido que deseas incluir</legend>
+<label><input type="checkbox" id="capabilities" data-testid="capabilities" checked>
+Incluir capacidades técnicas disponibles</label>
+<label><input type="checkbox" id="issues" data-testid="issues" checked>
+Incluir códigos de error técnicos seleccionados manualmente</label>
+</fieldset>
+<label for="issue-code">Si experimentaste un problema, selecciona solo su categoría</label>
+<select id="issue-code" data-testid="issue-code">
+<option value="">Sin problema declarado</option>
+<option value="audio-unavailable">Audio no disponible</option>
+<option value="audio-context-suspended">Contexto de audio suspendido</option>
+<option value="audio-interrupted">Audio interrumpido</option>
+<option value="route-unverified">Salida de audio no verificada</option>
+<option value="offline-unavailable">Offline no disponible</option>
+<option value="offline-cache-unverified">Caché offline no verificada</option>
+<option value="storage-blocked">Almacenamiento bloqueado</option>
+<option value="storage-volatile">Datos en memoria temporal</option>
+<option value="checkpoint-damaged">Checkpoint dañado</option>
+<option value="unsupported-browser-capability">Capacidad del navegador no compatible</option>
+<option value="unknown-technical-error">Error técnico no identificado</option>
+</select>
+<button id="preview" data-testid="preview" type="button">Generar vista previa local</button>
+<button id="clear" data-testid="clear" type="button">Quitar selección e informe</button>
+<h2>Vista previa antes de cualquier copia</h2>
+<label for="report">Revisa el JSON, sin datos de pruebas o perfiles</label>
+<textarea id="report" data-testid="report" readonly spellcheck="false"
+ placeholder="Aquí aparecerá únicamente el diagnóstico técnico revisable."></textarea>
+<label><input id="confirm" data-testid="confirm" type="checkbox" disabled>
+He revisado el contenido y autorizo crear una copia local de este informe.</label>
+<button id="copy" data-testid="copy" type="button" disabled>Copiar informe revisado</button>
+<button id="download" data-testid="download" type="button" disabled>Descargar informe JSON</button>
+<p id="status" data-testid="status" role="status">Ningún informe generado. No hay envío automático.</p>
+<p><a href="../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
+</main>
+<script type="module">
+import {createHear3LocalDiagnostic} from '../src/hear3/local-diagnostics.mjs';
+const $=id=>document.getElementById(id);
+const report=createHear3LocalDiagnostic();
+let previewAvailable=false;
+function resetPreview(){
+ previewAvailable=false;
+ $('confirm').checked=false;
+ $('confirm').disabled=true;
+ $('copy').disabled=true;
+ $('download').disabled=true;
+ $('report').value='';
+}
+function updateButtons(){
+ const allowed=previewAvailable&&$('confirm').checked;
+ $('copy').disabled=!allowed||!navigator.clipboard?.writeText;
+ $('download').disabled=!allowed;
+}
+$('capabilities').addEventListener('change',resetPreview);
+$('issues').addEventListener('change',resetPreview);
+$('issue-code').addEventListener('change',resetPreview);
+$('confirm').addEventListener('change',updateButtons);
+$('preview').addEventListener('click',()=>{
+ resetPreview();report.clearIssues();
+ try{
+  const code=$('issue-code').value;
+  if(code)report.addIssue(code);
+  report.preview({includeCapabilities:$('capabilities').checked,
+   includeIssueCodes:$('issues').checked});
+  $('report').value=report.exportReviewed({confirmed:true});
+  previewAvailable=true;$('confirm').disabled=false;
+  $('status').textContent='Vista previa local preparada. No se ha copiado ni enviado nada.';
+ }catch(error){
+  $('status').textContent='No se pudo preparar el informe: '+(error?.message??String(error));
+ }
+});
+$('clear').addEventListener('click',()=>{
+ resetPreview();report.clearIssues();$('issue-code').value='';
+ $('status').textContent='Selección e informe descartados. Nada enviado.';
+});
+$('copy').addEventListener('click',async()=>{
+ if(!previewAvailable||!$('confirm').checked)return;
+ try{
+  await navigator.clipboard.writeText(report.exportReviewed({confirmed:true}));
+  $('status').textContent='Informe copiado al portapapeles. No se envió automáticamente.';
+ }catch(error){
+  $('status').textContent='No se pudo copiar al portapapeles: '+(error?.message??String(error));
+ }
+});
+$('download').addEventListener('click',()=>{
+ if(!previewAvailable||!$('confirm').checked)return;
+ try{
+  const blob=new Blob([report.exportReviewed({confirmed:true})],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const anchor=document.createElement('a');anchor.href=url;
+  anchor.download='hear3-diagnostico-tecnico-local.json';anchor.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $('status').textContent='Se solicitó descargar una copia local; ningún dato fue enviado por esta página.';
+ }catch(error){
+  $('status').textContent='No se pudo preparar la copia: '+(error?.message??String(error));
+ }
+});
+</script>
+</body>
+</html>
