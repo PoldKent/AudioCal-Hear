@@ -11,6 +11,8 @@ const mime = new Map([['.html','text/html; charset=utf-8'],['.js','text/javascri
 const allowedFiles = new Map([
   ['/', 'index.html'],
   ['/index.html', 'index.html'],
+  ['/hear3-preview/', 'hear3-preview/index.html'],
+  ['/hear3-preview/index.html', 'hear3-preview/index.html'],
   ['/tests/fixtures/hear3-audio-pilot.html', 'tests/fixtures/hear3-audio-pilot.html'],
   ['/tests/fixtures/hear3-catalog-pilot.html', 'tests/fixtures/hear3-catalog-pilot.html'],
   ['/tests/fixtures/hear3-legacy-v2-pilot.html', 'tests/fixtures/hear3-legacy-v2-pilot.html'],
