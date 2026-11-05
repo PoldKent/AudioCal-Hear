@@ -95,7 +95,9 @@ test('storage and Web Audio feature getter failures are safely represented, not 
  const env={isSecureContext:false, navigator:{},fetch(){}};
  Object.defineProperty(env,'AudioContext',{get(){throw Error('private device username secret');}});
  const tool=createHear3LocalDiagnostic({env});
- assert.throws(()=>tool.preview(),/private device username secret/);
+ const blocked=tool.preview();
+ assert.equal(blocked.capabilities.audioContext,false);
+ assert.equal(JSON.stringify(blocked).includes('private device username secret'),false);
  // Unknown errors are not copied into a report.
  const plain={isSecureContext:false,navigator:{},caches:null,fetch(){}};
  const safe=createHear3LocalDiagnostic({env:plain});
