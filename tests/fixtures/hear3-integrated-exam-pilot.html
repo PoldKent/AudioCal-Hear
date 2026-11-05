@@ -116,7 +116,7 @@ function render(){
  $('coverage').textContent='Bandas revisadas: '+data.completedBands+' de '+data.totalBands;
  $('frequency').textContent=current?current.frequencyHz+' Hz':'—';
  $('dbfs').textContent=data.status==='playing'?
-  (current?.frequencyHz??'')+' Hz / '+(toneSession?.getSession().currentTone?.digitalLevelDbfs??'—')+' dBFS':
+  (toneSession?.getSession().currentTone?.digitalLevelDbfs??'—')+' dBFS':
   data.nextDigitalLevelDbfs===null?'—':data.nextDigitalLevelDbfs+' dBFS';
  $('contradiction').textContent=data.contradictionExplanation??'';
  const elapsed=data.status==='playing'?Math.min(3000,performance.now()-toneStartVisual):0;
