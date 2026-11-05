@@ -196,6 +196,8 @@ import {createHear3ReadThrottle} from '../../src/hear3/read-throttle.mjs';
 import {createHear3ResumableAdaptiveExam} from '../../src/hear3/resumable-adaptive-exam.mjs';
 import {createHear3CatalogStore} from '../../src/hear3/catalog-backup-store.mjs';
 import {createHear3AdaptiveCatalogArchive} from '../../src/hear3/adaptive-catalog-archive.mjs';
+import {createHear3CatalogWriteCoordinator}
+ from '../../src/hear3/coordinated-catalog-writer.mjs';
 import {calculateHear3BoundedJointEq} from '../../src/hear3/bounded-eq-engine.mjs';
 import {modelHear3GraphicEqDigitalTransfer}
  from '../../src/hear3/eq-digital-transfer-model.mjs';
@@ -221,6 +223,7 @@ const profileId='hear3-integrated-pilot';
 const progressStore=createHear3AdaptiveProgressStore({profileId});
 const progressReader=createHear3ReadThrottle({read:()=>progressStore.load(),intervalMs:1000});
 const catalogStore=createHear3CatalogStore();
+const catalogWriter=createHear3CatalogWriteCoordinator({store:catalogStore});
 let archiveTransfer=null,archiveMessage='Primero termina el examen de tonos. No se guarda EQ.';
 let exam=null,planning=false,sweepStarting=false;
 let eqDraft=null,eqDigitalModel=null,eqDigitalModelError=null,renderedEq=undefined;
@@ -614,10 +617,11 @@ $('archive-preview').addEventListener('click',()=>run(()=>{
   ' respuestas, '+preview.bands+' bandas en estado inconcluso. '+
   'Ganancias EQ: 0. Revisa categoría y nombre antes de confirmar.';
 }));
-$('archive-commit').addEventListener('click',()=>run(()=>{
+$('archive-commit').addEventListener('click',()=>run(async()=>{
  if(!archiveTransfer)throw Error('Revisa antes las respuestas y el alcance del guardado.');
  if(!confirm('¿Guardar las respuestas experimentales como un nuevo dispositivo y perfil V3, sin EQ ni diagnóstico?'))return;
- const result=archiveTransfer.commit({userInitiated:true,confirmed:true});
+ const {response:result}=await catalogWriter.run(()=>
+  archiveTransfer.commit({userInitiated:true,confirmed:true}));
  archiveTransfer=null;
  archiveMessage=result.persistedOnDevice
   ?'Historial V3 guardado localmente. Estado: inconcluso. No se generó EQ.'
