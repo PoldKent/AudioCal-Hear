@@ -53,6 +53,10 @@ test('D-060 Chromium emulation reopens cached pilots when navigation is offline'
   expect(await page.evaluate(()=>window.hear3IntegratedPilot?.snapshot())).toBeNull();
   await page.goto('/hear3-privacy/');
   await expect(page.getByTestId('inspect')).toBeEnabled();
+  await page.goto('/hear3-diagnostics/');
+  await expect(page.getByTestId('preview')).toBeEnabled();
+  await page.getByTestId('preview').click();
+  await expect(page.getByTestId('report')).toHaveValue(/hear3-local-technical-report-v1/);
  }finally{
   await page.context().setOffline(false);
  }
