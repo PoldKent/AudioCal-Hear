@@ -256,7 +256,9 @@ function renderTransfer(){
  const root=$('transfer-rows');
  root.replaceChildren();
  if(!eqTransferReview){
-  $('transfer-status').textContent='Selecciona un perfil JSON con la escala de cada control y revisa la transferencia. No se aplica ningún EQ.';
+  $('transfer-status').textContent=eqDraft
+   ?'Selecciona un perfil JSON con la escala de cada control y revisa la transferencia. No se aplica ningún EQ.'
+   :'Primero finaliza el examen de tonos; después puedes seleccionar un perfil JSON de controles. No se aplica ningún EQ.';
   return;
  }
  const r=eqTransferReview;
