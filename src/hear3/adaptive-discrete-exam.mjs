@@ -44,7 +44,7 @@ export function createHear3AdaptiveDiscreteExam({
       && b.mustConfirmWithDiscreteTone===true,'Invalid discrete band');
     uniqueIds.add(b.id);
     return {id:b.id,frequencyHz:b.frequencyHz,observations:[],
-      status:'pending',intervalDbfs:null,confidence:'inconclusive'};
+      status:'pending',intervalDbfs:null,confidence:'inconclusive',verificationAsked:false};
   });
   let position=0,sequence=0,phase='ready',nextDbfs=initialDbfs;
   let activeTone=null,requestEpoch=0,contradiction=null;
@@ -109,7 +109,17 @@ export function createHear3AdaptiveDiscreteExam({
     let target;
     if(quietestHeard!==null&&loudestMiss!==null){
       const gap=quietestHeard-loudestMiss;
-      if(gap<=2){completeBand('bounded-subjective-interval');return;}
+      if(gap<=2){
+        // A selective confirmation repeats the quietest heard endpoint once.
+        // A disagreeing answer at that same digital level is an explicit
+        // contradiction and MUST enter the consent gate rather than being
+        // silently replaced by the latest observation.
+        if(!band.verificationAsked && band.observations.length<maxTrialsPerBand) {
+          band.verificationAsked=true;
+          nextDbfs=quietestHeard;phase='ready';return;
+        }
+        completeBand('bounded-subjective-interval');return;
+      }
       target=Number(((quietestHeard+loudestMiss)/2).toFixed(2));
     } else if(quietestHeard!==null){
       target=Math.max(limits.minDbfs,quietestHeard-coarseStepDb);
