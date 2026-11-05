@@ -16,19 +16,32 @@ test('D-060 offline opt-in never registers a worker or plays audio merely on vis
  expect(hasAudio).toBe(false);
 });
 
-test('D-060 explicit offline install verifies resources and reopens pilot without connectivity',async({page})=>{
- test.setTimeout(60000);
+async function installAndVerify(page){
  await page.goto('/hear3-preview/');
- if(!await supported(page))test.skip(true,'Offline service workers unavailable in this environment');
+ if(!await supported(page))test.skip(true,'Service Worker or Cache Storage unavailable in this browser');
  await page.getByTestId('offline-enable').click();
  await expect(page.getByTestId('offline-status')).toContainText('Recursos estáticos verificados',{timeout:25000});
  await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller),null,{timeout:10000});
- const cacheCheck=await page.evaluate(async()=>{
+ const cached=await page.evaluate(async()=>{
   const cache=await caches.open('audiocal-hear3-prototype-static-v1');
   return Boolean(await cache.match(new URL('/hear3-preview/',location.origin)))&&
     Boolean(await cache.match(new URL('/tests/fixtures/hear3-integrated-exam-pilot.html',location.origin)));
  });
- expect(cacheCheck).toBe(true);
+ expect(cached).toBe(true);
+}
+test('D-060 explicit opt-in verifies the static resource cache in supported browsers',async({page})=>{
+ test.setTimeout(60000);
+ await installAndVerify(page);
+});
+test('D-060 Chromium emulation reopens cached pilots when navigation is offline',async({page})=>{
+ test.setTimeout(60000);
+ // CI Playwright WebKit reports an INTERNAL browser navigation error when
+ // BrowserContext.setOffline(true) is used even after a verified install.
+ // Do not treat this as a successful iOS offline test: physical Safari
+ // navigation remains an explicit unsatisfied D-063 hardware requirement.
+ if(test.info().project.name==='iphone-webkit')
+  test.skip(true,'WebKit offline navigation simulator crashes; verify on real Safari/iOS');
+ await installAndVerify(page);
  await page.context().setOffline(true);
  try{
   await page.goto('/hear3-preview/');
