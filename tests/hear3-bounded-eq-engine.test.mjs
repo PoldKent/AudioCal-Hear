@@ -154,10 +154,10 @@ test('half-dB quantization and category caps hold across 2-31 supported bands',(
    intervalDbfs:{notHeardAtDbfs:-70+(i%4)*5,heardAtDbfs:-64+(i%4)*5},
    confidence:'medium',
    observations:[
-    {toneId:'l'+i,frequencyHz,channel:'joint',digitalLevelDbfs:-70+(i%4)*5,response:'not-heard',provenance:'user-response'},
-    {toneId:'h'+i,frequencyHz,channel:'joint',digitalLevelDbfs:-64+(i%4)*5,response:'heard',provenance:'user-response'},
-    {toneId:'l2'+i,frequencyHz,channel:'joint',digitalLevelDbfs:-70+(i%4)*5,response:'not-heard',provenance:'user-response'},
-    {toneId:'h2'+i,frequencyHz,channel:'joint',digitalLevelDbfs:-64+(i%4)*5,response:'heard',provenance:'user-response'},
+    {toneId:'lo-'+i,frequencyHz,channel:'joint',digitalLevelDbfs:-70+(i%4)*5,response:'not-heard',provenance:'user-response'},
+    {toneId:'hi-'+i,frequencyHz,channel:'joint',digitalLevelDbfs:-64+(i%4)*5,response:'heard',provenance:'user-response'},
+    {toneId:'lo2-'+i,frequencyHz,channel:'joint',digitalLevelDbfs:-70+(i%4)*5,response:'not-heard',provenance:'user-response'},
+    {toneId:'hi2-'+i,frequencyHz,channel:'joint',digitalLevelDbfs:-64+(i%4)*5,response:'heard',provenance:'user-response'},
    ],
   }));
   const r=compute({
