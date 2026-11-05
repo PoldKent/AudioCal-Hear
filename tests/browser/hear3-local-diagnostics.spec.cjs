@@ -16,9 +16,9 @@ test('D-061 diagnostics page neither starts audio nor includes hearing profiles'
  await expect(page.getByTestId('report')).toHaveValue('');
  expect(await page.evaluate(()=>window.__createdAudioContexts)).toBe(0);
  await page.getByTestId('preview').click();
- await expect(page.getByTestId('report')).toContainText('hear3-local-technical-report-v1');
- await expect(page.getByTestId('report')).not.toContainText('audiocal-hear-profiles-v1');
- await expect(page.getByTestId('report')).not.toContainText('userAgent');
+ await expect(page.getByTestId('report')).toHaveValue(/hear3-local-technical-report-v1/);
+ await expect(page.getByTestId('report')).not.toHaveValue(/audiocal-hear-profiles-v1/);
+ await expect(page.getByTestId('report')).not.toHaveValue(/userAgent/);
  expect(await page.evaluate(()=>window.__createdAudioContexts)).toBe(0);
  await expect(page.getByTestId('download')).toBeDisabled();
 });
@@ -26,7 +26,7 @@ test('D-061 only exports a reviewed local report after explicit approval',async(
  await page.goto('/hear3-diagnostics/');
  await page.getByTestId('issue-code').selectOption('audio-interrupted');
  await page.getByTestId('preview').click();
- await expect(page.getByTestId('report')).toContainText('audio-interrupted');
+ await expect(page.getByTestId('report')).toHaveValue(/audio-interrupted/);
  await expect(page.getByTestId('download')).toBeDisabled();
  await page.getByTestId('confirm').check();
  await expect(page.getByTestId('download')).toBeEnabled();
@@ -50,7 +50,7 @@ test('D-061 editing selected fields revokes previously approved diagnostic',asyn
  await expect(page.getByTestId('download')).toBeDisabled();
  await expect(page.getByTestId('report')).toHaveValue('');
  await page.getByTestId('preview').click();
- await expect(page.getByTestId('report')).toContainText('"capabilities": null');
+ await expect(page.getByTestId('report')).toHaveValue(/"capabilities": null/);
  await page.getByTestId('clear').click();
  await expect(page.getByTestId('download')).toBeDisabled();
  await expect(page.getByTestId('report')).toHaveValue('');
@@ -63,8 +63,8 @@ test('D-061 reports only technical codes and never modifies V2 profile storage',
  await page.getByTestId('preview').click();
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1')))
   .toBe('V2_KEEP');
- await expect(page.getByTestId('report')).toContainText('checkpoint-damaged');
- await expect(page.getByTestId('report')).not.toContainText('V2_KEEP');
+ await expect(page.getByTestId('report')).toHaveValue(/checkpoint-damaged/);
+ await expect(page.getByTestId('report')).not.toHaveValue(/V2_KEEP/);
  await page.goto('/hear3-preview/');
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1')))
   .toBe('V2_KEEP');
