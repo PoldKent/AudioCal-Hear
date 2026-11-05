@@ -40,8 +40,9 @@ async function reachContradiction(page){
  for(const reply of ['heard','not-heard','heard','not-heard','not-heard']){
   await expect(page.getByTestId('tone-next')).toBeEnabled();
   await page.getByTestId('tone-next').click();
-  await expect(page.getByTestId('tone-'+reply)).toBeEnabled();
-  await page.getByTestId('tone-'+reply).click();
+  const selector=reply==='heard'?'tone-heard':'tone-not';
+  await expect(page.getByTestId(selector)).toBeEnabled();
+  await page.getByTestId(selector).click();
  }
  await expect(page.getByTestId('tone-status')).toContainText('Contradicción');
  await expect(page.getByTestId('tone-confirm')).toBeEnabled();
