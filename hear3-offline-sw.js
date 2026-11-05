@@ -21,7 +21,7 @@ function validateManifest(doc){
     !/^[A-Za-z0-9._/-]+$/.test(path)||path.startsWith('/')||
     path.split('/').some(v=>v==='.'||v==='..')||seen.has(path))
    throw Error('Unsafe or duplicated offline asset path');
-  if(!(/^(hear3-preview\/|hear3-privacy\/|tests\/fixtures\/hear3-[a-z0-9-]+\.html$|src\/hear3\/[a-z0-9-]+\.mjs$)/.test(path)))
+  if(!(/^(hear3-preview\/|hear3-privacy\/|hear3-diagnostics\/|tests\/fixtures\/hear3-[a-z0-9-]+\.html$|src\/hear3\/[a-z0-9-]+\.mjs$)/.test(path)))
    throw Error('Unscoped offline resource');
   seen.add(path);
  }
@@ -63,7 +63,7 @@ self.addEventListener('fetch',event=>{
  const relative=url.pathname.slice(SCOPE.pathname.length);
  // Hear 2.0 itself and any other apps are not intercepted, even while
  // this optional worker controls the scope.
- if(!/^(hear3-preview\/|hear3-privacy\/|tests\/fixtures\/hear3-|src\/hear3\/|hear3-offline-manifest\.json$)/.test(relative))
+ if(!/^(hear3-preview\/|hear3-privacy\/|hear3-diagnostics\/|tests\/fixtures\/hear3-|src\/hear3\/|hear3-offline-manifest\.json$)/.test(relative))
   return;
  event.respondWith((async()=>{
   const manifest=await validatedCachedManifest();
