@@ -198,6 +198,51 @@ const progressReader=createHear3ReadThrottle({read:()=>progressStore.load(),inte
 const catalogStore=createHear3CatalogStore();
 let archiveTransfer=null,archiveMessage='Primero termina el examen de tonos. No se guarda EQ.';
 let exam=null,planning=false,sweepStarting=false;
+let eqDraft=null,renderedEq=undefined;
+function updateEqDraft(){
+ eqDraft=null;
+ if(!exam)return;
+ const evidence=exam.snapshot(),session=exam.getSession();
+ if(evidence.status==='completed'&&session.status==='completed'){
+  eqDraft=calculateHear3BoundedJointEq({
+   examSnapshot:evidence,sessionSnapshot:session,
+   deviceCategory:$('archive-category').value,
+  });
+ }
+}
+function renderEq(){
+ if(renderedEq===eqDraft)return;
+ renderedEq=eqDraft;
+ setEnabled('eq-export',Boolean(eqDraft));
+ const root=$('eq-rows');
+ root.replaceChildren();
+ if(!eqDraft){
+  $('eq-status').textContent='Finaliza el examen de tonos para calcular una curva EQ provisional.';
+  $('eq-headroom').textContent='La preamplificación y el headroom no están verificados.';
+  return;
+ }
+ $('eq-status').textContent='Modelo experimental: '+eqDraft.selectedMethod+
+  '. Bandas con intervalos subjetivos utilizables: '+eqDraft.observedEligibleBands+
+  ' de '+eqDraft.bandCount+'. Límite matemático de ganancia: ±'+eqDraft.capDb+
+  ' dB. '+(eqDraft.correctionCoverage==='neutral-only-no-valid-contrast'
+   ?'Evidencia insuficiente: todas las ganancias son neutras.'
+   :'Cálculo de contraste relativo terminado; no es un preset calibrado.');
+ const list=document.createElement('ul');
+ for(const b of eqDraft.rows){
+  const li=document.createElement('li');
+  const origin=b.source==='direct-subjective-contrast'
+   ?'intervalo subjetivo observado ('+b.confidence+')'
+   :b.estimated?'estimación entre bandas contiguas, opcional de comprobar'
+    :'neutra: sin contraste de evidencia suficiente';
+  li.textContent=b.frequencyHz+' Hz: '+(b.gainDb>0?'+':'')+b.gainDb+
+   ' dB · '+origin;
+  list.append(li);
+ }
+ root.append(list);
+ $('eq-headroom').textContent='Suma nominal de realces: '+
+  eqDraft.nominalPositiveGainSumDb+
+  ' dB. Preamplificación: no establecida. No se han simulado filtros reales ni comprobado clipping, headroom o dB SPL.';
+}
 let comparisonCounter=0;
 const comparisonReports=[];
 const comparison=createHear3ContextualToneComparison({onChange:render});
@@ -245,6 +290,7 @@ function render(){
   exam.getSession().status==='completed'));
  setEnabled('archive-commit',Boolean(archiveTransfer));
  $('archive-status').textContent=archiveMessage;
+ renderEq();
  const durability=exam?.getPersistence();
  $('recovery-status').textContent=local.checkpoint
   ?'Copia local disponible ('+local.durability+'). '+
@@ -392,7 +438,10 @@ $('tone-resume').addEventListener('click',()=>run(()=>{
  exam.resume({userInitiated:true});
  $('route-verified').checked=false;
 }));
-$('tone-finish').addEventListener('click',()=>run(()=>exam.finish()));
+$('tone-finish').addEventListener('click',()=>run(()=>{
+ exam.finish();
+ updateEqDraft();
+}));
 $('recover-exam').addEventListener('click',()=>run(async()=>{
  if(exam)throw Error('Ya hay un examen en esta página.');
  const saved=progressStore.load();
@@ -403,6 +452,7 @@ $('recover-exam').addEventListener('click',()=>run(async()=>{
   await candidate.recover({userInitiated:true});
   exam=candidate;
   $('route-verified').checked=false;
+  updateEqDraft();
  }catch(error){await candidate.dispose();throw error;}
 }));
 $('export-exam').addEventListener('click',()=>run(()=>{
@@ -428,6 +478,15 @@ for(const id of ['archive-device','archive-profile','archive-category']){
  $(id).addEventListener('input',discardArchive);
  $(id).addEventListener('change',discardArchive);
 }
+$('archive-category').addEventListener('change',()=>run(()=>updateEqDraft()));
+$('eq-export').addEventListener('click',()=>run(()=>{
+ if(!eqDraft)throw Error('No existe todavía un EQ provisional que revisar.');
+ const blob=new Blob([JSON.stringify(eqDraft,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;a.download='hear3-eq-matematico-no-validado.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}));
 $('archive-preview').addEventListener('click',()=>run(()=>{
  archiveTransfer=null;
  if(!exam)throw Error('No existe examen finalizado.');
@@ -462,6 +521,7 @@ window.hear3IntegratedPilot=Object.freeze({
  sweepResult:()=>sweepRunner.lastResult(),
  comparison:()=>comparison.snapshot(),
  comparisonReports:()=>comparisonReports.map(r=>({...r})),
+ eqDraft:()=>eqDraft?structuredClone(eqDraft):null,
 });
 const ticker=setInterval(render,120);
 window.addEventListener('pagehide',()=>{
