@@ -169,8 +169,9 @@ test('corrupted copies never load as valid adaptive evidence',async()=>{
  const f=setup();
  const original=f.create();
  await toneAndAnswer(original);
- const key=[...f.device.data.keys()].find(k=>k.startsWith('hear3:adaptive-progress:'));
- f.device.setItem(key,'{ "malformed":"true"');
+ const keys=[...f.device.data.keys()].filter(k=>k.startsWith('hear3:adaptive-progress:'));
+ assert.ok(keys.length>=2,'the two-slot journal must have independent copies');
+ for(const key of keys)f.device.setItem(key,'{ "malformed":"true"');
  const data=f.store.load();
  assert.equal(data.durability,'volatile','only this still-open instance has a volatile working copy');
  assert.ok(data.warnings.some(w=>w.includes('Damaged')));
