@@ -348,7 +348,7 @@ test('D-055/D-056 devicechange silences the tone and refuses to resume until rou
  await expect(page.getByTestId('observations')).toHaveText('Respuestas registradas: 0');
  const s=await page.evaluate(()=>window.hear3Pilot.snapshot());
  expect(s.routeCheckRequired).toBe(true);
- expect(s.invalidatedToneIds).toContain('pilot-tone-1');
+ expect(s.invalidatedToneIds).toContain('pilot-1');
  await page.getByTestId('confirm').click();
  await expect(page.getByTestId('resume')).toBeEnabled();
  await page.getByTestId('resume').click();
