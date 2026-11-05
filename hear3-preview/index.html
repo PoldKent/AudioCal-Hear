@@ -40,6 +40,13 @@
     .tile h3{font-size:1.31rem;line-height:1.27;letter-spacing:-.02em;margin:12px 0 9px}
     .tile p{color:var(--muted);margin:0 0 20px;flex:1}
     .tile a{font-weight:780;align-self:flex-start}
+    .offline-options{border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:0 0 35px;background:var(--surface)}
+    .offline-options h2{margin:0 0 9px;font-size:1.35rem}
+    .offline-options p{color:var(--muted);margin:8px 0}
+    .offline-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+    .offline-actions button{background:var(--surface2);border:1px solid var(--cyan);color:var(--text);padding:11px 14px;border-radius:11px;min-height:48px;font:inherit;font-weight:700;cursor:pointer}
+    .offline-actions button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+    .offline-actions button:disabled{opacity:.55;cursor:not-allowed}
     .features{padding:43px 0 50px}
     .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:26px}
     .fact{border-top:1px solid var(--line);padding-top:16px}
@@ -72,6 +79,17 @@
     <strong>Es una vista previa experimental, no un producto clínico ni una versión estable.</strong>
     <p>Los tonos no están calibrados en dB SPL; dBFS solo describe el nivel digital. Si usas los pilotos de sonido, mantén el volumen físico bajo y fijo, y detén la reproducción ante cualquier molestia. Ningún piloto inicia audio sin una acción explícita. No conviertas estas observaciones en un diagnóstico auditivo.</p>
   </aside>
+
+  <section class="offline-options" id="offline" aria-labelledby="offline-title">
+    <h2 id="offline-title">Acceso sin conexión · Opcional</h2>
+    <p>En navegadores compatibles puedes guardar voluntariamente los recursos estáticos de estos pilotos para volver a abrirlos sin Internet. No se guardan respuestas, perfiles ni archivos personales en esta caché. La aplicación Hear 2.0 no se instala ni modifica con esta función.</p>
+    <p>El resultado depende del soporte real del navegador, del almacenamiento disponible y de que los recursos se hayan descargado correctamente. La reproducción acústica y los dispositivos físicos siguen sin validarse.</p>
+    <div class="offline-actions">
+      <button type="button" id="offline-enable" data-testid="offline-enable">Guardar pilotos para uso sin conexión</button>
+      <button type="button" id="offline-disable" data-testid="offline-disable">Retirar recursos offline de Hear 3.0</button>
+    </div>
+    <p id="offline-status" data-testid="offline-status" role="status" aria-live="polite">Comprobando compatibilidad con almacenamiento offline…</p>
+  </section>
 
   <section id="pilotos" aria-labelledby="pilotos-title">
     <h2 class="section-title" id="pilotos-title">Qué puedes probar hoy</h2>
@@ -113,7 +131,7 @@
 
   <section class="features" aria-labelledby="limits-title">
     <h2 class="section-title" id="limits-title">Qué sigue en desarrollo</h2>
-    <p class="section-intro">La integración barrido → tonos adaptativos, el algoritmo EQ con evidencia, la interfaz definitiva, la migración histórica completa, accesibilidad, funcionamiento offline y validación acústica real. La publicación estable exige superar todos los P0 y el criterio D-063.</p>
+    <p class="section-intro">La integración barrido → tonos adaptativos, el algoritmo EQ con evidencia, la interfaz definitiva, la migración histórica completa, accesibilidad, pruebas offline en equipos reales y validación acústica real. La publicación estable exige superar todos los P0 y el criterio D-063.</p>
     <div class="facts">
       <div class="fact"><strong>Tu Hear actual se conserva</strong><span>Esta vista previa no reemplaza la aplicación principal ni modifica automáticamente sus perfiles V2.</span></div>
       <div class="fact"><strong>Datos en el navegador</strong><span>Los pilotos no incorporan cuentas ni sincronización en la nube. El almacenamiento local puede borrarse; exporta copias cuando sea necesario.</span></div>
@@ -122,5 +140,43 @@
   </section>
 </main>
 <footer class="end"><div class="wrap"><a href="../">Hear actual</a><a href="https://github.com/PoldKent/AudioCal-Hear/issues/30">Decisiones D-001–D-063</a><span>AudioCal Hear 3.0 · Vista previa experimental</span></div></footer>
+<script type="module">
+import {detectHear3OfflineSupport,enableHear3Offline,disableHear3Offline}
+ from '../src/hear3/offline-optin.mjs';
+const enable=document.getElementById('offline-enable');
+const disable=document.getElementById('offline-disable');
+const status=document.getElementById('offline-status');
+const capabilities=detectHear3OfflineSupport();
+if(!capabilities.supported){
+ enable.disabled=true;disable.disabled=true;
+ status.textContent='Este navegador u origen no permite verificar esta función de recursos offline. Los pilotos siguen accesibles con conexión.';
+}else{
+ status.textContent='Soporte disponible. No se almacenará nada sin que lo solicites.';
+}
+enable.addEventListener('click',async()=>{
+ enable.disabled=true;
+ status.textContent='Validando la caché local de recursos estáticos…';
+ try{
+  const result=await enableHear3Offline();
+  status.textContent='Recursos estáticos verificados: '+result.staticResources+
+   '. '+result.warning;
+ }catch(error){
+  status.textContent='No se pudo verificar el modo offline: '+(error?.message??String(error))+
+   '. No asumimos que funcione sin conexión.';
+ }finally{enable.disabled=!capabilities.supported;}
+});
+disable.addEventListener('click',async()=>{
+ disable.disabled=true;
+ status.textContent='Comprobando y retirando únicamente la caché estática de Hear 3.0…';
+ try{
+  const result=await disableHear3Offline();
+  status.textContent=result.complete
+   ?'Se solicitó retirar los recursos offline de Hear 3.0. '+result.warning
+   :'No se pudo verificar la eliminación completa de la caché experimental.';
+ }catch(error){
+  status.textContent='No se pudieron retirar todos los recursos: '+(error?.message??String(error));
+ }finally{disable.disabled=!capabilities.supported;}
+});
+</script>
 </body>
 </html>
