@@ -168,3 +168,37 @@ test('P0 discrete tone is silenced on AudioContext suspension and reports interr
   await adapter.dispose();
   assert.equal(f.listeners.size, 0);
 });
+
+
+test('devicechange stops active tone, discards future responses and detaches listener on dispose',async()=>{
+ const f=createFakeContext();
+ const listeners=new Map();
+ const target={
+  addEventListener:(name,fn)=>listeners.set(name,fn),
+  removeEventListener:(name,fn)=>{if(listeners.get(name)===fn)listeners.delete(name);},
+ };
+ const events=[];
+ const a=createWebAudioToneAdapter({createContext:()=>f.ctx,
+  mediaDevicesTarget:target,onInterrupted:event=>events.push(event)});
+ assert.equal(listeners.has('devicechange'),true);
+ await a.playTone(args({channel:'joint'}));
+ assert.equal(a.getStatus().activeToneId,'a1');
+ listeners.get('devicechange')?.();
+ assert.equal(a.getStatus().activeToneId,null);
+ assert.deepEqual(events,[{reason:'devicechange',routeMayHaveChanged:true}]);
+ assert.ok(f.calls.some(x=>x[0]==='gain.set'&&x[1]===0));
+ await a.dispose();
+ assert.equal(listeners.size,0);
+});
+test('devicechange during suspended context resume prevents any stale autoplay',async()=>{
+ const f=createFakeContext({pendingResume:true});
+ const target={listener:null,addEventListener(_name,fn){this.listener=fn;},
+  removeEventListener(){this.listener=null;}};
+ const a=createWebAudioToneAdapter({createContext:()=>f.ctx,mediaDevicesTarget:target});
+ const pending=a.playTone(args({channel:'joint'}));
+ target.listener?.();
+ f.resolvePending();
+ assert.deepEqual(await pending,{started:false,reason:'cancelled'});
+ assert.equal(f.calls.some(x=>x[0]==='start'),false);
+ await a.dispose();
+});
