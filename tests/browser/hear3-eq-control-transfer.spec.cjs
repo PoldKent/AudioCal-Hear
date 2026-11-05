@@ -10,12 +10,15 @@ async function mockDigitalTones(page){
   }
   class Context{
    constructor(){this.state='running';this.currentTime=0;this.destination={};this.sampleRate=48000;}
-   createOscillator(){return {
-    frequency:new Param(),onended:null,
-    connect(){},disconnect(){},
-    start(){window.__playCount++;},
-    stop(){},
-   };}
+   createOscillator(){
+    const oscillator={
+     frequency:new Param(),onended:null,
+     connect(){},disconnect(){},
+     start(){window.__playCount++;},
+     stop(at){if(at>=15)setTimeout(()=>oscillator.onended?.(),35);},
+    };
+    return oscillator;
+   }
    createGain(){return {gain:new Param(),connect(){},disconnect(){}};}
    addEventListener(){}removeEventListener(){}
    async resume(){this.state='running';}
