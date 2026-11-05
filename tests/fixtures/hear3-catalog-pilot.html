@@ -70,6 +70,20 @@ Permitir borrar los registros dependientes, solo después de verlos y confirmar<
 <button type="button" id="legacy-preview" data-testid="legacy-preview">Revisar perfiles Hear 2.0</button>
 <button type="button" id="legacy-export" data-testid="legacy-export" disabled>Exportar archivo original V2</button>
 <button type="button" id="legacy-import" data-testid="legacy-import" disabled>Importar solo metadatos compatibles</button>
+<h3>Conservar íntegro el historial V2, separado de resultados V3</h3>
+<p>Esta operación es adicional y opcional. Se preserva <strong>todo el texto V2 original
+ como archivo histórico opaco</strong>, incluidos medidas, controles y campos
+ desconocidos; no equivale a migrar umbrales clínicos ni ganancias EQ. Exporta
+ primero una copia independiente. El respaldo de catálogo V3 por sí solo no
+ incluye este historial: descarga también el respaldo V2 conservado.</p>
+<button type="button" id="legacy-vault-export" data-testid="legacy-vault-export" disabled>
+Descargar respaldo portátil íntegro V2 para otra instalación</button>
+<button type="button" id="legacy-vault-save" data-testid="legacy-vault-save" disabled>
+Guardar historial íntegro V2 en archivo local separado de V3</button>
+<button type="button" id="legacy-vault-stored-export" data-testid="legacy-vault-stored-export" disabled>
+Volver a descargar historial V2 previamente conservado</button>
+<p id="legacy-vault-status" data-testid="legacy-vault-status" role="status">
+Todavía no se ha guardado ningún historial V2 completo en Hear3.</p>
 <p id="legacy-description" data-testid="legacy-description" role="status">Aún no se han revisado los datos de Hear 2.0.</p>
 <p id="error" data-testid="error" role="alert"></p>
 </main>
@@ -79,21 +93,25 @@ import {createHear3CatalogStore,createHear3CatalogBackupTransfer,MAX_CATALOG_JSO
 import { createHear3CatalogHistoryReader } from '../../src/hear3/catalog-history-reader.mjs';
 import { createHear3CatalogDeletion } from '../../src/hear3/catalog-selective-deletion.mjs';
 import {createHear3CatalogWriteCoordinator} from '../../src/hear3/coordinated-catalog-writer.mjs';
+import {createHear3LosslessV2HistoryVault,importHear3LosslessV2History,
+ HEAR3_V2_VAULT_FORMAT} from '../../src/hear3/legacy-v2-history-vault.mjs';
 import { createHear2MigrationTransfer, LEGACY_V2_SOURCE_KEY, LEGACY_V2_ACTIVE_KEY }
  from '../../src/hear3/legacy-v2-migration.mjs';
 const store=createHear3CatalogStore();
 const writer=createHear3CatalogWriteCoordinator({store});
+const legacyHistoryVault=createHear3LosslessV2HistoryVault();
 const transfer=createHear3CatalogBackupTransfer({store});
 const historyReader=createHear3CatalogHistoryReader({store});
 const deletion=createHear3CatalogDeletion({store});
 let deletionProposal=null;
-let legacyFileRaw=null;
+let legacyFileRaw=null,legacyFileActiveId='';
+let legacyVaultPreview=null,legacyVaultExportAttempted=false;
 const legacyTransfer=createHear2MigrationTransfer({store,readLegacy:()=>{
  if($('legacy-source').value==='file'){
   if(legacyFileRaw===null)throw Error('Selecciona y revisa primero un archivo V2.');
   // The official export file has no independently verified active-profile ID.
   // Do not infer an active profile from its contents.
-  return {profilesRaw:legacyFileRaw,activeProfileId:''};
+  return {profilesRaw:legacyFileRaw,activeProfileId:legacyFileActiveId};
  }
  return {
   profilesRaw:localStorage.getItem(LEGACY_V2_SOURCE_KEY)??'',
@@ -155,6 +173,17 @@ function render() {
  $('commit').disabled=!preview;
  $('legacy-export').disabled=!legacyPreview;
  $('legacy-import').disabled=!legacyPreview||!legacyArchiveExportAttempted;
+ $('legacy-vault-export').disabled=!legacyVaultPreview;
+ $('legacy-vault-save').disabled=!legacyVaultPreview||!legacyVaultExportAttempted;
+ const savedV2History=legacyHistoryVault.load();
+ $('legacy-vault-stored-export').disabled=!savedV2History.available;
+ $('legacy-vault-status').textContent=savedV2History.available
+  ?'Historial V2 completo disponible: '+savedV2History.summary.profileCount+
+   ' perfiles. Persistencia de dispositivo: '+
+   (savedV2History.persistedOnDevice?'sí, lectura local verificada':'NO, datos temporales')+
+   '. Resultados clínicos V3 convertidos: 0. '+savedV2History.warnings.join(' ')
+  :'No existe historial V2 completo conservado en este navegador. '+
+    savedV2History.warnings.join(' ');
  $('legacy-description').textContent=legacyPreview?
   'Origen V2: '+legacyPreview.sourceFormat+'. Perfiles antiguos: '+legacyPreview.sourceProfiles+'; perfiles V3 compatibles: '+legacyPreview.mappedProfiles+
   '; resultados históricos convertidos: 0; observaciones originales que permanecen en archivo V2: '+
@@ -251,8 +280,10 @@ $('history-show').addEventListener('click',()=>{
  }catch(e){$('error').textContent=e.message;}
 });
 function discardLegacyPreview(){
- legacyTransfer.discard();
+ legacyTransfer.discard();legacyHistoryVault.discard();
  legacyPreview=null;legacyArchiveExportAttempted=false;legacyFileRaw=null;
+ legacyFileActiveId='';
+ legacyVaultPreview=null;legacyVaultExportAttempted=false;
  render();
 }
 $('legacy-source').addEventListener('change',discardLegacyPreview);
@@ -261,6 +292,8 @@ $('legacy-preview').addEventListener('click',async()=>{
  $('error').textContent='';
  legacyTransfer.discard();
  legacyPreview=null;legacyArchiveExportAttempted=false;legacyFileRaw=null;
+ legacyFileActiveId='';legacyVaultPreview=null;legacyVaultExportAttempted=false;
+ legacyHistoryVault.discard();
  const sourceMode=$('legacy-source').value;
  const file=$('legacy-file').files?.[0];
  try{
@@ -271,12 +304,23 @@ $('legacy-preview').addEventListener('click',async()=>{
    if($('legacy-source').value!==sourceMode||
     $('legacy-file').files?.[0]!==file)
     throw Error('La selección V2 cambió durante la lectura; vuelve a revisar.');
-   legacyFileRaw=text;
+   const parsed=JSON.parse(text);
+   if(parsed?.format===HEAR3_V2_VAULT_FORMAT){
+    const portable=importHear3LosslessV2History(text);
+    legacyFileRaw=portable.sourceText;
+    legacyFileActiveId=portable.activeProfileId;
+   }else legacyFileRaw=text;
   }
   legacyPreview=legacyTransfer.preview();
+  const sourceRaw=sourceMode==='file'?legacyFileRaw:
+   localStorage.getItem(LEGACY_V2_SOURCE_KEY)??'';
+  const active=sourceMode==='file'?legacyFileActiveId:
+   localStorage.getItem(LEGACY_V2_ACTIVE_KEY)??'';
+  legacyVaultPreview=legacyHistoryVault.preview(sourceRaw,{activeProfileId:active});
  }catch(e){
-  legacyTransfer.discard();
-  legacyPreview=null;legacyFileRaw=null;
+  legacyTransfer.discard();legacyHistoryVault.discard();
+  legacyPreview=null;legacyFileRaw=null;legacyFileActiveId='';
+  legacyVaultPreview=null;legacyVaultExportAttempted=false;
   $('error').textContent=e.message;
  }finally{render();}
 });
@@ -302,6 +346,41 @@ $('legacy-import').addEventListener('click',async()=>{
   if(!result.persistedOnDevice)$('error').textContent=result.warning||'Datos en memoria temporal.';
  }catch(e){$('error').textContent=e.message;}
  finally{render();}
+});
+$('legacy-vault-export').addEventListener('click',()=>{
+ $('error').textContent='';
+ try{
+  const blob=new Blob([legacyHistoryVault.exportPending()],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='hear3-historial-v2-completo-portatil.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  legacyVaultExportAttempted=true;
+ }catch(e){$('error').textContent=e.message;}
+ finally{render();}
+});
+$('legacy-vault-save').addEventListener('click',async()=>{
+ $('error').textContent='';
+ try{
+  if(!legacyVaultPreview||!legacyVaultExportAttempted)
+   throw Error('Revisa y descarga primero una copia portable del historial V2 completo.');
+  if(!confirm('¿Guardar todos los datos originales V2 como archivo local separado, SIN convertirlos en pruebas clínicas V3?'))return;
+  const {response:saved}=await writer.run(()=>legacyHistoryVault.commit({
+   userInitiated:true,confirmed:true,confirmSourceBackupExported:true,
+   confirmOverwrite:legacyVaultPreview.replacesExisting,
+  }));
+  legacyVaultPreview=null;legacyVaultExportAttempted=false;
+  if(!saved.persistedOnDevice)$('error').textContent=saved.warning;
+ }catch(e){$('error').textContent=e.message;}
+ finally{render();}
+});
+$('legacy-vault-stored-export').addEventListener('click',()=>{
+ $('error').textContent='';
+ try{
+  const blob=new Blob([legacyHistoryVault.exportStored()],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='hear3-historial-v2-verificado-respaldo.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }catch(e){$('error').textContent=e.message;}
 });
 // Test-only local inspection. No mutation methods or network functions.
 window.hear3CatalogPilot=Object.freeze({
