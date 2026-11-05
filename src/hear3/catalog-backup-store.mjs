@@ -84,9 +84,11 @@ export function createHear3CatalogStore({
       warnings,
     };
   }
-  function save(catalog) {
+  function save(catalog,{expectedRevision=null}={}) {
     const checked=validateHear3Catalog(catalog);
     const data=current();
+    check(expectedRevision===null||expectedRevision===(data.best?.revision??0),
+      'Catalog changed since it was read; review before saving');
     const revision=(data.best?.revision??0)+1;
     const raw=persistedRecord(revision,checked);
     volatile={revision,catalog:clone(checked)};
