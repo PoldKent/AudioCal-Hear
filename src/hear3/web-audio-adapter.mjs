@@ -15,6 +15,10 @@ function defaultCreateContext() {
   return new AC();
 }
 
+function defaultMediaDevicesTarget(){
+  try { return typeof navigator==='undefined'?null:navigator.mediaDevices??null; }
+  catch { return null; }
+}
 function defaultIsVisible() {
   return typeof document === 'undefined' || !document.hidden;
 }
@@ -30,6 +34,7 @@ export function createWebAudioToneAdapter({
   onInterrupted = () => {},
   visibilityTarget = typeof document === 'undefined' ? null : document,
   lifecycleTarget = typeof window === 'undefined' ? null : window,
+  mediaDevicesTarget = defaultMediaDevicesTarget(),
 } = {}) {
   assert(typeof createContext === 'function', 'Invalid context factory');
   assert(typeof isVisible === 'function', 'Invalid visibility callback');
@@ -173,6 +178,7 @@ export function createWebAudioToneAdapter({
     old?.removeEventListener?.('statechange', handleContextStateChange);
     visibilityTarget?.removeEventListener?.('visibilitychange', handleVisibility);
     lifecycleTarget?.removeEventListener?.('pagehide', handlePageHide);
+    mediaDevicesTarget?.removeEventListener?.('devicechange',handleDeviceChange);
     if (old && typeof old.close === 'function' && old.state !== 'closed') {
       await old.close();
     }
@@ -189,8 +195,17 @@ export function createWebAudioToneAdapter({
   const handlePageHide = () => {
     if (!disposed) { stop(); onInterrupted({ reason: 'pagehide' }); }
   };
+  const handleDeviceChange=()=>{
+    if(disposed)return;
+    // Browsers may fire this on a microphone change too. Conservative
+    // invalidation is preferable to assuming an unchanged output route.
+    stop();
+    try{onInterrupted({reason:'devicechange',routeMayHaveChanged:true});}
+    catch{/* already silenced before notifying the caller */}
+  };
   visibilityTarget?.addEventListener?.('visibilitychange', handleVisibility);
   lifecycleTarget?.addEventListener?.('pagehide', handlePageHide);
+  mediaDevicesTarget?.addEventListener?.('devicechange',handleDeviceChange);
 
   return Object.freeze({ playTone, stop, dispose, getStatus });
 }

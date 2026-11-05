@@ -37,9 +37,13 @@ export function createHear3AudioSession({
 
   const adapter = adapterFactory({
     onToneEnded,
-    onInterrupted: ({ reason }) => {
+    onInterrupted: ({ reason,routeMayHaveChanged=false }) => {
       if (disposed) return;
-      pause({ type: 'INTERRUPT', routeMayHaveChanged: reason === 'pagehide' });
+      // A context suspension, output-list change, or pagehide invalidates
+      // confidence in the physical route and volume. No automatic resume.
+      pause({ type: 'INTERRUPT',
+        routeMayHaveChanged:routeMayHaveChanged===true||
+          ['pagehide','devicechange','context-suspended'].includes(reason) });
     },
   });
 

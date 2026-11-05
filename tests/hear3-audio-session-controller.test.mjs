@@ -156,3 +156,30 @@ test('P0 unreported context suspension invalidates the tone rather than acceptin
   assert.deepEqual(state.observations, []);
   assert.ok(stopped > 0);
 });
+
+
+test('device list change requires manual output/volume reconfirmation even in ready session',async()=>{
+ const f=fixture();
+ await f.controller.startTone(f.tone);
+ f.controller.answer('heard');
+ assert.equal(f.controller.getSession().status,'ready');
+ assert.equal(f.controller.getSession().routeCheckRequired,false);
+ f.lifecycle.onInterrupted({reason:'devicechange',routeMayHaveChanged:true});
+ const paused=f.controller.getSession();
+ assert.equal(paused.status,'paused');
+ assert.equal(paused.routeCheckRequired,true);
+ assert.equal(paused.observations.length,1);
+ assert.throws(()=>f.controller.resume({userInitiated:true}),/Route check/);
+ f.controller.confirmRoute({userConfirmed:true});
+ f.controller.resume({userInitiated:true});
+ assert.equal(f.controller.getSession().status,'ready');
+ assert.equal(f.calls.filter(x=>x[0]==='play').length,1);
+});
+test('suspended audio context requires manual route check, not just resume click',async()=>{
+ const f=fixture();
+ await f.controller.startTone(f.tone);
+ f.lifecycle.onInterrupted({reason:'context-suspended'});
+ assert.equal(f.controller.getSession().routeCheckRequired,true);
+ assert.deepEqual(f.controller.getSession().observations,[]);
+ assert.throws(()=>f.controller.resume({userInitiated:true}),/Route check/);
+});
