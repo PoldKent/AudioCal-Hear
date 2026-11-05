@@ -47,19 +47,21 @@ export function createHear3CatalogStore({
   check(typeof key==='string' && /^[a-z0-9:_-]{1,120}$/.test(key), 'Invalid catalog storage key');
   let volatile=null;
   function inspect(storage,kind) {
-    const records=[]; let corrupt=false, unavailable=!storage;
-    if(!storage) return {records,corrupt,unavailable};
+    const records=[],damagedSlots=[];
+    let unavailable=!storage;
+    if(!storage)return {records,corrupt:false,unavailable,damagedSlots};
     for(let slot=0;slot<2;slot++){
-      try {
-        const raw=storage.getItem(key+':'+slot);
-        if(raw==null) continue;
-        records.push({...parseRecord(raw),durability:kind});
-      } catch(e) {
-        if(e instanceof SyntaxError || /checksum|envelope|catalog|device|profile|result|EQ|observation|version|fields|duplicate|Unknown|Unsupported/i.test(String(e.message)))corrupt=true;
-        else unavailable=true;
+      let raw;
+      try{raw=storage.getItem(key+':'+slot);}
+      catch{unavailable=true;continue;}
+      if(raw==null)continue;
+      try{records.push({...parseRecord(raw),durability:kind});}
+      catch{
+        // A readable but invalid record is damaged data, never a free slot.
+        damagedSlots.push(slot);
       }
     }
-    return {records,corrupt,unavailable};
+    return {records,corrupt:damagedSlots.length>0,unavailable,damagedSlots};
   }
   function current() {
     const dev=inspect(deviceStorage,'device-local');
@@ -100,17 +102,27 @@ export function createHear3CatalogStore({
       revision,durability:'volatile',persistedOnDevice:false,
       warning:'Damaged catalog copies were preserved. Export the temporary catalog before closing.',
     };
-    for(const [storage,durability] of [[deviceStorage,'device-local'],[tabStorage,'tab-session']]) {
-      if(!storage)continue;
+    for(const [storage,durability,scope] of [
+      [deviceStorage,'device-local',data.dev],
+      [tabStorage,'tab-session',data.tab],
+    ]) {
+      if(!storage||scope.unavailable)continue;
+      // Never destroy an unreadable or checksum-invalid copy by reusing the
+      // ordinary rotating slot. If a sibling is healthy, use that one.
+      // This is a non-destructive local strategy, not a cross-tab transaction.
+      const slot=[revision%2,(revision+1)%2]
+        .find(i=>!scope.damagedSlots.includes(i));
+      if(slot===undefined)continue;
       try {
-        const slot=revision%2;
         storage.setItem(key+':'+slot,raw);
         check(storage.getItem(key+':'+slot)===raw,'Catalog write/read mismatch');
         parseRecord(raw);
         return {revision,durability,persistedOnDevice:durability==='device-local',
-          warning:durability==='device-local'
-            ? 'Catalog saved in this browser; clearing browser data still erases it.'
-            : 'Catalog stored only for this tab session. Export a backup.'};
+          warning:scope.damagedSlots.length>0
+            ?'A damaged catalog slot was preserved; redundancy is reduced. Export a backup.'
+            :durability==='device-local'
+              ? 'Catalog saved in this browser; clearing browser data still erases it.'
+              : 'Catalog stored only for this tab session. Export a backup.'};
       } catch { /* use another local option, never a remote fallback */ }
     }
     return {
