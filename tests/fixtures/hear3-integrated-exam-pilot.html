@@ -64,8 +64,24 @@ progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bo
 <button type="button" id="tone-finish" data-testid="tone-finish" disabled>Finalizar y ver resumen</button>
 </div>
 </section>
+<section aria-labelledby="recovery-heading">
+<h2 id="recovery-heading">3. Recuperación de progreso del examen</h2>
+<p>El plan y las respuestas a tonos se guardan juntos en este navegador.
+ Recuperar nunca reproduce audio automáticamente. Antes de reanudar verifica
+ la salida de audio y mantén el volumen físico bajo, cómodo y fijo.</p>
+<p id="recovery-status" role="status" data-testid="recovery-status">Comprobando copias locales…</p>
+<div class="controls">
+<button type="button" id="recover-exam" data-testid="recover-exam" disabled>Recuperar examen guardado</button>
+<button type="button" id="export-exam" data-testid="export-exam" disabled>Descargar respaldo JSON</button>
+<button type="button" id="delete-exam" data-testid="delete-exam" disabled>Eliminar este checkpoint V3</button>
+</div>
+<label for="route-verified"><input id="route-verified" data-testid="route-verified" type="checkbox">
+He comprobado la salida y el volumen físico bajo antes de reanudar</label>
+<p>Las copias JSON descargadas no están cifradas y no se eliminan al borrar datos del navegador.
+ Los datos de Hear 2.0 no se migran ni eliminan automáticamente.</p>
+</section>
 <section aria-labelledby="summary-heading">
-<h2 id="summary-heading">3. Evidencia y límites</h2>
+<h2 id="summary-heading">4. Evidencia y límites</h2>
 <p>Este piloto registra lo escuchado/no escuchado; muestra intervalos subjetivos o
  bandas inconclusas. No inventa un umbral auditivo ni calcula una ganancia EQ.</p>
 <div id="result" data-testid="result" role="status">Sin resultados confirmados.</div>
@@ -76,15 +92,24 @@ progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bo
 <script type="module">
 import {createSweepPlan,planSweepConfirmations} from '../../src/hear3/sweep-planner.mjs';
 import {createSweepAudioRunner} from '../../src/hear3/sweep-audio-runner.mjs';
-import {createHear3AudioSession} from '../../src/hear3/audio-session-controller.mjs';
-import {createHear3AdaptiveDiscreteExam} from '../../src/hear3/adaptive-discrete-exam.mjs';
+import {createHear3AdaptiveProgressStore} from '../../src/hear3/adaptive-progress-store.mjs';
+import {createHear3ResumableAdaptiveExam} from '../../src/hear3/resumable-adaptive-exam.mjs';
 
 const $=id=>document.getElementById(id);
 const bands=[125,250,500,1000,2000].map(f=>({id:'band-'+f,frequencyHz:f}));
 const sweepPlan=createSweepPlan({minHz:125,maxHz:2000,durationSeconds:20});
 const levelRange={minDbfs:-80,maxDbfs:-42};
 const sweepRunner=createSweepAudioRunner({onEnded:render,onInterrupted:render});
-let exam=null,toneSession=null,planning=false,sweepStarting=false;
+const profileId='hear3-integrated-pilot';
+const progressStore=createHear3AdaptiveProgressStore({profileId});
+let exam=null,planning=false,sweepStarting=false;
+function createExam(plan){
+ return createHear3ResumableAdaptiveExam({plan,profileId,
+  minDbfs:levelRange.minDbfs,maxDbfs:levelRange.maxDbfs,
+  initialDbfs:-60,maxTrialsPerBand:7,coarseStepDb:6,
+  durationSeconds:3,progressStore,
+ });
+}
 let toneStartVisual=0;
 const buttons=['sweep-start','sweep-stop','sweep-heard','sweep-not','plan',
  'tone-next','tone-stop','tone-heard','tone-not','tone-confirm','tone-skip',
@@ -105,6 +130,16 @@ function render(){
  setEnabled('sweep-heard',s.status==='playing');
  setEnabled('sweep-not',s.status==='playing');
  setEnabled('plan',!exam&&prev?.status==='completed'&&s.status!=='playing'&&!sweepStarting&&!planning);
+ const local=progressStore.load();
+ setEnabled('recover-exam',!exam&&Boolean(local.checkpoint));
+ setEnabled('export-exam',Boolean(local.checkpoint));
+ setEnabled('delete-exam',Boolean(local.checkpoint));
+ const durability=exam?.getPersistence();
+ $('recovery-status').textContent=local.checkpoint
+  ?'Copia local disponible ('+local.durability+'). '+
+    (durability?.warning??local.warnings.join(' '))
+  :'Todavía no existe un checkpoint verificable. '+
+    (durability?.warning??local.warnings.join(' '));
  if(!exam)return;
  const data=exam.snapshot();
  const current=data.bands.find(b=>b.id===data.currentBandId);
@@ -116,7 +151,7 @@ function render(){
  $('coverage').textContent='Bandas revisadas: '+data.completedBands+' de '+data.totalBands;
  $('frequency').textContent=current?current.frequencyHz+' Hz':'—';
  $('dbfs').textContent=data.status==='playing'?
-  (toneSession?.getSession().currentTone?.digitalLevelDbfs??'—')+' dBFS':
+  (exam?.getSession().currentTone?.digitalLevelDbfs??'—')+' dBFS':
   data.nextDigitalLevelDbfs===null?'—':data.nextDigitalLevelDbfs+' dBFS';
  $('contradiction').textContent=data.contradictionExplanation??'';
  const elapsed=data.status==='playing'?Math.min(3000,performance.now()-toneStartVisual):0;
@@ -128,7 +163,7 @@ function render(){
  setEnabled('tone-confirm',data.status==='awaiting-confirmation');
  setEnabled('tone-skip',data.status==='awaiting-confirmation');
  setEnabled('tone-resume',data.status==='paused');
- setEnabled('tone-finish',data.status==='completed'&&toneSession?.getSession().status==='ready');
+ setEnabled('tone-finish',data.status==='completed'&&exam?.getSession().status==='ready');
  const list=document.createElement('ul');
  for(const b of data.bands){
   if(b.status==='pending')continue;
@@ -167,10 +202,7 @@ $('plan').addEventListener('click',()=>run(async()=>{
  planning=true;
  try{
   const confirmations=planSweepConfirmations(sweepPlan,result.reports,bands);
-  toneSession=createHear3AudioSession({profileId:'hear3-integrated-pilot',
-    minDbfs:levelRange.minDbfs,maxDbfs:levelRange.maxDbfs});
-  exam=createHear3AdaptiveDiscreteExam({plan:confirmations,sessionController:toneSession,
-    initialDbfs:-60,maxTrialsPerBand:7,coarseStepDb:6,durationSeconds:3});
+  exam=createExam(confirmations);
  } finally{planning=false;}
 }));
 $('tone-next').addEventListener('click',()=>run(async()=>{
@@ -184,8 +216,41 @@ $('tone-not').addEventListener('click',()=>run(()=>exam.answer('not-heard')));
 $('tone-stop').addEventListener('click',()=>run(()=>exam.interrupt()));
 $('tone-confirm').addEventListener('click',()=>run(()=>exam.confirmContradiction({userConfirmed:true})));
 $('tone-skip').addEventListener('click',()=>run(()=>exam.confirmContradiction({userConfirmed:false})));
-$('tone-resume').addEventListener('click',()=>run(()=>exam.resume({userInitiated:true})));
+$('tone-resume').addEventListener('click',()=>run(()=>{
+ if(!exam)throw Error('No existe examen para reanudar.');
+ if(exam.getSession().routeCheckRequired){
+  if(!$('route-verified').checked)throw Error('Comprueba la salida y confirma el volumen antes de reanudar.');
+  exam.confirmRoute({userConfirmed:true});
+ }
+ exam.resume({userInitiated:true});
+ $('route-verified').checked=false;
+}));
 $('tone-finish').addEventListener('click',()=>run(()=>exam.finish()));
+$('recover-exam').addEventListener('click',()=>run(async()=>{
+ if(exam)throw Error('Ya hay un examen en esta página.');
+ const saved=progressStore.load();
+ if(!saved.checkpoint)throw Error('No hay copia local verificada para recuperar.');
+ if(!confirm('¿Recuperar las respuestas y el plan guardados? No se reproducirá audio.'))return;
+ const candidate=createExam(saved.checkpoint.plan);
+ try{
+  await candidate.recover({userInitiated:true});
+  exam=candidate;
+  $('route-verified').checked=false;
+ }catch(error){await candidate.dispose();throw error;}
+}));
+$('export-exam').addEventListener('click',()=>run(()=>{
+ const blob=new Blob([progressStore.exportBackup()],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const link=document.createElement('a');
+ link.href=url;link.download='hear3-examen-adaptativo-checkpoint.json';
+ link.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}));
+$('delete-exam').addEventListener('click',()=>run(()=>{
+ if(!confirm('¿Eliminar las copias guardadas de este examen V3 de este navegador? No borra perfiles V2 ni archivos descargados.'))return;
+ const result=exam?exam.clearCheckpoint({confirmed:true}):progressStore.clear({confirmed:true});
+ if(!result.cleared)throw Error(result.warning??'La eliminación no pudo verificarse.');
+}));
 window.hear3IntegratedPilot=Object.freeze({
  snapshot:()=>exam?.snapshot()??null,
  sweep:()=>sweepRunner.snapshot(),
@@ -195,7 +260,7 @@ const ticker=setInterval(render,120);
 window.addEventListener('pagehide',()=>{
  clearInterval(ticker);
  sweepRunner.stop('pagehide');
- toneSession?.interrupt({routeMayHaveChanged:true});
+ exam?.interrupt({routeMayHaveChanged:true});
 },{once:true});
 render();
 </script>
