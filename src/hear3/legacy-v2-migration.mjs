@@ -153,7 +153,7 @@ export function createHear2MigrationTransfer({
     proposal={
       catalog:candidate.catalog,
       archive:candidate.archive,
-      baselineToken:stateToken(current),
+      baselineToken:stateToken(current),revision:current.revision,
       sourceToken:fingerprint(source),
     };
     return deepClone({
@@ -180,8 +180,9 @@ export function createHear2MigrationTransfer({
     ensure(stateToken(current)===proposal.baselineToken,
       'V3 catalog changed since preview; inspect again');
     const toSave=proposal.catalog;
+    const proposalRevision=proposal.revision;
     proposal=null;
-    const result=store.save(toSave);
+    const result=store.save(toSave,{expectedRevision:proposalRevision});
     return {
       migratedProfileMetadata:true,
       migratedHistoricalResults:false,
