@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hear · privacidad y borrado de datos locales (experimental)</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:light dark}
+body{margin:0 auto;max-width:46rem;padding:1.1rem 1rem 4rem;line-height:1.55}
+h1{font-size:clamp(1.5rem,5vw,2.2rem)}
+.warning{border:1px solid;padding:1rem;border-radius:.7rem}
+label{display:block;font-weight:650;margin-top:1rem}
+button,input,select{font:inherit;min-height:44px;box-sizing:border-box}
+button{padding:.65rem 1rem;cursor:pointer;margin:.5rem .5rem .5rem 0;touch-action:manipulation}
+input,select{width:100%;max-width:40rem;padding:.6rem;margin:.3rem 0 .65rem}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
+ outline:3px solid currentColor;outline-offset:3px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;border-bottom:1px solid #9995;padding:.55rem .35rem}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+#action-status{min-height:1.5rem}
+@media(prefers-reduced-motion:reduce){*,*::after,*::before{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Privacidad · revisar y eliminar datos locales de Hear</h1>
+<p class="warning"><strong>Herramienta experimental de borrado con consentimiento.</strong>
+ Borrar datos locales es irreversible sin un respaldo exportado antes. Esta herramienta no elimina archivos
+ JSON descargados, fotos guardadas fuera de las claves auditadas, otros sitios/apps, cachés del navegador
+ ni registros remotos. No existe prueba de eliminación de todos los soportes.
+ Cierra otras pestañas de Hear para evitar que vuelvan a escribir.</p>
+<p>Antes de eliminar, puedes guardar una copia desde
+ <a href="../tests/fixtures/hear3-catalog-pilot.html">el catálogo V3</a>
+ o desde <a href="../">Hear 2.0</a> cuando la función correspondiente esté disponible.</p>
+<label for="scope">Qué datos quieres eliminar</label>
+<select id="scope" data-testid="scope">
+<option value="v3-only">Solo V3: catálogo y checkpoints experimentales</option>
+<option value="all-hear">Todos los datos conocidos de Hear 2.0 y Hear 3.0, incluido idioma</option>
+</select>
+<button id="inspect" type="button" data-testid="inspect">Revisar alcance, sin borrar nada</button>
+<section aria-label="Vista previa del borrado">
+<h2>Claves locales detectadas</h2>
+<p id="preview-status" data-testid="preview-status" role="status">
+ Selecciona el alcance y pulsa revisar. No se elimina nada al inspeccionar.</p>
+<table>
+<thead><tr><th>Ubicación</th><th>Claves conocidas detectadas</th></tr></thead>
+<tbody>
+<tr><td>Almacenamiento del navegador</td><td id="local-count" data-testid="local-count">—</td></tr>
+<tr><td>Almacenamiento de esta pestaña</td><td id="tab-count" data-testid="tab-count">—</td></tr>
+<tr><td>Total que se intentará eliminar</td><td id="total-count" data-testid="total-count">—</td></tr>
+</tbody>
+</table>
+<p id="warnings" data-testid="warnings" role="alert"></p>
+</section>
+<section aria-label="Confirmación de eliminación">
+<h2>Confirmación explícita</h2>
+<p>Escribe exactamente <strong id="required-phrase" data-testid="required-phrase">—</strong>
+ para activar el borrado. Se solicitará una confirmación adicional antes de escribir.</p>
+<label for="confirm-phrase">Frase de confirmación</label>
+<input id="confirm-phrase" data-testid="confirm-phrase" type="text" autocomplete="off"
+ spellcheck="false" placeholder="Escribe la frase mostrada">
+<button type="button" id="commit" data-testid="commit" disabled>Eliminar las claves revisadas</button>
+<p id="action-status" data-testid="action-status" role="status"></p>
+</section>
+<p><a href="../hear3-preview/">Volver a Hear 3.0</a></p>
+</main>
+<script type="module">
+import {createHear3ScopedStorageCleanup}
+ from '../src/hear3/scoped-storage-cleanup.mjs';
+const $=id=>document.getElementById(id);
+const cleanup=createHear3ScopedStorageCleanup();
+let proposal=null;
+function invalidate(){
+ cleanup.discard();proposal=null;
+ $('commit').disabled=true;
+ $('confirm-phrase').value='';
+ $('required-phrase').textContent='—';
+ $('preview-status').textContent='Elige revisar de nuevo antes de borrar.';
+ $('local-count').textContent='—';
+ $('tab-count').textContent='—';
+ $('total-count').textContent='—';
+ $('warnings').textContent='';
+}
+$('scope').addEventListener('change',invalidate);
+$('confirm-phrase').addEventListener('input',()=>{
+ $('commit').disabled=!proposal||proposal.unreadableScopes!==0||
+  $('confirm-phrase').value!==proposal.confirmationPhrase;
+});
+$('inspect').addEventListener('click',()=>{
+ invalidate();$('action-status').textContent='';
+ try{
+  proposal=cleanup.inspect({scope:$('scope').value});
+  $('local-count').textContent=String(proposal.deviceLocal.count);
+  $('tab-count').textContent=String(proposal.tabSession.count);
+  $('total-count').textContent=String(proposal.allKnownEntries);
+  $('required-phrase').textContent=proposal.confirmationPhrase;
+  $('preview-status').textContent=proposal.includesHear2
+   ?'Incluye las tres claves V2 auditadas y las claves V3 conocidas. Se eliminará también el idioma guardado.'
+   :'Solo incluye el catálogo y los checkpoints V3 conocidos. Conserva los perfiles y el idioma V2.';
+  $('warnings').textContent=proposal.warnings.join(' ')+(proposal.unreadableScopes
+   ?' No se permitirá el borrado sin revisar todos los almacenes.' : '');
+ }catch(error){
+  proposal=null;
+  $('warnings').textContent=error?.message??String(error);
+ }
+});
+$('commit').addEventListener('click',()=>{
+ if(!proposal)return;
+ const target=proposal;
+ const message=target.includesHear2
+  ?'¿Borrar las claves conocidas de Hear 2.0 y V3 mostradas en la vista previa? Es irreversible y afecta a perfiles antiguos.'
+  :'¿Borrar únicamente el catálogo y los checkpoints V3 mostrados en la vista previa?';
+ if(!confirm(message))return;
+ $('action-status').textContent='';
+ try{
+  const outcome=cleanup.commit({userInitiated:true,confirmed:true,
+   phrase:$('confirm-phrase').value});
+  $('action-status').textContent=outcome.cleared
+   ?'Se verificó la eliminación de '+outcome.attempted+' claves conocidas. '+outcome.message
+   :'No se pudo verificar la eliminación completa: '+outcome.message;
+ }catch(error){
+  $('action-status').textContent='Borrado no iniciado: '+(error?.message??String(error));
+ }
+ invalidate();
+});
+window.hear3PrivacyPilot=Object.freeze({inspect:()=>proposal?{...proposal}:null});
+</script>
+</body>
+</html>
