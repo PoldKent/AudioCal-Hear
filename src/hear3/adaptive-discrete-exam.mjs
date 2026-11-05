@@ -50,10 +50,18 @@ export function createHear3AdaptiveDiscreteExam({
   let activeTone=null,requestEpoch=0,contradiction=null;
   const taken=new Set();
 
-  function snapshot() {
+  function syncControllerStatus() {
     const data=sessionController.getSession();
-    // A lower-level interruption always wins over a previously cached UI
-    // state. Never claim a tone is still valid after route/context suspension.
+    // The audio adapter can pause asynchronously when a tone expires or a
+    // browser route is lost. Invalidate the coordinator's cached tone state
+    // as soon as it is observed; manual resume must remain possible.
+    if(data.status==='paused' && phase!=='paused' && phase!=='completed'){
+      requestEpoch++;activeTone=null;phase='paused';
+    }
+    return data;
+  }
+  function snapshot() {
+    const data=syncControllerStatus();
     const status=data.status==='paused'?'paused':phase;
     return clone({
       status,profileId:base.profileId,channel,
@@ -172,14 +180,19 @@ export function createHear3AdaptiveDiscreteExam({
     try{state=sessionController.answer(response);}
     catch(error){requestEpoch++;activeTone=null;phase='paused';throw error;}
     const recorded=state.observations.at(-1);
-    check(state.status==='ready' && recorded &&
+    const valid=state.status==='ready' && recorded &&
       recorded.toneId===expected.toneId &&
       recorded.frequencyHz===expected.frequencyHz &&
       recorded.digitalLevelDbfs===expected.digitalLevelDbfs &&
       recorded.channel===expected.channel &&
       recorded.response===response &&
       recorded.provenance==='user-response' &&
-      !taken.has(recorded.toneId),'Unverified or duplicate tone observation');
+      !taken.has(recorded.toneId);
+    if(!valid){
+      requestEpoch++;activeTone=null;phase='paused';
+      sessionController.interrupt({routeMayHaveChanged:true});
+      throw Error('Unverified or duplicate tone observation');
+    }
     taken.add(recorded.toneId);
     bands[position].observations.push(clone(recorded));
     activeTone=null;phase='ready';
