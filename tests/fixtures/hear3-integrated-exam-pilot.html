@@ -53,12 +53,24 @@ progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bo
 <progress id="tone-progress" max="3000" value="0"></progress>
 <p id="coverage" data-testid="coverage">Bandas confirmadas: 0</p>
 <p id="contradiction" role="status" data-testid="contradiction"></p>
+<p id="comparison-status" data-testid="comparison-status" role="status">Comparaciones contextuales: ninguna.</p>
+<p>Si existen respuestas contradictorias, confirmar iniciará dos tonos consecutivos con
+ una única acción. El segundo se reproduce automáticamente solo si el primero terminó
+ y el audio sigue activo; después responde cuál percibiste más claramente.
+ La comparación no es calibración acústica ni prueba de umbral.</p>
+<div class="controls" role="group" aria-label="Respuesta a comparación de dos tonos">
+<button type="button" id="comparison-first" data-testid="comparison-first" disabled>Primer tono más claro</button>
+<button type="button" id="comparison-second" data-testid="comparison-second" disabled>Segundo tono más claro</button>
+<button type="button" id="comparison-similar" data-testid="comparison-similar" disabled>Los dos parecidos</button>
+<button type="button" id="comparison-neither" data-testid="comparison-neither" disabled>No percibí ninguno</button>
+<button type="button" id="comparison-uncertain" data-testid="comparison-uncertain" disabled>No estoy seguro</button>
+</div>
 <div class="controls">
 <button type="button" id="tone-next" data-testid="tone-next" disabled>Reproducir siguiente tono</button>
 <button type="button" id="tone-stop" data-testid="tone-stop" disabled>Detener y pausar</button>
 <button type="button" id="tone-heard" data-testid="tone-heard" disabled>Lo escucho</button>
 <button type="button" id="tone-not" data-testid="tone-not" disabled>No lo escucho</button>
-<button type="button" id="tone-confirm" data-testid="tone-confirm" disabled>Confirmar repetición</button>
+<button type="button" id="tone-confirm" data-testid="tone-confirm" disabled>Confirmar y comparar dos tonos</button>
 <button type="button" id="tone-skip" data-testid="tone-skip" disabled>Conservar como inconclusa</button>
 <button type="button" id="tone-resume" data-testid="tone-resume" disabled>Reanudar manualmente</button>
 <button type="button" id="tone-finish" data-testid="tone-finish" disabled>Finalizar y ver resumen</button>
@@ -123,6 +135,8 @@ import {createHear3AdaptiveProgressStore} from '../../src/hear3/adaptive-progres
 import {createHear3ResumableAdaptiveExam} from '../../src/hear3/resumable-adaptive-exam.mjs';
 import {createHear3CatalogStore} from '../../src/hear3/catalog-backup-store.mjs';
 import {createHear3AdaptiveCatalogArchive} from '../../src/hear3/adaptive-catalog-archive.mjs';
+import {createHear3ContextualToneComparison,planHear3ContradictionComparison}
+ from '../../src/hear3/contextual-tone-comparison.mjs';
 
 const $=id=>document.getElementById(id);
 const bands=[125,250,500,1000,2000].map(f=>({id:'band-'+f,frequencyHz:f}));
@@ -134,6 +148,9 @@ const progressStore=createHear3AdaptiveProgressStore({profileId});
 const catalogStore=createHear3CatalogStore();
 let archiveTransfer=null,archiveMessage='Primero termina el examen de tonos. No se guarda EQ.';
 let exam=null,planning=false,sweepStarting=false;
+let comparisonCounter=0;
+const comparisonReports=[];
+const comparison=createHear3ContextualToneComparison({onChange:render});
 function createExam(plan){
  return createHear3ResumableAdaptiveExam({plan,profileId,
   minDbfs:levelRange.minDbfs,maxDbfs:levelRange.maxDbfs,
@@ -189,14 +206,27 @@ function render(){
   (exam?.getSession().currentTone?.digitalLevelDbfs??'—')+' dBFS':
   data.nextDigitalLevelDbfs===null?'—':data.nextDigitalLevelDbfs+' dBFS';
  $('contradiction').textContent=data.contradictionExplanation??'';
+ const cmp=comparison.snapshot();
+ const comparing=['first','gap','second'].includes(cmp.state);
+ const needsComparisonReply=cmp.state==='awaiting-response'&&
+   data.status==='awaiting-confirmation';
+ $('comparison-status').textContent=cmp.state==='first'?'Comparación: reproduciendo el primer tono':
+   cmp.state==='gap'?'Comparación: separación silenciosa entre tonos':
+   cmp.state==='second'?'Comparación: reproduciendo el segundo tono':
+   needsComparisonReply?'Los dos tonos terminaron. Elige una respuesta perceptiva.':
+   cmp.state==='interrupted'?'Comparación interrumpida: sin evidencia perceptiva nueva':
+   cmp.state==='completed'?'Última comparación terminada. Respuestas: '+comparisonReports.length:
+   'Comparaciones contextuales: ninguna.';
+ for(const id of ['comparison-first','comparison-second','comparison-similar',
+  'comparison-neither','comparison-uncertain'])setEnabled(id,needsComparisonReply);
  const elapsed=data.status==='playing'?Math.min(3000,performance.now()-toneStartVisual):0;
  $('tone-progress').value=elapsed;
  setEnabled('tone-next',data.status==='ready');
- setEnabled('tone-stop',['starting','playing','ready'].includes(data.status));
- setEnabled('tone-heard',data.status==='playing');
- setEnabled('tone-not',data.status==='playing');
- setEnabled('tone-confirm',data.status==='awaiting-confirmation');
- setEnabled('tone-skip',data.status==='awaiting-confirmation');
+ setEnabled('tone-stop',['starting','playing','ready'].includes(data.status)||comparing);
+ setEnabled('tone-heard',data.status==='playing'&&!comparing);
+ setEnabled('tone-not',data.status==='playing'&&!comparing);
+ setEnabled('tone-confirm',data.status==='awaiting-confirmation'&&!comparing&&!needsComparisonReply);
+ setEnabled('tone-skip',data.status==='awaiting-confirmation'&&!comparing&&!needsComparisonReply);
  setEnabled('tone-resume',data.status==='paused');
  setEnabled('tone-finish',data.status==='completed'&&exam?.getSession().status==='ready');
  const list=document.createElement('ul');
@@ -248,9 +278,45 @@ $('tone-next').addEventListener('click',()=>run(async()=>{
 }));
 $('tone-heard').addEventListener('click',()=>run(()=>exam.answer('heard')));
 $('tone-not').addEventListener('click',()=>run(()=>exam.answer('not-heard')));
-$('tone-stop').addEventListener('click',()=>run(()=>exam.interrupt()));
-$('tone-confirm').addEventListener('click',()=>run(()=>exam.confirmContradiction({userConfirmed:true})));
-$('tone-skip').addEventListener('click',()=>run(()=>exam.confirmContradiction({userConfirmed:false})));
+$('tone-stop').addEventListener('click',()=>run(()=>{
+ const state=comparison.snapshot().state;
+ if(['first','gap','second'].includes(state))return comparison.interrupt('user-stop');
+ return exam.interrupt();
+}));
+$('tone-confirm').addEventListener('click',()=>run(async()=>{
+ const s=exam?.snapshot();
+ if(s?.status!=='awaiting-confirmation')throw Error('No hay contradicción que comparar.');
+ const last=s.bands.find(b=>b.id===s.currentBandId)?.observations.at(-1);
+ if(!last)throw Error('No existe tono verificado para la comparación.');
+ const plan=planHear3ContradictionComparison({
+  comparisonId:'cmp-'+(++comparisonCounter),
+  frequencyHz:last.frequencyHz,channel:last.channel,
+  currentDbfs:last.digitalLevelDbfs,
+  authorizedDigitalRangeDbfs:s.authorizedDigitalRangeDbfs,
+ });
+ const played=await comparison.start({userInitiated:true,comparison:plan});
+ if(!played.started)throw Error('La secuencia de comparación no llegó a comenzar.');
+}));
+$('tone-skip').addEventListener('click',()=>run(()=>{
+ comparison.interrupt('skip');
+ return exam.confirmContradiction({userConfirmed:false});
+}));
+for(const [id,choice] of [
+ ['comparison-first','first-clearer'],['comparison-second','second-clearer'],
+ ['comparison-similar','similar'],['comparison-neither','neither'],
+ ['comparison-uncertain','uncertain'],
+]){
+ $(id).addEventListener('click',()=>run(()=>{
+  const result=comparison.respond(choice);
+  comparisonReports.push(result);
+  // No hearing threshold or EQ value is calculated from this preference.
+  // Inconclusive/unknown hearing stays inconclusive; otherwise the
+  // pre-existing isolated planner may repeat a tone after confirmation.
+  return exam.confirmContradiction({
+   userConfirmed:!result.uncertaintyPreserved,
+  });
+ }));
+}
 $('tone-resume').addEventListener('click',()=>run(()=>{
  if(!exam)throw Error('No existe examen para reanudar.');
  if(exam.getSession().routeCheckRequired){
@@ -328,11 +394,14 @@ window.hear3IntegratedPilot=Object.freeze({
  snapshot:()=>exam?.snapshot()??null,
  sweep:()=>sweepRunner.snapshot(),
  sweepResult:()=>sweepRunner.lastResult(),
+ comparison:()=>comparison.snapshot(),
+ comparisonReports:()=>comparisonReports.map(r=>({...r})),
 });
 const ticker=setInterval(render,120);
 window.addEventListener('pagehide',()=>{
  clearInterval(ticker);
  sweepRunner.stop('pagehide');
+ void comparison.dispose();
  if(exam&&exam.getSession().status!=='completed')
   exam.interrupt({routeMayHaveChanged:true});
 },{once:true});

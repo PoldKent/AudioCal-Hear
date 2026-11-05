@@ -37,6 +37,7 @@ const allowedFiles = new Map([
   ['/src/hear3/web-audio-adapter.mjs', 'src/hear3/web-audio-adapter.mjs'],
   ['/src/hear3/sweep-planner.mjs', 'src/hear3/sweep-planner.mjs'],
   ['/src/hear3/adaptive-discrete-exam.mjs', 'src/hear3/adaptive-discrete-exam.mjs'],
+  ['/src/hear3/contextual-tone-comparison.mjs', 'src/hear3/contextual-tone-comparison.mjs'],
   ['/src/hear3/adaptive-progress-store.mjs', 'src/hear3/adaptive-progress-store.mjs'],
   ['/src/hear3/resumable-adaptive-exam.mjs', 'src/hear3/resumable-adaptive-exam.mjs'],
   ['/src/hear3/adaptive-catalog-archive.mjs', 'src/hear3/adaptive-catalog-archive.mjs'],
