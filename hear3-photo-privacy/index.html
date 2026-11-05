@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hear 3.0 · Privacidad de fotografías (piloto)</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:light dark}
+body{max-width:46rem;margin:1.5rem auto;padding:0 1rem 3rem;line-height:1.55}
+button,input{font:inherit;min-height:44px}button{padding:.7rem}
+button:focus-visible,input:focus-visible,a:focus-visible{
+ outline:3px solid currentColor;outline-offset:3px}
+.controls{display:flex;gap:.8rem;flex-wrap:wrap;margin:1.2rem 0}
+.notice{border:1px solid currentColor;border-radius:.6rem;padding:1rem}
+img{max-width:100%;height:auto;border:1px solid}
+label{display:block;margin:1rem 0 .3rem}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Hear 3.0 · Imagen privada del ecualizador</h1>
+<p class="notice"><strong>Proceso local, voluntario y experimental.</strong>
+ La fotografía nunca se sube ni se guarda en los perfiles. Solo se abre cuando
+ eliges inspeccionarla, se descodifican sus píxeles y se crea una imagen PNG
+ nueva. No se copian intencionalmente los metadatos EXIF/GPS originales.
+ No se identifica automáticamente el equipo ni se deducen posiciones,
+ bandas, frecuencias o límites de ganancia de la fotografía.</p>
+<label for="photo">Selecciona JPEG, PNG o WebP (hasta 8 MiB)</label>
+<input id="photo" data-testid="photo" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+<div class="controls">
+<button id="inspect" type="button" data-testid="inspect">Procesar localmente sin subir</button>
+<button id="download" type="button" data-testid="download" disabled>Guardar PNG nuevo sin EXIF original</button>
+<button id="clear" type="button" data-testid="clear">Descartar imagen y vista previa</button>
+</div>
+<p id="status" data-testid="status" role="status" aria-live="polite">
+Ninguna imagen procesada ni almacenada.</p>
+<p id="error" data-testid="error" role="alert"></p>
+<img id="preview" data-testid="preview" alt="Vista previa del PNG recodificado localmente, sin identificación del equipo" hidden>
+<p>Revisa manualmente las frecuencias y controles reales del EQ con una fuente fiable.
+ Una imagen por sí sola no puede demostrar respuesta acústica ni seguridad del
+ volumen. Cierra esta pantalla para liberar la vista previa temporal.</p>
+<p><a href="../hear3-preview/">Volver a Hear 3.0 experimental</a></p>
+</main>
+<script type="module">
+import {createHear3PrivatePhotoSession} from '../src/hear3/private-photo-sanitizer.mjs';
+const $=id=>document.getElementById(id);
+const session=createHear3PrivatePhotoSession();
+function clear(){
+ $('preview').removeAttribute('src');
+ $('preview').hidden=true;
+ session.clear();
+ $('download').disabled=true;
+ $('status').textContent='Imagen descartada: no hay fotografía almacenada en Hear 3.0.';
+}
+$('photo').addEventListener('change',()=>{
+ clear();
+ $('error').textContent='';
+});
+$('inspect').addEventListener('click',async()=>{
+ clear();$('error').textContent='';
+ const file=$('photo').files?.[0];
+ try{
+  if(!file)throw Error('Selecciona un archivo antes de inspeccionarlo.');
+  $('status').textContent='Descodificando y recodificando píxeles solo en este navegador…';
+  const result=await session.inspect(file,{userInitiated:true});
+  if($('photo').files?.[0]!==file){
+   clear();throw Error('Cambió la fotografía seleccionada. Revisa de nuevo.');
+  }
+  $('preview').src=result.previewUrl;$('preview').hidden=false;
+  $('download').disabled=false;
+  $('status').textContent='PNG local de '+result.summary.outputWidth+' × '+
+   result.summary.outputHeight+' píxeles, '+result.summary.outputBytes+
+   ' bytes. No se subió, no se guardó automáticamente y no se interpretó el EQ.';
+ }catch(error){
+  clear();$('error').textContent=error?.message??'No se pudo tratar la imagen localmente.';
+ }
+});
+$('download').addEventListener('click',()=>{
+ $('error').textContent='';
+ try{
+  const blob=session.getSanitizedBlob({userInitiated:true});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download='hear3-foto-rasterizada-sin-exif-origen.png';
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }catch(error){$('error').textContent=error?.message??'No existe una imagen procesada.';}
+});
+$('clear').addEventListener('click',clear);
+window.addEventListener('pagehide',()=>{
+ $('preview').removeAttribute('src');
+ session.dispose();
+},{once:true});
+window.hear3PhotoPilot=Object.freeze({summary:()=>session.snapshot()});
+</script>
+</body>
+</html>
