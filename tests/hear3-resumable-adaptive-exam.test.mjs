@@ -64,7 +64,7 @@ test('recovery needs a click and restores a silent paused session and the next a
  const oldStarts=f.starts.length;
  const next=f.create();
  assert.equal(next.getRecoveryProposal().observationCount,1);
- assert.throws(()=>next.resume({userInitiated:true}),/not paused/);
+ assert.throws(()=>next.resume({userInitiated:true}),/Explicit action required to resume/);
  await assert.rejects(next.recover(),/explicit user action/);
  const savedRevision=f.store.load().revision;
  const result=await next.recover({userInitiated:true});
@@ -172,10 +172,15 @@ test('corrupted copies never load as valid adaptive evidence',async()=>{
  const key=[...f.device.data.keys()].find(k=>k.startsWith('hear3:adaptive-progress:'));
  f.device.setItem(key,'{ "malformed":"true"');
  const data=f.store.load();
- assert.equal(data.checkpoint,null);
+ assert.equal(data.durability,'volatile','only this still-open instance has a volatile working copy');
  assert.ok(data.warnings.some(w=>w.includes('Damaged')));
- const newExam=f.create();
- assert.equal(newExam.getRecoveryProposal().available,false);
+ // A reopened browser has no access to the former in-memory fallback;
+ // damaged persistent bytes must NOT be treated as verified evidence.
+ const independent=createHear3AdaptiveProgressStore({
+  profileId:'test-profile',deviceStorage:f.device,tabStorage:null,
+ });
+ assert.equal(independent.load().checkpoint,null);
+ assert.ok(independent.load().warnings.some(w=>w.includes('Damaged')));
 });
 test('checkpoint deletion requires consent, clears both slots and does not delete legacy profiles',async()=>{
  const f=setup();
