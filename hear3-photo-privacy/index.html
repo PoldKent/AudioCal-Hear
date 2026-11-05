@@ -45,7 +45,8 @@ Ninguna imagen procesada ni almacenada.</p>
 import {createHear3PrivatePhotoSession} from '../src/hear3/private-photo-sanitizer.mjs';
 const $=id=>document.getElementById(id);
 const session=createHear3PrivatePhotoSession();
-function clear(){
+function clear({forgetSelection=true}={}){
+ if(forgetSelection)$('photo').value='';
  $('preview').removeAttribute('src');
  $('preview').hidden=true;
  session.clear();
@@ -53,12 +54,12 @@ function clear(){
  $('status').textContent='Imagen descartada: no hay fotografía almacenada en Hear 3.0.';
 }
 $('photo').addEventListener('change',()=>{
- clear();
+ clear({forgetSelection:false});
  $('error').textContent='';
 });
 $('inspect').addEventListener('click',async()=>{
- clear();$('error').textContent='';
  const file=$('photo').files?.[0];
+ clear({forgetSelection:false});$('error').textContent='';
  try{
   if(!file)throw Error('Selecciona un archivo antes de inspeccionarlo.');
   $('status').textContent='Descodificando y recodificando píxeles solo en este navegador…';
@@ -88,6 +89,7 @@ $('download').addEventListener('click',()=>{
 $('clear').addEventListener('click',clear);
 window.addEventListener('pagehide',()=>{
  $('preview').removeAttribute('src');
+ $('photo').value='';
  session.dispose();
 },{once:true});
 window.hear3PhotoPilot=Object.freeze({summary:()=>session.snapshot()});
