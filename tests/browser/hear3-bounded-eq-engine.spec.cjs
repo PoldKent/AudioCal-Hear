@@ -51,7 +51,14 @@ test('D-039/041 UI keeps EQ disabled until explicit finish, then provides one ne
  await expect(page.getByTestId('eq-export')).toBeEnabled();
  await expect(page.getByTestId('eq-status')).toContainText('Evidencia insuficiente');
  await expect(page.getByTestId('eq-rows').locator('li')).toHaveCount(5);
- await expect(page.getByTestId('eq-headroom')).toContainText('Preamplificación: no establecida');
+ await expect(page.getByTestId('eq-headroom')).toContainText('Referencia DSP NO calibrada');
+ await expect(page.getByTestId('eq-headroom')).toContainText('Atenuación sugerida SOLO para el modelo digital: 0 dB');
+ await expect(page.getByTestId('eq-headroom')).toContainText('NO certifica picos entre muestras');
+ const model=await page.evaluate(()=>window.hear3IntegratedPilot.eqDigitalModel());
+ expect(model.suggestedReferencePreampDb).toBe(0);
+ expect(model.physicalClippingVerified).toBe(false);
+ expect(model.autoApplyAllowed).toBe(false);
+ expect(model.finiteHorizonSampleBoundEstablished).toBe(true);
  const eq=await page.evaluate(()=>window.hear3IntegratedPilot.eqDraft());
  expect(eq.rows.map(x=>x.gainDb)).toEqual([0,0,0,0,0]);
  expect(eq.validatedForProduction).toBe(false);
