@@ -30,6 +30,8 @@ progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bo
  Mantén el volumen físico bajo, cómodo y fijo. Detén el sonido ante molestias.
  Los niveles dBFS no miden presión sonora (dB SPL) ni prueban seguridad acústica.
  Cada reproducción requiere una acción explícita. Ningún resultado produce aún ganancias de EQ.</p>
+<p id="audio-preflight" data-testid="audio-preflight" role="status">
+Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automáticamente.</p>
 <section aria-labelledby="sweep-heading">
 <h2 id="sweep-heading">1. Exploración de frecuencias</h2>
 <p>Recorrido 125–2.000 Hz · máximo 20 s · −60 dBFS · ambos canales.
@@ -144,6 +146,8 @@ He comprobado la salida y el volumen físico bajo antes de reanudar</label>
 <script type="module">
 import {createSweepPlan,planSweepConfirmations,frequencyAtSweepTime}
  from '../../src/hear3/sweep-planner.mjs';
+import {inspectHear3AudioCapabilities}
+ from '../../src/hear3/audio-capability-preflight.mjs';
 import {createSweepAudioRunner} from '../../src/hear3/sweep-audio-runner.mjs';
 import {createHear3AdaptiveProgressStore} from '../../src/hear3/adaptive-progress-store.mjs';
 import {createHear3ResumableAdaptiveExam} from '../../src/hear3/resumable-adaptive-exam.mjs';
@@ -153,6 +157,14 @@ import {createHear3ContextualToneComparison,planHear3ContradictionComparison}
  from '../../src/hear3/contextual-tone-comparison.mjs';
 
 const $=id=>document.getElementById(id);
+const audioPreflight=inspectHear3AudioCapabilities();
+const audioReady=audioPreflight.canAttemptJointTone;
+$('audio-preflight').textContent=audioReady
+ ?'Web Audio básico detectado. Puedes iniciar sonidos manualmente tras comprobar la salida y mantener el volumen físico bajo; la detección no acredita seguridad ni un equipo concreto.'
+ :'No están disponibles las funciones de Web Audio necesarias ('+
+  audioPreflight.missingEssential.join(', ')+
+  '). Las pruebas sonoras permanecen desactivadas; puedes revisar y gestionar datos locales cuando existan.';
+
 const bands=[125,250,500,1000,2000].map(f=>({id:'band-'+f,frequencyHz:f}));
 const sweepPlan=createSweepPlan({minHz:125,maxHz:2000,durationSeconds:20});
 const levelRange={minDbfs:-80,maxDbfs:-42};
@@ -193,7 +205,7 @@ function render(){
   Math.ceil(Math.max(0,s.plan.durationSeconds-s.elapsedSeconds))+' s':'—';
  $('sweep-count').textContent='Observaciones informativas: '+
   (s.status==='playing'?s.reports.length:prev?.reports?.length??0);
- setEnabled('sweep-start',!exam&&!sweepStarting&&s.status!=='playing');
+ setEnabled('sweep-start',audioReady&&!exam&&!sweepStarting&&s.status!=='playing');
  setEnabled('sweep-stop',s.status==='playing'||sweepStarting);
  setEnabled('sweep-heard',s.status==='playing');
  setEnabled('sweep-not',s.status==='playing');
@@ -241,13 +253,13 @@ function render(){
   'comparison-neither','comparison-uncertain'])setEnabled(id,needsComparisonReply);
  const elapsed=data.status==='playing'?Math.min(3000,performance.now()-toneStartVisual):0;
  $('tone-progress').value=elapsed;
- setEnabled('tone-next',data.status==='ready');
+ setEnabled('tone-next',audioReady&&data.status==='ready');
  setEnabled('tone-stop',['starting','playing','ready'].includes(data.status)||comparing);
  setEnabled('tone-heard',data.status==='playing'&&!comparing);
  setEnabled('tone-not',data.status==='playing'&&!comparing);
- setEnabled('tone-confirm',data.status==='awaiting-confirmation'&&!comparing&&!needsComparisonReply);
+ setEnabled('tone-confirm',audioReady&&data.status==='awaiting-confirmation'&&!comparing&&!needsComparisonReply);
  setEnabled('tone-skip',data.status==='awaiting-confirmation'&&!comparing&&!needsComparisonReply);
- setEnabled('tone-resume',data.status==='paused');
+ setEnabled('tone-resume',audioReady&&data.status==='paused');
  setEnabled('tone-finish',data.status==='completed'&&exam?.getSession().status==='ready');
  const list=document.createElement('ul');
  for(const b of data.bands){
@@ -271,6 +283,7 @@ async function run(action){
 }
 $('sweep-start').addEventListener('click',()=>run(async()=>{
  if(exam)throw Error('El examen de tonos ya se inició.');
+ if(!audioReady)throw Error('El navegador no cumple los mínimos de Web Audio para reproducir tonos.');
  sweepStarting=true;render();
  try{await sweepRunner.start({
   userInitiated:true,plan:sweepPlan,digitalLevelDbfs:-60,
@@ -292,6 +305,7 @@ $('plan').addEventListener('click',()=>run(async()=>{
 }));
 $('tone-next').addEventListener('click',()=>run(async()=>{
  if(!exam)throw Error('Primero completa el barrido');
+ if(!audioReady)throw Error('Web Audio no disponible; no se puede reproducir el siguiente tono.');
  const res=await exam.playNext({userInitiated:true});
  if(!res.started)throw Error('El audio no se inició o fue interrumpido.');
  toneStartVisual=performance.now();
@@ -306,6 +320,7 @@ $('tone-stop').addEventListener('click',()=>run(()=>{
 $('tone-confirm').addEventListener('click',()=>run(async()=>{
  const s=exam?.snapshot();
  if(s?.status!=='awaiting-confirmation')throw Error('No hay contradicción que comparar.');
+ if(!audioReady)throw Error('Web Audio no disponible; no se puede iniciar una comparación.');
  const last=s.bands.find(b=>b.id===s.currentBandId)?.observations.at(-1);
  if(!last)throw Error('No existe tono verificado para la comparación.');
  const plan=planHear3ContradictionComparison({
