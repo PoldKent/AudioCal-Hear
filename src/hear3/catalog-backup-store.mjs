@@ -106,7 +106,7 @@ export function createHear3CatalogStore({
       [deviceStorage,'device-local',data.dev],
       [tabStorage,'tab-session',data.tab],
     ]) {
-      if(!storage)continue;
+      if(!storage||scope.unavailable)continue;
       // Never destroy an unreadable or checksum-invalid copy by reusing the
       // ordinary rotating slot. If a sibling is healthy, use that one.
       // This is a non-destructive local strategy, not a cross-tab transaction.
