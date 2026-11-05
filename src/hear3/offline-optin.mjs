@@ -18,7 +18,7 @@ export function validateHear3OfflineManifest(doc){
    /^[A-Za-z0-9._/-]+$/.test(path)&&!path.startsWith('/')&&
    !path.split('/').some(v=>v==='.'||v==='..')&&!unique.has(path),
    'Manifest includes an unsafe or duplicate resource');
-  check(/^(hear3-preview\/|hear3-privacy\/|tests\/fixtures\/hear3-[a-z0-9-]+\.html$|src\/hear3\/[a-z0-9-]+\.mjs$)/.test(path),
+  check(/^(hear3-preview\/|hear3-privacy\/|hear3-diagnostics\/|tests\/fixtures\/hear3-[a-z0-9-]+\.html$|src\/hear3\/[a-z0-9-]+\.mjs$)/.test(path),
    'Manifest contains a resource outside experimental Hear 3.0');
   unique.add(path);
  }
