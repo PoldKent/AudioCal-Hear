@@ -50,6 +50,7 @@ const allowedFiles = new Map([
   ['/src/hear3/legacy-v2-migration.mjs', 'src/hear3/legacy-v2-migration.mjs'],
   ['/src/hear3/legacy-v2-migration-audit.mjs', 'src/hear3/legacy-v2-migration-audit.mjs'],
   ['/src/hear3/legacy-v2-history-view.mjs', 'src/hear3/legacy-v2-history-view.mjs'],
+  ['/src/hear3/legacy-v2-history-vault.mjs', 'src/hear3/legacy-v2-history-vault.mjs'],
   ['/src/hear3/web-audio-adapter.mjs', 'src/hear3/web-audio-adapter.mjs'],
   ['/src/hear3/manual-channel-verification.mjs', 'src/hear3/manual-channel-verification.mjs'],
   ['/src/hear3/sweep-planner.mjs', 'src/hear3/sweep-planner.mjs'],
