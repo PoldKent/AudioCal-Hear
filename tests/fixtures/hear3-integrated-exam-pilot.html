@@ -133,8 +133,29 @@ La preamplificación y el headroom no están verificados en el dispositivo.</p>
 <button type="button" id="eq-export" data-testid="eq-export" disabled>
 Descargar curva EQ experimental JSON para revisión (no preset de dispositivo)</button>
 </section>
+<section aria-labelledby="transfer-heading">
+<h2 id="transfer-heading">6. Revisar conversión a controles del equipo</h2>
+<p class="notice">Esta función <strong>no mueve ningún control</strong>. Solo convierte
+ ganancias EQ provisionales a una escala de dB declarada por ti y únicamente
+ si las frecuencias coinciden exactamente. No presume que una posición
+ física equivale a dB, que la descripción pertenece al equipo conectado ni
+ que su respuesta acústica esté verificada.</p>
+<label for="transfer-file">Archivo JSON con el perfil de controles gráficos
+ (`{deviceId, type:"graphic", bands:[...]}` o propiedad `graphicEq`)</label>
+<input id="transfer-file" data-testid="transfer-file" type="file"
+ accept=".json,application/json">
+<div class="controls">
+<button type="button" id="transfer-preview" data-testid="transfer-preview" disabled>
+Revisar redondeo de controles, sin aplicar</button>
+<button type="button" id="transfer-export" data-testid="transfer-export" disabled>
+Descargar informe de transferencia (no preset)</button>
+</div>
+<p id="transfer-status" data-testid="transfer-status" role="status">
+Primero finaliza un examen y selecciona un perfil de controles.</p>
+<div id="transfer-rows" data-testid="transfer-rows" aria-label="Equivalencia provisional de controles"></div>
+</section>
 <section aria-labelledby="archive-heading">
-<h2 id="archive-heading">6. Guardar respuestas en el historial V3</h2>
+<h2 id="archive-heading">7. Guardar respuestas en el historial V3</h2>
 <p>Cuando el examen haya finalizado puedes archivar las respuestas reales como un
  <strong>registro experimental inconcluso</strong>. El EQ provisional calculado
  se puede descargar aparte, pero <strong>no se guarda como EQ validado</strong>
@@ -178,6 +199,8 @@ import {createHear3AdaptiveCatalogArchive} from '../../src/hear3/adaptive-catalo
 import {calculateHear3BoundedJointEq} from '../../src/hear3/bounded-eq-engine.mjs';
 import {modelHear3GraphicEqDigitalTransfer}
  from '../../src/hear3/eq-digital-transfer-model.mjs';
+import {previewHear3EqControlTransfer}
+ from '../../src/hear3/eq-control-quantization.mjs';
 import {createHear3ContextualToneComparison,planHear3ContradictionComparison}
  from '../../src/hear3/contextual-tone-comparison.mjs';
 
@@ -201,8 +224,10 @@ const catalogStore=createHear3CatalogStore();
 let archiveTransfer=null,archiveMessage='Primero termina el examen de tonos. No se guarda EQ.';
 let exam=null,planning=false,sweepStarting=false;
 let eqDraft=null,eqDigitalModel=null,eqDigitalModelError=null,renderedEq=undefined;
+let eqTransferReview=null,renderedTransfer=undefined;
 function updateEqDraft(){
  eqDraft=null;eqDigitalModel=null;eqDigitalModelError=null;
+ eqTransferReview=null;renderedTransfer=undefined;
  if(!exam)return;
  const evidence=exam.snapshot(),session=exam.getSession();
  if(evidence.status==='completed'&&session.status==='completed'){
@@ -222,6 +247,39 @@ function updateEqDraft(){
    eqDigitalModelError=error?.message??'No se pudo modelar este filtro digital.';
   }
  }
+}
+function renderTransfer(){
+ setEnabled('transfer-preview',Boolean(eqDraft));
+ setEnabled('transfer-export',Boolean(eqTransferReview));
+ if(renderedTransfer===eqTransferReview)return;
+ renderedTransfer=eqTransferReview;
+ const root=$('transfer-rows');
+ root.replaceChildren();
+ if(!eqTransferReview){
+  $('transfer-status').textContent=eqDraft
+   ?'Selecciona un perfil JSON con la escala de cada control y revisa la transferencia. No se aplica ningún EQ.'
+   :'Primero finaliza el examen de tonos; después puedes seleccionar un perfil JSON de controles. No se aplica ningún EQ.';
+  return;
+ }
+ const r=eqTransferReview;
+ $('transfer-status').textContent='Escalas dB representables: '+
+  r.mappedCount+' de '+r.deviceBandCount+'. Sin equivalencia comprobable: '+
+  r.unmappedCount+'. Error RMS del redondeo: '+
+  (r.rmsErrorDb===null?'no disponible':r.rmsErrorDb+' dB')+
+  '. No se verificó el equipo ni se creó un preset aplicable.';
+ const ul=document.createElement('ul');
+ for(const b of r.rows){
+  const li=document.createElement('li');
+  li.textContent=b.frequencyHz+' Hz: objetivo '+(b.targetGainDb>0?'+':'')+
+   b.targetGainDb+' dB; '+(b.attainableDb===null
+    ?'sin conversión a una posición real ('+b.transferStatus+')'
+    :'valor en escala declarada '+(b.attainableDb>0?'+':'')+b.attainableDb+
+     ' dB; diferencia '+b.residualDb+' dB; '+b.transferStatus+
+     (b.clampedToRange?'; limitado por rango':'')+
+     (b.roundedToStep?'; redondeado al paso':''));
+  ul.append(li);
+ }
+ root.append(ul);
 }
 function renderEq(){
  if(renderedEq===eqDraft)return;
@@ -313,6 +371,7 @@ function render(){
  setEnabled('archive-commit',Boolean(archiveTransfer));
  $('archive-status').textContent=archiveMessage;
  renderEq();
+ renderTransfer();
  const durability=exam?.getPersistence();
  $('recovery-status').textContent=local.checkpoint
   ?'Copia local disponible ('+local.durability+'). '+
@@ -501,6 +560,30 @@ for(const id of ['archive-device','archive-profile','archive-category']){
  $(id).addEventListener('change',discardArchive);
 }
 $('archive-category').addEventListener('change',()=>run(()=>updateEqDraft()));
+$('transfer-file').addEventListener('change',()=>{
+ eqTransferReview=null;renderTransfer();
+});
+$('transfer-preview').addEventListener('click',()=>run(async()=>{
+ eqTransferReview=null;renderedTransfer=undefined;
+ if(!eqDraft)throw Error('Finaliza el examen antes de revisar una transferencia.');
+ const file=$('transfer-file').files?.[0];
+ if(!file||file.size===0||file.size>131072)
+  throw Error('Selecciona un perfil JSON de controles de hasta 128 KiB.');
+ const raw=await file.text();
+ if($('transfer-file').files?.[0]!==file)
+  throw Error('El archivo cambió durante la lectura; vuelve a revisar.');
+ const profile=JSON.parse(raw);
+ eqTransferReview=previewHear3EqControlTransfer({
+  eqDraft,graphicEqProfile:profile?.graphicEq??profile,
+ });
+}));
+$('transfer-export').addEventListener('click',()=>run(()=>{
+ if(!eqTransferReview)throw Error('No existe ninguna transferencia revisada.');
+ const blob=new Blob([JSON.stringify(eqTransferReview,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='hear3-transferencia-no-validada-no-aplicar.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}));
 $('eq-export').addEventListener('click',()=>run(()=>{
  if(!eqDraft)throw Error('No existe todavía un EQ provisional que revisar.');
  const blob=new Blob([JSON.stringify({
@@ -548,6 +631,7 @@ window.hear3IntegratedPilot=Object.freeze({
  comparisonReports:()=>comparisonReports.map(r=>({...r})),
  eqDraft:()=>eqDraft?structuredClone(eqDraft):null,
  eqDigitalModel:()=>eqDigitalModel?structuredClone(eqDigitalModel):null,
+ eqTransferReview:()=>eqTransferReview?structuredClone(eqTransferReview):null,
 });
 const ticker=setInterval(render,120);
 window.addEventListener('pagehide',()=>{

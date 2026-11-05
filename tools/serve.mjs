@@ -20,6 +20,7 @@ const allowedFiles = new Map([
   ['/src/hear3/read-throttle.mjs', 'src/hear3/read-throttle.mjs'],
   ['/src/hear3/bounded-eq-engine.mjs', 'src/hear3/bounded-eq-engine.mjs'],
   ['/src/hear3/eq-digital-transfer-model.mjs', 'src/hear3/eq-digital-transfer-model.mjs'],
+  ['/src/hear3/eq-control-quantization.mjs', 'src/hear3/eq-control-quantization.mjs'],
   ['/hear3-privacy/', 'hear3-privacy/index.html'],
   ['/hear3-privacy/index.html', 'hear3-privacy/index.html'],
   ['/hear3-diagnostics/', 'hear3-diagnostics/index.html'],
