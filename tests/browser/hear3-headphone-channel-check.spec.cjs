@@ -112,3 +112,20 @@ test('P0 user stop invalidates the incomplete stereo check and reload is silent'
  expect(await page.evaluate(()=>window.__channelToneStarts.length)).toBe(0);
  await expect(page.getByTestId('play')).toBeDisabled();
 });
+
+
+test('D-058 Escape silences a running manual stereo check without attributing any ear',async({page})=>{
+ await mockAudio(page);
+ await page.goto(PILOT);
+ await confirmPhysicalSetup(page);
+ await page.getByTestId('play').focus();
+ await page.keyboard.press('Enter');
+ await expect(page.getByTestId('check-status')).toContainText('Reproduciendo');
+ await page.keyboard.press('Escape');
+ await expect(page.getByTestId('check-status')).toContainText('interrumpida');
+ const status=await page.evaluate(()=>window.hear3ChannelPilot.snapshot());
+ expect(status.audioPlaying).toBe(false);
+ expect(status.perEarExamEnabled).toBe(false);
+ expect(status.observations).toHaveLength(0);
+ await expect(page.getByTestId('heard-left')).toBeDisabled();
+});
