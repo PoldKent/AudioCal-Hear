@@ -21,6 +21,7 @@
     "src/hear3/device-profile-contract.mjs",
     "src/hear3/eq-control-quantization.mjs",
     "src/hear3/eq-digital-transfer-model.mjs",
+    "src/hear3/legacy-v2-history-vault.mjs",
     "src/hear3/legacy-v2-history-view.mjs",
     "src/hear3/legacy-v2-migration-audit.mjs",
     "src/hear3/legacy-v2-migration.mjs",

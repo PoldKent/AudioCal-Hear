@@ -150,3 +150,33 @@ test('discard prevents late commit even after an authorized preview',()=>{
  }),/Preview/);
  assert.equal(f.local.getItem('audiocal-language-v1'),'es');
 });
+
+
+test('imported lossless V2 vault is scoped V3 private data but original V2 stays intact',()=>{
+ const f=fixture();
+ f.local.setItem('hear3:v2-history:v1:0','OPAQUE-HISTORIC-EXPORT');
+ f.tab.setItem('hear3:v2-history:v1:1','PORTABLE-COPY');
+ const preview=f.cleanup.inspect({scope:'v3-only'});
+ assert.equal(preview.deviceLocal.v3LegacyHistoryVault,1);
+ assert.equal(preview.tabSession.v3LegacyHistoryVault,1);
+ assert.equal(preview.allKnownEntries,7);
+ assert.equal(f.local.getItem('audiocal-hear-profiles-v1'),'V2-JSON');
+ const done=f.cleanup.commit({
+  userInitiated:true,confirmed:true,phrase:HEAR_STORAGE_V3_PHRASE,
+ });
+ assert.equal(done.cleared,true);
+ assert.equal(f.local.getItem('hear3:v2-history:v1:0'),null);
+ assert.equal(f.tab.getItem('hear3:v2-history:v1:1'),null);
+ assert.equal(f.local.getItem('audiocal-hear-profiles-v1'),'V2-JSON');
+ assert.equal(f.local.getItem('third-party-privacy'),'KEEP');
+});
+test('new historical copy after privacy preview invalidates deletion before any key removal',()=>{
+ const f=fixture();
+ f.cleanup.inspect({scope:'v3-only'});
+ f.local.setItem('hear3:v2-history:v1:1','NEW-COPY-AFTER-PREVIEW');
+ assert.throws(()=>f.cleanup.commit({
+  userInitiated:true,confirmed:true,phrase:HEAR_STORAGE_V3_PHRASE,
+ }),/changed since preview/);
+ assert.equal(f.local.getItem('hear3:catalog:v1:0'),'CATALOG-A');
+ assert.equal(f.local.getItem('hear3:v2-history:v1:1'),'NEW-COPY-AFTER-PREVIEW');
+});
