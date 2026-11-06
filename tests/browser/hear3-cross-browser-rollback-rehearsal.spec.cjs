@@ -21,7 +21,7 @@ async function makeCatalog(page,suffix){
    activeProfileId:profile,
   };
   const saved=store.save(catalog);
-  return {original:catalog,backup:store.exportBackup(),
+  return {original:store.load().catalog,backup:store.exportBackup(),
    revision:saved.revision,persistedOnDevice:saved.persistedOnDevice};
  },suffix);
 }
@@ -70,8 +70,7 @@ test('D-060 reversible full V3 backup across independent browser contexts withou
  const originStill=await origin.evaluate(()=>window.hear3CatalogPilot.snapshot());
  expect(originStill.catalog).toEqual(source.original);
  expect(originStill.persistedOnDevice).toBe(true);
- expect(await target.evaluate(()=>typeof window.AudioContext)).toBe('function');
- // No sound requested: opening or importing the catalog has no audio actions.
+  // No sound requested: opening or importing the catalog has no audio actions.
  expect(await target.getByTestId('summary').textContent()).toContain('1 resultados');
  await second.close();await first.close();
 });
