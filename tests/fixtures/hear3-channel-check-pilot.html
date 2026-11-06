@@ -121,6 +121,12 @@ $('retry').addEventListener('click',()=>action(()=>{
  $('route').checked=false;$('low-volume').checked=false;
  controller.restart({userInitiated:true});
 }));
+document.addEventListener('keydown',event=>{
+ if(event.key!=='Escape'||event.repeat||event.altKey||event.ctrlKey||event.metaKey)return;
+ if(!controller.snapshot().audioPlaying)return;
+ event.preventDefault();
+ void action(()=>controller.interrupt('keyboard-escape'));
+});
 window.hear3ChannelPilot=Object.freeze({snapshot:()=>controller.snapshot()});
 window.addEventListener('pagehide',()=>{void controller.dispose();},{once:true});
 render();

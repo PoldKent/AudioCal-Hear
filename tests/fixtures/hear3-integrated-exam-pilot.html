@@ -8,7 +8,12 @@
 :root{color-scheme:light dark;font-family:system-ui,sans-serif}
 body{max-width:46rem;margin:1.2rem auto;padding:0 1rem 3rem;line-height:1.55}
 h1{font-size:clamp(1.6rem,5vw,2.2rem)}button{font:inherit;min-height:2.75rem;padding:.65rem .85rem;touch-action:manipulation}
-button:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
+ outline:3px solid currentColor;outline-offset:3px}
+.skip-link{position:absolute;top:-100px;left:12px;background:Canvas;color:CanvasText;
+ padding:.7rem;border:2px solid;z-index:10}
+.skip-link:focus{top:8px}
+#eq-heading:focus{outline:3px solid currentColor;outline-offset:3px}
 .controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
 button{width:100%}.notice{border:1px solid;border-radius:.6rem;padding:.85rem;margin:1rem 0}
 progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bottom:1.2rem;margin-bottom:1.5rem}
@@ -24,13 +29,19 @@ progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bo
 </style>
 </head>
 <body>
-<main>
+<a class="skip-link" href="#main-content" data-testid="skip-link">Saltar al contenido principal</a>
+<main id="main-content" tabindex="-1">
 <h1>Hear 3.0 · barrido → tonos de confirmación</h1>
 <p class="notice"><strong>Piloto de desarrollo, no examen clínico ni EQ validado.</strong>
  Mantén el volumen físico bajo, cómodo y fijo. Detén el sonido ante molestias.
  Los niveles dBFS no miden presión sonora (dB SPL) ni prueban seguridad acústica.
- Cada reproducción requiere una acción explícita. El EQ matemático provisional que aparece
+ Cada reproducción requiere una acción explícita. Durante un tono o barrido puedes
+ pulsar <kbd>Escape</kbd> para detener el sonido y conservar la sesión como
+ interrumpida, sin registrar una respuesta auditiva.
+ El EQ matemático provisional que aparece
  al finalizar no se aplicará automáticamente ni está calibrado para tu equipo.</p>
+<p id="keyboard-stop-status" data-testid="keyboard-stop-status" role="status" aria-live="polite">
+Para detener audio iniciado, pulsa Escape.</p>
 <p id="audio-preflight" data-testid="audio-preflight" role="status">
 Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automáticamente.</p>
 <section aria-labelledby="sweep-heading">
@@ -117,7 +128,7 @@ He comprobado la salida y el volumen físico bajo antes de reanudar</label>
 <div id="result" data-testid="result" role="status">Sin resultados confirmados.</div>
 </section>
 <section aria-labelledby="eq-heading">
-<h2 id="eq-heading">5. EQ matemático provisional · una sola curva conjunta</h2>
+<h2 id="eq-heading" tabindex="-1">5. EQ matemático provisional · una sola curva conjunta</h2>
 <p class="notice">Las ganancias indicadas son hipótesis experimentales derivadas de
  tus respuestas subjetivas con señales en dBFS. No miden una pérdida auditiva,
  no verifican clipping, no certifican el equipo ni el nivel de presión acústica.
@@ -207,6 +218,10 @@ import {createHear3ContextualToneComparison,planHear3ContradictionComparison}
  from '../../src/hear3/contextual-tone-comparison.mjs';
 
 const $=id=>document.getElementById(id);
+function setLiveText(id,value){
+ const node=$(id),text=String(value);
+ if(node.textContent!==text)node.textContent=text;
+}
 const audioPreflight=inspectHear3AudioCapabilities();
 const audioReady=audioPreflight.canAttemptJointTone;
 $('audio-preflight').textContent=audioReady
@@ -344,9 +359,9 @@ function setEnabled(id,enabled){$(id).disabled=!enabled;}
 function render(){
  const s=sweepRunner.snapshot();
  const prev=sweepRunner.lastResult();
- $('sweep-status').textContent=s.status==='playing'?'Barrido en reproducción':
+ setLiveText('sweep-status',s.status==='playing'?'Barrido en reproducción':
   sweepStarting?'Preparando barrido':prev?.status==='completed'?'Barrido finalizado':
-  prev?.status==='interrupted'?'Barrido interrumpido; sin confirmación automática':'Listo para comenzar';
+  prev?.status==='interrupted'?'Barrido interrumpido; sin confirmación automática':'Listo para comenzar');
  $('sweep-progress').value=s.status==='playing'?s.elapsedSeconds:
   prev?.status==='completed'?20:0;
  const sweeping=s.status==='playing';
@@ -384,11 +399,11 @@ function render(){
  if(!exam)return;
  const data=currentExam;
  const current=data.bands.find(b=>b.id===data.currentBandId);
- $('tone-status').textContent=data.status==='completed'?'Todos los tonos planificados están revisados':
+ setLiveText('tone-status',data.status==='completed'?'Todos los tonos planificados están revisados':
   data.status==='paused'?'Pausado: requiere reanudación explícita':
   data.status==='awaiting-confirmation'?'Contradicción: confirma o conserva inconclusa':
   data.status==='playing'?'Tono en reproducción':
-  data.status==='starting'?'Preparando tono':'Listo para el siguiente tono';
+  data.status==='starting'?'Preparando tono':'Listo para el siguiente tono');
  $('coverage').textContent='Bandas revisadas: '+data.completedBands+' de '+data.totalBands;
  $('frequency').textContent=current?current.frequencyHz+' Hz':'—';
  $('dbfs').textContent=data.status==='playing'?
@@ -399,13 +414,13 @@ function render(){
  const comparing=['first','gap','second'].includes(cmp.state);
  const needsComparisonReply=cmp.state==='awaiting-response'&&
    data.status==='awaiting-confirmation';
- $('comparison-status').textContent=cmp.state==='first'?'Comparación: reproduciendo el primer tono':
+ setLiveText('comparison-status',cmp.state==='first'?'Comparación: reproduciendo el primer tono':
    cmp.state==='gap'?'Comparación: separación silenciosa entre tonos':
    cmp.state==='second'?'Comparación: reproduciendo el segundo tono':
    needsComparisonReply?'Los dos tonos terminaron. Elige una respuesta perceptiva.':
    cmp.state==='interrupted'?'Comparación interrumpida: sin evidencia perceptiva nueva':
    cmp.state==='completed'?'Última comparación terminada. Respuestas: '+comparisonReports.length:
-   'Comparaciones contextuales: ninguna.';
+   'Comparaciones contextuales: ninguna.');
  for(const id of ['comparison-first','comparison-second','comparison-similar',
   'comparison-neither','comparison-uncertain'])setEnabled(id,needsComparisonReply);
  const elapsed=data.status==='playing'?Math.min(3000,performance.now()-toneStartVisual):0;
@@ -525,6 +540,7 @@ $('tone-resume').addEventListener('click',()=>run(()=>{
 $('tone-finish').addEventListener('click',()=>run(()=>{
  exam.finish();
  updateEqDraft();
+ $('eq-heading').focus();
 }));
 $('recover-exam').addEventListener('click',()=>run(async()=>{
  if(exam)throw Error('Ya hay un examen en esta página.');
@@ -636,6 +652,21 @@ window.hear3IntegratedPilot=Object.freeze({
  eqDraft:()=>eqDraft?structuredClone(eqDraft):null,
  eqDigitalModel:()=>eqDigitalModel?structuredClone(eqDigitalModel):null,
  eqTransferReview:()=>eqTransferReview?structuredClone(eqTransferReview):null,
+});
+document.addEventListener('keydown',event=>{
+ if(event.key!=='Escape'||event.repeat||event.altKey||event.ctrlKey||event.metaKey)return;
+ const sweep=sweepRunner.snapshot().status==='playing'||sweepStarting;
+ const compare=['first','gap','second'].includes(comparison.snapshot().state);
+ const tone=['playing','starting'].includes(exam?.snapshot().status);
+ if(!sweep&&!compare&&!tone)return;
+ event.preventDefault();
+ void run(()=>{
+  if(compare)comparison.interrupt('keyboard-escape');
+  if(sweep)sweepRunner.stop('keyboard-escape');
+  if(tone)exam.interrupt({routeMayHaveChanged:false});
+  $('keyboard-stop-status').textContent=
+   'Audio digital detenido con Escape. Ninguna respuesta nueva registrada.';
+ });
 });
 const ticker=setInterval(render,120);
 window.addEventListener('pagehide',()=>{
