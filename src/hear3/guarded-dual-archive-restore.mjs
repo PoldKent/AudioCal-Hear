@@ -107,7 +107,7 @@ export function createHear3GuardedDualRestore({
    desiredHistory={sourceText:importedHistory.sourceText,
     activeProfileId:importedHistory.activeProfileId};
   }catch(error){discard();throw error;}
-  const after=identity(desiredCatalog,desiredHistory);
+  const after=identity({catalog:desiredCatalog},desiredHistory);
   proposal={
    baseline:identity(before.catalog,before.history),target:after,
    catalogRevision:before.catalog.revision,historyRevision:before.history.revision,
