@@ -197,17 +197,23 @@ export function createHear3GuardedDualRestore({
   discard();
   return executed.response;
  }
- function acknowledgeCoherentRecovery({userInitiated=false,confirmed=false}={}){
+ async function acknowledgeCoherentRecovery({userInitiated=false,confirmed=false}={}){
   check(userInitiated===true&&confirmed===true,
    'Explicit inspection and acknowledgement required');
-  const record=inspectJournal();
-  check(record,'No pending recovery marker to acknowledge');
-  const s=status();
-  check(s.coherentSnapshotVerified===true,
-   'Recovery incomplete: V3 and V2 do not match the same verified before/after pair');
-  check(removeJournal(),'Cannot clear recovery marker; preserve it for manual investigation');
-  discard();
-  return {acknowledged:true,matches:s.matches,restoredAutomatically:false};
+  const expectedRevision=catalogStore.load().revision;
+  // Recovery acknowledgement is a mutation too: it must not race a
+  // cooperating tab that is changing either archive under the same lock.
+  const executed=await coordinator.run(()=>{
+   const record=inspectJournal();
+   check(record,'No pending recovery marker to acknowledge');
+   const s=status();
+   check(s.coherentSnapshotVerified===true,
+    'Recovery incomplete: V3 and V2 do not match the same verified before/after pair');
+   check(removeJournal(),'Cannot clear recovery marker; preserve it for manual investigation');
+   discard();
+   return {acknowledged:true,matches:s.matches,restoredAutomatically:false};
+  },{expectedRevision});
+  return executed.response;
  }
  return Object.freeze({preview,exportPreviousV3,exportPreviousV2,commit,
   status,acknowledgeCoherentRecovery,discard});
