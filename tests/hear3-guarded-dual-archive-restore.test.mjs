@@ -120,7 +120,7 @@ test('interrupted V2 stage keeps durable in-progress marker and rejects mixed-pa
  assert.throws(()=>next.create().preview({
   catalogBackupText:a.catalogText,historyBackupText:a.historyText,
  }),/Unresolved dual-restore/);
- assert.throws(()=>next.create().acknowledgeCoherentRecovery({
+ await assert.rejects(()=>next.create().acknowledgeCoherentRecovery({
   userInitiated:true,confirmed:true,
  }),/Recovery incomplete/);
  assert.ok(to.storage.getItem(HEAR3_DUAL_RESTORE_JOURNAL_KEY));
@@ -140,9 +140,9 @@ test('interrupted V2 stage keeps durable in-progress marker and rejects mixed-pa
  const verified=next.create().status();
  assert.equal(verified.coherentSnapshotVerified,true);
  assert.equal(verified.matches,'previous-baseline');
- assert.equal(next.create().acknowledgeCoherentRecovery({
+ assert.equal((await next.create().acknowledgeCoherentRecovery({
   userInitiated:true,confirmed:true,
- }).acknowledged,true);
+ })).acknowledged,true);
  assert.equal(next.create().status().state,'clear');
  assert.equal(original.historyText,next.vault.exportStored());
 });
@@ -157,9 +157,9 @@ test('failed V3 write never attempts V2 and keeps baseline recoverable after rel
  assert.equal(reopened.vault.load().sourceText,v2('b'));
  assert.equal(reopened.create().status().matches,'previous-baseline');
  target.storage.blockedPrefixes=[];
- assert.equal(reopened.create().acknowledgeCoherentRecovery({
+ assert.equal((await reopened.create().acknowledgeCoherentRecovery({
   userInitiated:true,confirmed:true,
- }).acknowledged,true);
+ })).acknowledged,true);
 });
 
 test('stale V2 vault revision blocks joint restore before any journal mutation',async()=>{
@@ -218,8 +218,8 @@ test('when marker removal is blocked, completed pair is recognizable and explici
  assert.equal(state.state,'completed');
  assert.equal(state.matches,'restored-target');
  dst.storage.blockDelete=false;
- assert.equal(dst.create().acknowledgeCoherentRecovery({
+ assert.equal((await dst.create().acknowledgeCoherentRecovery({
   userInitiated:true,confirmed:true,
- }).matches,'restored-target');
+ })).matches,'restored-target');
  assert.equal(dst.create().status().state,'clear');
 });
