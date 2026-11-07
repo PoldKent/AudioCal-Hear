@@ -6,13 +6,16 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 const hostname = '127.0.0.1';
 const port = Number(process.env.PORT || 4177);
 const mime = new Map([['.html','text/html; charset=utf-8'],['.js','text/javascript; charset=utf-8'],['.mjs','text/javascript; charset=utf-8'],['.json','application/json; charset=utf-8'],['.css','text/css; charset=utf-8']]);
-// Only this local development server serves the isolated Hear 3.0 pilot.
-// The public GitHub Pages site still serves index.html and does not link it.
+// Explicit development/CI allowlist for the stable page and isolated Hear 3.0 pilots.
+// The static public preview links experiments without replacing Hear 2.0.
 const allowedFiles = new Map([
   ['/', 'index.html'],
   ['/index.html', 'index.html'],
   ['/hear3-preview/', 'hear3-preview/index.html'],
   ['/hear3-preview/index.html', 'hear3-preview/index.html'],
+  ['/hear3-dual-restore/', 'hear3-dual-restore/index.html'],
+  ['/hear3-dual-restore/index.html', 'hear3-dual-restore/index.html'],
+  ['/src/hear3/guarded-dual-archive-restore.mjs', 'src/hear3/guarded-dual-archive-restore.mjs'],
   ['/hear3-offline-manifest.json', 'hear3-offline-manifest.json'],
   ['/hear3-offline-sw.js', 'hear3-offline-sw.js'],
   ['/src/hear3/offline-optin.mjs', 'src/hear3/offline-optin.mjs'],
