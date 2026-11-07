@@ -125,6 +125,7 @@ test('interrupted V2 restore is flagged after reload, blocks second restore and 
   vault.previewPackage(historyBackup);
   vault.commit({userInitiated:true,confirmed:true,
    confirmSourceBackupExported:true,confirmOverwrite:true});
+  localStorage.setItem('audiocal-hear-profiles-v1','ORIGINAL-V2-before');
  },a);
  await prepare(page,source);
  await page.evaluate(()=>{
