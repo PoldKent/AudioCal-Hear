@@ -1,7 +1,7 @@
 const {test,expect}=require('@playwright/test');
 const PILOT='/tests/fixtures/hear3-integrated-exam-pilot.html';
-async function fakeAudio(page){
- await page.addInitScript(()=>{
+async function fakeAudio(page,{sweepAutoEnds=true}={}){
+ await page.addInitScript(({sweepAutoEnds})=>{
   window.__accessibilityStarts=0;
   class Param{
    setValueAtTime(){}linearRampToValueAtTime(){}
@@ -14,7 +14,7 @@ async function fakeAudio(page){
     const osc={frequency:new Param(),onended:null,
      connect(){},disconnect(){},
      start(){window.__accessibilityStarts++;},
-     stop(at){if(at>=15)setTimeout(()=>osc.onended?.(),45);}
+     stop(at){if(sweepAutoEnds&&at>=15)setTimeout(()=>osc.onended?.(),45);}
     };
     return osc;
    }
@@ -24,7 +24,7 @@ async function fakeAudio(page){
    async close(){this.state='closed';}
   }
   window.AudioContext=AudioCtx;window.webkitAudioContext=AudioCtx;
- });
+ },{sweepAutoEnds});
 }
 test('D-058 keyboard skip link goes to main content; all essential status live regions are labeled',async({page})=>{
  await page.goto(PILOT);
@@ -40,7 +40,9 @@ test('D-058 keyboard skip link goes to main content; all essential status live r
  await expect(page.getByTestId('skip-link')).toHaveAttribute('href','#main-content');
 });
 test('D-058 Escape stops an active sweep without producing a heard/not-heard observation',async({page})=>{
- await fakeAudio(page);await page.goto(PILOT);
+ // Hold the fake scheduled end open: a 45 ms completion previously raced
+ // the real keyboard event under loaded CI and incorrectly tested idle Escape.
+ await fakeAudio(page,{sweepAutoEnds:false});await page.goto(PILOT);
  await page.getByTestId('sweep-start').focus();
  await page.keyboard.press('Enter');
  await expect(page.getByTestId('sweep-status')).toContainText('Barrido en reproducción');
