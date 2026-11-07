@@ -97,6 +97,7 @@
     <p class="section-intro">Soporte técnico: <a href="../hear3-diagnostics/">revisar o descargar un diagnóstico local</a> de capacidades del navegador, sin respuestas auditivas ni envío automático.</p>
     <p class="section-intro">Fotografías: <a href="../hear3-photo-privacy/">revisar y recodificar localmente una imagen</a> a un PNG nuevo para evitar copiar intencionalmente metadatos originales. No se sube ni se guarda la foto y no se detecta un EQ automáticamente.</p>
     <p class="section-intro">Verificación voluntaria: <a href="../tests/fixtures/hear3-channel-check-pilot.html">comprobar subjetivamente los canales izquierdo y derecho de auriculares</a> con acciones explícitas y modo conjunto por defecto. No valida separación física ni habilita automáticamente un examen por oído.</p>
+    <p class="section-intro">Restauración experimental: <a href="../hear3-dual-restore/">comprobar y restaurar conjuntamente los archivos V3 y V2 conservado</a>, con dos respaldos previos y detección de interrupciones. No garantiza una transacción atómica ni recuperación ante pérdida física del dispositivo.</p>
     <p class="section-intro">Son prototipos funcionales aislados y cubiertos por pruebas automatizadas. Los resultados y la compatibilidad con dispositivos físicos todavía requieren validación adicional.</p>
     <div class="grid">
       <article class="tile">
@@ -114,7 +115,7 @@
       <article class="tile">
         <div class="kicker">Integración · Prototipo de investigación</div>
         <h3>Barrido y tonos adaptativos</h3>
-        <p>Prueba un recorrido experimental: barrido inicial y luego tonos individuales dentro de límites digitales ya autorizados. Detiene el sonido al responder, solicita confirmación ante contradicciones y deja las bandas sin evidencia como inconclusas. No genera todavía ganancias EQ.</p>
+        <p>Prueba un recorrido experimental: barrido inicial y luego tonos individuales dentro de límites digitales ya autorizados. Detiene el sonido al responder, solicita confirmación ante contradicciones y deja las bandas sin evidencia como inconclusas. Puede mostrar una hipótesis EQ matemática provisional, no aplicable automáticamente ni calibrada acústicamente.</p>
         <a href="../tests/fixtures/hear3-integrated-exam-pilot.html">Abrir piloto integrado</a>
       </article>
       <article class="tile">
