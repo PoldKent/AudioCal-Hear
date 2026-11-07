@@ -33,7 +33,7 @@ async function seed(page,id){
   if(!store.save(catalog).persistedOnDevice)throw Error('V3 setup did not persist');
   vault.preview(oldText);vault.exportPending();
   if(!vault.commit({userInitiated:true,confirmed:true,
-   confirmSourceBackupExported:true}).persistedOnDevice)throw Error('V2 setup did not persist');
+   confirmSourceBackupExported:true,confirmOverwrite:true}).persistedOnDevice)throw Error('V2 setup did not persist');
   localStorage.setItem('audiocal-hear-profiles-v1','ORIGINAL-V2-'+id);
   return {catalog:store.load().catalog,history:oldText,
    catalogBackup:store.exportBackup(),historyBackup:vault.exportStored(),
