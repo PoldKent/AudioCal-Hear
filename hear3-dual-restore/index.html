@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hear 3 · restauración conjunta protegida V2/V3 · experimento</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif}
+body{max-width:49rem;margin:1.5rem auto;padding:0 1rem;line-height:1.55}
+button,input{font:inherit;box-sizing:border-box;min-height:2.75rem}
+button{display:block;width:100%;margin:.7rem 0;padding:.7rem;touch-action:manipulation}
+input[type=file]{display:block;width:100%;padding:.5rem 0;margin:.25rem 0 1rem}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+.notice{border:1px solid;border-radius:.5rem;padding:1rem}
+p{overflow-wrap:anywhere}
+fieldset{border:1px solid;border-radius:.5rem;padding:1rem;margin:1rem 0}
+label{display:block;font-weight:600}
+[role=alert]{min-height:1.5rem}
+.skip{position:absolute;left:-10000px}.skip:focus{position:static}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a href="#main" class="skip">Saltar al contenido principal</a>
+<main id="main" tabindex="-1">
+<h1>Restaurar V2 y V3 juntos · piloto experimental</h1>
+<p class="notice"><strong>No modifica Hear 2.0.</strong> Esta opción solo sirve si ya existen
+un catálogo V3 y una copia histórica V2 guardados en este navegador. No reproduce audio ni aplica
+ecualización. Las restauraciones en dos claves <strong>NO son atómicas</strong>; un corte puede
+exigir volver a restaurar manualmente ambos archivos.</p>
+<p>Antes de reemplazar, conservarás <strong>dos respaldos del estado anterior</strong> fuera del
+navegador. Este sitio solo puede solicitar la descarga, no confirmar que tu disco la guardó.</p>
+<section aria-labelledby="recover-h">
+<h2 id="recover-h">Estado de recuperación anterior</h2>
+<p data-testid="recovery-status" id="recovery-status" role="status" aria-live="polite"></p>
+<button type="button" id="recovery-review" data-testid="recovery-review">
+Revisar estado de los dos almacenes</button>
+<button type="button" id="recovery-ack" data-testid="recovery-ack" disabled>
+Reconocer pareja coherente y retirar marcador de recuperación</button>
+</section>
+<section aria-labelledby="source-h">
+<h2 id="source-h">1 · Revisar dos archivos fuente</h2>
+<label for="v3-file">Catálogo original de Hear 3.0 · JSON V3</label>
+<input type="file" id="v3-file" data-testid="v3-file" accept=".json,application/json">
+<label for="v2-file">Historial íntegro conservado de Hear 2.0 · archivo portátil V2</label>
+<input type="file" id="v2-file" data-testid="v2-file" accept=".json,application/json">
+<button type="button" id="review" data-testid="review">Comprobar ambos archivos sin escribir datos</button>
+<p id="review-status" data-testid="review-status" role="status" aria-live="polite">
+No se han revisado archivos.</p>
+</section>
+<section aria-labelledby="rollback-h">
+<h2 id="rollback-h">2 · Descargar respaldo del estado anterior</h2>
+<p>Los siguientes archivos contienen datos anteriores a la restauración. Descárgalos por separado
+y guárdalos en una ubicación externa recuperable. No son una copia nueva automática en la nube.</p>
+<button type="button" id="previous-v3" data-testid="previous-v3" disabled>
+Descargar catálogo V3 anterior</button>
+<button type="button" id="previous-v2" data-testid="previous-v2" disabled>
+Descargar historial V2 anterior</button>
+<p id="backup-status" data-testid="backup-status" role="status">Descargas previas no solicitadas.</p>
+</section>
+<section aria-labelledby="commit-h">
+<h2 id="commit-h">3 · Restaurar con confirmación</h2>
+<button type="button" id="restore" data-testid="restore" disabled>
+Reemplazar ambos archivos tras confirmar copias externas</button>
+<p data-testid="operation-status" id="operation-status" role="status" aria-live="polite">
+No se ha iniciado ninguna restauración.</p>
+<p class="notice">Si se interrumpe la segunda escritura, podría quedar una pareja incompleta.
+El diario bloquea restauraciones repetidas y permite detectar el estado tras recargar,
+pero <strong>no repara automáticamente datos parciales</strong>. Usa entonces los dos respaldos
+anteriores desde los importadores independientes del
+<a href="../tests/fixtures/hear3-catalog-pilot.html">catálogo V3/V2</a>,
+comprueba ambos y vuelve a esta pantalla para reconocer la recuperación.</p>
+</section>
+<p id="error" data-testid="error" role="alert"></p>
+<p><a href="../hear3-preview/">Volver a Hear 3.0 experimental</a></p>
+</main>
+<script type="module">
+import {createHear3CatalogStore} from '../src/hear3/catalog-backup-store.mjs';
+import {createHear3LosslessV2HistoryVault} from '../src/hear3/legacy-v2-history-vault.mjs';
+import {createHear3CatalogWriteCoordinator} from '../src/hear3/coordinated-catalog-writer.mjs';
+import {createHear3GuardedDualRestore} from '../src/hear3/guarded-dual-archive-restore.mjs';
+const $=id=>document.getElementById(id);
+const catalogStore=createHear3CatalogStore();
+const historyVault=createHear3LosslessV2HistoryVault();
+const coordinator=createHear3CatalogWriteCoordinator({store:catalogStore});
+const engine=createHear3GuardedDualRestore({catalogStore,historyVault,coordinator});
+let inspected=null,requestedV3=false,requestedV2=false,busy=false;
+function render(){
+ const enabled=Boolean(inspected)&&!busy;
+ $('previous-v3').disabled=!enabled;
+ $('previous-v2').disabled=!enabled;
+ $('restore').disabled=!enabled||!requestedV3||!requestedV2;
+ for(const id of ['review','v3-file','v2-file','recovery-review'])$(id).disabled=busy;
+ $('backup-status').textContent='Solicitud de descarga: V3 '+(requestedV3?'sí':'no')+
+  ', V2 '+(requestedV2?'sí':'no')+
+  '. Comprueba que ambos archivos se guardaron realmente antes de confirmar.';
+ try{
+  const s=engine.status();
+  $('recovery-status').textContent=s.state==='clear'
+   ?'No hay marcador de restauración interrumpida.'
+   :'Marcador: '+s.state+'. Pareja '+s.matches+
+    '. Coherencia local verificada: '+(s.coherentSnapshotVerified?'sí':'no')+
+    '. Compara ambos archivos, sin atribuirles autenticidad criptográfica.';
+  $('recovery-ack').disabled=busy||!s.requiresRecovery||!s.coherentSnapshotVerified;
+  if(s.requiresRecovery)$('restore').disabled=true;
+ }catch(e){
+  $('recovery-status').textContent='No se puede leer el marcador: '+e.message;
+  $('restore').disabled=true;$('recovery-ack').disabled=true;
+ }
+}
+function reset(){
+ engine.discard();inspected=null;requestedV3=false;requestedV2=false;
+ $('review-status').textContent='Archivos cambiados. Vuelve a revisar ambos orígenes.';
+ render();
+}
+$('v3-file').addEventListener('change',reset);
+$('v2-file').addEventListener('change',reset);
+function download(text,name){
+ const blob=new Blob([text],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),3000);
+}
+async function work(callback){
+ if(busy)return;
+ $('error').textContent='';busy=true;render();
+ try{await callback();}
+ catch(e){$('error').textContent=e?.message||String(e);}
+ finally{busy=false;render();}
+}
+$('review').addEventListener('click',()=>work(async()=>{
+ inspected=null;requestedV3=false;requestedV2=false;
+ const f3=$('v3-file').files?.[0],f2=$('v2-file').files?.[0];
+ if(!f3||!f2||f3.size===0||f2.size===0||
+  f3.size>2097152*4||f2.size>4194304*4)
+  throw Error('Selecciona DOS archivos JSON válidos dentro del límite permitido.');
+ const [catalogBackupText,historyBackupText]=await Promise.all([f3.text(),f2.text()]);
+ if($('v3-file').files?.[0]!==f3||$('v2-file').files?.[0]!==f2)
+  throw Error('Los archivos cambiaron durante la lectura; revísalos nuevamente.');
+ inspected=engine.preview({catalogBackupText,historyBackupText});
+ $('review-status').textContent='Revisión solo lectura: V3: '+inspected.sourceV3Devices+
+  ' equipos, '+inspected.sourceV3Profiles+' perfiles, '+inspected.sourceV3Results+
+  ' resultados. V2: '+inspected.sourceV2Profiles+' perfiles, '+
+  inspected.sourceV2HistoricalRecords+' registros históricos. '+
+  'Se requieren DOS respaldos previos y consentimiento de ambos reemplazos. Ningún dato clínico V3 nuevo se deduce de V2.';
+}));
+$('previous-v3').addEventListener('click',()=>{
+ try{download(engine.exportPreviousV3(),'hear3-antes-de-restaurar-catalogo-v3.json');requestedV3=true;}
+ catch(e){$('error').textContent=e.message;}
+ finally{render();}
+});
+$('previous-v2').addEventListener('click',()=>{
+ try{download(engine.exportPreviousV2(),'hear3-antes-de-restaurar-historial-v2.json');requestedV2=true;}
+ catch(e){$('error').textContent=e.message;}
+ finally{render();}
+});
+$('restore').addEventListener('click',()=>work(async()=>{
+ if(!inspected||!requestedV3||!requestedV2)
+  throw Error('Primero revisa los dos archivos y solicita ambos respaldos previos.');
+ if(!confirm('¿Confirmas que ambos respaldos del estado ANTERIOR quedaron guardados fuera del navegador?'))return;
+ if(!confirm('¿REEMPLAZAR el catálogo V3 y el historial V2 conservado? Son DOS escrituras distintas; una interrupción puede requerir rollback manual.'))return;
+ const result=await engine.commit({userInitiated:true,
+  confirmBothReplacements:true,confirmRollbackDownloads:true});
+ inspected=null;requestedV3=false;requestedV2=false;
+ $('review-status').textContent='Revisión consumida. Se requiere nueva revisión para otra operación.';
+ $('operation-status').textContent=result.journalCleared
+  ?'Ambos archivos se restauraron y verificaron en este navegador. Recarga para comprobar persistencia.'
+  :'Ambos archivos coinciden, pero el diario necesita reconocimiento manual; no continúes sin revisarlo.';
+}));
+$('recovery-review').addEventListener('click',()=>{
+ $('error').textContent='';render();
+});
+$('recovery-ack').addEventListener('click',()=>work(()=>{
+ const s=engine.status();
+ if(!s.coherentSnapshotVerified)
+  throw Error('Los dos almacenes no son una pareja coherente; importa los respaldos anteriores manualmente.');
+ if(!confirm('¿Revisaste el contenido de V2 y V3 y confirmas retirar el marcador? No se restaurará nada automáticamente.'))return;
+ const done=engine.acknowledgeCoherentRecovery({userInitiated:true,confirmed:true});
+ $('operation-status').textContent='Marcador retirado tras comprobar pareja: '+
+  done.matches+'. No se realizó recuperación automática.';
+}));
+render();
+</script>
+</body>
+</html>
