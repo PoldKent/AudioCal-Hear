@@ -6,6 +6,7 @@ import {createHear3LosslessV2HistoryVault}
  from '../src/hear3/legacy-v2-history-vault.mjs';
 import {createHear3GuardedDualRestore,HEAR3_DUAL_RESTORE_JOURNAL_KEY}
  from '../src/hear3/guarded-dual-archive-restore.mjs';
+import {validateHear3Catalog} from '../src/hear3/catalog-contract.mjs';
 
 class Storage{
  constructor(){this.data=new Map();this.blockedPrefixes=[];this.blockDelete=false;}
@@ -87,7 +88,7 @@ test('dual restore requires two validated files, two prior backups and explicit 
  const b3=engine.exportPreviousV3();
  await assert.rejects(()=>engine.commit(consent),/Request both prior/);
  const b2=engine.exportPreviousV2();
- assert.equal(b3,b.catalogText);
+ assert.deepEqual(JSON.parse(b3).catalog,JSON.parse(b.catalogText).catalog);
  assert.equal(b2,b.historyText);
  await assert.rejects(()=>engine.commit({userInitiated:true,
   confirmRollbackDownloads:true}),/Explicit consent/);
@@ -98,7 +99,7 @@ test('dual restore requires two validated files, two prior backups and explicit 
  assert.equal(done.noAudioStarted,true);
  assert.equal(destination.storage.getItem(HEAR3_DUAL_RESTORE_JOURNAL_KEY),null);
  const reopened=site(destination.storage);
- assert.deepEqual(reopened.store.load().catalog,catalog('source'));
+ assert.deepEqual(reopened.store.load().catalog,validateHear3Catalog(catalog('source')));
  assert.equal(reopened.vault.load().sourceText,v2('source'));
  assert.equal(reopened.create().status().state,'clear');
 });
@@ -114,7 +115,7 @@ test('interrupted V2 stage keeps durable in-progress marker and rejects mixed-pa
  assert.equal(state.requiresRecovery,true);
  assert.equal(state.coherentSnapshotVerified,false);
  assert.equal(state.matches,'mixed-or-unverified');
- assert.deepEqual(next.store.load().catalog,catalog('new'));
+ assert.deepEqual(next.store.load().catalog,validateHear3Catalog(catalog('new')));
  assert.equal(next.vault.load().sourceText,v2('old'));
  assert.throws(()=>next.create().preview({
   catalogBackupText:a.catalogText,historyBackupText:a.historyText,
@@ -152,7 +153,7 @@ test('failed V3 write never attempts V2 and keeps baseline recoverable after rel
  target.storage.blockedPrefixes=['hear3:catalog:v1:'];
  await assert.rejects(()=>engine.commit(consent),/V3 restore is not device-persistent/);
  const reopened=site(target.storage);
- assert.deepEqual(reopened.store.load().catalog,catalog('b'));
+ assert.deepEqual(reopened.store.load().catalog,validateHear3Catalog(catalog('b')));
  assert.equal(reopened.vault.load().sourceText,v2('b'));
  assert.equal(reopened.create().status().matches,'previous-baseline');
  target.storage.blockedPrefixes=[];
@@ -170,7 +171,7 @@ test('stale V2 vault revision blocks joint restore before any journal mutation',
   confirmSourceBackupExported:true,confirmOverwrite:true});
  await assert.rejects(()=>runner.commit(consent),/sources changed since preview/);
  assert.equal(dst.storage.getItem(HEAR3_DUAL_RESTORE_JOURNAL_KEY),null);
- assert.deepEqual(dst.store.load().catalog,catalog('old'));
+ assert.deepEqual(dst.store.load().catalog,validateHear3Catalog(catalog('old')));
  assert.equal(dst.vault.load().sourceText,v2('other'));
 });
 
@@ -188,7 +189,7 @@ test('corrupted input or journal fails closed and does not mutate archives',asyn
  assert.throws(()=>dst.create().preview({
   catalogBackupText:a.catalogText,historyBackupText:a.historyText,
  }),/Damaged dual-restore journal/);
- assert.deepEqual(dst.store.load().catalog,catalog('old'));
+ assert.deepEqual(dst.store.load().catalog,validateHear3Catalog(catalog('old')));
  assert.equal(dst.vault.load().sourceText,v2('old'));
 });
 
@@ -202,7 +203,7 @@ test('missing durable old history or unwritable marker rejects restoration witho
  const service=dst.create();arm(service,a);
  dst.storage.blockedPrefixes=[HEAR3_DUAL_RESTORE_JOURNAL_KEY];
  await assert.rejects(()=>service.commit(consent),/Cannot persist dual-restore recovery marker/);
- assert.deepEqual(dst.store.load().catalog,catalog('old'));
+ assert.deepEqual(dst.store.load().catalog,validateHear3Catalog(catalog('old')));
  assert.equal(dst.vault.load().sourceText,v2('old'));
 });
 
