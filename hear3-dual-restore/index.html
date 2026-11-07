@@ -170,12 +170,12 @@ $('restore').addEventListener('click',()=>work(async()=>{
 $('recovery-review').addEventListener('click',()=>{
  $('error').textContent='';render();
 });
-$('recovery-ack').addEventListener('click',()=>work(()=>{
+$('recovery-ack').addEventListener('click',()=>work(async()=>{
  const s=engine.status();
  if(!s.coherentSnapshotVerified)
   throw Error('Los dos almacenes no son una pareja coherente; importa los respaldos anteriores manualmente.');
  if(!confirm('¿Revisaste el contenido de V2 y V3 y confirmas retirar el marcador? No se restaurará nada automáticamente.'))return;
- const done=engine.acknowledgeCoherentRecovery({userInitiated:true,confirmed:true});
+ const done=await engine.acknowledgeCoherentRecovery({userInitiated:true,confirmed:true});
  $('operation-status').textContent='Marcador retirado tras comprobar pareja: '+
   done.matches+'. No se realizó recuperación automática.';
 }));
