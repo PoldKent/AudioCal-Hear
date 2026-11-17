@@ -23,7 +23,7 @@ async function releaseAudioResume(page){
 }
 
 async function fresh(page) {
-  await page.goto('/');
+  await page.goto('/hear2/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
 }
