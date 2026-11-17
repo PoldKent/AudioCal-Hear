@@ -218,8 +218,19 @@ Finaliza el examen para consultar una curva orientativa.</p>
  </div>
  <p data-immediate-eq="action-status" role="status" aria-live="polite"
   data-testid="eq-immediate-action">El EQ no se aplica automáticamente.</p>
- <p>Para conservar este resultado, utiliza «Guardar mis resultados» más abajo.
- Después puedes <a href="../hear3-eq-editor/">editarlo banda por banda</a> desde la misma aplicación.</p>
+ <div class="app-actions app-result-actions">
+  <button type="button" data-immediate-eq="restore" data-testid="eq-immediate-restore" disabled>
+   Restaurar propuesta original</button>
+  <button type="button" data-immediate-eq="save" data-testid="eq-immediate-save" disabled>
+   Guardar mis cambios al EQ</button>
+ </div>
+ <p data-immediate-eq="save-status" data-testid="eq-immediate-save-status"
+  role="status" aria-live="polite">
+  Puedes ajustar los números y exportarlos ahora. Para guardarlos en el historial,
+  primero guarda tus resultados incluyendo el EQ, y confirma después la edición.
+ </p>
+ <p>Los ajustes manuales no cambian las mediciones originales.
+ También puedes <a href="../hear3-eq-editor/">editar un EQ guardado</a> desde el historial.</p>
 </div>
 <details class="app-result-details">
  <summary>Ver evidencia de tonos y cálculo técnico</summary>
