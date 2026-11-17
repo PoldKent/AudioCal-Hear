@@ -323,6 +323,7 @@ const progressStore=createHear3AdaptiveProgressStore({profileId});
 const progressReader=createHear3ReadThrottle({read:()=>progressStore.load(),intervalMs:1000});
 const catalogStore=createHear3CatalogStore();
 const catalogWriter=createHear3CatalogWriteCoordinator({store:catalogStore});
+let archiveResultId=null;
 let archiveTransfer=null,archiveMessage='Primero termina el examen de tonos. No se guarda EQ.';
 let exam=null,planning=false,sweepStarting=false;
 let eqDraft=null,eqDigitalModel=null,eqDigitalModelError=null,renderedEq=undefined;
@@ -692,7 +693,7 @@ $('delete-exam').addEventListener('click',()=>run(()=>{
 }));
 function discardArchive(){
  archiveTransfer?.discard();
- archiveTransfer=null;
+ archiveTransfer=null;archiveResultId=null;
  archiveMessage='Cualquier cambio necesita una nueva vista previa, sin guardar datos.';
  render();
 }
@@ -737,7 +738,7 @@ $('eq-export').addEventListener('click',()=>run(()=>{
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }));
 $('archive-preview').addEventListener('click',()=>run(()=>{
- archiveTransfer=null;
+ archiveTransfer=null;archiveResultId=null;
  if(!exam)throw Error('No existe examen finalizado.');
  if(typeof crypto==='undefined'||typeof crypto.randomUUID!=='function')
   throw Error('Se requiere un origen seguro para generar identificadores únicos.');
@@ -751,7 +752,7 @@ $('archive-preview').addEventListener('click',()=>run(()=>{
   category:$('archive-category').value,
   includeProvisionalEq:$('archive-eq-optin').checked,
  });
- archiveTransfer=transfer;
+ archiveTransfer=transfer;archiveResultId=preview.resultId;
  archiveMessage='Se guardarán '+preview.subjectiveResponses+
   ' respuestas, '+preview.bands+' bandas. '+
   (preview.provisionalEqOptIn
@@ -769,7 +770,12 @@ $('archive-commit').addEventListener('click',()=>run(async()=>{
  const {response:result}=await catalogWriter.run(()=>
   archiveTransfer.commit({userInitiated:true,confirmed:true,
    confirmProvisionalEq:addEq}));
- archiveTransfer=null;
+ const archivedResultId=archiveResultId;
+ archiveTransfer=null;archiveResultId=null;
+ if(result.provisionalEqStored&&archivedResultId)
+  document.dispatchEvent(new CustomEvent('hear3:eq-archive-saved',{
+   detail:{resultId:archivedResultId,persistedOnDevice:result.persistedOnDevice}
+  }));
  archiveMessage=result.persistedOnDevice
   ?result.provisionalEqStored
    ?'Historial y EQ matemático provisional guardados. Ábrelo en el editor para revisar o exportar.'
