@@ -36,7 +36,7 @@ test('invalid imported values are rejected and gain-unit mapping is never inferr
  assert.equal(Object.hasOwn(norm,'dbPerStep'),false);
 });
 test('generated app includes contextual setup and retains existing audio logic',()=>{
- const html=fs.readFileSync('index.html','utf8');
+ const html=fs.readFileSync('hear2/index.html','utf8');
  for(const str of ['data-context=','context:normalizeCalibrationContext(temp.context,temp.type)','function nextTrialLevel(','function transferMapping('])
   assert.ok(html.includes(str),str);
 });
@@ -94,7 +94,7 @@ test('local correction v2 does not invent EQ from isolated or unmeasured tones',
 });
 test('original response table, automatic explanation, and 7/10-band formats remain',()=>{
  const script=fs.readFileSync('src/js/04-equalization.js','utf8');
- const html=fs.readFileSync('index.html','utf8');
+ const html=fs.readFileSync('hear2/index.html','utf8');
  for(const token of ['function renderCalibrationTrace(', 'Medición original sin modificar',
   'diferencia percibida entre tonos; ganancia moderada y experimental', 'const EQ_ALGORITHM_VERSION='])assert.ok(html.includes(token),token);
  assert.match(script,/autoReason/);
@@ -122,7 +122,7 @@ test('EQ PNG positioning is only exact for verified control units',()=>{
  assert.equal(m.rows[0].position,4);assert.equal(m.rows[1].position,-2);
 });
 test('PNG export is integrated into source and monolithic app',()=>{
- const html=fs.readFileSync('index.html','utf8');
+ const html=fs.readFileSync('hear2/index.html','utf8');
  for(const word of ["function saveEqCardPng(","document.createElement('canvas')","case 'downloadpng'","eqStepDb:'unknown'"])assert.ok(html.includes(word),word);
  assert.doesNotMatch(html,/id="eqCardCanvas"/,'Only the live EQ may render; PNG is generated when requested');
  const src=fs.readFileSync('src/js/04-equalization.js','utf8');
@@ -176,7 +176,7 @@ test('cross-evidence marks truncated loudness as inconclusive and preserves data
  p.passes=1;assert.equal(c.evidenceReport(p).count.thresholdPairs,0);
 });
 test('CSV export explicitly distinguishes dBFS from dB of EQ',()=>{
- const html=fs.readFileSync('index.html','utf8');
+ const html=fs.readFileSync('hear2/index.html','utf8');
  for(const s of ['evidenceAuditMarkup(p)','function evidenceCsv(', "case 'download-audit'",'Sonoridad comparación 1 dBFS relativo'])assert.ok(html.includes(s),s);
 });
 
