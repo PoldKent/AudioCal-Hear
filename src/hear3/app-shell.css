@@ -130,6 +130,10 @@ a{color:var(--app-accent)}
  align-items:center;text-align:center;gap:.2rem;padding:.4rem .2rem;font-size:.86rem;
  font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .app-eq-band strong{font-size:.95rem}
+.app-eq-input{width:100%;min-height:44px;padding:.3rem .2rem;border-radius:.45rem;
+ color:var(--app-text);background:var(--app-panel);border:1px solid var(--app-line);
+ font:inherit;font-variant-numeric:tabular-nums;text-align:center}
+.app-eq-input:invalid{outline:2px solid #f6b867}
 .app-eq-band small{font-size:.7rem;color:var(--app-muted)}
 .app-eq-bar-area{height:165px;width:70%;max-width:58px;position:relative;border-left:1px solid var(--app-line)}
 .app-eq-zero{position:absolute;top:50%;left:0;width:100%;border-top:2px solid var(--app-muted);opacity:.7}
