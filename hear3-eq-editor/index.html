@@ -245,8 +245,10 @@ $('commit').addEventListener('click',async()=>{
    :'No se verificó persistencia de dispositivo. Exporta un respaldo inmediatamente.';
  }catch(error){
   editor?.discard();reviewed=null;
-  $('error').textContent=error?.message??String(error);
+  const message=error?.message??String(error);
   refresh(selected);
+  // Keep the concurrency error visible after refreshing the selected EQ.
+  $('error').textContent=message;
  }finally{busyState(false);}
 });
 function download(content,filename,type){
