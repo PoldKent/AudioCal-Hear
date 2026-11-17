@@ -317,6 +317,7 @@ $('png').addEventListener('click',()=>withError(()=>{
   $('export-status').textContent='Se solicitó descargar un PNG local, no un preset de equipo.';
  },'image/png');
 }));
-refresh();
+const requested=new URLSearchParams(location.search).get('result');
+refresh(requested&&/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,95}$/.test(requested)?requested:'');
 </script>
 </body></html>
