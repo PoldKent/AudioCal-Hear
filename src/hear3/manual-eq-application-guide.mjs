@@ -21,7 +21,7 @@ const guides=Object.freeze({
   steps:[
    'Con el automóvil estacionado, abre los controles de audio o el ecualizador del vehículo.',
    'Compara la frecuencia de cada banda con la tabla. Un número diferente no equivale automáticamente a la misma banda.',
-   'Si el equipo indica ganancias en dB con un cero conocido, traslada solo los valores que realmente pueda representar. Si usa niveles o posiciones, necesitas la equivalencia del fabricante.',
+   'Si el equipo indica ganancias en dB con un cero conocido, traslada solo los valores que realmente pueda representar. Si usa niveles o posiciones, no inventes una conversión: necesitas la equivalencia del fabricante.',
    'No operes el ecualizador ni hagas pruebas auditivas mientras conduces. Mantén un volumen bajo y cómodo.',
   ],
  },
