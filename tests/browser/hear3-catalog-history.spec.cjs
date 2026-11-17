@@ -29,7 +29,11 @@ async function importBackup(page,text) {
   name:'hear3-catalog.json',mimeType:'application/json',buffer:Buffer.from(text),
  });
  await page.getByTestId('preview').click();
+ const revision=await page.evaluate(()=>window.hear3CatalogPilot.snapshot().revision);
  await page.getByTestId('commit').click();
+ // WebKit's single-tab safety probe is asynchronous: do not reload or
+ // begin another import until the catalog has actually been persisted.
+ await expect.poll(()=>page.evaluate(()=>window.hear3CatalogPilot.snapshot().revision)).toBe(revision+1);
 }
 
 test('P0 history on first visit never invents a result or starts audio',async({page})=>{

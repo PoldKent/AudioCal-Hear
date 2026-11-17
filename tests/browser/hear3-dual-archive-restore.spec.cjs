@@ -161,9 +161,20 @@ test('D-051/D-060 V2 vault competing tabs: Web Locks + revision CAS refuse stale
    page.evaluate(()=>window.submitLegacyVault()),
    second.evaluate(()=>window.submitLegacyVault()),
   ]);
-  expect([first,other].filter(x=>x.ok)).toHaveLength(1);
-  expect([first,other].filter(x=>!x.ok)).toHaveLength(1);
-  expect([first,other].find(x=>!x.ok).error).toContain('changed since preview');
+  const conservativeWebKit=await page.evaluate(()=>
+   /iPhone|iPad|iPod/i.test(navigator.userAgent));
+  if(conservativeWebKit){
+   // WebKit previously acknowledged TWO persistent overlapping writes.
+   // A participating second tab must now fail CLOSED before any mutation.
+   expect([first,other].filter(x=>x.ok)).toHaveLength(0);
+   expect([first,other].filter(x=>!x.ok)).toHaveLength(2);
+   for(const reply of [first,other])
+    expect(reply.error).toContain('Another Hear 3 tab is open in WebKit');
+  }else{
+   expect([first,other].filter(x=>x.ok)).toHaveLength(1);
+   expect([first,other].filter(x=>!x.ok)).toHaveLength(1);
+   expect([first,other].find(x=>!x.ok).error).toContain('changed since preview');
+  }
   const stored=await page.evaluate(async()=>{
    const {createHear3LosslessV2HistoryVault}=
     await import('/src/hear3/legacy-v2-history-vault.mjs');
@@ -171,8 +182,14 @@ test('D-051/D-060 V2 vault competing tabs: Web Locks + revision CAS refuse stale
    return {sourceText:result.sourceText,revision:result.revision,
     persistedOnDevice:result.persistedOnDevice};
   });
-  expect(stored.revision).toBe(1);
-  expect(stored.persistedOnDevice).toBe(true);
-  expect([historicV2('tab-1'),historicV2('tab-2')]).toContain(stored.sourceText);
+  if(conservativeWebKit){
+   expect(stored.revision).toBe(0);
+   expect(stored.persistedOnDevice).toBe(false);
+   expect(stored.sourceText).toBe(null);
+  }else{
+   expect(stored.revision).toBe(1);
+   expect(stored.persistedOnDevice).toBe(true);
+   expect([historicV2('tab-1'),historicV2('tab-2')]).toContain(stored.sourceText);
+  }
  }finally{await second.close();}
 });

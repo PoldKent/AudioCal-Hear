@@ -86,8 +86,8 @@
 <body>
 <a href="#main" class="skip">Saltar al contenido</a>
 <header><div class="wrap top">
-  <a class="brand" href="../" aria-label="Volver a AudioCal Hear"><span class="logo" aria-hidden="true">◉</span><span>AudioCal <span style="color:var(--cyan)">Hear</span></span></a>
-  <a class="back" href="../">Volver a la aplicación actual</a>
+  <a class="brand" href="../hear2/" aria-label="Abrir Hear 2.0 anterior"><span class="logo" aria-hidden="true">◉</span><span>AudioCal <span style="color:var(--cyan)">Hear</span></span></a>
+  <a class="back" href="../hear2/">Abrir Hear 2.0 anterior</a>
   <div class="theme-control">
     <label for="hear3-theme-choice">Apariencia</label>
     <select id="hear3-theme-choice" data-testid="hear3-theme-choice" aria-label="Apariencia de Hear 3.0">
@@ -106,7 +106,7 @@
     <div class="actions">
       <a class="action primary" href="../tests/fixtures/hear3-integrated-exam-pilot.html">Comenzar examen experimental</a>
       <a class="action secondary" href="#pilotos">Explorar herramientas</a>
-      <a class="action secondary" href="../">Abrir Hear actual</a>
+      <a class="action secondary" href="../hear2/">Abrir Hear 2.0 anterior</a>
     </div>
   </section>
   <section class="quick-start" aria-labelledby="quick-start-heading">
@@ -129,7 +129,7 @@
 
   <section class="offline-options" id="offline" aria-labelledby="offline-title">
     <h2 id="offline-title">Acceso sin conexión · Opcional</h2>
-    <p>En navegadores compatibles puedes guardar voluntariamente los recursos estáticos de estos pilotos para volver a abrirlos sin Internet. No se guardan respuestas, perfiles ni archivos personales en esta caché. La aplicación Hear 2.0 no se instala ni modifica con esta función.</p>
+    <p>En navegadores compatibles puedes guardar voluntariamente los recursos estáticos de estos pilotos para volver a abrirlos sin Internet. No se guardan respuestas, perfiles ni archivos personales en esta caché. La copia histórica de Hear 2.0 no se modifica con esta función.</p>
     <p>El resultado depende del soporte real del navegador, del almacenamiento disponible y de que los recursos se hayan descargado correctamente. La reproducción acústica y los dispositivos físicos siguen sin validarse.</p>
     <div class="offline-actions">
       <button type="button" id="offline-enable" data-testid="offline-enable">Guardar pilotos para uso sin conexión</button>
@@ -185,13 +185,13 @@
     <h2 class="section-title" id="limits-title">Qué sigue en desarrollo</h2>
     <p class="section-intro">La integración barrido → tonos adaptativos, el algoritmo EQ con evidencia, la interfaz definitiva, la migración histórica completa, accesibilidad, pruebas offline en equipos reales y validación acústica real. La publicación estable exige superar todos los P0 y el criterio D-063.</p>
     <div class="facts">
-      <div class="fact"><strong>Tu Hear actual se conserva</strong><span>Esta vista previa no reemplaza la aplicación principal ni modifica automáticamente sus perfiles V2.</span></div>
+      <div class="fact"><strong>Tu Hear actual se conserva</strong><span>Hear 3.0 es ahora la entrada principal experimental; Hear 2.0 sigue disponible en /hear2/ y los perfiles V2 no se convierten ni modifican automáticamente.</span></div>
       <div class="fact"><strong>Datos en el navegador</strong><span>Los pilotos no incorporan cuentas ni sincronización en la nube. El almacenamiento local puede borrarse; exporta copias cuando sea necesario.</span></div>
       <div class="fact"><strong>Progreso auditable</strong><span>Las 63 decisiones del producto y las condiciones de validación siguen documentadas en GitHub.</span></div>
     </div>
   </section>
 </main>
-<footer class="end"><div class="wrap"><a href="../">Hear actual</a><a href="https://github.com/PoldKent/AudioCal-Hear/issues/30">Decisiones D-001–D-063</a><span>AudioCal Hear 3.0 · Vista previa experimental</span></div></footer>
+<footer class="end"><div class="wrap"><a href="../hear2/">Hear actual</a><a href="https://github.com/PoldKent/AudioCal-Hear/issues/30">Decisiones D-001–D-063</a><span>AudioCal Hear 3.0 · Vista previa experimental</span></div></footer>
 <script type="module">
 import {detectHear3OfflineSupport,enableHear3Offline,disableHear3Offline}
  from '../src/hear3/offline-optin.mjs';

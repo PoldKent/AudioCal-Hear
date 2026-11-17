@@ -48,7 +48,7 @@ test('P0 archival preview is unavailable until verified discrete exam is finishe
 test('P0 opt-in archive saves completed tone responses without false EQ or deleting V2',async({page})=>{
  test.setTimeout(60000);
  await fakeAudio(page);
- await page.goto('/');
+ await page.goto('/hear3-preview/');
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','LEGACY_STAYS'));
  await page.goto(PILOT);
  await finishSubjectivePilot(page);

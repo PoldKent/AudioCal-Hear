@@ -92,7 +92,7 @@ test('P0 JSON backup contains verified adaptive state, not a clinical EQ',async(
 
 test('P0 confirmed deletion does not re-save on render and preserves existing V2 data',async({page})=>{
  await mockAudio(page);
- await page.goto('/');
+ await page.goto('/hear3-preview/');
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','DONT_ERASE_V2'));
  await completedAndAnswered(page);
  page.once('dialog',dialog=>dialog.accept());

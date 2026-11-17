@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'index.html'
+      - 'hear2/index.html'
+      - 'src/hear3-entry.html'
       - 'src/**'
       - 'tools/**'
       - 'tests/**'
@@ -20,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Check out the proposed Hear 2.0 code
+      - name: Check out the proposed Hear 3 beta and preserved Hear 2 fallback
         uses: actions/checkout@v4
       - name: Set up Node 22
         uses: actions/setup-node@v4
@@ -33,7 +35,7 @@ jobs:
           set -euo pipefail
           node --check tools/serve-beta.mjs
           mkdir -p beta-dist
-          cp index.html beta-dist/index.html
+          cp hear2/index.html beta-dist/index.html
           cp tools/serve-beta.mjs beta-dist/serve-beta.mjs
           cp tools/start-beta.cmd beta-dist/start-beta.cmd
           cp docs/HEAR-V2-BETA.md beta-dist/README.md

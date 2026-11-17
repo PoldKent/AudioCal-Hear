@@ -20,6 +20,7 @@ const MODULES = [
 ];
 
 const template = read('src/index.template.html');
+const publicEntry = read('src/hear3-entry.html');
 const css = read('src/styles.css');
 const json = read('src/translations.json');
 const script = MODULES.map(read).join('');
@@ -37,16 +38,19 @@ function inject(html, token, replacement) {
 let output = inject(template, '__AUDIOCAL_CSS__', css);
 output = inject(output, '__AUDIOCAL_I18N__', json);
 output = inject(output, '__AUDIOCAL_JS__', script);
-if (!output.startsWith('<!doctype html>') || !output.trimEnd().endsWith('</html>')) throw Error('HTML output is incomplete');
+if (!output.startsWith('<!doctype html>') || !output.trimEnd().endsWith('</html>')) throw Error('Legacy HTML output is incomplete');
+if (!publicEntry.startsWith('<!doctype html>') || !publicEntry.trimEnd().endsWith('</html>')) throw Error('Primary entry HTML is incomplete');
 
 if (process.argv.includes('--check')) {
-  if (output !== read('index.html')) {
-    console.error('Generated HTML differs from index.html. Run npm run build and commit the result.');
+  if (output !== read('hear2/index.html') || publicEntry !== read('index.html')) {
+    console.error('Generated Hear 2.0 fallback or Hear 3.0 primary entry differs from committed HTML. Run npm run build and commit both files.');
     process.exitCode = 1;
   } else {
-    console.log('Verified: index.html is byte-identical to generated standalone HTML.');
+    console.log('Verified: Hear 2 fallback is byte-identical to the generated standalone bundle, and the primary root redirects to Hear 3 beta.');
   }
 } else {
-  fs.writeFileSync(path.join(ROOT, 'index.html'), output, 'utf8');
-  console.log('Built index.html (' + Buffer.byteLength(output, 'utf8') + ' bytes).');
+  fs.mkdirSync(path.join(ROOT, 'hear2'), {recursive:true});
+  fs.writeFileSync(path.join(ROOT, 'hear2/index.html'), output, 'utf8');
+  fs.writeFileSync(path.join(ROOT, 'index.html'), publicEntry, 'utf8');
+  console.log('Built Hear 2 legacy bundle (' + Buffer.byteLength(output, 'utf8') + ' bytes) and Hear 3 beta root.');
 }

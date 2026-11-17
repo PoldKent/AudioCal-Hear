@@ -94,7 +94,7 @@ test('P0 interrupted sweep never advances to discrete exam',async({page})=>{
 });
 
 test('pilot inspection and navigation do not clear old Hear 2.0 profiles',async({page})=>{
- await page.goto('/');
+ await page.goto('/hear3-preview/');
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','UNCHANGED_LEGACY'));
  await page.goto(PILOT);
  await expect(page.getByTestId('plan')).toBeDisabled();

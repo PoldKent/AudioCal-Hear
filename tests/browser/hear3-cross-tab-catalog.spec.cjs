@@ -22,14 +22,21 @@ test('two open tabs cannot both commit the same preview: one stale operation is 
  ]);
  await expect(page.getByTestId('summary')).toContainText('Catálogo V3');
  await expect(second.getByTestId('summary')).toContainText('Catálogo V3');
- await expect.poll(()=>page.evaluate(()=>
-  window.hear3CatalogPilot.snapshot().revision)).toBe(1);
- await expect.poll(async()=>{
-  const errors=await Promise.all([
-   page.getByTestId('error').textContent(),second.getByTestId('error').textContent(),
-  ]);
-  return errors.filter(s=>s.includes('Catalog changed')).length;
- }).toBe(1);
+ const iOS=await page.evaluate(()=>/iPhone|iPad|iPod/i.test(navigator.userAgent));
+ if(iOS){
+  await expect(page.getByTestId('error')).toContainText('Another Hear 3 tab is open in WebKit');
+  await expect(second.getByTestId('error')).toContainText('Another Hear 3 tab is open in WebKit');
+  expect(await page.evaluate(()=>window.hear3CatalogPilot.snapshot().revision)).toBe(0);
+ }else{
+  await expect.poll(()=>page.evaluate(()=>
+   window.hear3CatalogPilot.snapshot().revision)).toBe(1);
+  await expect.poll(async()=>{
+   const errors=await Promise.all([
+    page.getByTestId('error').textContent(),second.getByTestId('error').textContent(),
+   ]);
+   return errors.filter(s=>s.includes('Catalog changed')).length;
+  }).toBe(1);
+ }
  expect(await page.evaluate(()=>navigator.locks?.request instanceof Function)).toBe(true);
  await second.close();
 });

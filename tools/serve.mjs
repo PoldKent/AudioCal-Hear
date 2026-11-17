@@ -6,11 +6,13 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 const hostname = '127.0.0.1';
 const port = Number(process.env.PORT || 4177);
 const mime = new Map([['.html','text/html; charset=utf-8'],['.js','text/javascript; charset=utf-8'],['.mjs','text/javascript; charset=utf-8'],['.json','application/json; charset=utf-8'],['.css','text/css; charset=utf-8']]);
-// Explicit development/CI allowlist for the stable page and isolated Hear 3.0 pilots.
-// The static public preview links experiments without replacing Hear 2.0.
+// Explicit allowlist mirrors the public deployment: Hear 3 beta is the root,
+// and Hear 2 remains a standalone legacy fallback at /hear2/.
 const allowedFiles = new Map([
   ['/', 'index.html'],
   ['/index.html', 'index.html'],
+  ['/hear2/', 'hear2/index.html'],
+  ['/hear2/index.html', 'hear2/index.html'],
   ['/hear3-preview/', 'hear3-preview/index.html'],
   ['/hear3-preview/index.html', 'hear3-preview/index.html'],
   ['/hear3-eq-editor/', 'hear3-eq-editor/index.html'],

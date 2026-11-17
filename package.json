@@ -1,9 +1,9 @@
 {
   "name": "audiocal-hear",
-  "version": "1.11.0",
+  "version": "3.0.0-beta.1",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Proprietary standalone hearing and EQ web application",
+  "description": "Hear 3.0 experimental beta entry with preserved Hear 2.0 standalone rollback",
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",

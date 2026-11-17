@@ -56,7 +56,7 @@ test('D-061 editing selected fields revokes previously approved diagnostic',asyn
  await expect(page.getByTestId('report')).toHaveValue('');
 });
 test('D-061 reports only technical codes and never modifies V2 profile storage',async({page})=>{
- await page.goto('/');
+ await page.goto('/hear3-preview/');
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','V2_KEEP'));
  await page.goto('/hear3-diagnostics/');
  await page.getByTestId('issue-code').selectOption('checkpoint-damaged');

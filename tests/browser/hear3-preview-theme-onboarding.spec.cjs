@@ -31,11 +31,11 @@ test('the new guide has a safe start, explicit recovery instruction and no autop
   document.documentElement.clientWidth+2)).toBe(true);
 });
 test('theme preference belongs only to Hear 3 and does not alter legacy Hear 2 profiles',async({page})=>{
- await page.goto('/');
+ await page.goto('/hear2/');
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','OLD_V2_STAYS'));
  await page.goto(PAGE);
  await page.getByTestId('hear3-theme-choice').selectOption('dark');
- await page.goto('/');
+ await page.goto('/hear2/');
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1')))
   .toBe('OLD_V2_STAYS');
 });
