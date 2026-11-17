@@ -15,7 +15,7 @@ test('appearance follows the operating system unless explicitly overridden',asyn
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','light');
  await page.getByRole('link',{name:'Mi ecualizador',exact:true}).click();
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','light');
- await page.getByRole('link',{name:'Inicio'}).click();
+ await page.getByRole('link',{name:'Inicio',exact:true}).click();
  await expect(page.getByTestId('hear3-theme-choice')).toHaveValue('light');
  await page.getByTestId('hear3-theme-choice').selectOption('system');
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','dark');
