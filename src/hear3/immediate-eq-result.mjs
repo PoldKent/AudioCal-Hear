@@ -5,6 +5,10 @@
  * Saved profiles are edited through the catalog's transactional EQ editor.
  */
 import {HEAR3_EQ_ENGINE_FORMAT} from './bounded-eq-engine.mjs';
+import {createHear3CatalogStore} from './catalog-backup-store.mjs';
+import {createHear3CatalogWriteCoordinator} from './coordinated-catalog-writer.mjs';
+import {createHear3ProvisionalEqEditor} from './provisional-eq-editor.mjs';
+
 const check=(ok,message)=>{if(!ok)throw Error(message);};
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const signed=n=>(n>0?'+':'')+n;
@@ -85,68 +89,120 @@ export function paintHear3ImmediateEqPng(canvas,review){
 export function mountHear3ImmediateEq({root,source,getDraft,env=globalThis}){
  check(root&&source&&typeof getDraft==='function','Faltan elementos del resultado.');
  const $=id=>root.querySelector('[data-immediate-eq="'+id+'"]');
- let review=null,fingerprint=null;
+ const store=createHear3CatalogStore();
+ const writer=createHear3CatalogWriteCoordinator({store});
+ let original=null,review=null,values=[],savedValues=[],fingerprint=null,resultId=null,busy=false;
+ const setText=(id,message)=>{$(id).textContent=message;};
  function download(content,name,mime){
   const blob=content instanceof Blob?content:new Blob([content],{type:mime});
   const url=URL.createObjectURL(blob),link=document.createElement('a');
   link.href=url;link.download=name;document.body.append(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1500);
  }
- function render(){
-  const draft=getDraft();
-  const next=draft?JSON.stringify(draft.rows.map(r=>[r.frequencyHz,r.gainDb])):'';
-  if(next===fingerprint)return;
-  fingerprint=next;
-  review=null;
+ const altered=()=>values.some((v,i)=>v!==original?.rows[i]?.gainDb);
+ const unsaved=()=>values.some((v,i)=>v!==savedValues[i]);
+ function valid(){
+  return original!==null&&values.length===original.rows.length&&values.every(v=>
+   finite(v)&&Number.isInteger(v*2)&&Math.abs(v)<=original.capDb);
+ }
+ function sync(){
+  review=valid()?Object.freeze({...original,rows:Object.freeze(
+   original.rows.map((r,i)=>Object.freeze({...r,gainDb:values[i]}))
+  )}):null;
+  const canExport=Boolean(review);
+  for(const id of ['copy','txt','csv','png'])$(id).disabled=!canExport;
+  $('restore').disabled=busy||!valid()||!altered();
+  $('save').disabled=busy||!review||!resultId||!unsaved();
+  if(!valid()&&original)setText('action-status',
+   'Hay una ganancia inválida. Utiliza pasos de 0,5 dB dentro del límite.');
+  else if(review)setText('action-status',
+   altered()?'Cambios manuales en esta curva. Puedes copiar o descargar los valores visibles.':
+    'Curva original lista para copiar o descargar. No modifica automáticamente tu equipo.');
+ }
+ function setBar(fill,v){
+  const height=Math.abs(v)/original.capDb*47;
+  fill.style.height=Math.max(2,height)+'%';
+  fill.style.top=(v>=0?50-height:50)+'%';
+  fill.classList.toggle('negative',v<0);
+ }
+ function showRows(){
   const stage=$('chart');stage.replaceChildren();
-  if(!draft){
-   $('status').textContent='Al finalizar el examen, aquí aparecerán los valores para cada banda.';
-   for(const id of ['copy','txt','csv','png'])$(id).disabled=true;
-   return;
-  }
-  try{review=inspectHear3ImmediateEq(draft);}
-  catch(error){
-   $('status').textContent=error.message;
-   for(const id of ['copy','txt','csv','png'])$(id).disabled=true;
-   return;
-  }
-  $('status').textContent=review.resultStatus+' '+review.warning;
-  for(const id of ['copy','txt','csv','png'])$(id).disabled=false;
+  if(!original){stage.removeAttribute('role');return;}
   stage.setAttribute('role','group');
-  stage.setAttribute('aria-label','Ganancias por frecuencia del EQ actual');
-  for(const r of review.rows){
+  stage.setAttribute('aria-label','Ganancias editables por frecuencia del EQ actual');
+  for(const [i,r] of original.rows.entries()){
    const cell=document.createElement('div');cell.className='app-eq-band';
    const graph=document.createElement('div');graph.className='app-eq-bar-area';
    graph.setAttribute('aria-hidden','true');
    const zero=document.createElement('div');zero.className='app-eq-zero';
    const bar=document.createElement('div');bar.className='app-eq-bar';
-   const height=Math.abs(r.gainDb)/review.capDb*47;
-   bar.style.height=Math.max(2,height)+'%';
-   bar.style.top=(r.gainDb>=0?50-height:50)+'%';
-   if(r.gainDb<0)bar.classList.add('negative');
-   graph.append(zero,bar);
-   const gain=document.createElement('strong');
-   gain.textContent=signed(r.gainDb)+' dB';
-   const freq=document.createElement('span');freq.textContent=r.frequencyHz+' Hz';
+   setBar(bar,values[i]);graph.append(zero,bar);
+   const freq=document.createElement('strong');freq.textContent=r.frequencyHz+' Hz';
+   const field=document.createElement('input');field.type='number';
+   field.id='eq-inline-'+i;
+   field.dataset.testid='eq-inline-gain-'+i;
+   field.step='0.5';field.min=String(-original.capDb);
+   field.max=String(original.capDb);field.value=String(values[i]);
+   field.setAttribute('aria-label','Ganancia de '+r.frequencyHz+' Hz, en dB');
+   field.className='app-eq-input';
    const detail=document.createElement('small');detail.textContent=r.source==='direct-subjective-contrast'
-    ?'Tono confirmado':r.estimated?'Estimado':'Sin evidencia suficiente';
-   cell.append(graph,gain,freq,detail);
-   stage.append(cell);
+    ?'Tono confirmado':r.source==='estimated-from-neighbor-subjective-brackets'
+     ?'Estimado':'Sin evidencia suficiente';
+   const number=document.createElement('span');number.textContent=signed(values[i])+' dB';
+   field.addEventListener('input',()=>{
+    if(busy)return;
+    const n=field.value===''?NaN:Number(field.value);
+    values[i]=n;
+    if(Number.isFinite(n)){setBar(bar,n);number.textContent=signed(n)+' dB';}
+    else number.textContent='—';
+    sync();
+    if(review)setText('save-status',resultId
+     ?unsaved()?'Tienes ediciones nuevas. Confirma «Guardar mis cambios al EQ».':
+      'Esta curva coincide con el último resultado guardado.'
+     :'Las ediciones están solo en esta vista. Para guardarlas, archiva el resultado incluyendo EQ.');
+   });
+   cell.append(graph,freq,field,number,detail);stage.append(cell);
   }
  }
- const error=message=>{$('action-status').textContent=message;};
+ function render(){
+  const draft=getDraft();
+  const fingerprintNew=draft?JSON.stringify([draft.deviceCategory,draft.capDb,
+   draft.rows.map(r=>[r.frequencyHz,r.gainDb,r.source])]):'';
+  if(fingerprintNew===fingerprint)return;
+  fingerprint=fingerprintNew;original=null;review=null;resultId=null;
+  values=[];savedValues=[];
+  if(!draft){
+   $('chart').replaceChildren();
+   setText('status','Al finalizar el examen, aquí aparecerán los valores para cada banda.');
+   setText('save-status','Primero completa el examen para obtener una curva.');
+   sync();return;
+  }
+  try{original=inspectHear3ImmediateEq(draft);}
+  catch(error){
+   $('chart').replaceChildren();
+   setText('status',error.message);
+   setText('save-status','El EQ no está disponible.');
+   sync();return;
+  }
+  values=original.rows.map(r=>r.gainDb);
+  savedValues=values.slice();
+  setText('status',original.resultStatus+' '+original.warning);
+  setText('save-status','Puedes editar y exportar ahora. Para conservar las ediciones, guarda el resultado incluyendo el EQ.');
+  showRows();sync();
+ }
+ const error=message=>setText('action-status',message);
  $('copy').addEventListener('click',async()=>{
   try{
-   check(review,'No hay EQ para copiar.');
+   check(review,'No hay EQ válido para copiar.');
    check(env.navigator?.clipboard?.writeText,'Este navegador no permite copiar. Usa TXT.');
    await env.navigator.clipboard.writeText(formatHear3ImmediateEq(review));
-   error('Valores copiados. No se cambió ningún dispositivo.');
+   error('Valores visibles copiados. No se cambió ningún dispositivo.');
   }catch(e){error(e?.message??String(e));}
  });
  for(const format of ['txt','csv']){
   $(format).addEventListener('click',()=>{
    try{
-    check(review,'Primero finaliza el examen.');
+    check(review,'Primero finaliza el examen y revisa las ganancias.');
     download(formatHear3ImmediateEq(review,{format}),
      'audiocal-hear-mi-eq-orientativo.'+format,
      format==='txt'?'text/plain;charset=utf-8':'text/csv;charset=utf-8');
@@ -156,7 +212,7 @@ export function mountHear3ImmediateEq({root,source,getDraft,env=globalThis}){
  }
  $('png').addEventListener('click',()=>{
   try{
-   check(review,'Primero finaliza el examen.');
+   check(review,'Primero finaliza el examen y revisa las ganancias.');
    const canvas=paintHear3ImmediateEqPng(document.createElement('canvas'),review);
    canvas.toBlob(blob=>{
     if(!blob){error('No se pudo generar la imagen PNG.');return;}
@@ -164,6 +220,63 @@ export function mountHear3ImmediateEq({root,source,getDraft,env=globalThis}){
     error('Imagen PNG generada a partir de la misma curva visible.');
    },'image/png');
   }catch(e){error(e?.message??String(e));}
+ });
+ $('restore').addEventListener('click',()=>{
+  if(!original||busy)return;
+  values=original.rows.map(r=>r.gainDb);
+  showRows();sync();
+  setText('save-status',resultId
+   ?'Valores originales recuperados en pantalla; guarda si deseas sustituir tus ediciones anteriores.'
+   :'Se recuperó la propuesta original; no se alteraron datos del examen.');
+ });
+ document.addEventListener('hear3:eq-archive-saved',event=>{
+  if(!original||!event.detail?.resultId)return;
+  try{
+   const target=event.detail.resultId;
+   const snapshot=createHear3ProvisionalEqEditor({store,resultId:target}).snapshot();
+   check(snapshot.rows.length===original.rows.length&&snapshot.rows.every((r,i)=>
+    r.bandId===original.rows[i].bandId&&
+    r.frequencyHz===original.rows[i].frequencyHz&&
+    r.originalGainDb===original.rows[i].gainDb),
+    'El resultado guardado no corresponde a las bandas actuales.');
+   resultId=target;savedValues=snapshot.rows.map(r=>r.currentGainDb);
+   setText('save-status',event.detail.persistedOnDevice
+    ?'Resultado archivado. Si editaste ganancias, confirma «Guardar mis cambios al EQ».':
+     'La persistencia de los datos del dispositivo no está verificada; exporta un respaldo.');
+   sync();
+  }catch(e){
+   resultId=null;setText('save-status','No se puede vincular el EQ guardado: '+e.message);sync();
+  }
+ });
+ $('save').addEventListener('click',async()=>{
+  if(!original||!resultId||!review||busy||!unsaved())return;
+  const target=resultId;
+  if(!env.confirm('¿Guardar estas ganancias manuales en tu perfil local? No se reproducirá audio ni se modificará ningún dispositivo.'))return;
+  busy=true;sync();
+  try{
+   const editor=createHear3ProvisionalEqEditor({store,resultId:target});
+   const snapshot=editor.snapshot();
+   check(snapshot.rows.length===original.rows.length&&snapshot.rows.every((r,i)=>
+    r.bandId===original.rows[i].bandId&&r.frequencyHz===original.rows[i].frequencyHz&&
+    r.originalGainDb===original.rows[i].gainDb),
+    'El resultado guardado cambió; no se modificarán bandas equivocadas.');
+   const valuesPatch=snapshot.rows.flatMap((r,i)=>r.currentGainDb===values[i]
+    ?[]:[{bandId:r.bandId,gainDb:values[i]}]);
+   if(valuesPatch.length){
+    editor.preview({values:valuesPatch});
+    const {response}=await writer.run(()=>editor.commit({
+     userInitiated:true,confirmed:true,
+    }),{expectedRevision:snapshot.revision});
+    savedValues=values.slice();
+    setText('save-status',response.persistedOnDevice
+     ?'Tus cambios están guardados en el perfil, con historial y propuesta original intactos.':
+      'Cambios registrados, pero sin persistencia verificada en dispositivo. Exporta un respaldo.');
+   }else{
+    savedValues=values.slice();
+    setText('save-status','La curva ya coincide con los valores guardados.');
+   }
+  }catch(e){setText('save-status','No se guardaron los cambios: '+(e?.message??String(e)));}
+  finally{busy=false;sync();}
  });
  const observer=new MutationObserver(render);
  observer.observe(source,{childList:true});
