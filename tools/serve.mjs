@@ -26,6 +26,8 @@ const allowedFiles = new Map([
   ['/src/hear3/app-theme.mjs', 'src/hear3/app-theme.mjs'],
   ['/src/hear3/immediate-eq-result.mjs', 'src/hear3/immediate-eq-result.mjs'],
   ['/src/hear3/manual-eq-application-guide.mjs', 'src/hear3/manual-eq-application-guide.mjs'],
+  ['/src/hear3/photo-band-assistant.mjs', 'src/hear3/photo-band-assistant.mjs'],
+  ['/src/hear3/guided-journey.mjs', 'src/hear3/guided-journey.mjs'],
   ['/src/hear3/digital-tone-visualizer.mjs', 'src/hear3/digital-tone-visualizer.mjs'],
   ['/hear3-dual-restore/', 'hear3-dual-restore/index.html'],
   ['/hear3-dual-restore/index.html', 'hear3-dual-restore/index.html'],

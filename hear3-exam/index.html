@@ -76,6 +76,24 @@ input,select{accent-color:#70cfff}
 Para detener audio iniciado, pulsa Escape.</p>
 <p id="audio-preflight" data-testid="audio-preflight" role="status">
 Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automáticamente.</p>
+<div id="guided-journey" class="app-exam-journey" aria-label="Etapas de mi examen">
+ <nav data-journey="nav" class="app-exam-journey-nav" aria-label="Recorrido guiado">
+  <a href="#layout-heading" data-journey-stage="prepare" aria-current="step">1 · Mi equipo</a>
+  <a href="#sweep-heading" data-journey-stage="sweep">2 · Barrido</a>
+  <a href="#tones-heading" data-journey-stage="tones">3 · Tonos</a>
+  <a href="#eq-heading" data-journey-stage="result">4 · Mi EQ</a>
+ </nav>
+ <p data-journey="status" data-testid="journey-status"
+  class="app-subtle" role="status" aria-live="polite">
+  Etapa actual: 1 · Mi equipo. Puedes regresar sin perder tus datos.
+ </p>
+ <div class="app-exam-journey-actions">
+  <button type="button" data-journey="back" data-testid="journey-back"
+   disabled>Volver a la etapa anterior</button>
+  <button type="button" data-journey="next" data-testid="journey-next">
+   Ver la siguiente etapa</button>
+ </div>
+</div>
 <section aria-labelledby="layout-heading">
 <h2 id="layout-heading">1. Tu equipo y sus bandas</h2>
 <p>Elige las frecuencias reales de tu EQ gráfico; los presets son nominales y no detectan tu hardware.
@@ -106,6 +124,35 @@ Mantén el volumen físico bajo. Puedes utilizar entre 2 y 31 bandas sin atribui
 <button type="button" id="layout-apply" data-testid="layout-apply">Confirmar las bandas del EQ</button>
 <p id="layout-status" data-testid="layout-status" role="status" aria-live="polite">
 Distribución inicial: 5 bandas declaradas, de 125 a 2000 Hz. No verificada físicamente.</p>
+<div id="photo-band-assistant" class="app-device-helper" aria-label="Ayuda para configurar frecuencias">
+ <button type="button" data-photo="suggest" data-testid="device-suggest-layout">
+  Usar referencia de auriculares (10 bandas)
+ </button>
+ <p class="app-subtle">La referencia no identifica automáticamente tu equipo.
+  Comprueba que las frecuencias coincidan antes de comenzar.</p>
+ <details class="app-result-details" data-testid="photo-band-details">
+  <summary>Usar una foto de mi ecualizador para identificar sus bandas</summary>
+  <p>Una foto puede ayudarte a copiar las frecuencias. Hear no la sube ni la guarda.
+   Si este navegador tiene reconocimiento de texto compatible, aparecerá una
+   <strong>propuesta que debes comprobar</strong> antes de usar.</p>
+  <label for="hear-eq-photo">Foto de los controles de frecuencias (JPG, PNG o WebP, máximo 8 MB)</label>
+  <input id="hear-eq-photo" data-photo="input" data-testid="eq-photo-input"
+   type="file" accept="image/jpeg,image/png,image/webp">
+  <canvas class="app-device-photo" data-photo="canvas" data-testid="eq-photo-canvas"
+   aria-label="Previsualización local del ecualizador fotografiado" hidden></canvas>
+  <p data-photo="status" data-testid="eq-photo-status" role="status" aria-live="polite">
+   Selecciona una foto. También puedes escribir las bandas manualmente.</p>
+  <p data-photo="proposal" data-testid="eq-photo-proposal"></p>
+  <div class="app-actions app-result-actions">
+   <button type="button" data-photo="apply" data-testid="eq-photo-apply" disabled>
+    Usar estas frecuencias para revisarlas</button>
+   <button type="button" data-photo="clear" data-testid="eq-photo-clear">
+    Descartar fotografía</button>
+  </div>
+  <p class="app-subtle">Si no se reconocen todas las etiquetas, escribe los números
+   en «Frecuencias personalizadas». Ninguna fotografía pasa al historial o al respaldo.</p>
+ </details>
+</div>
 </section>
 <section aria-labelledby="sweep-heading">
 <h2 id="sweep-heading">2. Exploración de frecuencias</h2>
@@ -176,32 +223,8 @@ Estos valores muestran el programa digital, no la frecuencia acústica realmente
 <button type="button" id="tone-finish" data-testid="tone-finish" disabled>Finalizar y ver resumen</button>
 </div>
 </section>
-<section aria-labelledby="recovery-heading">
-<h2 id="recovery-heading">Recuperar mi examen</h2>
-<p>El plan y las respuestas a tonos se guardan juntos en este navegador.
- Recuperar nunca reproduce audio automáticamente. Antes de reanudar verifica
- la salida de audio y mantén el volumen físico bajo, cómodo y fijo.</p>
-<p id="recovery-status" role="status" data-testid="recovery-status">Comprobando copias locales…</p>
-<div class="controls">
-<button type="button" id="recover-exam" data-testid="recover-exam" disabled>Recuperar examen guardado</button>
-<button type="button" id="export-exam" data-testid="export-exam" disabled>Descargar respaldo JSON</button>
-<button type="button" id="delete-exam" data-testid="delete-exam" disabled>Eliminar este examen guardado</button>
-</div>
-<label for="route-verified"><input id="route-verified" data-testid="route-verified" type="checkbox">
-He comprobado la salida y el volumen físico bajo antes de reanudar</label>
-<p>Las copias JSON descargadas no están cifradas y no se eliminan al borrar datos del navegador.
- Los datos guardados anteriormente no se migran ni eliminan automáticamente.</p>
-</section>
-<section aria-labelledby="summary-heading">
-<h2 id="summary-heading">4. Resultados del examen</h2>
-<p>Este examen registra lo escuchado/no escuchado; muestra intervalos subjetivos o
- bandas inconclusas. No inventa un umbral auditivo. Cuando se finaliza explícitamente
- el examen conjunto, genera un EQ matemático de contraste relativo, con topes
- y origen identificados por banda. <strong>No está calibrado acústicamente.</strong></p>
-<div id="result" data-testid="result" role="status">Sin resultados confirmados.</div>
-</section>
 <section aria-labelledby="eq-heading">
-<h2 id="eq-heading" tabindex="-1">5. Tu ecualizador</h2>
+<h2 id="eq-heading" tabindex="-1">4. Tu ecualizador</h2>
 <p class="notice">Las ganancias indicadas son ajustes orientativos derivados de
  tus respuestas subjetivas con señales en dBFS. No miden una pérdida auditiva,
  no verifican clipping, no certifican el equipo ni el nivel de presión acústica.
@@ -260,29 +283,8 @@ Finaliza el examen para consultar una curva orientativa.</p>
 <button type="button" id="eq-export" data-testid="eq-export" disabled>
 Descargar mi curva (JSON, sin aplicar al equipo)</button>
 </section>
-<section aria-labelledby="transfer-heading">
-<h2 id="transfer-heading">6. Transferir ajustes manualmente</h2>
-<p class="notice">Esta función <strong>no mueve ningún control</strong>. Solo convierte
- ganancias EQ provisionales a una escala de dB declarada por ti y únicamente
- si las frecuencias coinciden exactamente. No presume que una posición
- física equivale a dB, que la descripción pertenece al equipo conectado ni
- que su respuesta acústica esté verificada.</p>
-<label for="transfer-file">Archivo JSON con el perfil de controles gráficos
- (`{deviceId, type:"graphic", bands:[...]}` o propiedad `graphicEq`)</label>
-<input id="transfer-file" data-testid="transfer-file" type="file"
- accept=".json,application/json">
-<div class="controls">
-<button type="button" id="transfer-preview" data-testid="transfer-preview" disabled>
-Revisar redondeo de controles, sin aplicar</button>
-<button type="button" id="transfer-export" data-testid="transfer-export" disabled>
-Descargar informe de transferencia (no preset)</button>
-</div>
-<p id="transfer-status" data-testid="transfer-status" role="status">
-Primero finaliza un examen y selecciona un perfil de controles.</p>
-<div id="transfer-rows" data-testid="transfer-rows" aria-label="Equivalencia provisional de controles"></div>
-</section>
 <section aria-labelledby="archive-heading">
-<h2 id="archive-heading">7. Guardar mis resultados</h2>
+<h2 id="archive-heading">5. Guardar mi resultado</h2>
 <p>Tu EQ aparece automáticamente al terminar el examen. Puedes copiarlo o descargarlo sin guardarlo. Si decides conservarlo,
  puedes guardar tus respuestas en el historial. Si lo autorizas
  <strong>por separado</strong>, también puedes guardar una curva matemática
@@ -304,6 +306,51 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 </div>
 <p id="archive-status" data-testid="archive-status" role="status">Primero termina el examen de tonos. No se guarda EQ.</p>
 <p><a href="../hear3-library/">Ver mis resultados</a> · <a href="../hear3-eq-editor/">Editar mi ecualizador</a></p>
+</section>
+<section aria-labelledby="recovery-heading">
+<h2 id="recovery-heading">Recuperar mi examen</h2>
+<p>El plan y las respuestas a tonos se guardan juntos en este navegador.
+ Recuperar nunca reproduce audio automáticamente. Antes de reanudar verifica
+ la salida de audio y mantén el volumen físico bajo, cómodo y fijo.</p>
+<p id="recovery-status" role="status" data-testid="recovery-status">Comprobando copias locales…</p>
+<div class="controls">
+<button type="button" id="recover-exam" data-testid="recover-exam" disabled>Recuperar examen guardado</button>
+<button type="button" id="export-exam" data-testid="export-exam" disabled>Descargar respaldo JSON</button>
+<button type="button" id="delete-exam" data-testid="delete-exam" disabled>Eliminar este examen guardado</button>
+</div>
+<label for="route-verified"><input id="route-verified" data-testid="route-verified" type="checkbox">
+He comprobado la salida y el volumen físico bajo antes de reanudar</label>
+<p>Las copias JSON descargadas no están cifradas y no se eliminan al borrar datos del navegador.
+ Los datos guardados anteriormente no se migran ni eliminan automáticamente.</p>
+</section>
+<section aria-labelledby="summary-heading">
+<h2 id="summary-heading">Detalles de las respuestas del examen</h2>
+<p>Este examen registra lo escuchado/no escuchado; muestra intervalos subjetivos o
+ bandas inconclusas. No inventa un umbral auditivo. Cuando se finaliza explícitamente
+ el examen conjunto, genera un EQ matemático de contraste relativo, con topes
+ y origen identificados por banda. <strong>No está calibrado acústicamente.</strong></p>
+<div id="result" data-testid="result" role="status">Sin resultados confirmados.</div>
+</section>
+<section aria-labelledby="transfer-heading">
+<h2 id="transfer-heading">Opciones avanzadas de transferencia manual</h2>
+<p class="notice">Esta función <strong>no mueve ningún control</strong>. Solo convierte
+ ganancias EQ provisionales a una escala de dB declarada por ti y únicamente
+ si las frecuencias coinciden exactamente. No presume que una posición
+ física equivale a dB, que la descripción pertenece al equipo conectado ni
+ que su respuesta acústica esté verificada.</p>
+<label for="transfer-file">Archivo JSON con el perfil de controles gráficos
+ (`{deviceId, type:"graphic", bands:[...]}` o propiedad `graphicEq`)</label>
+<input id="transfer-file" data-testid="transfer-file" type="file"
+ accept=".json,application/json">
+<div class="controls">
+<button type="button" id="transfer-preview" data-testid="transfer-preview" disabled>
+Revisar redondeo de controles, sin aplicar</button>
+<button type="button" id="transfer-export" data-testid="transfer-export" disabled>
+Descargar informe de transferencia (no preset)</button>
+</div>
+<p id="transfer-status" data-testid="transfer-status" role="status">
+Primero finaliza un examen y selecciona un perfil de controles.</p>
+<div id="transfer-rows" data-testid="transfer-rows" aria-label="Equivalencia provisional de controles"></div>
 </section>
 <p id="error" data-testid="error" role="alert"></p>
 <p><a href="../">Volver al inicio</a></p>
@@ -864,6 +911,29 @@ attachHear3DigitalToneVisualizer({
  toneStatus:document.getElementById('tone-status'),
  sweepPath:document.getElementById('hear-sweep-wave'),
  tonePath:document.getElementById('hear-tone-wave'),
+});
+</script>
+<script type="module">
+import {mountHear3PhotoBandAssistant} from '../src/hear3/photo-band-assistant.mjs';
+mountHear3PhotoBandAssistant({
+ root:document.getElementById('photo-band-assistant'),
+ categorySelect:document.getElementById('archive-category'),
+ layoutChoice:document.getElementById('layout-choice'),
+ layoutCustom:document.getElementById('layout-custom'),
+ layoutApply:document.getElementById('layout-apply'),
+});
+</script>
+<script type="module">
+import {mountHear3GuidedJourney} from '../src/hear3/guided-journey.mjs';
+mountHear3GuidedJourney({
+ root:document.getElementById('guided-journey'),
+ getState:()=>({
+  sweep:window.hear3IntegratedPilot?.sweep(),
+  sweepResult:window.hear3IntegratedPilot?.sweepResult(),
+  exam:window.hear3IntegratedPilot?.snapshot(),
+  comparison:window.hear3IntegratedPilot?.comparison(),
+  eq:window.hear3IntegratedPilot?.eqDraft(),
+ }),
 });
 </script>
 </body>
