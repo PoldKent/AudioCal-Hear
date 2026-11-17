@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hear 3.0 beta · Historial y respaldos | AudioCal Hear</title>
+<title>Mis resultados y respaldos · AudioCal Hear</title>
 <style>
 :root{color-scheme:light dark;font-family:system-ui,sans-serif}
 body{max-width:42rem;margin:2rem auto;padding:0 1rem;line-height:1.55}
@@ -33,32 +33,35 @@ a:focus-visible{outline:3px solid #ffd178;outline-offset:3px}
 @media(max-width:560px){body{margin:.5rem auto;padding:0 .85rem}
 .hear-nav a{padding:.35rem .45rem;font-size:.92rem}}
 </style>
+<link rel="stylesheet" href="../src/hear3/app-shell.css">
 </head>
 <body>
-<nav class="hear-nav" aria-label="Secciones de Hear 3.0">
-<a href="../hear3-preview/">Inicio</a>
-<a href="../hear3-exam/">Examen</a>
-<a href="../hear3-library/" aria-current="page">Mi historial</a>
-<a href="../hear3-eq-editor/">Editar EQ</a>
-<a href="../hear2/">Hear 2 anterior</a>
-</nav>
-<main>
-<h1>Mi historial · Hear 3.0 beta</h1>
-<p class="warning"><strong>Gestión local experimental.</strong> Sin audio, cuentas ni sincronización. Esta sección
-ofrece una migración opcional y conservadora desde Hear 2.0. No borra ni modifica sus datos originales; las mediciones históricas quedan en un archivo aparte y aún no se convierten a resultados V3.</p>
-<p><a href="../hear3-exam/">Realizar otro examen experimental</a> ·
+<header class="app-topbar">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal">
+  <a href="../">Inicio</a>
+  <a href="../hear3-exam/">Examen</a>
+  <a href="../hear3-eq-editor/">Mi ecualizador</a>
+  <a href="../hear3-library/" aria-current="page">Historial</a>
+  <a href="../#ajustes">Ajustes</a>
+ </nav>
+</header>
+<main class="app-page">
+<h1>Mis resultados e historial</h1>
+<p class="warning"><strong>Tus datos se guardan en este navegador.</strong> No se envían a la nube ni se reproduce sonido en esta sección. Puedes exportar copias, revisar resultados o recuperar datos anteriores sin modificarlos automáticamente.</p>
+<p><a href="../hear3-exam/">Comenzar otro examen</a> ·
 <a href="../hear3-eq-editor/">Abrir EQ guardado</a> ·
-<a href="../hear3-dual-restore/">Restauración protegida V2 y V3</a></p>
+<a href="../hear3-dual-restore/">Restaurar respaldos completos</a></p>
 <p id="summary" data-testid="summary" role="status">Cargando…</p>
 <p id="durability" data-testid="durability" role="status"></p>
-<button type="button" id="download" data-testid="download">Exportar catálogo V3 (JSON)</button>
+<button type="button" id="download" data-testid="download">Descargar respaldo de mis resultados (JSON)</button>
 <h2>Último resultado del perfil activo (solo lectura)</h2>
 <p>Esta vista no modifica resultados, no inicia sonido y no valida acústicamente el equipo.</p>
 <button type="button" id="history-show" data-testid="history-show">Consultar último resultado</button>
 <p id="history-result" data-testid="history-result" role="status">Todavía no se ha consultado el historial.</p>
-<h2>Eliminar datos V3 seleccionados</h2>
-<p>Esta acción afecta únicamente al catálogo V3 de este navegador. No elimina copias JSON descargadas,
-perfiles V2, checkpoints ni otros datos del sitio. Si eliges borrar un perfil o equipo relacionado
+<h2>Eliminar resultados seleccionados</h2>
+<p>Esta acción afecta únicamente al historial de esta aplicación. No elimina copias JSON descargadas,
+historial antiguo, exámenes en curso ni otros datos del sitio. Si eliges borrar un perfil o equipo relacionado
 con resultados, tendrás que autorizar también la eliminación de esos registros.</p>
 <label for="delete-kind">Tipo de dato</label>
 <select id="delete-kind" data-testid="delete-kind">
@@ -71,7 +74,7 @@ Permitir borrar los registros dependientes, solo después de verlos y confirmar<
 <button type="button" id="delete-preview" data-testid="delete-preview">Revisar eliminación</button>
 <button type="button" id="delete-commit" data-testid="delete-commit" disabled>Confirmar eliminación seleccionada</button>
 <p id="delete-summary" data-testid="delete-summary" role="status">Ninguna eliminación revisada.</p>
-<h2>Importar respaldo</h2>
+<h2>Importar resultados guardados</h2>
 <label for="file">Archivo JSON local</label>
 <input id="file" data-testid="file" type="file" accept=".json,application/json">
 <label for="mode">Modo de importación</label>
@@ -84,7 +87,9 @@ Permitir borrar los registros dependientes, solo después de verlos y confirmar<
 <button type="button" id="commit" data-testid="commit" disabled>Confirmar importación</button>
 </div>
 <p id="description" data-testid="description" role="status">Todavía no se ha revisado ningún archivo.</p>
-<h2>Migración conservadora de Hear 2.0 (experimental)</h2>
+<details class="app-card" id="datos-anteriores">
+<summary>Importar datos de una instalación anterior (opcional)</summary>
+<h2>Transferir datos de una instalación anterior</h2>
 <p class="warning">Primero revisa los perfiles antiguos y exporta el archivo completo de respaldo V2. La migración solo trasladará equipos y frecuencias; las mediciones y configuraciones anteriores se conservan en el archivo, sin transformarse en resultados V3.</p>
 <label for="legacy-source">Origen de los perfiles Hear 2.0</label>
 <select id="legacy-source" data-testid="legacy-source">
@@ -114,6 +119,8 @@ Volver a descargar historial V2 previamente conservado</button>
 <p id="legacy-vault-status" data-testid="legacy-vault-status" role="status">
 Todavía no se ha guardado ningún historial V2 completo en Hear3.</p>
 <p id="legacy-description" data-testid="legacy-description" role="status">Aún no se han revisado los datos de Hear 2.0.</p>
+
+</details>
 <p id="error" data-testid="error" role="alert"></p>
 </main>
 <script type="module">
