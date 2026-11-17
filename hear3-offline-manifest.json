@@ -24,6 +24,7 @@
     "src/hear3/coordinated-catalog-writer.mjs",
     "src/hear3/device-profile-contract.mjs",
     "src/hear3/eq-control-quantization.mjs",
+    "src/hear3/eq-band-layouts.mjs",
     "src/hear3/eq-digital-transfer-model.mjs",
     "src/hear3/provisional-eq-editor.mjs",
     "src/hear3/guarded-dual-archive-restore.mjs",
