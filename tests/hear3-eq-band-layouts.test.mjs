@@ -33,3 +33,12 @@ test('invalid layouts fail closed instead of sorting, clipping, deduplicating or
  assert.deepEqual(resolveHear3GraphicBandLayout({preset:'5'}).map(x=>x.frequencyHz),
   [125,250,500,1000,2000]);
 });
+
+test('documented car and headphone references preserve the actual photographed EQ frequencies',()=>{
+ const car=resolveHear3GraphicBandLayout({preset:'car-reference-7'}).map(r=>r.frequencyHz);
+ const headphones=resolveHear3GraphicBandLayout({preset:'headphones-reference-10'})
+  .map(r=>r.frequencyHz);
+ assert.deepEqual(car,[64,160,400,1000,2500,6250,15625]);
+ assert.deepEqual(headphones,[30,60,120,250,500,1000,2000,4000,8000,16000]);
+ assert.deepEqual(HEAR3_BAND_PRESET_SIZES,[4,5,7,10,15,31]);
+});

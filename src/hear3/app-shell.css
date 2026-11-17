@@ -116,4 +116,43 @@ a{color:var(--app-accent)}
  .app-nav{width:100%;margin-left:0;justify-content:space-between;gap:0}
  .app-nav a{font-size:.85rem;padding:.45rem .38rem}
 }
+/* The waveform is an illustration of the programmed digital frequency only. */
+.hear-wave{display:block;width:100%;max-width:620px;height:auto;min-height:70px;
+ margin:.55rem auto;background:var(--app-panel);
+ border:1px solid var(--app-line);border-radius:.8rem;padding:.25rem;
+ opacity:.65;overflow:visible}
+.hear-wave.hear-wave-active{opacity:1}
+.hear-wave.hear-wave-active path{animation:hear-wave-pulse 1.4s ease-in-out infinite alternate}
+@keyframes hear-wave-pulse{from{opacity:.62}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.hear-wave.hear-wave-active path{animation:none}}
+/* Single test-to-result journey: one legible, printable EQ chart. */
+.app-result-card{border:1px solid var(--app-line);border-radius:1rem;
+ background:var(--app-panel-hi);padding:clamp(.85rem,2.5vw,1.45rem);margin:1.15rem 0}
+.app-result-card h3{margin:.1rem 0 .6rem;font-size:1.35rem;letter-spacing:-.02em}
+.app-eq-scroll{overflow-x:auto;max-width:100%;overscroll-behavior-x:contain;
+ border:1px solid var(--app-line);border-radius:.8rem;background:var(--app-panel);
+ margin:1rem 0;padding:.5rem;scrollbar-width:thin}
+.app-eq-chart{display:flex;gap:clamp(.25rem,1vw,.55rem);
+ min-width:max-content;align-items:stretch}
+.app-eq-chart:empty{min-width:0;min-height:4rem}
+.app-eq-band{width:clamp(73px,10vw,97px);min-width:73px;display:flex;flex-direction:column;
+ align-items:center;text-align:center;gap:.2rem;padding:.4rem .2rem;font-size:.86rem;
+ font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.app-eq-band strong{font-size:.95rem}
+.app-eq-input{width:100%;min-height:44px;padding:.3rem .2rem;border-radius:.45rem;
+ color:var(--app-text);background:var(--app-panel);border:1px solid var(--app-line);
+ font:inherit;font-variant-numeric:tabular-nums;text-align:center}
+.app-eq-input:invalid{outline:2px solid #f6b867}
+.app-eq-band small{font-size:.7rem;color:var(--app-muted)}
+.app-eq-bar-area{height:165px;width:70%;max-width:58px;position:relative;border-left:1px solid var(--app-line)}
+.app-eq-zero{position:absolute;top:50%;left:0;width:100%;border-top:2px solid var(--app-muted);opacity:.7}
+.app-eq-bar{position:absolute;left:22%;width:56%;border-radius:4px;
+ background:#21b8d1;min-height:2px}
+.app-eq-bar.negative{background:#dfaa50}
+.app-result-actions button{width:auto;max-width:100%;min-height:44px;flex:1 1 130px}
+.app-result-details{border:1px solid var(--app-line);border-radius:.8rem;
+ padding:.75rem 1rem;margin:1rem 0;color:var(--app-muted)}
+.app-result-details summary{cursor:pointer;min-height:32px;color:var(--app-text);font-weight:740}
+@media(max-width:480px){.app-result-actions button{flex:1 1 44%}}
+
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

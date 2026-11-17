@@ -90,6 +90,8 @@ Mantén el volumen físico bajo. Puedes utilizar entre 2 y 31 bandas sin atribui
 </select>
 <label for="layout-choice">Distribución gráfica</label>
 <select id="layout-choice" data-testid="layout-choice">
+<option value="car-reference-7">Automóvil de referencia · 7 bandas (64–15.625 Hz)</option>
+<option value="headphones-reference-10">Auriculares de referencia · 10 bandas (30–16.000 Hz)</option>
 <option value="4">4 bandas nominales</option>
 <option value="5" selected>5 bandas nominales</option>
 <option value="7">7 bandas nominales</option>
@@ -116,6 +118,11 @@ Distribución inicial: 5 bandas declaradas, de 125 a 2000 Hz. No verificada fís
 <p><strong>Nivel de señal digital:</strong>
 <output id="sweep-level" data-testid="sweep-level" aria-live="off">—</output></p>
 </div>
+<svg class="hear-wave" viewBox="0 0 480 84" role="img"
+ aria-label="Representación visual orientativa de la frecuencia digital programada en el barrido">
+ <path id="hear-sweep-wave" stroke="#39c7d5" stroke-width="2.4" stroke-linecap="round"
+  fill="none"></path>
+</svg>
 <p>Tiempo restante orientativo: <output id="sweep-remaining" data-testid="sweep-remaining" aria-live="off">—</output>.
 Estos valores muestran el programa digital, no la frecuencia acústica realmente emitida, ni si lo escuchas.</p>
 <label for="sweep-progress">Progreso temporal orientativo del barrido</label>
@@ -137,6 +144,11 @@ Estos valores muestran el programa digital, no la frecuencia acústica realmente
 <p id="tone-status" role="status" aria-live="polite" data-testid="tone-status">Esperando barrido</p>
 <p><strong>Frecuencia:</strong> <span id="frequency" data-testid="frequency">—</span></p>
 <p><strong>Nivel digital:</strong> <span id="dbfs" data-testid="dbfs">—</span></p>
+<svg class="hear-wave" viewBox="0 0 480 84" role="img"
+ aria-label="Representación visual orientativa del tono digital programado">
+ <path id="hear-tone-wave" stroke="#39c7d5" stroke-width="2.4" stroke-linecap="round"
+  fill="none"></path>
+</svg>
 <label for="tone-progress">Progreso estimado del tono (no representa salida física)</label>
 <progress id="tone-progress" max="3000" value="0"></progress>
 <p id="coverage" data-testid="coverage">Bandas confirmadas: 0</p>
@@ -199,9 +211,43 @@ He comprobado la salida y el volumen físico bajo antes de reanudar</label>
  dos bandas vecinas con evidencia suficiente.</p>
 <p id="eq-status" data-testid="eq-status" role="status">
 Finaliza el examen para consultar una curva orientativa.</p>
-<div id="eq-rows" data-testid="eq-rows" aria-label="Ganancias EQ orientativas por banda"></div>
-<p id="eq-headroom" data-testid="eq-headroom">
-La preamplificación y el headroom no están verificados en el dispositivo.</p>
+<div class="app-result-card" id="eq-immediate" data-testid="eq-immediate"
+ aria-labelledby="eq-immediate-title">
+ <h3 id="eq-immediate-title">Estos son los valores de tu EQ</h3>
+ <p data-immediate-eq="status" data-testid="eq-immediate-status" role="status">
+  Al finalizar aparecerán los ajustes de todas las bandas.</p>
+ <div class="app-eq-scroll">
+  <div data-immediate-eq="chart" data-testid="eq-immediate-chart" class="app-eq-chart"
+   aria-label="Curva gráfica de ganancias de ecualización"></div>
+ </div>
+ <div class="app-actions app-result-actions">
+  <button type="button" data-immediate-eq="copy" data-testid="eq-immediate-copy" disabled>Copiar valores</button>
+  <button type="button" data-immediate-eq="txt" data-testid="eq-immediate-txt" disabled>Descargar TXT</button>
+  <button type="button" data-immediate-eq="csv" data-testid="eq-immediate-csv" disabled>Descargar CSV</button>
+  <button type="button" data-immediate-eq="png" data-testid="eq-immediate-png" disabled>Guardar imagen PNG</button>
+ </div>
+ <p data-immediate-eq="action-status" role="status" aria-live="polite"
+  data-testid="eq-immediate-action">El EQ no se aplica automáticamente.</p>
+ <div class="app-actions app-result-actions">
+  <button type="button" data-immediate-eq="restore" data-testid="eq-immediate-restore" disabled>
+   Restaurar propuesta original</button>
+  <button type="button" data-immediate-eq="save" data-testid="eq-immediate-save" disabled>
+   Guardar mis cambios al EQ</button>
+ </div>
+ <p data-immediate-eq="save-status" data-testid="eq-immediate-save-status"
+  role="status" aria-live="polite">
+  Puedes ajustar los números y exportarlos ahora. Para guardarlos en el historial,
+  primero guarda tus resultados incluyendo el EQ, y confirma después la edición.
+ </p>
+ <p>Los ajustes manuales no cambian las mediciones originales.
+ También puedes <a href="../hear3-eq-editor/">editar un EQ guardado</a> desde el historial.</p>
+</div>
+<details class="app-result-details">
+ <summary>Ver evidencia de tonos y cálculo técnico</summary>
+ <div id="eq-rows" data-testid="eq-rows" aria-label="Ganancias EQ orientativas por banda"></div>
+ <p id="eq-headroom" data-testid="eq-headroom">
+ La preamplificación y el headroom no están verificados en el dispositivo.</p>
+</details>
 <button type="button" id="eq-export" data-testid="eq-export" disabled>
 Descargar mi curva (JSON, sin aplicar al equipo)</button>
 </section>
@@ -228,7 +274,8 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 </section>
 <section aria-labelledby="archive-heading">
 <h2 id="archive-heading">7. Guardar mis resultados</h2>
-<p>Al finalizar, puedes guardar tus respuestas en el historial. Si lo autorizas
+<p>Tu EQ aparece automáticamente al terminar el examen. Puedes copiarlo o descargarlo sin guardarlo. Si decides conservarlo,
+ puedes guardar tus respuestas en el historial. Si lo autorizas
  <strong>por separado</strong>, también puedes guardar una curva matemática
  <strong>provisional y no calibrada</strong> para editarla y exportarla.
  Sin autorización adicional solo se conservan las respuestas, sin EQ.
@@ -297,6 +344,7 @@ const progressStore=createHear3AdaptiveProgressStore({profileId});
 const progressReader=createHear3ReadThrottle({read:()=>progressStore.load(),intervalMs:1000});
 const catalogStore=createHear3CatalogStore();
 const catalogWriter=createHear3CatalogWriteCoordinator({store:catalogStore});
+let archiveResultId=null;
 let archiveTransfer=null,archiveMessage='Primero termina el examen de tonos. No se guarda EQ.';
 let exam=null,planning=false,sweepStarting=false;
 let eqDraft=null,eqDigitalModel=null,eqDigitalModelError=null,renderedEq=undefined;
@@ -666,7 +714,7 @@ $('delete-exam').addEventListener('click',()=>run(()=>{
 }));
 function discardArchive(){
  archiveTransfer?.discard();
- archiveTransfer=null;
+ archiveTransfer=null;archiveResultId=null;
  archiveMessage='Cualquier cambio necesita una nueva vista previa, sin guardar datos.';
  render();
 }
@@ -711,7 +759,7 @@ $('eq-export').addEventListener('click',()=>run(()=>{
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }));
 $('archive-preview').addEventListener('click',()=>run(()=>{
- archiveTransfer=null;
+ archiveTransfer=null;archiveResultId=null;
  if(!exam)throw Error('No existe examen finalizado.');
  if(typeof crypto==='undefined'||typeof crypto.randomUUID!=='function')
   throw Error('Se requiere un origen seguro para generar identificadores únicos.');
@@ -725,7 +773,7 @@ $('archive-preview').addEventListener('click',()=>run(()=>{
   category:$('archive-category').value,
   includeProvisionalEq:$('archive-eq-optin').checked,
  });
- archiveTransfer=transfer;
+ archiveTransfer=transfer;archiveResultId=preview.resultId;
  archiveMessage='Se guardarán '+preview.subjectiveResponses+
   ' respuestas, '+preview.bands+' bandas. '+
   (preview.provisionalEqOptIn
@@ -743,7 +791,12 @@ $('archive-commit').addEventListener('click',()=>run(async()=>{
  const {response:result}=await catalogWriter.run(()=>
   archiveTransfer.commit({userInitiated:true,confirmed:true,
    confirmProvisionalEq:addEq}));
- archiveTransfer=null;
+ const archivedResultId=archiveResultId;
+ archiveTransfer=null;archiveResultId=null;
+ if(result.provisionalEqStored&&archivedResultId)
+  document.dispatchEvent(new CustomEvent('hear3:eq-archive-saved',{
+   detail:{resultId:archivedResultId,persistedOnDevice:result.persistedOnDevice}
+  }));
  archiveMessage=result.persistedOnDevice
   ?result.provisionalEqStored
    ?'Historial y EQ matemático provisional guardados. Ábrelo en el editor para revisar o exportar.'
@@ -784,6 +837,23 @@ window.addEventListener('pagehide',()=>{
   exam.interrupt({routeMayHaveChanged:true});
 },{once:true});
 render();
+</script>
+<script type="module">
+import {mountHear3ImmediateEq} from '../src/hear3/immediate-eq-result.mjs';
+const root=document.getElementById('eq-immediate');
+const source=document.getElementById('eq-rows');
+mountHear3ImmediateEq({root,source,getDraft:()=>window.hear3IntegratedPilot?.eqDraft()??null});
+</script>
+<script type="module">
+import {attachHear3DigitalToneVisualizer} from '../src/hear3/digital-tone-visualizer.mjs';
+attachHear3DigitalToneVisualizer({
+ sweepFrequency:document.getElementById('sweep-frequency'),
+ sweepStatus:document.getElementById('sweep-status'),
+ toneFrequency:document.getElementById('frequency'),
+ toneStatus:document.getElementById('tone-status'),
+ sweepPath:document.getElementById('hear-sweep-wave'),
+ tonePath:document.getElementById('hear-tone-wave'),
+});
 </script>
 </body>
 </html>

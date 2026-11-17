@@ -9,12 +9,16 @@ const presets=Object.freeze({
  '7':[63,125,250,500,1000,2000,4000],
  '10':[31.5,63,125,250,500,1000,2000,4000,8000,16000],
  '15':[25,40,63,100,160,250,400,630,1000,1600,2500,4000,6300,10000,16000],
+ // Reference layouts documented from the user's real EQ photographs.
+ // They are user-declared examples, never automatic hardware recognition.
+ 'car-reference-7':[64,160,400,1000,2500,6250,15625],
+ 'headphones-reference-10':[30,60,120,250,500,1000,2000,4000,8000,16000],
  '31':[20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,
   1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000],
 });
 const check=(value,message)=>{if(!value)throw Error(message);};
 export const HEAR3_BAND_PRESET_SIZES=Object.freeze(
- Object.keys(presets).map(Number));
+ Object.keys(presets).filter(x=>/^\d+$/.test(x)).map(Number));
 function checkedFrequencies(input){
  check(Array.isArray(input)&&input.length>=2&&input.length<=31,
   'El EQ debe tener de 2 a 31 frecuencias.');

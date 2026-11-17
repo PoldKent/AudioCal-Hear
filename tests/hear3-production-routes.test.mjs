@@ -6,7 +6,7 @@ const file=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 function logic(html){
  const marker='<script type="module">';
  assert.ok(html.includes(marker),'Missing the original module entry');
- return html.split(marker).at(-1).split('</script>')[0];
+ return html.slice(html.indexOf(marker)+marker.length).split('</script>')[0];
 }
 test('exam keeps its tested audio and safety engine without changing source logic',()=>{
  const pilot=logic(file('tests/fixtures/hear3-integrated-exam-pilot.html'));
