@@ -93,3 +93,31 @@ test('P0 opt-in archive saves completed tone responses without false EQ or delet
  await page.getByRole('link',{name:'Consultar catálogo e historial V3'}).click();
  await expect(page.getByTestId('summary')).toContainText('1 dispositivos, 1 perfiles, 1 resultados');
 });
+
+test('optional EQ can be archived only with double consent and reopened as an editable provisional review',async({page})=>{
+ test.setTimeout(90000);
+ await fakeAudio(page);
+ await page.goto(PILOT);
+ await finishSubjectivePilot(page);
+ await page.getByTestId('archive-eq-optin').check();
+ await page.getByTestId('archive-preview').click();
+ await expect(page.getByTestId('archive-status')).toContainText('EQ PROVISIONAL: 5 bandas');
+ let dialogs=0;
+ page.on('dialog',d=>{dialogs++;return d.accept();});
+ await page.getByTestId('archive-commit').click();
+ await expect(page.getByTestId('archive-status')).toContainText('EQ matemático provisional guardados');
+ expect(dialogs).toBe(2);
+ const saved=await page.evaluate(async()=>{
+  const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
+  return createHear3CatalogStore().load().catalog.results[0];
+ });
+ expect(saved.status).toBe('provisional');
+ expect(saved.provenance).toBe('experimental-tone-test');
+ expect(saved.originalEq).toHaveLength(5);
+ expect(saved.currentEq).toEqual(saved.originalEq);
+ await page.goto('/hear3-eq-editor/');
+ await expect(page.getByTestId('result-select').locator('option')).toHaveCount(2);
+ await page.getByTestId('result-select').selectOption(saved.id);
+ await expect(page.getByTestId('chart').locator('.band')).toHaveCount(5);
+ await expect(page.getByTestId('catalog-status')).toContainText(saved.id);
+});

@@ -167,11 +167,11 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 </section>
 <section aria-labelledby="archive-heading">
 <h2 id="archive-heading">7. Guardar respuestas en el historial V3</h2>
-<p>Cuando el examen haya finalizado puedes archivar las respuestas reales como un
- <strong>registro experimental inconcluso</strong>. El EQ provisional calculado
- se puede descargar aparte, pero <strong>no se guarda como EQ validado</strong>
- en el catálogo. No se crea ningún umbral clínico. Las respuestas se guardan
- aquí y el respaldo del catálogo V3 se exporta por separado.</p>
+<p>Al finalizar, puedes guardar respuestas en el historial V3. Si lo autorizas
+ <strong>por separado</strong>, también puedes guardar una curva matemática
+ <strong>provisional y no calibrada</strong> para editarla y exportarla.
+ Sin autorización adicional solo se conservan las respuestas, sin EQ.
+ Ningún modo aplica las ganancias automáticamente o crea diagnósticos clínicos.</p>
 <label for="archive-device">Nombre del equipo que deseas registrar</label>
 <input id="archive-device" data-testid="archive-device" type="text" maxlength="120" value="Equipo del piloto"
  autocomplete="off">
@@ -186,12 +186,14 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 <option value="application">Aplicación</option>
 <option value="interface">Interfaz de audio</option>
 </select>
+<label><input type="checkbox" id="archive-eq-optin" data-testid="archive-eq-optin">
+ Guardar también el EQ matemático provisional, sin calibración ni aplicación automática</label>
 <div class="controls">
 <button type="button" id="archive-preview" data-testid="archive-preview" disabled>Revisar guardado V3</button>
 <button type="button" id="archive-commit" data-testid="archive-commit" disabled>Confirmar guardado V3</button>
 </div>
 <p id="archive-status" data-testid="archive-status" role="status">Primero termina el examen de tonos. No se guarda EQ.</p>
-<p><a href="hear3-catalog-pilot.html">Consultar catálogo e historial V3</a></p>
+<p><a href="hear3-catalog-pilot.html">Consultar catálogo e historial V3</a> · <a href="../../hear3-eq-editor/">Editar EQ provisional guardado</a></p>
 </section>
 <p id="error" data-testid="error" role="alert"></p>
 <p><a href="../../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
@@ -574,7 +576,7 @@ function discardArchive(){
  archiveMessage='Cualquier cambio necesita una nueva vista previa, sin guardar datos.';
  render();
 }
-for(const id of ['archive-device','archive-profile','archive-category']){
+for(const id of ['archive-device','archive-profile','archive-category','archive-eq-optin']){
  $(id).addEventListener('input',discardArchive);
  $(id).addEventListener('change',discardArchive);
 }
@@ -627,20 +629,31 @@ $('archive-preview').addEventListener('click',()=>run(()=>{
   deviceName:$('archive-device').value.trim(),
   profileName:$('archive-profile').value.trim(),
   category:$('archive-category').value,
+  includeProvisionalEq:$('archive-eq-optin').checked,
  });
  archiveTransfer=transfer;
  archiveMessage='Se guardarán '+preview.subjectiveResponses+
-  ' respuestas, '+preview.bands+' bandas en estado inconcluso. '+
-  'Ganancias EQ: 0. Revisa categoría y nombre antes de confirmar.';
+  ' respuestas, '+preview.bands+' bandas. '+
+  (preview.provisionalEqOptIn
+   ?'EQ PROVISIONAL: '+preview.originalEqBands+' bandas, sin calibración y sin aplicación automática.'
+   :'Ganancias EQ: 0. Estado inconcluso.')+
+  ' Revisa categoría y nombre antes de confirmar.';
 }));
 $('archive-commit').addEventListener('click',()=>run(async()=>{
  if(!archiveTransfer)throw Error('Revisa antes las respuestas y el alcance del guardado.');
- if(!confirm('¿Guardar las respuestas experimentales como un nuevo dispositivo y perfil V3, sin EQ ni diagnóstico?'))return;
+ const addEq=$('archive-eq-optin').checked;
+ if(!confirm(addEq
+  ?'¿Guardar respuestas y una curva EQ PROVISIONAL no calibrada? No aplica valores automáticamente.'
+  :'¿Guardar las respuestas experimentales como un nuevo dispositivo y perfil V3, sin EQ ni diagnóstico?'))return;
+ if(addEq&&!confirm('Confirmación adicional: los valores derivan de tonos subjetivos sin validación física, SPL ni headroom. ¿Guardar solo para revisión?'))return;
  const {response:result}=await catalogWriter.run(()=>
-  archiveTransfer.commit({userInitiated:true,confirmed:true}));
+  archiveTransfer.commit({userInitiated:true,confirmed:true,
+   confirmProvisionalEq:addEq}));
  archiveTransfer=null;
  archiveMessage=result.persistedOnDevice
-  ?'Historial V3 guardado localmente. Estado: inconcluso. No se generó EQ.'
+  ?result.provisionalEqStored
+   ?'Historial y EQ matemático provisional guardados. Ábrelo en el editor para revisar o exportar.'
+   :'Historial V3 guardado localmente. Estado: inconcluso. No se generó EQ.'
   :'La escritura en almacenamiento permanente NO está verificada. Exporta un respaldo local. '+(result.warning??'');
 }));
 window.hear3IntegratedPilot=Object.freeze({

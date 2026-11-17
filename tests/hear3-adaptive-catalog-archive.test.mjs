@@ -171,3 +171,43 @@ test('existing catalog entities remain unchanged when appending experimental arc
  assert.equal(saved.activeProfileId,'existing-profile');
  assert.equal(saved.results.length,2);
 });
+
+test('explicit opt-in archives a bounded provisional joint EQ and requires extra consent',async()=>{
+ const f=fixture();
+ f.local.setItem('audiocal-hear-profiles-v1','V2_NOT_TOUCHED');
+ await finish(f.exam);
+ const p=f.archive.preview({...f.args,includeProvisionalEq:true});
+ assert.equal(p.provisionalEqOptIn,true);
+ assert.equal(p.status,'provisional');
+ assert.equal(p.originalEqBands,2);
+ assert.equal(p.currentEqBands,2);
+ assert.equal(p.eqAutoApplyAllowed,false);
+ assert.equal(p.eqAcousticallyValidated,false);
+ assert.throws(()=>f.archive.commit({userInitiated:true,confirmed:true}),
+  /separate explicit confirmation/);
+ assert.equal(f.cat.load().revision,0);
+ const saved=f.archive.commit({userInitiated:true,confirmed:true,confirmProvisionalEq:true});
+ assert.equal(saved.resultStatus,'provisional');
+ assert.equal(saved.provisionalEqStored,true);
+ assert.equal(saved.autoApplyAllowed,false);
+ assert.equal(saved.persistedOnDevice,true);
+ const s=f.cat.load().catalog.results[0];
+ assert.equal(s.status,'provisional');
+ assert.equal(s.originalEq.length,2);
+ assert.deepEqual(s.currentEq,s.originalEq);
+ assert.deepEqual(s.editHistory,[]);
+ assert.equal(s.observations.length,9);
+ assert.equal(f.local.getItem('audiocal-hear-profiles-v1'),'V2_NOT_TOUCHED');
+ const restarted=createHear3CatalogStore({deviceStorage:f.local,tabStorage:null});
+ assert.deepEqual(restarted.load().catalog.results[0].originalEq,s.originalEq);
+});
+test('archive never enables provisional EQ unless opt-in boolean is explicitly true',async()=>{
+ const f=fixture();await finish(f.exam);
+ assert.throws(()=>f.archive.preview({...f.args,includeProvisionalEq:'true'}),
+  /opt-in must be explicit/);
+ const p=f.archive.preview({...f.args,includeProvisionalEq:false});
+ assert.equal(p.originalEqBands,0);
+ const saved=f.archive.commit({userInitiated:true,confirmed:true,confirmProvisionalEq:true});
+ assert.equal(saved.provisionalEqStored,false);
+ assert.equal(f.cat.load().catalog.results[0].currentEq.length,0);
+});
