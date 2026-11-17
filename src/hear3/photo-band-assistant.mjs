@@ -35,8 +35,11 @@ export function proposeHear3PhotoBandFrequencies(rawText){
   if(values.length>31)
    fail('Se reconocieron demasiados números; verifica las frecuencias manualmente.');
  }
- if(!hasUnit)
-  fail('No hay etiquetas Hz/kHz suficientemente claras. Revisa la foto e introduce las bandas manualmente.');
+ const knownReference=!hasUnit&&['car-reference-7','headphones-reference-10']
+  .some(preset=>JSON.stringify(resolveHear3GraphicBandLayout({preset})
+   .map(v=>v.frequencyHz))===JSON.stringify(values));
+ if(!hasUnit&&!knownReference)
+  fail('No hay etiquetas Hz/kHz ni una referencia conocida completa. Revisa la foto e introduce las bandas manualmente.');
  // Reuse the identical input contract that the exam requires; order and
  // uniqueness must already be supported by the evidence.
  const validated=resolveHear3GraphicBandLayout({
