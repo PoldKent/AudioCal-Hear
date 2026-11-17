@@ -9,6 +9,8 @@ on:
       - 'tests/**'
       - 'package.json'
       - 'index.html'
+      - 'hear2/**'
+      - 'hear3-preview/**'
       - '.github/workflows/source-tests.yml'
   pull_request:
     paths:
@@ -17,6 +19,8 @@ on:
       - 'tests/**'
       - 'package.json'
       - 'index.html'
+      - 'hear2/**'
+      - 'hear3-preview/**'
       - '.github/workflows/source-tests.yml'
 
 permissions:
