@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hear 3.0 beta · Examen de tonos | AudioCal Hear</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif}
+body{max-width:46rem;margin:1.2rem auto;padding:0 1rem 3rem;line-height:1.55}
+h1{font-size:clamp(1.6rem,5vw,2.2rem)}button{font:inherit;min-height:2.75rem;padding:.65rem .85rem;touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
+ outline:3px solid currentColor;outline-offset:3px}
+.skip-link{position:absolute;top:-100px;left:12px;background:Canvas;color:CanvasText;
+ padding:.7rem;border:2px solid;z-index:10}
+.skip-link:focus{top:8px}
+#eq-heading:focus{outline:3px solid currentColor;outline-offset:3px}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
+button{width:100%}.notice{border:1px solid;border-radius:.6rem;padding:.85rem;margin:1rem 0}
+progress{width:100%;height:1rem}section{border-bottom:1px solid #8885;padding-bottom:1.2rem;margin-bottom:1.5rem}
+#frequency,#sweep-frequency{font-weight:850;font-size:clamp(2rem,6vw,3rem)}
+#dbfs,#sweep-level{font-weight:750}
+.sweep-readouts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin:.8rem 0}
+.sweep-readouts p{margin:.2rem 0}
+.sweep-readouts output{display:block;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+@media(max-width:360px){.sweep-readouts{grid-template-columns:1fr}}
+[role="alert"]{min-height:1.5rem}
+@media(max-width:360px){.controls{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* Public beta shell: navigation and visual hierarchy; audio remains opt-in. */
+:root{--hear-bg:#071321;--hear-surface:#102337;--hear-line:#55738a;--hear-link:#86e1ff;--hear-text:#edf7ff;--hear-muted:#d0e1ed; color-scheme:dark}
+body{background:var(--hear-bg);color:var(--hear-text);max-width:58rem}
+a{color:var(--hear-link)}.hear-nav{display:flex;gap:.45rem;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--hear-line);padding:.8rem 0 1rem;margin-bottom:1.25rem}
+.hear-nav a{display:inline-flex;align-items:center;min-height:44px;padding:.35rem .6rem;
+  border:1px solid var(--hear-line);border-radius:.6rem;text-decoration:none}
+.hear-nav a[aria-current="page"]{background:#214968;font-weight:750}
+.notice{background:#233543;border-color:var(--hear-line)}
+section{background:var(--hear-surface);border:1px solid var(--hear-line);border-radius:1rem;
+  padding:1.1rem;margin-bottom:1.2rem}
+button{border:1px solid var(--hear-line);border-radius:.65rem;background:#21445d;color:var(--hear-text);
+  cursor:pointer}button:disabled{opacity:.58;cursor:not-allowed}
+button:not(:disabled):hover{background:#315c78}
+h1,h2{line-height:1.25}h2{margin-top:0}main{max-width:100%}
+input,select{accent-color:#70cfff}
+@media(max-width:560px){body{margin:.4rem auto;padding:0 .85rem 2rem}section{padding:.85rem}
+  .hear-nav{gap:.3rem}.hear-nav a{padding:.35rem .45rem;font-size:.93rem}}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content" data-testid="skip-link">Saltar al contenido principal</a>
+<nav class="hear-nav" aria-label="Secciones de Hear 3.0">
+<a href="../hear3-preview/">Inicio</a>
+<a href="../hear3-exam/" aria-current="page">Examen</a>
+<a href="../hear3-library/">Mi historial</a>
+<a href="../hear3-eq-editor/">Editar EQ</a>
+<a href="../hear2/">Hear 2 anterior</a>
+</nav>
+<main id="main-content" tabindex="-1">
+<h1>Hear 3.0 beta · examen de tonos</h1>
+<p>Recorrido guiado: exploración de frecuencias, tonos individuales, resultados provisionales y guardado voluntario. Puedes detenerlo en cualquier momento.</p>
+<p class="notice"><strong>Versión beta experimental: no es una audiometría clínica ni un EQ acústicamente validado.</strong>
+ Mantén el volumen físico bajo, cómodo y fijo. Detén el sonido ante molestias.
+ Los niveles dBFS no miden presión sonora (dB SPL) ni prueban seguridad acústica.
+ Cada reproducción requiere una acción explícita. Durante un tono o barrido puedes
+ pulsar <kbd>Escape</kbd> para detener el sonido y conservar la sesión como
+ interrumpida, sin registrar una respuesta auditiva.
+ El EQ matemático provisional que aparece
+ al finalizar no se aplicará automáticamente ni está calibrado para tu equipo.</p>
+<p id="keyboard-stop-status" data-testid="keyboard-stop-status" role="status" aria-live="polite">
+Para detener audio iniciado, pulsa Escape.</p>
+<p id="audio-preflight" data-testid="audio-preflight" role="status">
+Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automáticamente.</p>
+<section aria-labelledby="sweep-heading">
+<h2 id="sweep-heading">1. Exploración de frecuencias</h2>
+<p>Recorrido 125–2.000 Hz · máximo 20 s · −60 dBFS · ambos canales.
+ Las respuestas durante el barrido son informativas, no umbrales.</p>
+<p id="sweep-status" role="status" data-testid="sweep-status">Sin iniciar</p>
+<div class="sweep-readouts" aria-label="Indicadores técnicos de barrido">
+<p><strong>Frecuencia digital programada:</strong>
+<output id="sweep-frequency" data-testid="sweep-frequency" aria-live="off">—</output></p>
+<p><strong>Nivel de señal digital:</strong>
+<output id="sweep-level" data-testid="sweep-level" aria-live="off">—</output></p>
+</div>
+<p>Tiempo restante orientativo: <output id="sweep-remaining" data-testid="sweep-remaining" aria-live="off">—</output>.
+Estos valores muestran el programa digital, no la frecuencia acústica realmente emitida, ni si lo escuchas.</p>
+<label for="sweep-progress">Progreso temporal orientativo del barrido</label>
+<progress id="sweep-progress" max="20" value="0"></progress>
+<div class="controls">
+<button type="button" id="sweep-start" data-testid="sweep-start">Iniciar barrido</button>
+<button type="button" id="sweep-stop" data-testid="sweep-stop" disabled>Detener barrido</button>
+<button type="button" id="sweep-heard" data-testid="sweep-heard" disabled>Lo escucho en esta zona</button>
+<button type="button" id="sweep-not" data-testid="sweep-not" disabled>No lo escucho aquí</button>
+</div>
+<p id="sweep-count" role="status" data-testid="sweep-count">Observaciones informativas: 0</p>
+</section>
+<section aria-labelledby="tones-heading">
+<h2 id="tones-heading">2. Tonos individuales de confirmación</h2>
+<p>Al finalizar el barrido, puedes iniciar un recorrido ordenado de las bandas.
+ El nivel digital se adapta a tus respuestas dentro de los límites autorizados, sin elevar
+ el volumen físico. Las contradicciones requieren confirmación antes de repetir.</p>
+<button type="button" id="plan" data-testid="plan" disabled>Preparar tonos desde el barrido finalizado</button>
+<p id="tone-status" role="status" aria-live="polite" data-testid="tone-status">Esperando barrido</p>
+<p><strong>Frecuencia:</strong> <span id="frequency" data-testid="frequency">—</span></p>
+<p><strong>Nivel digital:</strong> <span id="dbfs" data-testid="dbfs">—</span></p>
+<label for="tone-progress">Progreso estimado del tono (no representa salida física)</label>
+<progress id="tone-progress" max="3000" value="0"></progress>
+<p id="coverage" data-testid="coverage">Bandas confirmadas: 0</p>
+<p id="contradiction" role="status" data-testid="contradiction"></p>
+<p id="comparison-status" data-testid="comparison-status" role="status">Comparaciones contextuales: ninguna.</p>
+<p>Si existen respuestas contradictorias, confirmar iniciará dos tonos consecutivos con
+ una única acción. El segundo se reproduce automáticamente solo si el primero terminó
+ y el audio sigue activo; después responde cuál percibiste más claramente.
+ La comparación no es calibración acústica ni prueba de umbral.</p>
+<div class="controls" role="group" aria-label="Respuesta a comparación de dos tonos">
+<button type="button" id="comparison-first" data-testid="comparison-first" disabled>Primer tono más claro</button>
+<button type="button" id="comparison-second" data-testid="comparison-second" disabled>Segundo tono más claro</button>
+<button type="button" id="comparison-similar" data-testid="comparison-similar" disabled>Los dos parecidos</button>
+<button type="button" id="comparison-neither" data-testid="comparison-neither" disabled>No percibí ninguno</button>
+<button type="button" id="comparison-uncertain" data-testid="comparison-uncertain" disabled>No estoy seguro</button>
+</div>
+<div class="controls">
+<button type="button" id="tone-next" data-testid="tone-next" disabled>Reproducir siguiente tono</button>
+<button type="button" id="tone-stop" data-testid="tone-stop" disabled>Detener y pausar</button>
+<button type="button" id="tone-heard" data-testid="tone-heard" disabled>Lo escucho</button>
+<button type="button" id="tone-not" data-testid="tone-not" disabled>No lo escucho</button>
+<button type="button" id="tone-confirm" data-testid="tone-confirm" disabled>Confirmar y comparar dos tonos</button>
+<button type="button" id="tone-skip" data-testid="tone-skip" disabled>Conservar como inconclusa</button>
+<button type="button" id="tone-resume" data-testid="tone-resume" disabled>Reanudar manualmente</button>
+<button type="button" id="tone-finish" data-testid="tone-finish" disabled>Finalizar y ver resumen</button>
+</div>
+</section>
+<section aria-labelledby="recovery-heading">
+<h2 id="recovery-heading">3. Recuperación de progreso del examen</h2>
+<p>El plan y las respuestas a tonos se guardan juntos en este navegador.
+ Recuperar nunca reproduce audio automáticamente. Antes de reanudar verifica
+ la salida de audio y mantén el volumen físico bajo, cómodo y fijo.</p>
+<p id="recovery-status" role="status" data-testid="recovery-status">Comprobando copias locales…</p>
+<div class="controls">
+<button type="button" id="recover-exam" data-testid="recover-exam" disabled>Recuperar examen guardado</button>
+<button type="button" id="export-exam" data-testid="export-exam" disabled>Descargar respaldo JSON</button>
+<button type="button" id="delete-exam" data-testid="delete-exam" disabled>Eliminar este checkpoint V3</button>
+</div>
+<label for="route-verified"><input id="route-verified" data-testid="route-verified" type="checkbox">
+He comprobado la salida y el volumen físico bajo antes de reanudar</label>
+<p>Las copias JSON descargadas no están cifradas y no se eliminan al borrar datos del navegador.
+ Los datos de Hear 2.0 no se migran ni eliminan automáticamente.</p>
+</section>
+<section aria-labelledby="summary-heading">
+<h2 id="summary-heading">4. Evidencia y límites</h2>
+<p>Este examen experimental registra lo escuchado/no escuchado; muestra intervalos subjetivos o
+ bandas inconclusas. No inventa un umbral auditivo. Cuando se finaliza explícitamente
+ el examen conjunto, genera un EQ matemático de contraste relativo, con topes
+ y origen identificados por banda. <strong>No está calibrado acústicamente.</strong></p>
+<div id="result" data-testid="result" role="status">Sin resultados confirmados.</div>
+</section>
+<section aria-labelledby="eq-heading">
+<h2 id="eq-heading" tabindex="-1">5. EQ matemático provisional · una sola curva conjunta</h2>
+<p class="notice">Las ganancias indicadas son hipótesis experimentales derivadas de
+ tus respuestas subjetivas con señales en dBFS. No miden una pérdida auditiva,
+ no verifican clipping, no certifican el equipo ni el nivel de presión acústica.
+ <strong>No ajustes ni apliques automáticamente estas ganancias a un equipo físico
+ sin validar sus controles, respuesta y headroom.</strong> Las bandas sin evidencia
+ quedan neutras, salvo estimaciones identificadas y estrictamente acotadas entre
+ dos bandas vecinas con evidencia suficiente.</p>
+<p id="eq-status" data-testid="eq-status" role="status">
+Finaliza el examen de tonos para calcular una curva EQ provisional.</p>
+<div id="eq-rows" data-testid="eq-rows" aria-label="Ganancias EQ provisionales por banda"></div>
+<p id="eq-headroom" data-testid="eq-headroom">
+La preamplificación y el headroom no están verificados en el dispositivo.</p>
+<button type="button" id="eq-export" data-testid="eq-export" disabled>
+Descargar curva EQ experimental JSON para revisión (no preset de dispositivo)</button>
+</section>
+<section aria-labelledby="transfer-heading">
+<h2 id="transfer-heading">6. Revisar conversión a controles del equipo</h2>
+<p class="notice">Esta función <strong>no mueve ningún control</strong>. Solo convierte
+ ganancias EQ provisionales a una escala de dB declarada por ti y únicamente
+ si las frecuencias coinciden exactamente. No presume que una posición
+ física equivale a dB, que la descripción pertenece al equipo conectado ni
+ que su respuesta acústica esté verificada.</p>
+<label for="transfer-file">Archivo JSON con el perfil de controles gráficos
+ (`{deviceId, type:"graphic", bands:[...]}` o propiedad `graphicEq`)</label>
+<input id="transfer-file" data-testid="transfer-file" type="file"
+ accept=".json,application/json">
+<div class="controls">
+<button type="button" id="transfer-preview" data-testid="transfer-preview" disabled>
+Revisar redondeo de controles, sin aplicar</button>
+<button type="button" id="transfer-export" data-testid="transfer-export" disabled>
+Descargar informe de transferencia (no preset)</button>
+</div>
+<p id="transfer-status" data-testid="transfer-status" role="status">
+Primero finaliza un examen y selecciona un perfil de controles.</p>
+<div id="transfer-rows" data-testid="transfer-rows" aria-label="Equivalencia provisional de controles"></div>
+</section>
+<section aria-labelledby="archive-heading">
+<h2 id="archive-heading">7. Guardar respuestas en el historial V3</h2>
+<p>Al finalizar, puedes guardar respuestas en el historial V3. Si lo autorizas
+ <strong>por separado</strong>, también puedes guardar una curva matemática
+ <strong>provisional y no calibrada</strong> para editarla y exportarla.
+ Sin autorización adicional solo se conservan las respuestas, sin EQ.
+ Ningún modo aplica las ganancias automáticamente o crea diagnósticos clínicos.</p>
+<label for="archive-device">Nombre del equipo que deseas registrar</label>
+<input id="archive-device" data-testid="archive-device" type="text" maxlength="120" value="Mi equipo"
+ autocomplete="off">
+<label for="archive-profile">Nombre del perfil de prueba</label>
+<input id="archive-profile" data-testid="archive-profile" type="text" maxlength="120" value="Mi perfil experimental"
+ autocomplete="off">
+<label for="archive-category">Categoría del equipo (no verificada automáticamente)</label>
+<select id="archive-category" data-testid="archive-category">
+<option value="headphones">Auriculares</option>
+<option value="speaker">Parlantes</option>
+<option value="car">Sistema de automóvil</option>
+<option value="application">Aplicación</option>
+<option value="interface">Interfaz de audio</option>
+</select>
+<label><input type="checkbox" id="archive-eq-optin" data-testid="archive-eq-optin">
+ Guardar también el EQ matemático provisional, sin calibración ni aplicación automática</label>
+<div class="controls">
+<button type="button" id="archive-preview" data-testid="archive-preview" disabled>Revisar guardado V3</button>
+<button type="button" id="archive-commit" data-testid="archive-commit" disabled>Confirmar guardado V3</button>
+</div>
+<p id="archive-status" data-testid="archive-status" role="status">Primero termina el examen de tonos. No se guarda EQ.</p>
+<p><a href="../hear3-library/">Consultar catálogo e historial V3</a> · <a href="../hear3-eq-editor/">Editar EQ provisional guardado</a></p>
+</section>
+<p id="error" data-testid="error" role="alert"></p>
+<p><a href="../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
+</main>
+<script type="module">
+import {createSweepPlan,planSweepConfirmations,frequencyAtSweepTime}
+ from '../src/hear3/sweep-planner.mjs';
+import {inspectHear3AudioCapabilities}
+ from '../src/hear3/audio-capability-preflight.mjs';
+import {createSweepAudioRunner} from '../src/hear3/sweep-audio-runner.mjs';
+import {createHear3AdaptiveProgressStore} from '../src/hear3/adaptive-progress-store.mjs';
+import {createHear3ReadThrottle} from '../src/hear3/read-throttle.mjs';
+import {createHear3ResumableAdaptiveExam} from '../src/hear3/resumable-adaptive-exam.mjs';
+import {createHear3CatalogStore} from '../src/hear3/catalog-backup-store.mjs';
+import {createHear3AdaptiveCatalogArchive} from '../src/hear3/adaptive-catalog-archive.mjs';
+import {createHear3CatalogWriteCoordinator}
+ from '../src/hear3/coordinated-catalog-writer.mjs';
+import {calculateHear3BoundedJointEq} from '../src/hear3/bounded-eq-engine.mjs';
+import {modelHear3GraphicEqDigitalTransfer}
+ from '../src/hear3/eq-digital-transfer-model.mjs';
+import {previewHear3EqControlTransfer}
+ from '../src/hear3/eq-control-quantization.mjs';
+import {createHear3ContextualToneComparison,planHear3ContradictionComparison}
+ from '../src/hear3/contextual-tone-comparison.mjs';
+
+const $=id=>document.getElementById(id);
+function setLiveText(id,value){
+ const node=$(id),text=String(value);
+ if(node.textContent!==text)node.textContent=text;
+}
+const audioPreflight=inspectHear3AudioCapabilities();
+const audioReady=audioPreflight.canAttemptJointTone;
+$('audio-preflight').textContent=audioReady
+ ?'Web Audio básico detectado. Puedes iniciar sonidos manualmente tras comprobar la salida y mantener el volumen físico bajo; la detección no acredita seguridad ni un equipo concreto.'
+ :'No están disponibles las funciones de Web Audio necesarias ('+
+  audioPreflight.missingEssential.join(', ')+
+  '). Las pruebas sonoras permanecen desactivadas; puedes revisar y gestionar datos locales cuando existan.';
+
+const bands=[125,250,500,1000,2000].map(f=>({id:'band-'+f,frequencyHz:f}));
+const sweepPlan=createSweepPlan({minHz:125,maxHz:2000,durationSeconds:20});
+const levelRange={minDbfs:-80,maxDbfs:-42};
+const sweepRunner=createSweepAudioRunner({onEnded:render,onInterrupted:render});
+const profileId='hear3-integrated-pilot';
+const progressStore=createHear3AdaptiveProgressStore({profileId});
+const progressReader=createHear3ReadThrottle({read:()=>progressStore.load(),intervalMs:1000});
+const catalogStore=createHear3CatalogStore();
+const catalogWriter=createHear3CatalogWriteCoordinator({store:catalogStore});
+let archiveTransfer=null,archiveMessage='Primero termina el examen de tonos. No se guarda EQ.';
+let exam=null,planning=false,sweepStarting=false;
+let eqDraft=null,eqDigitalModel=null,eqDigitalModelError=null,renderedEq=undefined;
+let eqTransferReview=null,renderedTransfer=undefined;
+function updateEqDraft(){
+ eqDraft=null;eqDigitalModel=null;eqDigitalModelError=null;
+ eqTransferReview=null;renderedTransfer=undefined;
+ if(!exam)return;
+ const evidence=exam.snapshot(),session=exam.getSession();
+ if(evidence.status==='completed'&&session.status==='completed'){
+  eqDraft=calculateHear3BoundedJointEq({
+   examSnapshot:evidence,sessionSnapshot:session,
+   deviceCategory:$('archive-category').value,
+  });
+  try{
+   // Fixed-reference digital model, not the actual sample rate/Q of an
+   // attached device. Does not construct an AudioContext or start sound.
+   eqDigitalModel=modelHear3GraphicEqDigitalTransfer({
+    eqDraft,sampleRateHz:48000,
+   });
+  }catch(error){
+   // Preserve the justified source EQ even if a particular DSP model
+   // is incompatible. Never silently output a physical device preset.
+   eqDigitalModelError=error?.message??'No se pudo modelar este filtro digital.';
+  }
+ }
+}
+function renderTransfer(){
+ setEnabled('transfer-preview',Boolean(eqDraft));
+ setEnabled('transfer-export',Boolean(eqTransferReview));
+ if(renderedTransfer===eqTransferReview)return;
+ renderedTransfer=eqTransferReview;
+ const root=$('transfer-rows');
+ root.replaceChildren();
+ if(!eqTransferReview){
+  $('transfer-status').textContent=eqDraft
+   ?'Selecciona un perfil JSON con la escala de cada control y revisa la transferencia. No se aplica ningún EQ.'
+   :'Primero finaliza el examen de tonos; después puedes seleccionar un perfil JSON de controles. No se aplica ningún EQ.';
+  return;
+ }
+ const r=eqTransferReview;
+ $('transfer-status').textContent='Escalas dB representables: '+
+  r.mappedCount+' de '+r.deviceBandCount+'. Sin equivalencia comprobable: '+
+  r.unmappedCount+'. Error RMS del redondeo: '+
+  (r.rmsErrorDb===null?'no disponible':r.rmsErrorDb+' dB')+
+  '. No se verificó el equipo ni se creó un preset aplicable.';
+ const ul=document.createElement('ul');
+ for(const b of r.rows){
+  const li=document.createElement('li');
+  li.textContent=b.frequencyHz+' Hz: objetivo '+(b.targetGainDb>0?'+':'')+
+   b.targetGainDb+' dB; '+(b.attainableDb===null
+    ?'sin conversión a una posición real ('+b.transferStatus+')'
+    :'valor en escala declarada '+(b.attainableDb>0?'+':'')+b.attainableDb+
+     ' dB; diferencia '+b.residualDb+' dB; '+b.transferStatus+
+     (b.clampedToRange?'; limitado por rango':'')+
+     (b.roundedToStep?'; redondeado al paso':''));
+  ul.append(li);
+ }
+ root.append(ul);
+}
+function renderEq(){
+ if(renderedEq===eqDraft)return;
+ renderedEq=eqDraft;
+ setEnabled('eq-export',Boolean(eqDraft));
+ const root=$('eq-rows');
+ root.replaceChildren();
+ if(!eqDraft){
+  $('eq-status').textContent='Finaliza el examen de tonos para calcular una curva EQ provisional.';
+  $('eq-headroom').textContent='Sin estudio DSP. La preamplificación y el headroom físicos no están verificados.';
+  return;
+ }
+ $('eq-status').textContent='Modelo experimental: '+eqDraft.selectedMethod+
+  '. Bandas con intervalos subjetivos utilizables: '+eqDraft.observedEligibleBands+
+  ' de '+eqDraft.bandCount+'. Límite matemático de ganancia: ±'+eqDraft.capDb+
+  ' dB. '+(eqDraft.correctionCoverage==='neutral-only-no-valid-contrast'
+   ?'Evidencia insuficiente: todas las ganancias son neutras.'
+   :'Cálculo de contraste relativo terminado; no es un preset calibrado.');
+ const list=document.createElement('ul');
+ for(const b of eqDraft.rows){
+  const li=document.createElement('li');
+  const origin=b.source==='direct-subjective-contrast'
+   ?'intervalo subjetivo observado ('+b.confidence+')'
+   :b.estimated?'estimación entre bandas contiguas, opcional de comprobar'
+    :'neutra: sin contraste de evidencia suficiente';
+  li.textContent=b.frequencyHz+' Hz: '+(b.gainDb>0?'+':'')+b.gainDb+
+   ' dB · '+origin;
+  list.append(li);
+ }
+ root.append(list);
+ const digital=eqDigitalModel;
+ $('eq-headroom').textContent=digital
+  ?'Referencia DSP NO calibrada: cascada biquad peaking Q='+digital.referenceQ+
+   ', '+digital.referenceSampleRateHz+' Hz asumidos. Pico de respuesta compleja: '+
+   digital.modeledPeakMagnitudeDb+' dB; norma L1 parcial: '+
+   digital.partialImpulseL1Db+' dB. Atenuación sugerida SOLO para el modelo digital: '+
+   (digital.suggestedReferencePreampDb===null?'no disponible: excede el presupuesto':
+    digital.suggestedReferencePreampDb+' dB')+
+   '. Horizonte '+digital.finiteHorizonSamples+
+   ' muestras, entrada limitada a ±1, estado inicial cero. NO certifica picos entre muestras, DSP del equipo, dB SPL ni headroom físico; nunca se aplicará automáticamente.'
+  :'Modelado DSP no disponible: '+(eqDigitalModelError??'sin datos')+
+   '. La curva original permanece solo para revisión; sin preamplificación autorizada.';
+}
+let comparisonCounter=0;
+const comparisonReports=[];
+const comparison=createHear3ContextualToneComparison({onChange:render});
+function createExam(plan){
+ return createHear3ResumableAdaptiveExam({plan,profileId,
+  minDbfs:levelRange.minDbfs,maxDbfs:levelRange.maxDbfs,
+  initialDbfs:-60,maxTrialsPerBand:7,coarseStepDb:6,
+  durationSeconds:3,progressStore,
+ });
+}
+let toneStartVisual=0;
+const buttons=['sweep-start','sweep-stop','sweep-heard','sweep-not','plan',
+ 'tone-next','tone-stop','tone-heard','tone-not','tone-confirm','tone-skip',
+ 'tone-resume','tone-finish'];
+function setEnabled(id,enabled){$(id).disabled=!enabled;}
+function render(){
+ const s=sweepRunner.snapshot();
+ const prev=sweepRunner.lastResult();
+ setLiveText('sweep-status',s.status==='playing'?'Barrido en reproducción':
+  sweepStarting?'Preparando barrido':prev?.status==='completed'?'Barrido finalizado':
+  prev?.status==='interrupted'?'Barrido interrumpido; sin confirmación automática':'Listo para comenzar');
+ $('sweep-progress').value=s.status==='playing'?s.elapsedSeconds:
+  prev?.status==='completed'?20:0;
+ const sweeping=s.status==='playing';
+ $('sweep-frequency').textContent=sweeping?
+  Math.round(frequencyAtSweepTime(s.plan,s.elapsedSeconds))+' Hz':'—';
+ $('sweep-level').textContent=sweeping?s.levelDbfs+' dBFS':'—';
+ $('sweep-remaining').textContent=sweeping?
+  Math.ceil(Math.max(0,s.plan.durationSeconds-s.elapsedSeconds))+' s':'—';
+ $('sweep-count').textContent='Observaciones informativas: '+
+  (s.status==='playing'?s.reports.length:prev?.reports?.length??0);
+ setEnabled('sweep-start',audioReady&&!exam&&!sweepStarting&&s.status!=='playing');
+ setEnabled('sweep-stop',s.status==='playing'||sweepStarting);
+ setEnabled('sweep-heard',s.status==='playing');
+ setEnabled('sweep-not',s.status==='playing');
+ setEnabled('plan',!exam&&prev?.status==='completed'&&s.status!=='playing'&&!sweepStarting&&!planning);
+ // D-062: avoid parsing/checksumming both persisted checkpoint slots on
+ // every 120 ms visual tick; user actions invalidate the cache immediately.
+ const local=progressReader.get();
+ setEnabled('recover-exam',!exam&&Boolean(local.checkpoint));
+ setEnabled('export-exam',Boolean(local.checkpoint));
+ setEnabled('delete-exam',Boolean(local.checkpoint));
+ const currentExam=exam?.snapshot()??null;
+ setEnabled('archive-preview',Boolean(currentExam?.status==='completed'&&
+  exam.getSession().status==='completed'));
+ setEnabled('archive-commit',Boolean(archiveTransfer));
+ $('archive-status').textContent=archiveMessage;
+ renderEq();
+ renderTransfer();
+ const durability=exam?.getPersistence();
+ $('recovery-status').textContent=local.checkpoint
+  ?'Copia local disponible ('+local.durability+'). '+
+    (durability?.warning??local.warnings.join(' '))
+  :'Todavía no existe un checkpoint verificable. '+
+    (durability?.warning??local.warnings.join(' '));
+ if(!exam)return;
+ const data=currentExam;
+ const current=data.bands.find(b=>b.id===data.currentBandId);
+ setLiveText('tone-status',data.status==='completed'?'Todos los tonos planificados están revisados':
+  data.status==='paused'?'Pausado: requiere reanudación explícita':
+  data.status==='awaiting-confirmation'?'Contradicción: confirma o conserva inconclusa':
+  data.status==='playing'?'Tono en reproducción':
+  data.status==='starting'?'Preparando tono':'Listo para el siguiente tono');
+ $('coverage').textContent='Bandas revisadas: '+data.completedBands+' de '+data.totalBands;
+ $('frequency').textContent=current?current.frequencyHz+' Hz':'—';
+ $('dbfs').textContent=data.status==='playing'?
+  (exam?.getSession().currentTone?.digitalLevelDbfs??'—')+' dBFS':
+  data.nextDigitalLevelDbfs===null?'—':data.nextDigitalLevelDbfs+' dBFS';
+ $('contradiction').textContent=data.contradictionExplanation??'';
+ const cmp=comparison.snapshot();
+ const comparing=['first','gap','second'].includes(cmp.state);
+ const needsComparisonReply=cmp.state==='awaiting-response'&&
+   data.status==='awaiting-confirmation';
+ setLiveText('comparison-status',cmp.state==='first'?'Comparación: reproduciendo el primer tono':
+   cmp.state==='gap'?'Comparación: separación silenciosa entre tonos':
+   cmp.state==='second'?'Comparación: reproduciendo el segundo tono':
+   needsComparisonReply?'Los dos tonos terminaron. Elige una respuesta perceptiva.':
+   cmp.state==='interrupted'?'Comparación interrumpida: sin evidencia perceptiva nueva':
+   cmp.state==='completed'?'Última comparación terminada. Respuestas: '+comparisonReports.length:
+   'Comparaciones contextuales: ninguna.');
+ for(const id of ['comparison-first','comparison-second','comparison-similar',
+  'comparison-neither','comparison-uncertain'])setEnabled(id,needsComparisonReply);
+ const elapsed=data.status==='playing'?Math.min(3000,performance.now()-toneStartVisual):0;
+ $('tone-progress').value=elapsed;
+ setEnabled('tone-next',audioReady&&data.status==='ready');
+ setEnabled('tone-stop',['starting','playing','ready'].includes(data.status)||comparing);
+ setEnabled('tone-heard',data.status==='playing'&&!comparing);
+ setEnabled('tone-not',data.status==='playing'&&!comparing);
+ setEnabled('tone-confirm',audioReady&&data.status==='awaiting-confirmation'&&!comparing&&!needsComparisonReply);
+ setEnabled('tone-skip',data.status==='awaiting-confirmation'&&!comparing&&!needsComparisonReply);
+ setEnabled('tone-resume',audioReady&&data.status==='paused');
+ setEnabled('tone-finish',data.status==='completed'&&exam?.getSession().status==='ready');
+ const list=document.createElement('ul');
+ for(const b of data.bands){
+  if(b.status==='pending')continue;
+  const li=document.createElement('li');
+  li.textContent=b.frequencyHz+' Hz: '+(b.status==='bounded-subjective-interval'
+    ?'intervalo subjetivo '+b.intervalDbfs.notHeardAtDbfs+' a '+
+     b.intervalDbfs.heardAtDbfs+' dBFS ('+b.confidence+')'
+    :'inconclusa')+'; '+b.observations.length+' respuestas.';
+  list.append(li);
+ }
+ const result=$('result');
+ if(list.childElementCount)result.replaceChildren(list);
+ else result.textContent='Sin resultados confirmados.';
+}
+async function run(action){
+ $('error').textContent='';
+ try{await action();}
+ catch(e){$('error').textContent=e?.message??String(e);}
+ finally{
+  // Deliberate actions must immediately refresh checkpoint buttons and
+  // durability warnings, even if the 1-second idle interval has not elapsed.
+  progressReader.invalidate();render();
+ }
+}
+$('sweep-start').addEventListener('click',()=>run(async()=>{
+ if(exam)throw Error('El examen de tonos ya se inició.');
+ if(!audioReady)throw Error('El navegador no cumple los mínimos de Web Audio para reproducir tonos.');
+ sweepStarting=true;render();
+ try{await sweepRunner.start({
+  userInitiated:true,plan:sweepPlan,digitalLevelDbfs:-60,
+  authorizedDigitalRangeDbfs:levelRange,channel:'joint',
+ });}
+ finally{sweepStarting=false;}
+}));
+$('sweep-stop').addEventListener('click',()=>run(()=>sweepRunner.stop('manual')));
+$('sweep-heard').addEventListener('click',()=>run(()=>sweepRunner.recordResponse(true)));
+$('sweep-not').addEventListener('click',()=>run(()=>sweepRunner.recordResponse(false)));
+$('plan').addEventListener('click',()=>run(async()=>{
+ const result=sweepRunner.lastResult();
+ if(result?.status!=='completed')throw Error('Completa primero el barrido.');
+ planning=true;
+ try{
+  const confirmations=planSweepConfirmations(sweepPlan,result.reports,bands);
+  exam=createExam(confirmations);
+ } finally{planning=false;}
+}));
+$('tone-next').addEventListener('click',()=>run(async()=>{
+ if(!exam)throw Error('Primero completa el barrido');
+ if(!audioReady)throw Error('Web Audio no disponible; no se puede reproducir el siguiente tono.');
+ const res=await exam.playNext({userInitiated:true});
+ if(!res.started)throw Error('El audio no se inició o fue interrumpido.');
+ toneStartVisual=performance.now();
+}));
+$('tone-heard').addEventListener('click',()=>run(()=>exam.answer('heard')));
+$('tone-not').addEventListener('click',()=>run(()=>exam.answer('not-heard')));
+$('tone-stop').addEventListener('click',()=>run(()=>{
+ const state=comparison.snapshot().state;
+ if(['first','gap','second'].includes(state))return comparison.interrupt('user-stop');
+ return exam.interrupt();
+}));
+$('tone-confirm').addEventListener('click',()=>run(async()=>{
+ const s=exam?.snapshot();
+ if(s?.status!=='awaiting-confirmation')throw Error('No hay contradicción que comparar.');
+ if(!audioReady)throw Error('Web Audio no disponible; no se puede iniciar una comparación.');
+ const last=s.bands.find(b=>b.id===s.currentBandId)?.observations.at(-1);
+ if(!last)throw Error('No existe tono verificado para la comparación.');
+ const plan=planHear3ContradictionComparison({
+  comparisonId:'cmp-'+(++comparisonCounter),
+  frequencyHz:last.frequencyHz,channel:last.channel,
+  currentDbfs:last.digitalLevelDbfs,
+  authorizedDigitalRangeDbfs:s.authorizedDigitalRangeDbfs,
+ });
+ const played=await comparison.start({userInitiated:true,comparison:plan});
+ if(!played.started)throw Error('La secuencia de comparación no llegó a comenzar.');
+}));
+$('tone-skip').addEventListener('click',()=>run(()=>{
+ comparison.interrupt('skip');
+ return exam.confirmContradiction({userConfirmed:false});
+}));
+for(const [id,choice] of [
+ ['comparison-first','first-clearer'],['comparison-second','second-clearer'],
+ ['comparison-similar','similar'],['comparison-neither','neither'],
+ ['comparison-uncertain','uncertain'],
+]){
+ $(id).addEventListener('click',()=>run(()=>{
+  const result=comparison.respond(choice);
+  comparisonReports.push(result);
+  // No hearing threshold or EQ value is calculated from this preference.
+  // Inconclusive/unknown hearing stays inconclusive; otherwise the
+  // pre-existing isolated planner may repeat a tone after confirmation.
+  return exam.confirmContradiction({
+   userConfirmed:!result.uncertaintyPreserved,
+  });
+ }));
+}
+$('tone-resume').addEventListener('click',()=>run(()=>{
+ if(!exam)throw Error('No existe examen para reanudar.');
+ if(exam.getSession().routeCheckRequired){
+  if(!$('route-verified').checked)throw Error('Comprueba la salida y confirma el volumen antes de reanudar.');
+  exam.confirmRoute({userConfirmed:true});
+ }
+ exam.resume({userInitiated:true});
+ $('route-verified').checked=false;
+}));
+$('tone-finish').addEventListener('click',()=>run(()=>{
+ exam.finish();
+ updateEqDraft();
+ $('eq-heading').focus();
+}));
+$('recover-exam').addEventListener('click',()=>run(async()=>{
+ if(exam)throw Error('Ya hay un examen en esta página.');
+ const saved=progressStore.load();
+ if(!saved.checkpoint)throw Error('No hay copia local verificada para recuperar.');
+ if(!confirm('¿Recuperar las respuestas y el plan guardados? No se reproducirá audio.'))return;
+ const candidate=createExam(saved.checkpoint.plan);
+ try{
+  await candidate.recover({userInitiated:true});
+  exam=candidate;
+  $('route-verified').checked=false;
+  updateEqDraft();
+ }catch(error){await candidate.dispose();throw error;}
+}));
+$('export-exam').addEventListener('click',()=>run(()=>{
+ const blob=new Blob([progressStore.exportBackup()],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const link=document.createElement('a');
+ link.href=url;link.download='hear3-examen-adaptativo-checkpoint.json';
+ link.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}));
+$('delete-exam').addEventListener('click',()=>run(()=>{
+ if(!confirm('¿Eliminar las copias guardadas de este examen V3 de este navegador? No borra perfiles V2 ni archivos descargados.'))return;
+ const result=exam?exam.clearCheckpoint({confirmed:true}):progressStore.clear({confirmed:true});
+ if(!result.cleared)throw Error(result.warning??'La eliminación no pudo verificarse.');
+}));
+function discardArchive(){
+ archiveTransfer?.discard();
+ archiveTransfer=null;
+ archiveMessage='Cualquier cambio necesita una nueva vista previa, sin guardar datos.';
+ render();
+}
+for(const id of ['archive-device','archive-profile','archive-category','archive-eq-optin']){
+ $(id).addEventListener('input',discardArchive);
+ $(id).addEventListener('change',discardArchive);
+}
+$('archive-category').addEventListener('change',()=>run(()=>updateEqDraft()));
+$('transfer-file').addEventListener('change',()=>{
+ eqTransferReview=null;renderTransfer();
+});
+$('transfer-preview').addEventListener('click',()=>run(async()=>{
+ eqTransferReview=null;renderedTransfer=undefined;
+ if(!eqDraft)throw Error('Finaliza el examen antes de revisar una transferencia.');
+ const file=$('transfer-file').files?.[0];
+ if(!file||file.size===0||file.size>131072)
+  throw Error('Selecciona un perfil JSON de controles de hasta 128 KiB.');
+ const raw=await file.text();
+ if($('transfer-file').files?.[0]!==file)
+  throw Error('El archivo cambió durante la lectura; vuelve a revisar.');
+ const profile=JSON.parse(raw);
+ eqTransferReview=previewHear3EqControlTransfer({
+  eqDraft,graphicEqProfile:profile?.graphicEq??profile,
+ });
+}));
+$('transfer-export').addEventListener('click',()=>run(()=>{
+ if(!eqTransferReview)throw Error('No existe ninguna transferencia revisada.');
+ const blob=new Blob([JSON.stringify(eqTransferReview,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='hear3-transferencia-no-validada-no-aplicar.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}));
+$('eq-export').addEventListener('click',()=>run(()=>{
+ if(!eqDraft)throw Error('No existe todavía un EQ provisional que revisar.');
+ const blob=new Blob([JSON.stringify({
+  ...eqDraft,digitalReferenceModel:eqDigitalModel,
+  digitalReferenceModelError:eqDigitalModelError,
+ },null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;a.download='hear3-eq-matematico-no-validado.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}));
+$('archive-preview').addEventListener('click',()=>run(()=>{
+ archiveTransfer=null;
+ if(!exam)throw Error('No existe examen finalizado.');
+ if(typeof crypto==='undefined'||typeof crypto.randomUUID!=='function')
+  throw Error('Se requiere un origen seguro para generar identificadores únicos.');
+ const transfer=createHear3AdaptiveCatalogArchive({catalogStore,exam});
+ const preview=transfer.preview({
+  deviceId:'v3-device-'+crypto.randomUUID(),
+  profileId:'v3-profile-'+crypto.randomUUID(),
+  resultId:'v3-result-'+crypto.randomUUID(),
+  deviceName:$('archive-device').value.trim(),
+  profileName:$('archive-profile').value.trim(),
+  category:$('archive-category').value,
+  includeProvisionalEq:$('archive-eq-optin').checked,
+ });
+ archiveTransfer=transfer;
+ archiveMessage='Se guardarán '+preview.subjectiveResponses+
+  ' respuestas, '+preview.bands+' bandas. '+
+  (preview.provisionalEqOptIn
+   ?'EQ PROVISIONAL: '+preview.originalEqBands+' bandas, sin calibración y sin aplicación automática.'
+   :'Ganancias EQ: 0. Estado inconcluso.')+
+  ' Revisa categoría y nombre antes de confirmar.';
+}));
+$('archive-commit').addEventListener('click',()=>run(async()=>{
+ if(!archiveTransfer)throw Error('Revisa antes las respuestas y el alcance del guardado.');
+ const addEq=$('archive-eq-optin').checked;
+ if(!confirm(addEq
+  ?'¿Guardar respuestas y una curva EQ PROVISIONAL no calibrada? No aplica valores automáticamente.'
+  :'¿Guardar las respuestas experimentales como un nuevo dispositivo y perfil V3, sin EQ ni diagnóstico?'))return;
+ if(addEq&&!confirm('Confirmación adicional: los valores derivan de tonos subjetivos sin validación física, SPL ni headroom. ¿Guardar solo para revisión?'))return;
+ const {response:result}=await catalogWriter.run(()=>
+  archiveTransfer.commit({userInitiated:true,confirmed:true,
+   confirmProvisionalEq:addEq}));
+ archiveTransfer=null;
+ archiveMessage=result.persistedOnDevice
+  ?result.provisionalEqStored
+   ?'Historial y EQ matemático provisional guardados. Ábrelo en el editor para revisar o exportar.'
+   :'Historial V3 guardado localmente. Estado: inconcluso. No se generó EQ.'
+  :'La escritura en almacenamiento permanente NO está verificada. Exporta un respaldo local. '+(result.warning??'');
+}));
+window.hear3IntegratedPilot=Object.freeze({
+ snapshot:()=>exam?.snapshot()??null,
+ sweep:()=>sweepRunner.snapshot(),
+ sweepResult:()=>sweepRunner.lastResult(),
+ comparison:()=>comparison.snapshot(),
+ comparisonReports:()=>comparisonReports.map(r=>({...r})),
+ eqDraft:()=>eqDraft?structuredClone(eqDraft):null,
+ eqDigitalModel:()=>eqDigitalModel?structuredClone(eqDigitalModel):null,
+ eqTransferReview:()=>eqTransferReview?structuredClone(eqTransferReview):null,
+});
+document.addEventListener('keydown',event=>{
+ if(event.key!=='Escape'||event.repeat||event.altKey||event.ctrlKey||event.metaKey)return;
+ const sweep=sweepRunner.snapshot().status==='playing'||sweepStarting;
+ const compare=['first','gap','second'].includes(comparison.snapshot().state);
+ const tone=['playing','starting'].includes(exam?.snapshot().status);
+ if(!sweep&&!compare&&!tone)return;
+ event.preventDefault();
+ void run(()=>{
+  if(compare)comparison.interrupt('keyboard-escape');
+  if(sweep)sweepRunner.stop('keyboard-escape');
+  if(tone)exam.interrupt({routeMayHaveChanged:false});
+  $('keyboard-stop-status').textContent=
+   'Audio digital detenido con Escape. Ninguna respuesta nueva registrada.';
+ });
+});
+const ticker=setInterval(render,120);
+window.addEventListener('pagehide',()=>{
+ clearInterval(ticker);
+ sweepRunner.stop('pagehide');
+ void comparison.dispose();
+ if(exam&&exam.getSession().status!=='completed')
+  exam.interrupt({routeMayHaveChanged:true});
+},{once:true});
+render();
+</script>
+</body>
+</html>
