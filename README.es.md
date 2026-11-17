@@ -14,7 +14,9 @@
 
 [Hear 3.0](https://poldkent.github.io/AudioCal-Hear/) ofrece ahora entrada guiada, un recorrido integrado experimental de barrido y tonos, un EQ matemático provisional y editable opcional, exportación TXT/CSV/JSON/PNG, catálogo V3, conservación íntegra y separada del historial V2, recuperación dual protegida y herramientas locales de privacidad/diagnóstico. **No constituye audiometría clínica, EQ calibrado físicamente ni preset aplicable automáticamente.** Siguen pendientes SPL medido, DSP físico, rutas Bluetooth reales, auditoría con lectores de pantalla y recuperación en equipos físicos. `stableReleaseClaim:false` permanece hasta superar D-063.
 
-El examen beta permite ahora seleccionar diseños nominales de 4/5/7/10/15/31 bandas o introducir entre 2 y 31 frecuencias propias del ecualizador. Son frecuencias declaradas por el usuario, no reconocidas ni calibradas automáticamente.\n\nLa versión Hear 2.0 se conserva en `hear2/index.html`. `npm run build` genera tanto el inicio beta de `index.html` como la aplicación independiente `hear2/index.html`, y `npm run verify` verifica ambos. Consulta [el protocolo de cambio y reversión](docs/hear3/47-primary-beta-entry-with-hear2-rollback.md).
+El examen beta permite ahora seleccionar diseños nominales de 4/5/7/10/15/31 bandas o introducir entre 2 y 31 frecuencias propias del ecualizador. Son frecuencias declaradas por el usuario, no reconocidas ni calibradas automáticamente.
+
+La versión Hear 2.0 se conserva en `hear2/index.html`. `npm run build` genera tanto el inicio beta de `index.html` como la aplicación independiente `hear2/index.html`, y `npm run verify` verifica ambos. Consulta [el protocolo de cambio y reversión](docs/hear3/47-primary-beta-entry-with-hear2-rollback.md).
 
 ## Flujo actual de Hear 2.0 — solo tonos
 
