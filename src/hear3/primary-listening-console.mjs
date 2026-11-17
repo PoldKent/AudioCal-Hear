@@ -76,8 +76,10 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  const frequency=$('frequency'),level=$('level'),answerRow=$('answers');
  const heard=$('heard'),notHeard=$('not'),stop=$('stop');
  const comparison=$('comparison'),skip=$('skip'),recover=$('recover');
+ const route=$('route'),routeInput=$('route-input');
  if([action,prompt,modeText,frequency,level,answerRow,heard,notHeard,
-  stop,comparison,skip,recover].some(element=>!element))
+  stop,comparison,skip,recover,route,routeInput,source('route-verified')]
+  .some(element=>!element))
   throw Error('El panel principal no tiene todos sus controles.');
  let view=null;
  const ids=HEAR3_CONSOLE_SOURCES;
@@ -123,7 +125,13 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   }
   action.hidden=isAnswer||view.mode==='sweep-running';
   action.textContent=view.primaryLabel;
-  action.disabled=!!view.primaryId&&!active(view.primaryId);
+  route.hidden=view.mode!=='resume';
+  routeInput.checked=Boolean(source('route-verified').checked);
+  routeInput.disabled=view.mode!=='resume';
+  // The existing engine still independently enforces this user confirmation.
+  // The mirror prevents a confusing failed action in the simplified panel.
+  action.disabled=(!!view.primaryId&&!active(view.primaryId))||
+   (view.mode==='resume'&&!source('route-verified').checked);
   stop.hidden=!view.stopId;
   stop.disabled=!view.stopId||!active(view.stopId);
   skip.hidden=view.mode!=='contradiction'||!active('tone-skip');
@@ -143,6 +151,7 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
    return;
   }
   if(!id||!active(id))return;
+  if(id==='tone-resume'&&!source('route-verified').checked)return;
   // This call is synchronous, only from a real button activation; the tested
   // engine's own confirmations, audio preflight and error handling remain.
   source(id).click();
@@ -159,6 +168,14 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  skip.addEventListener('click',()=>clickSource(view.mode==='contradiction'?
   'tone-skip':null));
  recover.addEventListener('click',()=>clickSource('recover-exam'));
+ routeInput.addEventListener('change',()=>{
+  if(view.mode!=='resume')return;
+  const original=source('route-verified');
+  original.checked=routeInput.checked;
+  original.dispatchEvent(new Event('change',{bubbles:true}));
+  render();
+ });
+ source('route-verified').addEventListener('change',render);
  for(const item of choices){
   const button=comparison.querySelector('[data-console-choice="'+item.id+'"]');
   button.addEventListener('click',()=>clickSource(view.mode==='comparison'?item.id:null));
