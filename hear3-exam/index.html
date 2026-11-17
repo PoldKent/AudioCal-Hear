@@ -90,6 +90,8 @@ Mantén el volumen físico bajo. Puedes utilizar entre 2 y 31 bandas sin atribui
 </select>
 <label for="layout-choice">Distribución gráfica</label>
 <select id="layout-choice" data-testid="layout-choice">
+<option value="car-reference-7">Automóvil de referencia · 7 bandas (64–15.625 Hz)</option>
+<option value="headphones-reference-10">Auriculares de referencia · 10 bandas (30–16.000 Hz)</option>
 <option value="4">4 bandas nominales</option>
 <option value="5" selected>5 bandas nominales</option>
 <option value="7">7 bandas nominales</option>
@@ -199,9 +201,32 @@ He comprobado la salida y el volumen físico bajo antes de reanudar</label>
  dos bandas vecinas con evidencia suficiente.</p>
 <p id="eq-status" data-testid="eq-status" role="status">
 Finaliza el examen para consultar una curva orientativa.</p>
-<div id="eq-rows" data-testid="eq-rows" aria-label="Ganancias EQ orientativas por banda"></div>
-<p id="eq-headroom" data-testid="eq-headroom">
-La preamplificación y el headroom no están verificados en el dispositivo.</p>
+<div class="app-result-card" id="eq-immediate" data-testid="eq-immediate"
+ aria-labelledby="eq-immediate-title">
+ <h3 id="eq-immediate-title">Estos son los valores de tu EQ</h3>
+ <p data-immediate-eq="status" data-testid="eq-immediate-status" role="status">
+  Al finalizar aparecerán los ajustes de todas las bandas.</p>
+ <div class="app-eq-scroll">
+  <div data-immediate-eq="chart" data-testid="eq-immediate-chart" class="app-eq-chart"
+   aria-label="Curva gráfica de ganancias de ecualización"></div>
+ </div>
+ <div class="app-actions app-result-actions">
+  <button type="button" data-immediate-eq="copy" data-testid="eq-immediate-copy" disabled>Copiar valores</button>
+  <button type="button" data-immediate-eq="txt" data-testid="eq-immediate-txt" disabled>Descargar TXT</button>
+  <button type="button" data-immediate-eq="csv" data-testid="eq-immediate-csv" disabled>Descargar CSV</button>
+  <button type="button" data-immediate-eq="png" data-testid="eq-immediate-png" disabled>Guardar imagen PNG</button>
+ </div>
+ <p data-immediate-eq="action-status" role="status" aria-live="polite"
+  data-testid="eq-immediate-action">El EQ no se aplica automáticamente.</p>
+ <p>Para conservar este resultado, utiliza «Guardar mis resultados» más abajo.
+ Después puedes <a href="../hear3-eq-editor/">editarlo banda por banda</a> desde la misma aplicación.</p>
+</div>
+<details class="app-result-details">
+ <summary>Ver evidencia de tonos y cálculo técnico</summary>
+ <div id="eq-rows" data-testid="eq-rows" aria-label="Ganancias EQ orientativas por banda"></div>
+ <p id="eq-headroom" data-testid="eq-headroom">
+ La preamplificación y el headroom no están verificados en el dispositivo.</p>
+</details>
 <button type="button" id="eq-export" data-testid="eq-export" disabled>
 Descargar mi curva (JSON, sin aplicar al equipo)</button>
 </section>
@@ -228,7 +253,8 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 </section>
 <section aria-labelledby="archive-heading">
 <h2 id="archive-heading">7. Guardar mis resultados</h2>
-<p>Al finalizar, puedes guardar tus respuestas en el historial. Si lo autorizas
+<p>Tu EQ aparece automáticamente al terminar el examen. Puedes copiarlo o descargarlo sin guardarlo. Si decides conservarlo,
+ puedes guardar tus respuestas en el historial. Si lo autorizas
  <strong>por separado</strong>, también puedes guardar una curva matemática
  <strong>provisional y no calibrada</strong> para editarla y exportarla.
  Sin autorización adicional solo se conservan las respuestas, sin EQ.
@@ -784,6 +810,12 @@ window.addEventListener('pagehide',()=>{
   exam.interrupt({routeMayHaveChanged:true});
 },{once:true});
 render();
+</script>
+<script type="module">
+import {mountHear3ImmediateEq} from '../src/hear3/immediate-eq-result.mjs';
+const root=document.getElementById('eq-immediate');
+const source=document.getElementById('eq-rows');
+mountHear3ImmediateEq({root,source,getDraft:()=>window.hear3IntegratedPilot?.eqDraft()??null});
 </script>
 </body>
 </html>
