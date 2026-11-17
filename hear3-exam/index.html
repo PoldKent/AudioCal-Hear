@@ -893,7 +893,7 @@ $('archive-commit').addEventListener('click',()=>run(async()=>{
  const addEq=$('archive-eq-optin').checked;
  if(!confirm(addEq
   ?'¿Guardar respuestas y una curva EQ PROVISIONAL no calibrada? No aplica valores automáticamente.'
-  :'¿Guardar las respuestas experimentales como un nuevo dispositivo y perfil V3, sin EQ ni diagnóstico?'))return;
+  :'¿Guardar las respuestas experimentales en el equipo o perfil seleccionado, sin EQ ni diagnóstico?'))return;
  if(addEq&&!confirm('Confirmación adicional: los valores derivan de tonos subjetivos sin validación física, SPL ni headroom. ¿Guardar solo para revisión?'))return;
  const {response:result}=await catalogWriter.run(()=>
   archiveTransfer.commit({userInitiated:true,confirmed:true,
