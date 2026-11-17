@@ -24,6 +24,7 @@ const allowedFiles = new Map([
   ['/src/hear3/provisional-eq-editor.mjs', 'src/hear3/provisional-eq-editor.mjs'],
   ['/src/hear3/app-shell.css', 'src/hear3/app-shell.css'],
   ['/src/hear3/app-theme.mjs', 'src/hear3/app-theme.mjs'],
+  ['/src/hear3/immediate-eq-result.mjs', 'src/hear3/immediate-eq-result.mjs'],
   ['/hear3-dual-restore/', 'hear3-dual-restore/index.html'],
   ['/hear3-dual-restore/index.html', 'hear3-dual-restore/index.html'],
   ['/src/hear3/guarded-dual-archive-restore.mjs', 'src/hear3/guarded-dual-archive-restore.mjs'],
