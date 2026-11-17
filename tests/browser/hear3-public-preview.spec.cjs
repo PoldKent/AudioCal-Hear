@@ -51,7 +51,7 @@ test('all publicly linked pilots load their module UIs without audio automatical
 });
 
 test('preview navigation never clears or migrates Hear 2.0 profiles automatically',async({page})=>{
-  await page.goto('/');
+  await page.goto('/hear3-preview/');
   await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','DO_NOT_TOUCH_V2'));
   await page.goto('/hear3-preview/');
   await expect(page.getByRole('heading',{level:1})).toBeVisible();
