@@ -16,7 +16,7 @@ const cases=[
 
 test('AudioCal Hear acceptance: measured 4/5/7/10 band profiles survive full results, edits and export',async({page})=>{
  for(const config of cases){
-  await page.goto('/');
+  await page.goto('/hear2/');
   await page.evaluate(()=>localStorage.clear());
   await page.reload();
   await page.locator('#uiLanguage').selectOption('es');
