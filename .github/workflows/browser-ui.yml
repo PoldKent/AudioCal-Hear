@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'hear2/**'
+      - 'hear3-preview/**'
       - 'src/**'
       - 'tools/**'
       - 'tests/browser/**'
@@ -14,6 +16,8 @@ on:
   pull_request:
     paths:
       - 'index.html'
+      - 'hear2/**'
+      - 'hear3-preview/**'
       - 'src/**'
       - 'tools/**'
       - 'tests/browser/**'
