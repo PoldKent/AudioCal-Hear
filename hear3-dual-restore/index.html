@@ -51,9 +51,9 @@ Reconocer pareja coherente y retirar marcador de recuperación</button>
 </section>
 <section aria-labelledby="source-h">
 <h2 id="source-h">1 · Revisar dos archivos fuente</h2>
-<label for="v3-file">Catálogo original de Hear 3.0 · JSON V3</label>
+<label for="v3-file">Catálogo original de AudioCal Hear · JSON actual</label>
 <input type="file" id="v3-file" data-testid="v3-file" accept=".json,application/json">
-<label for="v2-file">Historial íntegro conservado de Hear 2.0 · archivo portátil V2</label>
+<label for="v2-file">Historial íntegro conservado de el historial anterior · archivo portátil histórico</label>
 <input type="file" id="v2-file" data-testid="v2-file" accept=".json,application/json">
 <button type="button" id="review" data-testid="review">Comprobar ambos archivos sin escribir datos</button>
 <p id="review-status" data-testid="review-status" role="status" aria-live="polite">
@@ -64,9 +64,9 @@ No se han revisado archivos.</p>
 <p>Los siguientes archivos contienen datos anteriores a la restauración. Descárgalos por separado
 y guárdalos en una ubicación externa recuperable. No son una copia nueva automática en la nube.</p>
 <button type="button" id="previous-v3" data-testid="previous-v3" disabled>
-Descargar catálogo V3 anterior</button>
+Descargar catálogo actual anterior</button>
 <button type="button" id="previous-v2" data-testid="previous-v2" disabled>
-Descargar historial V2 anterior</button>
+Descargar historial histórico anterior</button>
 <p id="backup-status" data-testid="backup-status" role="status">Descargas previas no solicitadas.</p>
 </section>
 <section aria-labelledby="commit-h">
