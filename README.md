@@ -14,7 +14,9 @@
 
 [Hear 3.0](https://poldkent.github.io/AudioCal-Hear/) now provides a guided beta entry, a combined experimental sweep/tone exam, review-only bounded subjective EQ, an optional local V3 archive with an editable EQ, TXT/CSV/JSON/PNG export, independent V2 history preservation, guarded V2+V3 restore, privacy and diagnostic previews. **None of these results is a clinical hearing threshold, a physically calibrated EQ or an automatic device preset.** Acoustic SPL, hardware DSP, Bluetooth routing, screen-reader audit, actual device rollback and the 13 physical release audits remain pending. `stableReleaseClaim:false` must stay in force until the D-063 gate is met.
 
-The beta exam now accepts nominal 4/5/7/10/15/31-band layouts or a custom 2–31-frequency graphic EQ. These are user-declared frequencies, not automatically detected or acoustically calibrated hardware.\n\nThe project keeps a byte-exact, generated **Hear 2.0 fallback** under `hear2/index.html`; `npm run build` produces both the primary `index.html` beta router and `hear2/index.html` legacy standalone, and `npm run verify` checks both. See [transition and rollback protocol](docs/hear3/47-primary-beta-entry-with-hear2-rollback.md).
+The beta exam now accepts nominal 4/5/7/10/15/31-band layouts or a custom 2–31-frequency graphic EQ. These are user-declared frequencies, not automatically detected or acoustically calibrated hardware.
+
+The project keeps a byte-exact, generated **Hear 2.0 fallback** under `hear2/index.html`; `npm run build` produces both the primary `index.html` beta router and `hear2/index.html` legacy standalone, and `npm run verify` checks both. See [transition and rollback protocol](docs/hear3/47-primary-beta-entry-with-hear2-rollback.md).
 
 ## Current Hear 2.0 workflow — tones only
 
