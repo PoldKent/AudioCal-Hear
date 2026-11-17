@@ -173,10 +173,15 @@ try{
  // Return visits show the latest verified local profile, without silently
  // migrating old records, creating profiles or starting any sound.
  if(catalog.profiles.length){
-  const active=catalog.profiles.find(p=>p.id===catalog.activeProfileId)??catalog.profiles.at(-1);
+  // Use the latest saved result across ALL profiles for the return-home
+  // shortcut. Do not silently rewrite the user's persisted active profile.
+  const recent=[...catalog.results].sort((a,b)=>b.capturedAt-a.capturedAt)[0]??null;
+  const active=catalog.profiles.find(p=>p.id===recent?.profileId)??
+   catalog.profiles.find(p=>p.id===catalog.activeProfileId)??catalog.profiles.at(-1);
   const device=catalog.devices.find(d=>d.id===active.deviceId);
-  const latest=catalog.results.filter(r=>r.profileId===active.id)
-   .sort((a,b)=>b.capturedAt-a.capturedAt)[0]??null;
+  const latest=recent?.profileId===active.id?recent:
+   catalog.results.filter(r=>r.profileId===active.id)
+    .sort((a,b)=>b.capturedAt-a.capturedAt)[0]??null;
   $('recent-profile').hidden=false;
   $('recent-device').textContent=active.name+
    (device?' · '+device.name:'');
