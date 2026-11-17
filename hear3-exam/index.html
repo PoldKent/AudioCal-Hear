@@ -76,6 +76,24 @@ input,select{accent-color:#70cfff}
 Para detener audio iniciado, pulsa Escape.</p>
 <p id="audio-preflight" data-testid="audio-preflight" role="status">
 Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automáticamente.</p>
+<div id="guided-journey" class="app-exam-journey" aria-label="Etapas de mi examen">
+ <nav data-journey="nav" class="app-exam-journey-nav" aria-label="Recorrido guiado">
+  <a href="#layout-heading" data-journey-stage="prepare" aria-current="step">1 · Mi equipo</a>
+  <a href="#sweep-heading" data-journey-stage="sweep">2 · Barrido</a>
+  <a href="#tones-heading" data-journey-stage="tones">3 · Tonos</a>
+  <a href="#eq-heading" data-journey-stage="result">4 · Mi EQ</a>
+ </nav>
+ <p data-journey="status" data-testid="journey-status"
+  class="app-subtle" role="status" aria-live="polite">
+  Etapa actual: 1 · Mi equipo. Puedes regresar sin perder tus datos.
+ </p>
+ <div class="app-exam-journey-actions">
+  <button type="button" data-journey="back" data-testid="journey-back"
+   disabled>Volver a la etapa anterior</button>
+  <button type="button" data-journey="next" data-testid="journey-next">
+   Ver la siguiente etapa</button>
+ </div>
+</div>
 <section aria-labelledby="layout-heading">
 <h2 id="layout-heading">1. Tu equipo y sus bandas</h2>
 <p>Elige las frecuencias reales de tu EQ gráfico; los presets son nominales y no detectan tu hardware.
@@ -903,6 +921,19 @@ mountHear3PhotoBandAssistant({
  layoutChoice:document.getElementById('layout-choice'),
  layoutCustom:document.getElementById('layout-custom'),
  layoutApply:document.getElementById('layout-apply'),
+});
+</script>
+<script type="module">
+import {mountHear3GuidedJourney} from '../src/hear3/guided-journey.mjs';
+mountHear3GuidedJourney({
+ root:document.getElementById('guided-journey'),
+ getState:()=>({
+  sweep:window.hear3IntegratedPilot?.sweep(),
+  sweepResult:window.hear3IntegratedPilot?.sweepResult(),
+  exam:window.hear3IntegratedPilot?.snapshot(),
+  comparison:window.hear3IntegratedPilot?.comparison(),
+  eq:window.hear3IntegratedPilot?.eqDraft(),
+ }),
 });
 </script>
 </body>
