@@ -1,10 +1,12 @@
 /**
  * Hear 3.0 P0 — opt-in archiving of CONFIRMED subjective tone responses.
  * Creates new device/profile/result records in the local V3 catalog.
- * Deliberately stores NO EQ, threshold, SPL or acoustic validation.
+ * Defaults to no EQ. An explicitly consented, bounded numerical EQ can
+ * be stored as PROVISIONAL, never as calibrated, deployable or clinical.
  * Does not modify Hear 2.0 storage keys or downloaded backup files.
  */
 import {validateHear3Catalog} from './catalog-contract.mjs';
+import {calculateHear3BoundedJointEq} from './bounded-eq-engine.mjs';
 import {checkpointFingerprint} from './local-checkpoint-store.mjs';
 
 const check=(ok,msg)=>{if(!ok)throw Error(msg);};
@@ -95,7 +97,9 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
  function discard(){proposed=null;}
  function preview({
   deviceId,profileId,resultId,deviceName,profileName,category='headphones',
+  includeProvisionalEq=false,
  }={}){
+  check(typeof includeProvisionalEq==='boolean','Provisional EQ opt-in must be explicit');
   proposed=null;
   check(validId(deviceId)&&validId(profileId)&&validId(resultId),
    'Explicit unique device, profile and result IDs are required');
@@ -104,35 +108,54 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
   const time=now();
   check(Number.isSafeInteger(time)&&time>=0,'Invalid archive timestamp');
   const current=catalogStore.load();
+  const eq=includeProvisionalEq?calculateHear3BoundedJointEq({
+   examSnapshot:evidence.status,sessionSnapshot:evidence.session,
+   deviceCategory:category,
+  }):null;
+  check(!eq||(eq.autoApplyAllowed===false&&eq.validatedForProduction===false&&
+   eq.channel==='joint'&&eq.bandCount===evidence.eqBands.length&&
+   eq.originalEq.every((band,i)=>band.bandId===evidence.eqBands[i].id)),
+   'EQ must remain a bounded review-only joint mathematical hypothesis');
+  const currentEq=eq?clone(eq.currentEq):[];
+  const originalEq=eq?clone(eq.originalEq):[];
   const next=validateHear3Catalog({
    ...current.catalog,
    devices:[...current.catalog.devices,{id:deviceId,name:deviceName,category}],
    profiles:[...current.catalog.profiles,{id:profileId,deviceId,name:profileName,
     graphicEq:{type:'graphic',deviceId,bands:evidence.eqBands}}],
    results:[...current.catalog.results,{
-    id:resultId,profileId,capturedAt:time,status:'inconclusive',
-    provenance:'experimental-tone-test',
-    originalEq:[],currentEq:[],observations:evidence.observations,editHistory:[],
+    id:resultId,profileId,capturedAt:time,
+    status:eq?'provisional':'inconclusive',provenance:'experimental-tone-test',
+    originalEq,currentEq,observations:evidence.observations,editHistory:[],
    }],
    activeProfileId:current.catalog.activeProfileId??profileId,
   });
   proposed={next,catalogAtPreview:catalogToken(current),
-   examAtPreview:examToken(evidence),revision:current.revision};
+   examAtPreview:examToken(evidence),revision:current.revision,
+   includeProvisionalEq};
   return Object.freeze({
    deviceId,profileId,resultId,deviceName,profileName,category,
    subjectiveResponses:evidence.observations.length,
    bands:evidence.eqBands.length,
-   status:'inconclusive',originalEqBands:0,currentEqBands:0,
+   status:eq?'provisional':'inconclusive',
+   originalEqBands:originalEq.length,currentEqBands:currentEq.length,
+   provisionalEqOptIn:includeProvisionalEq,
+   eqModelStatus:eq?.modelStatus??null,
+   eqAcousticallyValidated:false,eqAutoApplyAllowed:false,
    existingResultsUnchanged:current.catalog.results.length,
    requiresConfirmation:true,
-   warning:'Only subjective Web Audio observations; no calibrated hearing threshold, diagnosis, SPL or usable EQ.',
+   warning:eq
+    ?'Optional mathematically bounded review-only EQ: not acoustically calibrated, not a device preset and never automatically applied.'
+    :'Only subjective Web Audio observations; no calibrated hearing threshold, diagnosis, SPL or usable EQ.',
   });
  }
- function commit({userInitiated=false,confirmed=false}={}){
+ function commit({userInitiated=false,confirmed=false,confirmProvisionalEq=false}={}){
   check(userInitiated===true&&confirmed===true,
    'Archiving requires explicit user action and confirmation');
   check(proposed,'Review a completed exam archive before saving');
   const selected=proposed;
+  check(!selected.includeProvisionalEq||confirmProvisionalEq===true,
+   'Provisional EQ requires separate explicit confirmation');
   const current=catalogStore.load();
   check(catalogToken(current)===selected.catalogAtPreview,
    'Catalog changed since archive preview; review again');
@@ -144,8 +167,12 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
    expectedRevision:selected.revision,
   });
   return {
-   archived:true,resultStatus:'inconclusive',
-   originalEqBands:0,currentEqBands:0,
+   archived:true,
+   resultStatus:selected.includeProvisionalEq?'provisional':'inconclusive',
+   originalEqBands:selected.includeProvisionalEq?selected.next.results.at(-1).originalEq.length:0,
+   currentEqBands:selected.includeProvisionalEq?selected.next.results.at(-1).currentEq.length:0,
+   provisionalEqStored:selected.includeProvisionalEq,
+   autoApplyAllowed:false,validatedForProduction:false,
    revision:saved.revision,
    durability:saved.durability,
    persistedOnDevice:saved.persistedOnDevice===true,
