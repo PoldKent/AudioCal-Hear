@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hear 3.0 · Diagnóstico técnico local</title>
+<title>Diagnóstico técnico · AudioCal Hear</title>
 <style>
 :root{font-family:system-ui,sans-serif;color-scheme:light dark}
 body{margin:0 auto;padding:1rem 1rem 3rem;max-width:46rem;line-height:1.55}
@@ -16,10 +16,21 @@ input:focus-visible,a:focus-visible{outline:3px solid currentColor;outline-offse
 fieldset{border:1px solid #888;padding:.75rem}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
+<link rel="stylesheet" href="../src/hear3/app-shell.css">
 </head>
 <body>
-<main>
-<h1>Hear 3.0 · Diagnóstico técnico local</h1>
+<header class="app-topbar">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal">
+  <a href="../">Inicio</a>
+  <a href="../hear3-exam/">Examen</a>
+  <a href="../hear3-eq-editor/">Mi ecualizador</a>
+  <a href="../hear3-library/">Historial</a>
+  <a href="../#ajustes">Ajustes</a>
+ </nav>
+</header>
+<main class="app-page">
+<h1>Diagnóstico técnico</h1>
 <p class="warning"><strong>Información técnica no clínica.</strong>
  Esta página solo examina disponibilidad de funciones del navegador, sin iniciar audio,
  acceder a tus respuestas auditivas ni leer perfiles, fotografías o archivos.
@@ -59,7 +70,7 @@ He revisado el contenido y autorizo crear una copia local de este informe.</labe
 <button id="copy" data-testid="copy" type="button" disabled>Copiar informe revisado</button>
 <button id="download" data-testid="download" type="button" disabled>Descargar informe JSON</button>
 <p id="status" data-testid="status" role="status">Ningún informe generado. No hay envío automático.</p>
-<p><a href="../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
+<p><a href="../">Volver al inicio</a></p>
 </main>
 <script type="module">
 import {createHear3LocalDiagnostic} from '../src/hear3/local-diagnostics.mjs';
