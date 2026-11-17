@@ -39,18 +39,16 @@ export function mountHear3GuidedJourney({root,getState,env=globalThis}={}){
  let model=null;
  function canNavigate(){
   const s=getState();
-  return s?.sweep?.status!=='playing'&&!['playing','starting'].includes(s?.exam?.status);
+  return s?.sweep?.status!=='playing'&&!['playing','starting'].includes(s?.exam?.status)&&
+   !['first','gap','second'].includes(s?.comparison?.state);
  }
  function go(step){
   if(!canNavigate()){
    status.textContent='Detén el tono o el barrido antes de cambiar de etapa; no se perderán respuestas válidas.';
    return;
   }
-  const item=model?.items.find(x=>x.name===step);
-  if(!item?.available){
-   status.textContent='Esta etapa aparecerá cuando completes la anterior. No iniciaremos sonido automáticamente.';
-   return;
-  }
+  // Navigation previews existing sections but NEVER advances the audio
+  // engine or marks an unfinished stage complete.
   const heading=env.document?.getElementById(ids[step]);
   heading?.scrollIntoView?.({block:'start',behavior:'auto'});
  }
@@ -62,7 +60,7 @@ export function mountHear3GuidedJourney({root,getState,env=globalThis}={}){
    const link=links[i];
    if(item.current)link.setAttribute('aria-current','step');
    else link.removeAttribute('aria-current');
-   link.setAttribute('aria-disabled',String(!item.available));
+   link.dataset.reached=String(item.available);
   }
   status.textContent='Etapa actual: '+model.items[model.activeIndex].label+
    '. Puedes volver a una etapa anterior para revisar los datos sin borrar el progreso.';
@@ -80,8 +78,7 @@ export function mountHear3GuidedJourney({root,getState,env=globalThis}={}){
  });
  next.addEventListener('click',()=>{
   if(!model||model.activeIndex>=3)return;
-  // "Next" never advances a test or starts audio; only navigates to an
-  // already reached stage. The app engine owns any actual progression.
+  // "Next" only scrolls. No sound, new measurements or progression.
   go(HEAR3_JOURNEY_STEPS[model.activeIndex+1]);
  });
  const targets=['sweep-status','tone-status','eq-status','sweep-count','coverage'];
