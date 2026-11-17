@@ -12,6 +12,9 @@ on:
       - 'src/styles.css'
       - 'src/translations.json'
       - 'index.html'
+      - 'hear2/**'
+      - 'hear3-preview/**'
+      - 'src/hear3-entry.html'
   push:
     branches:
       - 'hear3/**'
