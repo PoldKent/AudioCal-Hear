@@ -211,3 +211,67 @@ test('archive never enables provisional EQ unless opt-in boolean is explicitly t
  assert.equal(saved.provisionalEqStored,false);
  assert.equal(f.cat.load().catalog.results[0].currentEq.length,0);
 });
+
+test('the next exam can append a result to the exact same device/profile without duplication',async()=>{
+ const f=fixture();await finish(f.exam);
+ f.archive.preview(f.args);
+ f.archive.commit({userInitiated:true,confirmed:true});
+ const original=f.cat.load().catalog;
+ const preview=f.archive.preview({...f.args,deviceId:'unused-device',
+  profileId:'unused-profile',resultId:'result-2',reuseProfileId:'new-profile'});
+ assert.equal(preview.reusedDevice,true);
+ assert.equal(preview.reusedProfile,true);
+ assert.equal(preview.deviceId,'new-device');
+ assert.equal(preview.profileId,'new-profile');
+ assert.equal(preview.existingResultsUnchanged,1);
+ f.archive.commit({userInitiated:true,confirmed:true});
+ const saved=f.cat.load().catalog;
+ assert.deepEqual(saved.devices,original.devices);
+ assert.deepEqual(saved.profiles,original.profiles);
+ assert.deepEqual(saved.results[0],original.results[0]);
+ assert.equal(saved.results.length,2);
+ assert.equal(saved.results[1].profileId,'new-profile');
+ assert.equal(saved.activeProfileId,'new-profile');
+});
+test('a new profile can be added inside an existing equipment record',async()=>{
+ const f=fixture();await finish(f.exam);
+ f.archive.preview(f.args);
+ f.archive.commit({userInitiated:true,confirmed:true});
+ const old=f.cat.load().catalog.devices[0];
+ const preview=f.archive.preview({...f.args,
+  deviceId:'unused-new-device',profileId:'second-profile',resultId:'result-2',
+  profileName:'Otra configuración',reuseDeviceId:'new-device'});
+ assert.equal(preview.reusedDevice,true);
+ assert.equal(preview.reusedProfile,false);
+ f.archive.commit({userInitiated:true,confirmed:true});
+ const saved=f.cat.load().catalog;
+ assert.equal(saved.devices.length,1);
+ assert.deepEqual(saved.devices[0],old);
+ assert.equal(saved.profiles.length,2);
+ assert.equal(saved.profiles[1].deviceId,'new-device');
+ assert.equal(saved.profiles[1].name,'Otra configuración');
+ assert.equal(saved.results[1].profileId,'second-profile');
+});
+test('profile reuse refuses unknown targets, changed device category and mismatched EQ bands',async()=>{
+ const f=fixture();await finish(f.exam);
+ f.archive.preview(f.args);
+ f.archive.commit({userInitiated:true,confirmed:true});
+ assert.throws(()=>f.archive.preview({...f.args,resultId:'result-2',
+  reuseProfileId:'missing'}),/profile no longer exists/);
+ assert.throws(()=>f.archive.preview({...f.args,resultId:'result-2',
+  reuseDeviceId:'missing'}),/device no longer exists/);
+ assert.throws(()=>f.archive.preview({...f.args,resultId:'result-2',
+  reuseProfileId:'new-profile',category:'car'}),/category differs/);
+ assert.throws(()=>f.archive.preview({...f.args,resultId:'result-2',
+  reuseDeviceId:'new-device',reuseProfileId:'new-profile'}),/either an existing device or an existing profile/);
+ const current=f.cat.load().catalog;
+ current.profiles.push({id:'mismatched',deviceId:'new-device',name:'Equipo diferente',
+  graphicEq:{type:'graphic',deviceId:'new-device',bands:[
+   {id:'band-125',frequencyHz:125,source:'manual'},
+   {id:'band-1000',frequencyHz:1000,source:'manual'},
+  ]}});
+ f.cat.save(current);
+ assert.throws(()=>f.archive.preview({...f.args,resultId:'result-2',
+  reuseProfileId:'mismatched'}),/frequencies or identities differ/);
+ assert.equal(f.cat.load().catalog.results.length,1);
+});
