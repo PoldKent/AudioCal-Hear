@@ -30,10 +30,10 @@ test('navigation reaches the full exam, editor and local records without autopla
  await expect(page.getByRole('heading',{level:1})).toContainText('Examen de tonos');
  await expect(page.getByTestId('sweep-start')).toBeEnabled();
  await expect(page.getByTestId('tone-next')).toBeDisabled();
- await page.getByRole('link',{name:'Mi ecualizador'}).click();
+ await page.getByRole('link',{name:'Mi ecualizador',exact:true}).click();
  await expect(page).toHaveURL(/\/hear3-eq-editor\/$/);
  await expect(page.getByTestId('review')).toBeDisabled();
- await page.getByRole('link',{name:'Historial'}).click();
+ await page.getByRole('link',{name:'Historial',exact:true}).click();
  await expect(page).toHaveURL(/\/hear3-library\/$/);
  await expect(page.getByTestId('summary')).toContainText('0 dispositivos, 0 perfiles, 0 resultados');
  await page.getByRole('link',{name:'Inicio'}).click();
