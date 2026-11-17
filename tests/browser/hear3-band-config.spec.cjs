@@ -70,3 +70,22 @@ test('unsafe custom frequencies are rejected without mutating the default preset
  await expect(page.getByTestId('error')).toBeEmpty();
  await expect(page.getByTestId('sweep-start')).toBeEnabled();
 });
+
+test('a saved unfinished exam is not silently overwritten by a new frequency selection',async({page})=>{
+ await fakeAudio(page);
+ await page.goto('/hear3-exam/');
+ await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','V2_UNCHANGED'));
+ await page.getByTestId('sweep-start').click();
+ await expect(page.getByTestId('plan')).toBeEnabled();
+ await page.getByTestId('plan').click();
+ await expect(page.getByTestId('tone-next')).toBeEnabled();
+ await page.reload();
+ await expect(page.getByTestId('recover-exam')).toBeEnabled();
+ await page.getByTestId('layout-choice').selectOption('7');
+ await page.getByTestId('layout-apply').click();
+ await page.getByTestId('sweep-start').click();
+ await expect(page.getByTestId('error')).toContainText('Hay un examen guardado');
+ await expect(page.getByTestId('recover-exam')).toBeEnabled();
+ expect(await page.evaluate(()=>window.hear3IntegratedPilot.snapshot())).toBeNull();
+ expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('V2_UNCHANGED');
+});
