@@ -77,6 +77,10 @@ test('P0 device cascade cannot erase records of an unrelated device',async({page
  await expect(page.getByTestId('delete-summary')).toContainText('1 equipos, 1 perfiles y 1 resultados');
  const onDialog=d=>d.accept();page.on('dialog',onDialog);
  await page.getByTestId('delete-commit').click();
+ // The click starts an async Web Lock + readback operation. On slow mobile
+ // engines the event can finish BEFORE the coordinated mutation completes.
+ await expect(page.getByTestId('summary')).toContainText('1 dispositivos, 1 perfiles, 1 resultados');
+ await expect(page.getByTestId('error')).toBeEmpty();
  page.off('dialog',onDialog);
  const c=(await page.evaluate(()=>window.hear3CatalogPilot.snapshot())).catalog;
  expect(c.devices.map(x=>x.id)).toEqual(['device-two']);
