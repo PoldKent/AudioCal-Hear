@@ -106,6 +106,35 @@ Mantén el volumen físico bajo. Puedes utilizar entre 2 y 31 bandas sin atribui
 <button type="button" id="layout-apply" data-testid="layout-apply">Confirmar las bandas del EQ</button>
 <p id="layout-status" data-testid="layout-status" role="status" aria-live="polite">
 Distribución inicial: 5 bandas declaradas, de 125 a 2000 Hz. No verificada físicamente.</p>
+<div id="photo-band-assistant" class="app-device-helper" aria-label="Ayuda para configurar frecuencias">
+ <button type="button" data-photo="suggest" data-testid="device-suggest-layout">
+  Usar referencia de auriculares (10 bandas)
+ </button>
+ <p class="app-subtle">La referencia no identifica automáticamente tu equipo.
+  Comprueba que las frecuencias coincidan antes de comenzar.</p>
+ <details class="app-result-details" data-testid="photo-band-details">
+  <summary>Usar una foto de mi ecualizador para identificar sus bandas</summary>
+  <p>Una foto puede ayudarte a copiar las frecuencias. Hear no la sube ni la guarda.
+   Si este navegador tiene reconocimiento de texto compatible, aparecerá una
+   <strong>propuesta que debes comprobar</strong> antes de usar.</p>
+  <label for="hear-eq-photo">Foto de los controles de frecuencias (JPG, PNG o WebP, máximo 8 MB)</label>
+  <input id="hear-eq-photo" data-photo="input" data-testid="eq-photo-input"
+   type="file" accept="image/jpeg,image/png,image/webp">
+  <canvas class="app-device-photo" data-photo="canvas" data-testid="eq-photo-canvas"
+   aria-label="Previsualización local del ecualizador fotografiado" hidden></canvas>
+  <p data-photo="status" data-testid="eq-photo-status" role="status" aria-live="polite">
+   Selecciona una foto. También puedes escribir las bandas manualmente.</p>
+  <p data-photo="proposal" data-testid="eq-photo-proposal"></p>
+  <div class="app-actions app-result-actions">
+   <button type="button" data-photo="apply" data-testid="eq-photo-apply" disabled>
+    Usar estas frecuencias para revisarlas</button>
+   <button type="button" data-photo="clear" data-testid="eq-photo-clear">
+    Descartar fotografía</button>
+  </div>
+  <p class="app-subtle">Si no se reconocen todas las etiquetas, escribe los números
+   en «Frecuencias personalizadas». Ninguna fotografía pasa al historial o al respaldo.</p>
+ </details>
+</div>
 </section>
 <section aria-labelledby="sweep-heading">
 <h2 id="sweep-heading">2. Exploración de frecuencias</h2>
@@ -864,6 +893,16 @@ attachHear3DigitalToneVisualizer({
  toneStatus:document.getElementById('tone-status'),
  sweepPath:document.getElementById('hear-sweep-wave'),
  tonePath:document.getElementById('hear-tone-wave'),
+});
+</script>
+<script type="module">
+import {mountHear3PhotoBandAssistant} from '../src/hear3/photo-band-assistant.mjs';
+mountHear3PhotoBandAssistant({
+ root:document.getElementById('photo-band-assistant'),
+ categorySelect:document.getElementById('archive-category'),
+ layoutChoice:document.getElementById('layout-choice'),
+ layoutCustom:document.getElementById('layout-custom'),
+ layoutApply:document.getElementById('layout-apply'),
 });
 </script>
 </body>
