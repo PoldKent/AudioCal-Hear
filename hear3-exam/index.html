@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hear 3.0 beta · Examen de tonos | AudioCal Hear</title>
+<title>Examen de tonos · AudioCal Hear</title>
 <style>
 :root{color-scheme:light dark;font-family:system-ui,sans-serif}
 body{max-width:46rem;margin:1.2rem auto;padding:0 1rem 3rem;line-height:1.55}
@@ -46,33 +46,37 @@ input,select{accent-color:#70cfff}
 @media(max-width:560px){body{margin:.4rem auto;padding:0 .85rem 2rem}section{padding:.85rem}
   .hear-nav{gap:.3rem}.hear-nav a{padding:.35rem .45rem;font-size:.93rem}}
 </style>
+<link rel="stylesheet" href="../src/hear3/app-shell.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content" data-testid="skip-link">Saltar al contenido principal</a>
-<nav class="hear-nav" aria-label="Secciones de Hear 3.0">
-<a href="../hear3-preview/">Inicio</a>
-<a href="../hear3-exam/" aria-current="page">Examen</a>
-<a href="../hear3-library/">Mi historial</a>
-<a href="../hear3-eq-editor/">Editar EQ</a>
-<a href="../hear2/">Hear 2 anterior</a>
-</nav>
-<main id="main-content" tabindex="-1">
-<h1>Hear 3.0 beta · examen de tonos</h1>
-<p>Recorrido guiado: exploración de frecuencias, tonos individuales, resultados provisionales y guardado voluntario. Puedes detenerlo en cualquier momento.</p>
-<p class="notice"><strong>Versión beta experimental: no es una audiometría clínica ni un EQ acústicamente validado.</strong>
+<header class="app-topbar">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal">
+  <a href="../">Inicio</a>
+  <a href="../hear3-exam/" aria-current="page">Examen</a>
+  <a href="../hear3-eq-editor/">Mi ecualizador</a>
+  <a href="../hear3-library/">Historial</a>
+  <a href="../#ajustes">Ajustes</a>
+ </nav>
+</header>
+<main id="main-content" class="app-page" tabindex="-1">
+<h1>Examen de tonos</h1>
+<p>Configura tu equipo, escucha los tonos y guarda tus resultados cuando termines. Puedes pausar el examen en cualquier momento.</p>
+<p class="notice"><strong>No es una audiometría clínica ni un EQ acústicamente validado.</strong>
  Mantén el volumen físico bajo, cómodo y fijo. Detén el sonido ante molestias.
  Los niveles dBFS no miden presión sonora (dB SPL) ni prueban seguridad acústica.
  Cada reproducción requiere una acción explícita. Durante un tono o barrido puedes
  pulsar <kbd>Escape</kbd> para detener el sonido y conservar la sesión como
  interrumpida, sin registrar una respuesta auditiva.
- El EQ matemático provisional que aparece
+ La curva de ecualización orientativa que aparece
  al finalizar no se aplicará automáticamente ni está calibrado para tu equipo.</p>
 <p id="keyboard-stop-status" data-testid="keyboard-stop-status" role="status" aria-live="polite">
 Para detener audio iniciado, pulsa Escape.</p>
 <p id="audio-preflight" data-testid="audio-preflight" role="status">
 Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automáticamente.</p>
 <section aria-labelledby="layout-heading">
-<h2 id="layout-heading">0. Configuración del equipo y sus bandas</h2>
+<h2 id="layout-heading">1. Tu equipo y sus bandas</h2>
 <p>Elige las frecuencias reales de tu EQ gráfico; los presets son nominales y no detectan tu hardware.
 Mantén el volumen físico bajo. Puedes utilizar entre 2 y 31 bandas sin atribuirles equivalencias físicas.</p>
 <label for="archive-category">Categoría del equipo (no verificada automáticamente)</label>
@@ -101,7 +105,7 @@ Mantén el volumen físico bajo. Puedes utilizar entre 2 y 31 bandas sin atribui
 Distribución inicial: 5 bandas declaradas, de 125 a 2000 Hz. No verificada físicamente.</p>
 </section>
 <section aria-labelledby="sweep-heading">
-<h2 id="sweep-heading">1. Exploración de frecuencias</h2>
+<h2 id="sweep-heading">2. Exploración de frecuencias</h2>
 <p id="sweep-description" data-testid="sweep-description">Recorrido 125–2.000 Hz · máximo 20 s · −60 dBFS · ambos canales.
  Las respuestas durante el barrido son informativas, no umbrales.</p>
 <p id="sweep-status" role="status" data-testid="sweep-status">Sin iniciar</p>
@@ -124,7 +128,7 @@ Estos valores muestran el programa digital, no la frecuencia acústica realmente
 <p id="sweep-count" role="status" data-testid="sweep-count">Observaciones informativas: 0</p>
 </section>
 <section aria-labelledby="tones-heading">
-<h2 id="tones-heading">2. Tonos individuales de confirmación</h2>
+<h2 id="tones-heading">3. Tonos de confirmación</h2>
 <p>Al finalizar el barrido, puedes iniciar un recorrido ordenado de las bandas.
  El nivel digital se adapta a tus respuestas dentro de los límites autorizados, sin elevar
  el volumen físico. Las contradicciones requieren confirmación antes de repetir.</p>
@@ -160,7 +164,7 @@ Estos valores muestran el programa digital, no la frecuencia acústica realmente
 </div>
 </section>
 <section aria-labelledby="recovery-heading">
-<h2 id="recovery-heading">3. Recuperación de progreso del examen</h2>
+<h2 id="recovery-heading">Recuperar mi examen</h2>
 <p>El plan y las respuestas a tonos se guardan juntos en este navegador.
  Recuperar nunca reproduce audio automáticamente. Antes de reanudar verifica
  la salida de audio y mantén el volumen físico bajo, cómodo y fijo.</p>
@@ -168,24 +172,24 @@ Estos valores muestran el programa digital, no la frecuencia acústica realmente
 <div class="controls">
 <button type="button" id="recover-exam" data-testid="recover-exam" disabled>Recuperar examen guardado</button>
 <button type="button" id="export-exam" data-testid="export-exam" disabled>Descargar respaldo JSON</button>
-<button type="button" id="delete-exam" data-testid="delete-exam" disabled>Eliminar este checkpoint V3</button>
+<button type="button" id="delete-exam" data-testid="delete-exam" disabled>Eliminar este examen guardado</button>
 </div>
 <label for="route-verified"><input id="route-verified" data-testid="route-verified" type="checkbox">
 He comprobado la salida y el volumen físico bajo antes de reanudar</label>
 <p>Las copias JSON descargadas no están cifradas y no se eliminan al borrar datos del navegador.
- Los datos de Hear 2.0 no se migran ni eliminan automáticamente.</p>
+ Los datos guardados anteriormente no se migran ni eliminan automáticamente.</p>
 </section>
 <section aria-labelledby="summary-heading">
-<h2 id="summary-heading">4. Evidencia y límites</h2>
-<p>Este examen experimental registra lo escuchado/no escuchado; muestra intervalos subjetivos o
+<h2 id="summary-heading">4. Resultados del examen</h2>
+<p>Este examen registra lo escuchado/no escuchado; muestra intervalos subjetivos o
  bandas inconclusas. No inventa un umbral auditivo. Cuando se finaliza explícitamente
  el examen conjunto, genera un EQ matemático de contraste relativo, con topes
  y origen identificados por banda. <strong>No está calibrado acústicamente.</strong></p>
 <div id="result" data-testid="result" role="status">Sin resultados confirmados.</div>
 </section>
 <section aria-labelledby="eq-heading">
-<h2 id="eq-heading" tabindex="-1">5. EQ matemático provisional · una sola curva conjunta</h2>
-<p class="notice">Las ganancias indicadas son hipótesis experimentales derivadas de
+<h2 id="eq-heading" tabindex="-1">5. Tu ecualizador</h2>
+<p class="notice">Las ganancias indicadas son ajustes orientativos derivados de
  tus respuestas subjetivas con señales en dBFS. No miden una pérdida auditiva,
  no verifican clipping, no certifican el equipo ni el nivel de presión acústica.
  <strong>No ajustes ni apliques automáticamente estas ganancias a un equipo físico
@@ -193,15 +197,15 @@ He comprobado la salida y el volumen físico bajo antes de reanudar</label>
  quedan neutras, salvo estimaciones identificadas y estrictamente acotadas entre
  dos bandas vecinas con evidencia suficiente.</p>
 <p id="eq-status" data-testid="eq-status" role="status">
-Finaliza el examen de tonos para calcular una curva EQ provisional.</p>
-<div id="eq-rows" data-testid="eq-rows" aria-label="Ganancias EQ provisionales por banda"></div>
+Finaliza el examen para consultar una curva orientativa.</p>
+<div id="eq-rows" data-testid="eq-rows" aria-label="Ganancias EQ orientativas por banda"></div>
 <p id="eq-headroom" data-testid="eq-headroom">
 La preamplificación y el headroom no están verificados en el dispositivo.</p>
 <button type="button" id="eq-export" data-testid="eq-export" disabled>
-Descargar curva EQ experimental JSON para revisión (no preset de dispositivo)</button>
+Descargar mi curva (JSON, sin aplicar al equipo)</button>
 </section>
 <section aria-labelledby="transfer-heading">
-<h2 id="transfer-heading">6. Revisar conversión a controles del equipo</h2>
+<h2 id="transfer-heading">6. Transferir ajustes manualmente</h2>
 <p class="notice">Esta función <strong>no mueve ningún control</strong>. Solo convierte
  ganancias EQ provisionales a una escala de dB declarada por ti y únicamente
  si las frecuencias coinciden exactamente. No presume que una posición
@@ -222,8 +226,8 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 <div id="transfer-rows" data-testid="transfer-rows" aria-label="Equivalencia provisional de controles"></div>
 </section>
 <section aria-labelledby="archive-heading">
-<h2 id="archive-heading">7. Guardar respuestas en el historial V3</h2>
-<p>Al finalizar, puedes guardar respuestas en el historial V3. Si lo autorizas
+<h2 id="archive-heading">7. Guardar mis resultados</h2>
+<p>Al finalizar, puedes guardar tus respuestas en el historial. Si lo autorizas
  <strong>por separado</strong>, también puedes guardar una curva matemática
  <strong>provisional y no calibrada</strong> para editarla y exportarla.
  Sin autorización adicional solo se conservan las respuestas, sin EQ.
@@ -232,20 +236,20 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 <input id="archive-device" data-testid="archive-device" type="text" maxlength="120" value="Mi equipo"
  autocomplete="off">
 <label for="archive-profile">Nombre del perfil de prueba</label>
-<input id="archive-profile" data-testid="archive-profile" type="text" maxlength="120" value="Mi perfil experimental"
+<input id="archive-profile" data-testid="archive-profile" type="text" maxlength="120" value="Mi perfil"
  autocomplete="off">
 
 <label><input type="checkbox" id="archive-eq-optin" data-testid="archive-eq-optin">
  Guardar también el EQ matemático provisional, sin calibración ni aplicación automática</label>
 <div class="controls">
-<button type="button" id="archive-preview" data-testid="archive-preview" disabled>Revisar guardado V3</button>
-<button type="button" id="archive-commit" data-testid="archive-commit" disabled>Confirmar guardado V3</button>
+<button type="button" id="archive-preview" data-testid="archive-preview" disabled>Revisar guardado</button>
+<button type="button" id="archive-commit" data-testid="archive-commit" disabled>Confirmar y guardar</button>
 </div>
 <p id="archive-status" data-testid="archive-status" role="status">Primero termina el examen de tonos. No se guarda EQ.</p>
-<p><a href="../hear3-library/">Consultar catálogo e historial V3</a> · <a href="../hear3-eq-editor/">Editar EQ provisional guardado</a></p>
+<p><a href="../hear3-library/">Ver mis resultados</a> · <a href="../hear3-eq-editor/">Editar mi ecualizador</a></p>
 </section>
 <p id="error" data-testid="error" role="alert"></p>
-<p><a href="../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
+<p><a href="../">Volver al inicio</a></p>
 </main>
 <script type="module">
 import {createSweepPlan,planSweepConfirmations,frequencyAtSweepTime}
