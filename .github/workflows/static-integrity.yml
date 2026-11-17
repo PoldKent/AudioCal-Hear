@@ -30,7 +30,7 @@ jobs:
              !entry.includes('href="./hear3-library/"')||
              !entry.includes('href="./hear3-eq-editor/"')||
              !entry.includes('src/hear3/app-shell.css')||
-             !entry.includes('no es una prueba médica')||
+             !entry.includes('no sirve como diagnóstico médico')||
              entry.includes('url=./hear3-preview/')||
              entry.includes('href="./hear2/"'))
             throw Error('Single Hear application entry is incomplete or exposes a version selector');
