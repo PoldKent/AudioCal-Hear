@@ -241,6 +241,15 @@ Finaliza el examen para consultar una curva orientativa.</p>
  </p>
  <p>Los ajustes manuales no cambian las mediciones originales.
  También puedes <a href="../hear3-eq-editor/">editar un EQ guardado</a> desde el historial.</p>
+ <details data-immediate-eq="guide" data-testid="eq-manual-guide"
+  class="app-result-details" hidden>
+  <summary>Cómo introducir estos ajustes en mi equipo</summary>
+  <h4 data-immediate-eq="guide-title">Guía para tu equipo</h4>
+  <ol data-immediate-eq="guide-steps" data-testid="eq-guide-steps"></ol>
+  <p><strong>Frecuencias y ganancias de la curva que estás viendo:</strong></p>
+  <ul data-immediate-eq="guide-rows" data-testid="eq-guide-rows"></ul>
+  <p data-immediate-eq="guide-warning" class="app-note"></p>
+ </details>
 </div>
 <details class="app-result-details">
  <summary>Ver evidencia de tonos y cálculo técnico</summary>
@@ -842,7 +851,9 @@ render();
 import {mountHear3ImmediateEq} from '../src/hear3/immediate-eq-result.mjs';
 const root=document.getElementById('eq-immediate');
 const source=document.getElementById('eq-rows');
-mountHear3ImmediateEq({root,source,getDraft:()=>window.hear3IntegratedPilot?.eqDraft()??null});
+mountHear3ImmediateEq({root,source,
+ categorySelector:document.getElementById('archive-category'),
+ getDraft:()=>window.hear3IntegratedPilot?.eqDraft()??null});
 </script>
 <script type="module">
 import {attachHear3DigitalToneVisualizer} from '../src/hear3/digital-tone-visualizer.mjs';

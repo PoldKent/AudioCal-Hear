@@ -1,6 +1,6 @@
 const {test,expect}=require('@playwright/test');
 const HOME='/';
-const CACHE='audiocal-hear3-prototype-static-v2';
+const CACHE='audiocal-hear3-prototype-static-v3';
 
 async function supported(page){
  return page.evaluate(()=>Boolean(window.isSecureContext&&navigator.serviceWorker&&window.caches));
@@ -26,7 +26,8 @@ async function installAndVerify(page){
  const cached=await page.evaluate(async cacheName=>{
   const cache=await caches.open(cacheName);
   const required=['/index.html','/src/hear3/app-shell.css','/src/hear3/app-theme.mjs',
-   '/hear3-exam/','/hear3-library/','/hear3-eq-editor/'];
+   '/hear3-exam/','/hear3-library/','/hear3-eq-editor/',
+   '/src/hear3/immediate-eq-result.mjs','/src/hear3/manual-eq-application-guide.mjs'];
   for(const path of required){
    if(!await cache.match(new URL(path,location.origin)))return false;
   }

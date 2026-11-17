@@ -29,6 +29,7 @@
     "src/hear3/app-shell.css",
     "src/hear3/app-theme.mjs",
     "src/hear3/immediate-eq-result.mjs",
+    "src/hear3/manual-eq-application-guide.mjs",
     "src/hear3/digital-tone-visualizer.mjs",
     "src/hear3/eq-digital-transfer-model.mjs",
     "src/hear3/provisional-eq-editor.mjs",
@@ -46,11 +47,6 @@
     "src/hear3/session-contract.mjs",
     "src/hear3/sweep-audio-runner.mjs",
     "src/hear3/sweep-planner.mjs",
-    "src/hear3/web-audio-adapter.mjs",
-    "tests/fixtures/hear3-audio-pilot.html",
-    "tests/fixtures/hear3-catalog-pilot.html",
-    "tests/fixtures/hear3-integrated-exam-pilot.html",
-    "tests/fixtures/hear3-legacy-v2-pilot.html",
-    "tests/fixtures/hear3-sweep-pilot.html"
+    "src/hear3/web-audio-adapter.mjs"
   ]
 }

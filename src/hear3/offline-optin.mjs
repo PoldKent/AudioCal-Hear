@@ -4,7 +4,7 @@
  * Does not read, transmit or cache hearing results or personal profiles.
  */
 export const HEAR3_OFFLINE_MANIFEST_FORMAT='hear3-offline-static-manifest-v1';
-export const HEAR3_OFFLINE_CACHE_NAME='audiocal-hear3-prototype-static-v2';
+export const HEAR3_OFFLINE_CACHE_NAME='audiocal-hear3-prototype-static-v3';
 export const HEAR3_OFFLINE_CACHE_PREFIX='audiocal-hear3-prototype-static-';
 const check=(ok,message)=>{if(!ok)throw Error(message);};
 
@@ -101,6 +101,6 @@ export async function disableHear3Offline({env=globalThis}={}){
   requested:true,unregistered,
   removedCaches:cacheResults.filter(Boolean).length,
   complete:cacheResults.every(Boolean),
-  warning:'Only experimental Hear 3.0 offline static caches were targeted; private results, backups and other website caches were not changed.',
+  warning:'Only Hear application static caches were targeted; private results, backups and other website caches were not changed.',
  });
 }

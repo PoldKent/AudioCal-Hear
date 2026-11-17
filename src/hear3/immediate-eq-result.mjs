@@ -8,6 +8,7 @@ import {HEAR3_EQ_ENGINE_FORMAT} from './bounded-eq-engine.mjs';
 import {createHear3CatalogStore} from './catalog-backup-store.mjs';
 import {createHear3CatalogWriteCoordinator} from './coordinated-catalog-writer.mjs';
 import {createHear3ProvisionalEqEditor} from './provisional-eq-editor.mjs';
+import {planHear3ManualEqApplication} from './manual-eq-application-guide.mjs';
 
 const check=(ok,message)=>{if(!ok)throw Error(message);};
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
@@ -86,7 +87,7 @@ export function paintHear3ImmediateEqPng(canvas,review){
  g.fillText('Sin verificación de respuesta física, recorte, SPL ni headroom de dispositivo.',30,448);
  return canvas;
 }
-export function mountHear3ImmediateEq({root,source,getDraft,env=globalThis}){
+export function mountHear3ImmediateEq({root,source,getDraft,categorySelector=null,env=globalThis}){
  check(root&&source&&typeof getDraft==='function','Faltan elementos del resultado.');
  const $=id=>root.querySelector('[data-immediate-eq="'+id+'"]');
  const store=createHear3CatalogStore();
@@ -105,6 +106,32 @@ export function mountHear3ImmediateEq({root,source,getDraft,env=globalThis}){
   return original!==null&&values.length===original.rows.length&&values.every(v=>
    finite(v)&&Number.isInteger(v*2)&&Math.abs(v)<=original.capDb);
  }
+ function updateGuide(){
+  const guideNode=$('guide');
+  if(!guideNode)return;
+  if(!review){
+   guideNode.hidden=true;
+   return;
+  }
+  try{
+   const category=categorySelector?.value??'headphones';
+   const guide=planHear3ManualEqApplication({review,category});
+   guideNode.hidden=false;
+   setText('guide-title','Guía para '+guide.title.toLowerCase());
+   const steps=$('guide-steps');
+   steps.replaceChildren(...guide.steps.map(step=>{
+    const li=document.createElement('li');li.textContent=step;return li;
+   }));
+   const values=$('guide-rows');
+   values.replaceChildren(...guide.rows.map(row=>{
+    const li=document.createElement('li');li.textContent=row.text;return li;
+   }));
+   setText('guide-warning',guide.warning);
+  }catch(e){
+   guideNode.hidden=true;
+   setText('action-status',e?.message??String(e));
+  }
+ }
  function sync(){
   review=valid()?Object.freeze({...original,rows:Object.freeze(
    original.rows.map((r,i)=>Object.freeze({...r,gainDb:values[i]}))
@@ -113,6 +140,7 @@ export function mountHear3ImmediateEq({root,source,getDraft,env=globalThis}){
   for(const id of ['copy','txt','csv','png'])$(id).disabled=!canExport;
   $('restore').disabled=busy||!valid()||!altered();
   $('save').disabled=busy||!review||!resultId||!unsaved();
+  updateGuide();
   if(!valid()&&original)setText('action-status',
    'Hay una ganancia inválida. Utiliza pasos de 0,5 dB dentro del límite.');
   else if(review)setText('action-status',
@@ -278,6 +306,7 @@ export function mountHear3ImmediateEq({root,source,getDraft,env=globalThis}){
   }catch(e){setText('save-status','No se guardaron los cambios: '+(e?.message??String(e)));}
   finally{busy=false;sync();}
  });
+ if(categorySelector)categorySelector.addEventListener('change',()=>{if(review)updateGuide();});
  const observer=new MutationObserver(render);
  observer.observe(source,{childList:true});
  render();

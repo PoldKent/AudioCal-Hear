@@ -13,12 +13,12 @@ const root=resolve(here,'..');
 const manifest=JSON.parse(readFileSync(resolve(root,'hear3-offline-manifest.json'),'utf8'));
 test('static offline manifest contains real local, public pilot assets and no user records',()=>{
  const validated=validateHear3OfflineManifest(manifest);
- assert.equal(validated.paths.length,51);
+ assert.equal(validated.paths.length,47);
  const required=[
   'hear3-preview/','hear3-privacy/','hear3-diagnostics/','src/hear3/local-diagnostics.mjs',
   'hear3-exam/','hear3-library/','hear3-eq-editor/','hear3-dual-restore/',
   'src/hear3/provisional-eq-editor.mjs','src/hear3/guarded-dual-archive-restore.mjs',
-  'tests/fixtures/hear3-integrated-exam-pilot.html',
+  'src/hear3/manual-eq-application-guide.mjs',
   'src/hear3/contextual-tone-comparison.mjs',
   'src/hear3/adaptive-progress-store.mjs',
   'src/hear3/audio-capability-preflight.mjs',
@@ -95,7 +95,7 @@ test('successful user-initiated enable verifies every cached static asset',async
  assert.equal(f.calls.some(x=>Array.isArray(x)&&x[0]==='delete'),false);
 });
 test('failed static precache verification never claims offline readiness',async()=>{
- const f=environment({missing:'hear3-integrated-exam-pilot'});
+ const f=environment({missing:'manual-eq-application-guide.mjs'});
  await assert.rejects(enableHear3Offline({env:f.env,waitMs:1000}),/not verified/);
 });
 test('unavailable service workers block install and never fetch remote resources',async()=>{

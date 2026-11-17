@@ -1,13 +1,13 @@
 /**
- * Hear 3.0 D-060: opt-in pilot-only offline caching.
+ * Hear 3.0 D-060: opt-in offline caching for the public application.
  * Does not cache personal profiles, responses, localStorage or uploads.
- * Intercepts ONLY manifest-listed static Hear 3.0 prototype resources.
+ * Intercepts ONLY manifest-listed static resources of the Hear application.
  * This worker is not automatically registered by Hear 2.0.
  */
 'use strict';
 
 const CACHE_PREFIX='audiocal-hear3-prototype-static-';
-const CACHE_NAME=CACHE_PREFIX+'v2';
+const CACHE_NAME=CACHE_PREFIX+'v3';
 const SCOPE=new URL(self.registration.scope);
 const MANIFEST_URL=new URL('hear3-offline-manifest.json',SCOPE).href;
 
