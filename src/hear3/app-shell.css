@@ -155,6 +155,56 @@ a{color:var(--app-accent)}
 .app-result-details summary{cursor:pointer;min-height:32px;color:var(--app-text);font-weight:740}
 @media(max-width:480px){.app-result-actions button{flex:1 1 44%}}
 
+/* The one human-first test console: actions mirror tested source controls.
+   Never hide source controls: they remain available for accessibility and fallback. */
+.hear-listening-console{
+ max-width:100%;padding:clamp(1.1rem,3vw,1.8rem);
+ border:1px solid var(--app-line);border-radius:1.25rem;margin:1.25rem 0;
+ background:linear-gradient(145deg,var(--app-panel-hi),var(--app-panel) 62%);
+ box-shadow:0 8px 35px #0002;
+}
+.hear-listening-console :is(h2,p){margin:.35rem 0 .85rem}
+.hear-listening-console h2{font-size:clamp(1.5rem,3.5vw,2rem);line-height:1.2}
+.hear-listening-kicker{color:var(--app-accent);font-weight:850;letter-spacing:.13em;font-size:.8rem}
+.hear-listening-prompt{font-size:1.06rem;max-width:65ch;color:var(--app-text)}
+.hear-listening-meters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.75rem;margin:1rem 0}
+.hear-listening-meters>div{border:1px solid var(--app-line);
+ border-radius:.85rem;background:var(--app-bg);padding:.85rem 1rem}
+.hear-listening-label{display:block;font-size:.8rem;color:var(--app-muted);font-weight:700}
+.hear-listening-meters output{font-size:clamp(1.2rem,5vw,2.2rem);font-weight:850;
+ overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.hear-listening-answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin:1.1rem 0}
+.hear-listening-answers button{min-height:72px;font-weight:850;font-size:clamp(1rem,2.5vw,1.24rem);
+ width:100%;border-radius:.95rem;border:2px solid var(--app-accent);
+ color:var(--app-text);background:var(--app-bg)}
+.hear-listening-answers .hear-listening-heard{background:var(--app-action);color:var(--app-action-text);
+ border-color:var(--app-action)}
+.hear-listening-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;margin:.85rem 0}
+.hear-listening-comparison button{min-height:54px;border:1px solid var(--app-line);
+ border-radius:.75rem;background:var(--app-bg);color:var(--app-text);font-weight:750}
+.hear-listening-actions{display:flex;gap:.7rem;flex-wrap:wrap;align-items:stretch}
+.hear-listening-actions button{flex:1 1 160px;min-height:54px;border:1px solid var(--app-line);
+ border-radius:.75rem;background:var(--app-bg);color:var(--app-text);font-weight:760;padding:.7rem .9rem}
+.hear-listening-actions .hear-listening-action{flex:2 1 250px;background:var(--app-action);
+ color:var(--app-action-text);border-color:var(--app-action);font-size:1.06rem;font-weight:850}
+.hear-listening-console button:disabled{opacity:.5;cursor:not-allowed}
+.hear-listening-console button:not(:disabled){cursor:pointer;touch-action:manipulation}
+.hear-listening-console :is(.hear-listening-answers,.hear-listening-comparison) button:focus-visible{
+ outline:3px solid var(--app-ring);outline-offset:3px}
+.hear-listening-console .hear-listening-disclaimer{font-size:.83rem;color:var(--app-muted);
+ margin:1rem 0 0}
+.hear-listening-console [hidden]{display:none!important}
+@media(max-width:480px){
+ .hear-listening-console{padding:.9rem}
+ .hear-listening-answers{gap:.45rem}
+ .hear-listening-answers button{min-height:76px;padding:.65rem .25rem}
+ .hear-listening-meters{gap:.45rem}
+ .hear-listening-meters>div{padding:.65rem}
+ .hear-listening-actions button{min-height:54px}
+ .hear-listening-comparison{grid-template-columns:1fr}
+}
+
 /* One connected exam, with stage orientation rather than extra screens. */
 .app-exam-journey{border:1px solid var(--app-line);border-radius:1rem;
  background:var(--app-panel);padding:.95rem;margin:1rem 0 1.35rem}
