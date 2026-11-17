@@ -42,6 +42,19 @@
    </div>
   </div>
  </section>
+ <section id="recent-profile" class="app-section" aria-labelledby="recent-title" hidden>
+  <div class="app-card">
+   <p class="app-kicker">Bienvenido de nuevo</p>
+   <h2 class="app-section-heading" id="recent-title">Continúa con tu equipo</h2>
+   <p id="recent-device" data-testid="recent-device" class="app-lead"></p>
+   <p id="recent-session" data-testid="recent-session" class="app-subtle"></p>
+   <div class="app-actions">
+    <a id="recent-eq-link" data-testid="recent-eq-link" class="app-button primary"
+     href="./hear3-eq-editor/">Ver mi último EQ</a>
+    <a class="app-button" href="./hear3-library/">Mis perfiles y respaldos</a>
+   </div>
+  </div>
+ </section>
  <section class="app-section" aria-labelledby="tu-actividad">
   <h2 id="tu-actividad" class="app-section-heading">Tu actividad</h2>
   <div class="app-grid">
@@ -157,6 +170,25 @@ try{
  $('profile-summary').textContent=catalog.devices.length+' equipos · '+catalog.profiles.length+' perfiles';
  $('eq-count').textContent=String(catalog.results.filter(result=>
   Array.isArray(result.currentEq)&&result.currentEq.length>0).length);
+ // Return visits show the latest verified local profile, without silently
+ // migrating old records, creating profiles or starting any sound.
+ if(catalog.profiles.length){
+  const active=catalog.profiles.find(p=>p.id===catalog.activeProfileId)??catalog.profiles.at(-1);
+  const device=catalog.devices.find(d=>d.id===active.deviceId);
+  const latest=catalog.results.filter(r=>r.profileId===active.id)
+   .sort((a,b)=>b.capturedAt-a.capturedAt)[0]??null;
+  $('recent-profile').hidden=false;
+  $('recent-device').textContent=active.name+
+   (device?' · '+device.name:'');
+  $('recent-session').textContent=latest
+   ?'Último resultado guardado: '+new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(latest.capturedAt)+
+    (latest.currentEq?.length?' · EQ disponible':' · sin curva guardada')
+   :'Todavía no hay resultados guardados en este perfil.';
+  $('recent-eq-link').textContent=latest?.currentEq?.length?'Abrir mi último EQ':'Ver mis perfiles';
+  $('recent-eq-link').href=latest?.currentEq?.length
+   ?'./hear3-eq-editor/?result='+encodeURIComponent(latest.id)
+   :'./hear3-library/';
+ }
 }catch{
  $('profile-count').textContent='—';$('eq-count').textContent='—';
  $('profile-summary').textContent='No se pudo leer el historial local. Revisa tus respaldos sin borrar datos.';
