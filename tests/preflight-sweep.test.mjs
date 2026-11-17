@@ -43,7 +43,7 @@ test('microphone evidence is separate from subjective audibility',()=>{
  assert.match(context.sweepSummaryMarkup({sweepRecords:{both:{...record,method:'fixed-digital-level-preflight-v1'}}}),/no son umbrales clínicos/);
 });
 test('generated bundle ships sweep without touching automatic EQ calculation',()=>{
- const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const html=fs.readFileSync(new URL('../hear2/index.html',import.meta.url),'utf8');
  assert.ok(html.includes('fixed-digital-level-preflight-v1'));
  assert.ok(html.includes('Iniciar barrido previo'));
  assert.ok(html.includes('sweepPanelMarkup(p)'));
