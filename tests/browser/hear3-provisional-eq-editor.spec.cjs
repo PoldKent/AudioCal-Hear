@@ -53,7 +53,7 @@ test('saved provisional EQ can be edited with consent and reverted to original w
  expect((await stored(page)).current).toEqual([1,0,-1]);
  page.once('dialog',dialog=>dialog.accept());
  await page.getByTestId('commit').click();
- await expect(page.getByTestId('preview-status')).toContainText('guardado');
+ await expect(page.getByTestId('preview-status')).toContainText('EQ experimental guardado con historial de edición.');
  let after=await stored(page);
  expect(after.current).toEqual([2,0,-1]);
  expect(after.original).toEqual([1,0,-1]);
@@ -74,7 +74,7 @@ test('saved provisional EQ can be edited with consent and reverted to original w
  await page.getByTestId('commit').click();
  // The asynchronous WebKit tab-safety probe must resolve before asserting
  // the restored persisted EQ and its second edit journal entry.
- await expect(page.getByTestId('preview-status')).toContainText('guardado');
+ await expect(page.getByTestId('preview-status')).toContainText('EQ experimental guardado con historial de edición.');
  after=await stored(page);
  expect(after.current).toEqual(after.original);
  expect(after.edits).toBe(2);
@@ -130,7 +130,7 @@ test('two editor tabs reject stale changes instead of overwriting a newer EQ',as
    expect(saved.edits).toBe(0);
    expect(saved.historic).toBe('DO_NOT_EDIT_V2');
   }else{
-   await expect(page.getByTestId('preview-status')).toContainText('guardado');
+   await expect(page.getByTestId('preview-status')).toContainText('EQ experimental guardado con historial de edición.');
    second.once('dialog',d=>d.accept());
    await second.getByTestId('commit').click();
    await expect(second.getByTestId('error')).toContainText('Catalog changed in another tab');
