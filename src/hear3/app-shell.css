@@ -104,6 +104,9 @@ a{color:var(--app-accent)}
  background:var(--app-panel);color:var(--app-muted);margin:1rem 0}
 .app-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.app-sr-only:focus-visible{position:fixed;width:auto;height:auto;left:.6rem;top:.6rem;
+ padding:.7rem 1rem;clip:auto;overflow:visible;white-space:normal;
+ background:var(--app-panel);border-radius:.5rem;z-index:100}
 @media(max-width:760px){
  .app-hero{grid-template-columns:1fr}
  .app-illustration{min-height:130px}
