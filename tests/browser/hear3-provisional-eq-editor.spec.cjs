@@ -72,6 +72,9 @@ test('saved provisional EQ can be edited with consent and reverted to original w
  await expect(page.getByTestId('preview-status')).toContainText('valores originales');
  page.once('dialog',dialog=>dialog.accept());
  await page.getByTestId('commit').click();
+ // The asynchronous WebKit tab-safety probe must resolve before asserting
+ // the restored persisted EQ and its second edit journal entry.
+ await expect(page.getByTestId('preview-status')).toContainText('guardado');
  after=await stored(page);
  expect(after.current).toEqual(after.original);
  expect(after.edits).toBe(2);
