@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+const fs=require('node:fs');
 
 async function virtualAudio(page){
  await page.addInitScript(()=>{
@@ -64,6 +65,23 @@ test('public exam can complete, save opt-in provisional EQ, reopen history and e
  await expect(page.getByTestId('tone-finish')).toBeEnabled();
  await page.getByTestId('tone-finish').click();
  await expect(page.getByTestId('archive-preview')).toBeEnabled();
+ // The same proposed curve is visible and exportable immediately, even
+ // before creating any saved profile or asking for EQ archival consent.
+ await expect(page.getByTestId('eq-immediate-chart').locator('.app-eq-band')).toHaveCount(5);
+ await expect(page.getByTestId('eq-immediate-txt')).toBeEnabled();
+ await expect(page.getByTestId('eq-immediate-csv')).toBeEnabled();
+ await expect(page.getByTestId('eq-immediate-png')).toBeEnabled();
+ const txtDownload=page.waitForEvent('download');
+ await page.getByTestId('eq-immediate-txt').click();
+ const txt=await txtDownload;
+ const txtBody=fs.readFileSync(await txt.path(),'utf8');
+ expect(txtBody).toContain('No');
+ expect(txtBody).toContain('125 Hz = 0 dB');
+ expect(txtBody).toContain('2000 Hz = 0 dB');
+ const csvDownload=page.waitForEvent('download');
+ await page.getByTestId('eq-immediate-csv').click();
+ const csv=await csvDownload;
+ expect(fs.readFileSync(await csv.path(),'utf8')).toContain('125,0,');
  await page.getByTestId('archive-device').fill('Auriculares para la prueba');
  await page.getByTestId('archive-eq-optin').check();
  await page.getByTestId('archive-preview').click();
@@ -79,6 +97,12 @@ test('public exam can complete, save opt-in provisional EQ, reopen history and e
  await expect(page).toHaveURL(/\/hear3-eq-editor\/$/);
  await expect(page.getByTestId('result-select').locator('option')).toHaveCount(2);
  await page.getByTestId('result-select').selectOption({index:1});
+ await expect(page.getByTestId('chart').locator('.band')).toHaveCount(5);
+ await page.goto('/');
+ await expect(page.getByTestId('recent-device')).toContainText('Auriculares para la prueba');
+ await expect(page.getByTestId('recent-eq-link')).toContainText('Abrir mi último EQ');
+ await page.getByTestId('recent-eq-link').click();
+ await expect(page).toHaveURL(/\/hear3-eq-editor\/\?result=/);
  await expect(page.getByTestId('chart').locator('.band')).toHaveCount(5);
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('PRESERVE_V2');
 });
