@@ -18,7 +18,7 @@ export function proposeHear3PhotoBandFrequencies(rawText){
  if(typeof rawText!=='string'||rawText.length===0||rawText.length>12000)
   fail('No se reconocieron etiquetas de frecuencia suficientes.');
  // Never interpret arbitrary labels as frequencies without a Hz/kHz/k anchor.
- const token=/(?<![+\\-\\w\\d])(\\d{1,5}(?:[.,]\\d{1,3})?)\\s*(kHz|Hz|k)?(?![\\w\\d])/gi;
+ const token=/(?<![+\-\w\d])(\d{1,5}(?:[.,]\d{1,3})?)\s*(kHz|Hz|k)?(?![\w\d])/gi;
  const values=[];
  let match,hasUnit=false;
  while((match=token.exec(rawText))!==null){
