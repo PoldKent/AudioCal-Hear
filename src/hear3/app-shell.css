@@ -155,4 +155,23 @@ a{color:var(--app-accent)}
 .app-result-details summary{cursor:pointer;min-height:32px;color:var(--app-text);font-weight:740}
 @media(max-width:480px){.app-result-actions button{flex:1 1 44%}}
 
+/* Camera-assisted, local-only EQ transcription inside the ordinary setup. */
+.app-device-helper{margin:1.05rem 0 0;border-top:1px solid var(--app-line);
+ padding-top:.85rem}
+.app-device-helper>button{display:inline-flex;width:auto;max-width:100%;
+ min-height:44px;padding:.65rem .9rem;border-radius:.65rem;
+ border:1px solid var(--app-line);background:var(--app-panel-hi);
+ color:var(--app-text);font:inherit;font-weight:730;cursor:pointer}
+.app-device-helper>button[hidden]{display:none}
+.app-device-helper :is(input,button){touch-action:manipulation}
+.app-device-helper .app-result-details{margin:.7rem 0}
+.app-device-helper label{display:block;font-weight:750;margin:.8rem 0 .3rem}
+.app-device-helper input[type=file]{display:block;width:100%;min-height:44px;
+ padding:.4rem;border:1px solid var(--app-line);border-radius:.65rem}
+.app-device-photo{display:block;width:auto;max-width:100%;
+ max-height:320px;height:auto;object-fit:contain;margin:.85rem auto;
+ background:var(--app-panel);border:1px solid var(--app-line);border-radius:.65rem}
+.app-device-photo[hidden]{display:none}
+.app-device-helper [data-photo=proposal]{font-weight:700;overflow-wrap:anywhere}
+
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
