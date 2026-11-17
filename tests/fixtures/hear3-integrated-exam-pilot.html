@@ -201,6 +201,14 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
  <strong>provisional y no calibrada</strong> para editarla y exportarla.
  Sin autorización adicional solo se conservan las respuestas, sin EQ.
  Ningún modo aplica las ganancias automáticamente o crea diagnósticos clínicos.</p>
+<label for="archive-target">Dónde guardar este resultado</label>
+<select id="archive-target" data-testid="archive-target">
+ <option value="">Crear un dispositivo y un perfil nuevos</option>
+</select>
+<p id="archive-target-help" data-testid="archive-target-help" class="app-subtle">
+ Puedes reutilizar un equipo o perfil existente sin duplicarlo. Para un perfil guardado,
+ las frecuencias deben coincidir exactamente con el examen.
+</p>
 <label for="archive-device">Nombre del equipo que deseas registrar</label>
 <input id="archive-device" data-testid="archive-device" type="text" maxlength="120" value="Equipo del piloto"
  autocomplete="off">
@@ -679,6 +687,42 @@ $('eq-export').addEventListener('click',()=>run(()=>{
  a.href=url;a.download='hear3-eq-matematico-no-validado.json';a.click();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }));
+function updateArchiveTargetForm(){
+ const choice=$('archive-target').value;
+ const cat=catalogStore.load().catalog;
+ const p=choice.startsWith('profile:')?cat.profiles.find(v=>v.id===choice.slice(8)):null;
+ const deviceId=p?.deviceId??(choice.startsWith('device:')?choice.slice(7):null);
+ const d=deviceId?cat.devices.find(v=>v.id===deviceId):null;
+ $('archive-device').disabled=Boolean(d);
+ $('archive-profile').disabled=Boolean(p);
+ if(d&&$('archive-category').value!==d.category){
+  $('archive-category').value=d.category;
+  updateEqDraft();
+ }
+ $('archive-target-help').textContent=p
+  ?'Se guardará otro resultado en «'+p.name+'» sin modificar el perfil ni sus bandas. Las frecuencias del examen deben coincidir exactamente.'
+  :d?'Se creará un perfil nuevo dentro de «'+d.name+'». El equipo existente no se modificará.'
+   :'Se creará un dispositivo y un perfil nuevos. Si ya tienes uno, selecciónalo arriba.';
+}
+function refreshArchiveTargets(){
+ const select=$('archive-target'),previous=select.value;
+ const cat=catalogStore.load().catalog;
+ const options=[new Option('Crear un dispositivo y un perfil nuevos','')];
+ for(const d of cat.devices){
+  options.push(new Option('Equipo: '+d.name+' · crear perfil nuevo','device:'+d.id));
+ }
+ for(const p of cat.profiles){
+  const d=cat.devices.find(x=>x.id===p.deviceId);
+  options.push(new Option('Perfil: '+p.name+' · '+(d?.name??'equipo'),'profile:'+p.id));
+ }
+ select.replaceChildren(...options);
+ if([...select.options].some(o=>o.value===previous))select.value=previous;
+ updateArchiveTargetForm();
+}
+$('archive-target').addEventListener('change',()=>{
+ updateArchiveTargetForm();discardArchive();
+});
+refreshArchiveTargets();
 $('archive-preview').addEventListener('click',()=>run(()=>{
  archiveTransfer=null;archiveResultId=null;
  if(!exam)throw Error('No existe examen finalizado.');
@@ -692,6 +736,10 @@ $('archive-preview').addEventListener('click',()=>run(()=>{
   deviceName:$('archive-device').value.trim(),
   profileName:$('archive-profile').value.trim(),
   category:$('archive-category').value,
+  reuseDeviceId:$('archive-target').value.startsWith('device:')
+   ?$('archive-target').value.slice(7):null,
+  reuseProfileId:$('archive-target').value.startsWith('profile:')
+   ?$('archive-target').value.slice(8):null,
   includeProvisionalEq:$('archive-eq-optin').checked,
  });
  archiveTransfer=transfer;archiveResultId=preview.resultId;
@@ -700,7 +748,10 @@ $('archive-preview').addEventListener('click',()=>run(()=>{
   (preview.provisionalEqOptIn
    ?'EQ PROVISIONAL: '+preview.originalEqBands+' bandas, sin calibración y sin aplicación automática.'
    :'Ganancias EQ: 0. Estado inconcluso.')+
-  ' Revisa categoría y nombre antes de confirmar.';
+  (preview.reusedProfile?' Se añadirá un resultado a tu perfil existente.':
+   preview.reusedDevice?' Se creará un perfil dentro del equipo seleccionado.':
+    ' Se crearán un equipo y un perfil nuevos.')+
+  ' Revisa el destino y los valores antes de confirmar.';
 }));
 $('archive-commit').addEventListener('click',()=>run(async()=>{
  if(!archiveTransfer)throw Error('Revisa antes las respuestas y el alcance del guardado.');
@@ -723,6 +774,7 @@ $('archive-commit').addEventListener('click',()=>run(async()=>{
    ?'Historial y EQ matemático provisional guardados. Ábrelo en el editor para revisar o exportar.'
    :'Historial V3 guardado localmente. Estado: inconcluso. No se generó EQ.'
   :'La escritura en almacenamiento permanente NO está verificada. Exporta un respaldo local. '+(result.warning??'');
+ refreshArchiveTargets();
 }));
 window.hear3IntegratedPilot=Object.freeze({
  snapshot:()=>exam?.snapshot()??null,
