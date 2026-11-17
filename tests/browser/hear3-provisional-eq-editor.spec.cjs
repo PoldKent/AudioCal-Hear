@@ -40,7 +40,7 @@ test('saved provisional EQ can be edited with consent and reverted to original w
  test.setTimeout(90000);
  expect((await seed(page)).persisted).toBe(true);
  await page.goto(EDITOR);
- await expect(page.getByRole('heading',{level:1})).toContainText('Editor de EQ provisional');
+ await expect(page.getByRole('heading',{level:1})).toContainText('Mi ecualizador');
  await page.getByTestId('result-select').selectOption('qa-result');
  await expect(page.getByTestId('chart').locator('.band')).toHaveCount(3);
  await expect(page.getByTestId('gain-0')).toHaveValue('1');

@@ -26,10 +26,14 @@ jobs:
           import fs from 'node:fs';
           import vm from 'node:vm';
           const entry=fs.readFileSync('index.html','utf8');
-          if(!entry.includes('url=./hear3-preview/')||!entry.includes('href="./hear3-preview/"')||
-             !entry.includes('href="./hear2/"')||!entry.includes('Beta experimental')||
-             !entry.includes('no están calibrados')&& !entry.includes('aún no está calibrada'))
-            throw Error('Missing safe Hear 3 beta entry or explicit Hear 2 fallback');
+          if(!entry.includes('href="./hear3-exam/"')||
+             !entry.includes('href="./hear3-library/"')||
+             !entry.includes('href="./hear3-eq-editor/"')||
+             !entry.includes('src/hear3/app-shell.css')||
+             !entry.includes('no sirve como diagnóstico médico')||
+             entry.includes('url=./hear3-preview/')||
+             entry.includes('href="./hear2/"'))
+            throw Error('Single Hear application entry is incomplete or exposes a version selector');
           const html=fs.readFileSync('hear2/index.html','utf8');
           if(!html.startsWith('<!doctype html>') || !html.trimEnd().endsWith('</html>')) throw Error('HTML wrapper missing');
           const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];

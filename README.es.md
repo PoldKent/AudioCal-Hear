@@ -6,29 +6,17 @@
 
 **AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite escuchar tonos a diferentes niveles digitales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
 
-**[Abrir Hear 3.0 beta](https://poldkent.github.io/AudioCal-Hear/)** · [Comenzar examen experimental](https://poldkent.github.io/AudioCal-Hear/hear3-exam/) · [Mi historial y respaldos](https://poldkent.github.io/AudioCal-Hear/hear3-library/) · **[Abrir Hear 2.0 anterior](https://poldkent.github.io/AudioCal-Hear/hear2/)** · [Decisiones de producto](docs/HEAR-V2-PRODUCT-DECISIONS.md) · [Hoja de ruta](docs/HEAR-V2-ROADMAP.md) · [Historial](CHANGELOG.es.md)
+**[Abrir AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Comenzar examen](https://poldkent.github.io/AudioCal-Hear/hear3-exam/) · [Mi ecualizador](https://poldkent.github.io/AudioCal-Hear/hear3-eq-editor/) · [Mis resultados](https://poldkent.github.io/AudioCal-Hear/hear3-library/)
 
-> **Web principal: Hear 3.0 beta (`3.0.0-beta.1`), no lanzamiento estable ni calibración acústica certificada.** La dirección oficial abre el entorno experimental Hear 3.0. La versión independiente Hear 2.0 permanece en **[Abrir Hear 2.0 anterior](https://poldkent.github.io/AudioCal-Hear/hear2/)**. Navegar entre ambas no borra ni transforma los datos V2, pero el almacenamiento del navegador no sustituye una copia de seguridad. Exporta por separado V2 y V3 antes de reemplazar o eliminar datos.
+## Una sola aplicación
 
-### Hear 3.0 como beta principal (noviembre de 2026)
+La página principal abre **AudioCal Hear**, sin selectores de versión ni enlaces visibles a pilotos internos. El usuario dispone de un inicio con estado de sesión, examen con bandas de 2–31 frecuencias declaradas, resultados orientativos, un ecualizador editable, historial, exportación, privacidad y funcionamiento offline opcional. La navegación utiliza un mismo encabezado y preferencias de apariencia.
 
-[Hear 3.0](https://poldkent.github.io/AudioCal-Hear/) ofrece ahora entrada guiada, un recorrido integrado experimental de barrido y tonos, un EQ matemático provisional y editable opcional, exportación TXT/CSV/JSON/PNG, catálogo V3, conservación íntegra y separada del historial V2, recuperación dual protegida y herramientas locales de privacidad/diagnóstico. **No constituye audiometría clínica, EQ calibrado físicamente ni preset aplicable automáticamente.** Siguen pendientes SPL medido, DSP físico, rutas Bluetooth reales, auditoría con lectores de pantalla y recuperación en equipos físicos. `stableReleaseClaim:false` permanece hasta superar D-063.
+El historial guardado anteriormente **no se borra ni transforma automáticamente**. Una copia independiente del motor anterior permanece como recurso técnico de recuperación, sin anunciarse como otra versión de la aplicación. Las URLs antiguas de vista previa redirigen al inicio.
 
-El examen beta permite ahora seleccionar diseños nominales de 4/5/7/10/15/31 bandas o introducir entre 2 y 31 frecuencias propias del ecualizador. Son frecuencias declaradas por el usuario, no reconocidas ni calibradas automáticamente.
+**Alcance de seguridad:** Los tonos digitales no están calibrados en dB SPL, y las curvas EQ no son un diagnóstico ni un preset validado físicamente. Las pruebas de dispositivos reales, headroom y el criterio de aceptación D-063 siguen pendientes. El estado interno de publicación estable permanece en `stableReleaseClaim:false`. No se inicia audio ni se aplica EQ automáticamente.
 
-La versión Hear 2.0 se conserva en `hear2/index.html`. `npm run build` genera tanto el inicio beta de `index.html` como la aplicación independiente `hear2/index.html`, y `npm run verify` verifica ambos. Consulta [el protocolo de cambio y reversión](docs/hear3/47-primary-beta-entry-with-hear2-rollback.md).
-
-## Flujo actual de Hear 2.0 — solo tonos
-
-1. Elige los auriculares, auto o parlantes y **las bandas de tu ecualizador**. No necesitas completar un cuestionario sobre sala, ANC ni música.
-2. Mantén el volumen físico **bajo, cómodo y fijo**. Si pruebas los oídos por separado, confirma sus canales. Responde «Sí lo escucho» / «No lo escucho» a los tonos de las frecuencias.
-3. Al finalizar aparece **un EQ editable con ganancias en dB por banda**, calculadas automáticamente al comparar los umbrales digitales que registraste. Se sugiere solo una fracción de esas diferencias (hasta ±3 dB, ±2 dB en frecuencias extremas); las bandas sin umbral o discordantes permanecen neutras.
-4. **Copia las ganancias**, guarda PNG/TXT o usa la guía de transferencia al ecualizador de tu equipo. Las posiciones físicas requieren conocer su escala: Hear no inventa una equivalencia entre números del control y dB.
-5. Los perfiles y las respuestas a los tonos se conservan. No necesitas cargar música ni repetir pruebas A/B o de sonoridad.
-
-**Decisión de producto:** el usuario no tiene que realizar más ensayos físicos o repetir un test terminado para recibir ajustes. Las pruebas con equipos calibrados son investigación interna separada, no requisitos de uso. Consulta [las decisiones vigentes](docs/HEAR-V2-PRODUCT-DECISIONS.md).
-
-**Límite de interpretación:** los dBFS representan amplitud digital, no dB SPL en tu oído. El EQ es una propuesta perceptiva experimental, no una calibración médica, objetiva o universal.
+Detalles técnicos: [integración de la aplicación](docs/hear3/49-single-app-experience.md) · [decisiones de producto](https://github.com/PoldKent/AudioCal-Hear/issues/30) · [control de calidad](docs/hear3/release-evidence-gate.json).
 
 ## Historial de versiones anteriores (v1.9 y previas)
 

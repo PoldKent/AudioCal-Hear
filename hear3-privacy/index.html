@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hear · privacidad y borrado de datos locales (experimental)</title>
+<title>Privacidad y datos · AudioCal Hear</title>
 <style>
 :root{font-family:system-ui,sans-serif;color-scheme:light dark}
 body{margin:0 auto;max-width:46rem;padding:1.1rem 1rem 4rem;line-height:1.55}
@@ -20,22 +20,33 @@ td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 #action-status{min-height:1.5rem}
 @media(prefers-reduced-motion:reduce){*,*::after,*::before{transition:none!important;animation:none!important}}
 </style>
+<link rel="stylesheet" href="../src/hear3/app-shell.css">
+<script type="module" src="../src/hear3/app-theme.mjs"></script>
 </head>
 <body>
-<main>
-<h1>Privacidad · revisar y eliminar datos locales de Hear</h1>
-<p class="warning"><strong>Herramienta experimental de borrado con consentimiento.</strong>
+<header class="app-topbar">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal">
+  <a href="../">Inicio</a>
+  <a href="../hear3-exam/">Examen</a>
+  <a href="../hear3-eq-editor/">Mi ecualizador</a>
+  <a href="../hear3-library/">Historial</a>
+  <a href="../#ajustes">Ajustes</a>
+ </nav>
+</header>
+<main class="app-page">
+<h1>Privacidad y datos</h1>
+<p class="warning"><strong>Revisa con atención antes de borrar.</strong>
  Borrar datos locales es irreversible sin un respaldo exportado antes. Esta herramienta no elimina archivos
  JSON descargados, fotos guardadas fuera de las claves auditadas, otros sitios/apps, cachés del navegador
  ni registros remotos. No existe prueba de eliminación de todos los soportes.
  Cierra otras pestañas de Hear para evitar que vuelvan a escribir.</p>
-<p>Antes de eliminar, puedes guardar una copia desde
- <a href="../tests/fixtures/hear3-catalog-pilot.html">el catálogo V3</a>
- o desde <a href="../">Hear 2.0</a> cuando la función correspondiente esté disponible.</p>
+<p>Antes de eliminar datos, <a href="../hear3-library/">descarga un respaldo de tu historial</a>.
+ Los datos guardados en archivos externos no se borran desde aquí.</p>
 <label for="scope">Qué datos quieres eliminar</label>
 <select id="scope" data-testid="scope">
-<option value="v3-only">Solo V3: catálogo, checkpoints y copia histórica V2 importada</option>
-<option value="all-hear">Todos los datos conocidos de Hear 2.0 y Hear 3.0, incluido idioma</option>
+<option value="v3-only">Datos actuales, incluidos exámenes y copias históricas importadas</option>
+<option value="all-hear">Todos los datos locales conocidos, incluidas preferencias e historial antiguo</option>
 </select>
 <button id="inspect" type="button" data-testid="inspect">Revisar alcance, sin borrar nada</button>
 <section aria-label="Vista previa del borrado">
@@ -62,7 +73,7 @@ td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 <button type="button" id="commit" data-testid="commit" disabled>Eliminar las claves revisadas</button>
 <p id="action-status" data-testid="action-status" role="status"></p>
 </section>
-<p><a href="../hear3-preview/">Volver a Hear 3.0</a></p>
+<p><a href="../">Volver al inicio</a></p>
 </main>
 <script type="module">
 import {createHear3ScopedStorageCleanup}

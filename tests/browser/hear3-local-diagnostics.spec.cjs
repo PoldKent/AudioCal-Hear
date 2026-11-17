@@ -10,7 +10,7 @@ test('D-061 diagnostics page neither starts audio nor includes hearing profiles'
   };
  });
  await page.goto('/hear3-diagnostics/');
- await expect(page.getByRole('heading',{level:1})).toContainText('Diagnóstico técnico local');
+ await expect(page.getByRole('heading',{level:1})).toContainText('Diagnóstico técnico');
  await expect(page.getByTestId('copy')).toBeDisabled();
  await expect(page.getByTestId('download')).toBeDisabled();
  await expect(page.getByTestId('report')).toHaveValue('');
@@ -56,7 +56,7 @@ test('D-061 editing selected fields revokes previously approved diagnostic',asyn
  await expect(page.getByTestId('report')).toHaveValue('');
 });
 test('D-061 reports only technical codes and never modifies V2 profile storage',async({page})=>{
- await page.goto('/hear3-preview/');
+ await page.goto('/');
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','V2_KEEP'));
  await page.goto('/hear3-diagnostics/');
  await page.getByTestId('issue-code').selectOption('checkpoint-damaged');
@@ -65,7 +65,7 @@ test('D-061 reports only technical codes and never modifies V2 profile storage',
   .toBe('V2_KEEP');
  await expect(page.getByTestId('report')).toHaveValue(/checkpoint-damaged/);
  await expect(page.getByTestId('report')).not.toHaveValue(/V2_KEEP/);
- await page.goto('/hear3-preview/');
+ await page.goto('/');
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1')))
   .toBe('V2_KEEP');
 });

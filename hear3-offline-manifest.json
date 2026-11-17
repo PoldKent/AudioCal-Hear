@@ -1,6 +1,7 @@
 {
   "format": "hear3-offline-static-manifest-v1",
   "paths": [
+    "index.html",
     "hear3-diagnostics/",
     "hear3-preview/",
     "hear3-exam/",
@@ -25,6 +26,8 @@
     "src/hear3/device-profile-contract.mjs",
     "src/hear3/eq-control-quantization.mjs",
     "src/hear3/eq-band-layouts.mjs",
+    "src/hear3/app-shell.css",
+    "src/hear3/app-theme.mjs",
     "src/hear3/eq-digital-transfer-model.mjs",
     "src/hear3/provisional-eq-editor.mjs",
     "src/hear3/guarded-dual-archive-restore.mjs",

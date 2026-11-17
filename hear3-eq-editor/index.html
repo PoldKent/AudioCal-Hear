@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hear 3.0 · Editor y exportación de EQ provisional</title>
+<title>Mi ecualizador · AudioCal Hear</title>
 <style>
 :root{color-scheme:light dark;--line:#8395a7;--accent:#257db5}
 *{box-sizing:border-box}body{font:16px/1.55 system-ui,sans-serif;max-width:76rem;margin:auto;padding:1rem clamp(1rem,3vw,2.2rem) 3rem}
@@ -29,12 +29,24 @@ hr{border:none;border-top:1px solid var(--line);margin:1.4rem 0}
 .skip{position:absolute;left:-9999px}.skip:focus{left:1rem;top:.5rem;background:Canvas;padding:.7rem;z-index:10}
 @media(max-width:560px){body{padding:1rem}.chart{gap:6px}.controls button{flex:1 1 100%}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
-</style></head>
+</style><link rel="stylesheet" href="../src/hear3/app-shell.css">
+<script type="module" src="../src/hear3/app-theme.mjs"></script>
+</head>
 <body>
 <a href="#main" class="skip">Saltar al contenido principal</a>
-<main id="main">
-<p><a href="../hear3-preview/">← Volver a la vista previa</a></p>
-<h1>Editor de EQ provisional</h1>
+<header class="app-topbar">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal">
+  <a href="../">Inicio</a>
+  <a href="../hear3-exam/">Examen</a>
+  <a href="../hear3-eq-editor/" aria-current="page">Mi ecualizador</a>
+  <a href="../hear3-library/">Historial</a>
+  <a href="../#ajustes">Ajustes</a>
+ </nav>
+</header>
+<main id="main" class="app-page">
+<p><a href="../">← Volver al inicio</a></p>
+<h1>Mi ecualizador</h1>
 <p class="notice"><strong>Una sola curva conjunta, guardada localmente y revisable.</strong>
  Las ganancias provienen de observaciones subjetivas de tonos digitales: no
  constituyen una calibración auditiva, un diagnóstico, una medición acústica ni una
@@ -42,7 +54,7 @@ hr{border:none;border-top:1px solid var(--line);margin:1.4rem 0}
  Los límites ±2/±3 dB son de investigación matemática, no de seguridad física.</p>
 <section aria-labelledby="choose-title">
 <h2 id="choose-title">1 · Elegir un resultado guardado</h2>
-<label for="result-select">Resultado experimental con EQ provisional</label>
+<label for="result-select">Resultado guardado con curva orientativa</label>
 <select id="result-select" data-testid="result-select"><option value="">Selecciona un resultado</option></select>
 <p id="catalog-status" data-testid="catalog-status" role="status" aria-live="polite"></p>
 </section>
@@ -79,7 +91,7 @@ No se ha exportado ningún EQ.</p>
 </section>
 <p id="error" data-testid="error" role="alert" class="error"></p>
 <hr>
-<p><a href="../hear3-exam/">Ir al examen integrado experimental</a>
+<p><a href="../hear3-exam/">Iniciar un examen</a>
  · <a href="../hear3-library/">Ver catálogo y respaldos</a></p>
 </main>
 <script type="module">
