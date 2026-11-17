@@ -8,17 +8,20 @@ const pilots = [
   { link: 'Abrir visor de historial V2', url: '/tests/fixtures/hear3-legacy-v2-pilot.html', heading: 'revisión de perfiles antiguos' },
 ];
 
-test('Hear 3.0 public preview is linked from the real app without replacing Hear 2.0', async ({page}) => {
-  await page.goto('/');
-  await expect(page.locator('#root')).toHaveAttribute('data-page','setup');
-  const notice=page.getByRole('complementary',{name:'Avance de Hear 3.0'});
-  await expect(notice).toContainText('Vista previa disponible');
-  await notice.getByRole('link',{name:/Ver vista previa/}).click();
-  await expect(page).toHaveURL(/\/hear3-preview\/$/);
-  await expect(page.getByRole('heading',{level:1})).toContainText('La próxima forma de');
-  await expect(page.getByText('Es una vista previa experimental')).toBeVisible();
-  const noOverflow=await page.evaluate(()=>document.documentElement.scrollWidth <= document.documentElement.clientWidth+2);
-  expect(noOverflow).toBe(true);
+test('official root opens Hear 3 beta while preserving direct access to Hear 2 legacy', async ({page}) => {
+ await page.goto('/');
+ await expect(page).toHaveURL(/\/hear3-preview\/$/);
+ await expect(page.getByRole('heading',{level:1})).toContainText('La próxima forma de');
+ await expect(page.getByText('Es una vista previa experimental')).toBeVisible();
+ await expect(page.getByRole('link',{name:'Abrir Hear 2.0 anterior'}).first())
+  .toHaveAttribute('href','../hear2/');
+ const noOverflow=await page.evaluate(()=>
+  document.documentElement.scrollWidth <= document.documentElement.clientWidth+2);
+ expect(noOverflow).toBe(true);
+ await page.getByRole('link',{name:'Abrir Hear 2.0 anterior'}).first().click();
+ await expect(page).toHaveURL(/\/hear2\/$/);
+ await expect(page.locator('#root')).toHaveAttribute('data-page','setup');
+ await expect(page.getByRole('link',{name:/Ver vista previa/})).toHaveAttribute('href','../hear3-preview/');
 });
 
 test('preview exposes the five available experimental pilots, not a fictional full Hear 3.0 exam', async ({page}) => {
