@@ -51,6 +51,9 @@ test('P0 add-only backups preserve both results and never overwrite identical ID
  await upload(page,await backupFor(page,'a'));
  await page.getByTestId('preview').click();
  await page.getByTestId('commit').click();
+ // Wait for the async WebKit presence probe + verified commit before the
+ // second backup preview; click() alone does not await async handlers.
+ await expect(page.getByTestId('summary')).toContainText('1 dispositivos, 1 perfiles, 1 resultados');
  await upload(page,await backupFor(page,'b'));
  await page.getByTestId('preview').click();
  await expect(page.getByTestId('description')).toContainText('Al finalizar: 2 resultados');
