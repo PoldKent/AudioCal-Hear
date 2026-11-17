@@ -67,3 +67,19 @@ test('device shortcut requires conscious selection and never claims hardware det
  await page.getByTestId('layout-apply').click();
  await expect(page.getByTestId('layout-status')).toContainText('7 bandas entre 64 y 15625 Hz');
 });
+
+test('the four visible journey steps allow preview and safe backwards review without running audio',async({page})=>{
+ await page.goto('/hear3-exam/');
+ await expect(page.getByTestId('journey-status')).toContainText('Etapa actual: 1 · Mi equipo');
+ await expect(page.locator('[data-journey-stage=prepare]')).toHaveAttribute('aria-current','step');
+ await expect(page.getByTestId('journey-back')).toBeDisabled();
+ await page.getByTestId('journey-next').click();
+ await expect(page.getByTestId('journey-status')).toContainText('1 · Mi equipo');
+ await page.locator('[data-journey-stage=tones]').click();
+ await expect(page.getByTestId('tone-next')).toBeDisabled();
+ expect(await page.evaluate(()=>window.hear3IntegratedPilot.snapshot())).toBe(null);
+ // Navigation cannot create evidence or advance beyond the actual exam engine.
+ await expect(page.getByTestId('journey-status')).toContainText('1 · Mi equipo');
+ const links=page.locator('[data-journey-stage]');
+ await expect(links).toHaveCount(4);
+});
