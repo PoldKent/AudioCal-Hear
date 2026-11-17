@@ -155,6 +155,30 @@ a{color:var(--app-accent)}
 .app-result-details summary{cursor:pointer;min-height:32px;color:var(--app-text);font-weight:740}
 @media(max-width:480px){.app-result-actions button{flex:1 1 44%}}
 
+/* One connected exam, with stage orientation rather than extra screens. */
+.app-exam-journey{border:1px solid var(--app-line);border-radius:1rem;
+ background:var(--app-panel);padding:.95rem;margin:1rem 0 1.35rem}
+.app-exam-journey-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:.4rem}
+.app-exam-journey-nav a{text-align:center;display:grid;place-items:center;
+ min-height:50px;padding:.45rem .3rem;color:var(--app-muted);font-size:.92rem;
+ text-decoration:none;border:1px solid var(--app-line);border-radius:.7rem;
+ background:var(--app-bg)}
+.app-exam-journey-nav a[aria-current=step]{background:var(--app-action);
+ color:var(--app-action-text);font-weight:850;border-color:var(--app-action)}
+.app-exam-journey-nav a[data-reached=false]:not([aria-current=step]){opacity:.7}
+.app-exam-journey-actions{display:flex;gap:.6rem;flex-wrap:wrap}
+.app-exam-journey-actions button{flex:1 1 150px;min-height:44px;width:auto;
+ padding:.55rem .7rem;border-radius:.6rem;font:inherit;font-weight:700;
+ color:var(--app-text);background:var(--app-panel-hi);
+ border:1px solid var(--app-line)}
+.app-exam-journey-actions button:disabled{opacity:.5}
+@media(max-width:540px){
+ .app-exam-journey{padding:.7rem}
+ .app-exam-journey-nav{gap:.2rem}
+ .app-exam-journey-nav a{font-size:.77rem;line-height:1.2;padding:.4rem .15rem}
+}
+
 /* Camera-assisted, local-only EQ transcription inside the ordinary setup. */
 .app-device-helper{margin:1.05rem 0 0;border-top:1px solid var(--app-line);
  padding-top:.85rem}
