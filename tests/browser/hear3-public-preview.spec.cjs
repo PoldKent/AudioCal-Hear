@@ -36,7 +36,7 @@ test('navigation reaches the full exam, editor and local records without autopla
  await page.getByRole('link',{name:'Historial',exact:true}).click();
  await expect(page).toHaveURL(/\/hear3-library\/$/);
  await expect(page.getByTestId('summary')).toContainText('0 dispositivos, 0 perfiles, 0 resultados');
- await page.getByRole('link',{name:'Inicio'}).click();
+ await page.getByRole('link',{name:'Inicio',exact:true}).click();
  await expect(page).toHaveURL(/\/$/);
 });
 
