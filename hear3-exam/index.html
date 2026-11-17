@@ -118,6 +118,11 @@ Distribución inicial: 5 bandas declaradas, de 125 a 2000 Hz. No verificada fís
 <p><strong>Nivel de señal digital:</strong>
 <output id="sweep-level" data-testid="sweep-level" aria-live="off">—</output></p>
 </div>
+<svg class="hear-wave" viewBox="0 0 480 84" role="img"
+ aria-label="Representación visual orientativa de la frecuencia digital programada en el barrido">
+ <path id="hear-sweep-wave" stroke="#39c7d5" stroke-width="2.4" stroke-linecap="round"
+  fill="none"></path>
+</svg>
 <p>Tiempo restante orientativo: <output id="sweep-remaining" data-testid="sweep-remaining" aria-live="off">—</output>.
 Estos valores muestran el programa digital, no la frecuencia acústica realmente emitida, ni si lo escuchas.</p>
 <label for="sweep-progress">Progreso temporal orientativo del barrido</label>
@@ -139,6 +144,11 @@ Estos valores muestran el programa digital, no la frecuencia acústica realmente
 <p id="tone-status" role="status" aria-live="polite" data-testid="tone-status">Esperando barrido</p>
 <p><strong>Frecuencia:</strong> <span id="frequency" data-testid="frequency">—</span></p>
 <p><strong>Nivel digital:</strong> <span id="dbfs" data-testid="dbfs">—</span></p>
+<svg class="hear-wave" viewBox="0 0 480 84" role="img"
+ aria-label="Representación visual orientativa del tono digital programado">
+ <path id="hear-tone-wave" stroke="#39c7d5" stroke-width="2.4" stroke-linecap="round"
+  fill="none"></path>
+</svg>
 <label for="tone-progress">Progreso estimado del tono (no representa salida física)</label>
 <progress id="tone-progress" max="3000" value="0"></progress>
 <p id="coverage" data-testid="coverage">Bandas confirmadas: 0</p>
@@ -833,6 +843,17 @@ import {mountHear3ImmediateEq} from '../src/hear3/immediate-eq-result.mjs';
 const root=document.getElementById('eq-immediate');
 const source=document.getElementById('eq-rows');
 mountHear3ImmediateEq({root,source,getDraft:()=>window.hear3IntegratedPilot?.eqDraft()??null});
+</script>
+<script type="module">
+import {attachHear3DigitalToneVisualizer} from '../src/hear3/digital-tone-visualizer.mjs';
+attachHear3DigitalToneVisualizer({
+ sweepFrequency:document.getElementById('sweep-frequency'),
+ sweepStatus:document.getElementById('sweep-status'),
+ toneFrequency:document.getElementById('frequency'),
+ toneStatus:document.getElementById('tone-status'),
+ sweepPath:document.getElementById('hear-sweep-wave'),
+ tonePath:document.getElementById('hear-tone-wave'),
+});
 </script>
 </body>
 </html>
