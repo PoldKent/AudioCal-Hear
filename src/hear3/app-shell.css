@@ -183,6 +183,12 @@ a{color:var(--app-accent)}
 .hear-listening-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;margin:.85rem 0}
 .hear-listening-comparison button{min-height:54px;border:1px solid var(--app-line);
  border-radius:.75rem;background:var(--app-bg);color:var(--app-text);font-weight:750}
+.hear-listening-route{border:1px solid var(--app-line);padding:.85rem;
+ margin:.65rem 0;border-radius:.8rem;background:var(--app-bg)}
+.hear-listening-route label{display:flex;align-items:flex-start;gap:.65rem;font-weight:750}
+.hear-listening-route input[type=checkbox]{width:24px;height:24px;min-width:24px;
+ margin:.08rem 0 0;accent-color:var(--app-action)}
+.hear-listening-route p{margin:.55rem 0 0;font-size:.85rem;color:var(--app-muted)}
 .hear-listening-actions{display:flex;gap:.7rem;flex-wrap:wrap;align-items:stretch}
 .hear-listening-actions button{flex:1 1 160px;min-height:54px;border:1px solid var(--app-line);
  border-radius:.75rem;background:var(--app-bg);color:var(--app-text);font-weight:760;padding:.7rem .9rem}

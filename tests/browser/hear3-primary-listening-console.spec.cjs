@@ -71,3 +71,43 @@ test('mirrored action never creates tones or writes a profile without user initi
  await expect(page.getByTestId('plan')).toBeEnabled();
  expect(await page.evaluate(()=>localStorage.getItem('hear3:catalog:v1:0'))).toBe(records);
 });
+
+test('paused exam shows verified low-volume route in same console before resume',async({page})=>{
+ await virtualAudio(page);
+ await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-console-action').click();
+ await expect(page.getByTestId('plan')).toBeEnabled();
+ await page.getByTestId('hear-console-action').click();
+ await page.getByTestId('hear-console-action').click();
+ await expect(page.getByTestId('hear-console-heard')).toBeEnabled();
+ await expect(page.getByTestId('hear-console-stop')).toBeVisible();
+ await page.getByTestId('hear-console-stop').click();
+ await expect(page.getByTestId('tone-resume')).toBeEnabled();
+ await expect(page.getByTestId('hear-console-route')).toBeVisible();
+ await expect(page.getByTestId('hear-console-route')).not.toBeChecked();
+ await expect(page.getByTestId('hear-console-action')).toContainText('Reanudar mi examen');
+ await expect(page.getByTestId('hear-console-action')).toBeDisabled();
+ const starts=await page.evaluate(()=>window.__consoleStarts);
+ await page.getByTestId('hear-console-route').check();
+ await expect(page.getByTestId('route-verified')).toBeChecked();
+ await expect(page.getByTestId('hear-console-action')).toBeEnabled();
+ await page.getByTestId('hear-console-action').click();
+ await expect(page.getByTestId('tone-next')).toBeEnabled();
+ await expect(page.getByTestId('hear-console-route')).toBeHidden();
+ // Only clicking "play next tone" may start audio after explicit recovery.
+ expect(await page.evaluate(()=>window.__consoleStarts)).toBe(starts);
+});
+test('the route checkbox mirrors an original verified user selection without auto-play',async({page})=>{
+ await virtualAudio(page);
+ await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-console-action').click();
+ await expect(page.getByTestId('plan')).toBeEnabled();
+ await page.getByTestId('hear-console-action').click();
+ await page.getByTestId('hear-console-action').click();
+ await expect(page.getByTestId('tone-stop')).toBeEnabled();
+ await page.getByTestId('tone-stop').click();
+ await expect(page.getByTestId('hear-console-route')).toBeVisible();
+ await page.getByTestId('route-verified').check();
+ await expect(page.getByTestId('hear-console-route')).toBeChecked();
+ await expect(page.getByTestId('hear-console-action')).toBeEnabled();
+});
