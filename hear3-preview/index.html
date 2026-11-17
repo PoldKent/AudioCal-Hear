@@ -54,6 +54,32 @@
     .end{border-top:1px solid var(--line);padding:26px 0 42px;color:var(--muted);font-size:.89rem}
     .end a{margin-right:16px}
     @media(max-width:640px){.wrap{padding:0 17px}.hero{padding:39px 0 32px}.grid,.facts{grid-template-columns:1fr}.tile{padding:21px}.notice{padding:16px}.top{padding:16px 0}}
+    /* D-017: user override (system/light/dark), with tested contrast and focus. */
+    :root[data-hear3-theme="light"]{color-scheme:light;--bg:#f2f7fb;--surface:#ffffff;--surface2:#e8f1f8;--line:#a6bdd0;--text:#142b3d;--muted:#34536b;--cyan:#095d87;--gold:#744605;--green:#115c42}
+    :root[data-hear3-theme="light"] body{background:linear-gradient(180deg,#e6f3fb 0%,#f7fafc 45%,#f2f7fb 100%)}
+    :root[data-hear3-theme="light"] header{border-bottom-color:#a6bdd0}
+    :root[data-hear3-theme="light"] .brand{color:var(--text)}
+    :root[data-hear3-theme="light"] .tile{background:linear-gradient(180deg,#fff,#eef5fa)}
+    :root[data-hear3-theme="light"] .lead{color:#24455d}
+    :root[data-hear3-theme="light"] .status{background:#e8f6f0;border-color:#358168;color:#104733}
+    :root[data-hear3-theme="light"] .action.primary{background:#1b6087;border-color:#1b6087;color:#fff}
+    :root[data-hear3-theme="light"] .action.secondary{background:#eaf2f8;color:#193449}
+    :root[data-hear3-theme="light"] .notice{background:#fff0d7;border-color:#8d641d;color:#432b05}
+    :root[data-hear3-theme="light"] .notice p{color:#432b05}
+    :root[data-hear3-theme="light"] .offline-actions button{background:#e8f1f8;color:#142b3d}
+    :root[data-hear3-theme="light"] .fact strong{color:#142b3d}
+    :root[data-hear3-theme="light"] .skip{background:#1b6087;color:#fff}
+    .theme-control{display:flex;align-items:center;gap:.5rem}
+    .theme-control label{font-size:.82rem;font-weight:700}
+    .theme-control select{min-height:44px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;font:inherit;padding:.4rem}
+    .theme-control select:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+    .quick-start{padding:1rem 1.25rem;border:1px solid var(--line);border-radius:16px;background:var(--surface);margin:0 0 1.6rem}
+    .quick-start h2{font-size:1.22rem;margin:.1rem 0 .5rem}
+    .quick-start p{color:var(--muted);margin:.3rem 0 .8rem}
+    .quick-start ol{margin:.2rem 0 .5rem;padding-left:1.5rem}
+    .quick-start li{margin:.35rem 0}
+    .quick-start a{font-weight:780}
+    @media(max-width:640px){.theme-control{width:100%;justify-content:flex-start}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   </style>
 </head>
@@ -62,6 +88,14 @@
 <header><div class="wrap top">
   <a class="brand" href="../" aria-label="Volver a AudioCal Hear"><span class="logo" aria-hidden="true">◉</span><span>AudioCal <span style="color:var(--cyan)">Hear</span></span></a>
   <a class="back" href="../">Volver a la aplicación actual</a>
+  <div class="theme-control">
+    <label for="hear3-theme-choice">Apariencia</label>
+    <select id="hear3-theme-choice" data-testid="hear3-theme-choice" aria-label="Apariencia de Hear 3.0">
+      <option value="system">Según el sistema</option>
+      <option value="light">Claro</option>
+      <option value="dark">Oscuro</option>
+    </select>
+  </div>
 </div></header>
 <main class="wrap" id="main">
   <section class="hero" aria-labelledby="title">
@@ -70,9 +104,22 @@
     <h1 id="title">La próxima forma de <span>escuchar mejor.</span></h1>
     <p class="lead">Explora las funciones ya implementadas como pilotos experimentales: pruebas de tono y barrido, recuperación local, perfiles y respaldos. Incluyen una primera integración de barrido y tonos; todavía no constituyen un examen Hear 3.0 validado o completo.</p>
     <div class="actions">
-      <a class="action primary" href="#pilotos">Explorar los pilotos</a>
+      <a class="action primary" href="../tests/fixtures/hear3-integrated-exam-pilot.html">Comenzar examen experimental</a>
+      <a class="action secondary" href="#pilotos">Explorar herramientas</a>
       <a class="action secondary" href="../">Abrir Hear actual</a>
     </div>
+  </section>
+  <section class="quick-start" aria-labelledby="quick-start-heading">
+    <h2 id="quick-start-heading">Primeros pasos · sin registro</h2>
+    <ol>
+      <li>Comprueba qué dispositivo vas a usar y mantén un volumen físico bajo y confortable.</li>
+      <li>Abre el examen integrado y decide cuándo reproducir cada sonido; nada empieza automáticamente.</li>
+      <li>Revisa los resultados y, si quieres, guarda un EQ matemático provisional en el catálogo para editarlo.</li>
+    </ol>
+    <p id="resume-note" data-testid="resume-note" role="status" aria-live="polite">
+    Puedes iniciar una sesión nueva. Ninguna prueba se reproduce al entrar.</p>
+    <p><a href="../tests/fixtures/hear3-integrated-exam-pilot.html">Abrir examen integrado</a> ·
+    <a href="../hear3-eq-editor/">Revisar perfiles y EQ archivados</a></p>
   </section>
 
   <aside class="notice" aria-label="Aviso de seguridad">
@@ -148,6 +195,38 @@
 <script type="module">
 import {detectHear3OfflineSupport,enableHear3Offline,disableHear3Offline}
  from '../src/hear3/offline-optin.mjs';
+import {createHear3AdaptiveProgressStore} from '../src/hear3/adaptive-progress-store.mjs';
+const themeChoice=document.getElementById('hear3-theme-choice');
+const THEME_KEY='hear3:ui-theme:v1';
+const validThemes=new Set(['system','light','dark']);
+const media=typeof matchMedia==='function'?matchMedia('(prefers-color-scheme: dark)'):null;
+let theme='system';
+try{const stored=localStorage.getItem(THEME_KEY);
+ if(validThemes.has(stored))theme=stored;}catch{/* private browsing and quotas */}
+function applyTheme(){
+ const resolved=theme==='system'?(media?.matches?'dark':'light'):theme;
+ document.documentElement.dataset.hear3Theme=resolved;
+ themeChoice.value=theme;
+}
+themeChoice.addEventListener('change',()=>{
+ const value=themeChoice.value;
+ if(!validThemes.has(value))return;
+ theme=value;
+ try{if(value==='system')localStorage.removeItem(THEME_KEY);
+ else localStorage.setItem(THEME_KEY,value);}catch{/* preference stays local to tab */}
+ applyTheme();
+});
+if(media?.addEventListener)media.addEventListener('change',()=>{if(theme==='system')applyTheme();});
+else if(media?.addListener)media.addListener(()=>{if(theme==='system')applyTheme();});
+applyTheme();
+try{
+ const progress=createHear3AdaptiveProgressStore({profileId:'hear3-integrated-pilot'}).load();
+ if(progress.checkpoint){
+  document.getElementById('resume-note').textContent=
+   'Se detectó una copia local del examen en este navegador. Abre el examen y elige «Recuperar examen guardado» para revisar el progreso sin reproducción automática.';
+ }
+}catch{/* no data access means no misleading resume claim */}
+
 const enable=document.getElementById('offline-enable');
 const disable=document.getElementById('offline-disable');
 const status=document.getElementById('offline-status');
