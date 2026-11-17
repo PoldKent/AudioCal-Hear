@@ -68,6 +68,11 @@ test('public exam can complete, save opt-in provisional EQ, reopen history and e
  // The same proposed curve is visible and exportable immediately, even
  // before creating any saved profile or asking for EQ archival consent.
  await expect(page.getByTestId('eq-immediate-chart').locator('.app-eq-band')).toHaveCount(5);
+ await expect(page.getByTestId('eq-manual-guide')).toBeAttached();
+ await page.getByTestId('eq-manual-guide').locator('summary').click();
+ await expect(page.getByTestId('eq-guide-steps').locator('li')).toHaveCount(4);
+ await expect(page.getByTestId('eq-guide-rows').locator('li')).toHaveCount(5);
+ await expect(page.getByTestId('eq-guide-rows').locator('li').first()).toContainText('125 Hz · 0 dB');
  await expect(page.getByTestId('eq-immediate-txt')).toBeEnabled();
  await expect(page.getByTestId('eq-immediate-csv')).toBeEnabled();
  await expect(page.getByTestId('eq-immediate-png')).toBeEnabled();
@@ -83,6 +88,7 @@ test('public exam can complete, save opt-in provisional EQ, reopen history and e
  const csv=await csvDownload;
  expect(fs.readFileSync(await csv.path(),'utf8')).toContain('125,0,');
  await page.getByTestId('eq-inline-gain-0').fill('1');
+ await expect(page.getByTestId('eq-guide-rows').locator('li').first()).toContainText('125 Hz · +1 dB');
  await expect(page.getByTestId('eq-immediate-action')).toContainText('Cambios manuales');
  await expect(page.getByTestId('eq-immediate-save')).toBeDisabled();
  await page.getByTestId('archive-device').fill('Auriculares para la prueba');
