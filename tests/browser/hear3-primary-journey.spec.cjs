@@ -75,7 +75,7 @@ test('public exam can complete, save opt-in provisional EQ, reopen history and e
  await page.getByTestId('eq-immediate-txt').click();
  const txt=await txtDownload;
  const txtBody=fs.readFileSync(await txt.path(),'utf8');
- expect(txtBody).toContain('No');
+ expect(txtBody.toLowerCase()).toContain('no calibrado');
  expect(txtBody).toContain('125 Hz = 0 dB');
  expect(txtBody).toContain('2000 Hz = 0 dB');
  const csvDownload=page.waitForEvent('download');
