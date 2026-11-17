@@ -6,7 +6,7 @@
 
 **AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite escuchar tonos a diferentes niveles digitales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
 
-**[Abrir Hear 3.0 beta](https://poldkent.github.io/AudioCal-Hear/)** · **[Abrir Hear 2.0 anterior](https://poldkent.github.io/AudioCal-Hear/hear2/)** · [Decisiones de producto](docs/HEAR-V2-PRODUCT-DECISIONS.md) · [Hoja de ruta](docs/HEAR-V2-ROADMAP.md) · [Historial](CHANGELOG.es.md)
+**[Abrir Hear 3.0 beta](https://poldkent.github.io/AudioCal-Hear/)** · [Comenzar examen experimental](https://poldkent.github.io/AudioCal-Hear/hear3-exam/) · [Mi historial y respaldos](https://poldkent.github.io/AudioCal-Hear/hear3-library/) · **[Abrir Hear 2.0 anterior](https://poldkent.github.io/AudioCal-Hear/hear2/)** · [Decisiones de producto](docs/HEAR-V2-PRODUCT-DECISIONS.md) · [Hoja de ruta](docs/HEAR-V2-ROADMAP.md) · [Historial](CHANGELOG.es.md)
 
 > **Web principal: Hear 3.0 beta (`3.0.0-beta.1`), no lanzamiento estable ni calibración acústica certificada.** La dirección oficial abre el entorno experimental Hear 3.0. La versión independiente Hear 2.0 permanece en **[Abrir Hear 2.0 anterior](https://poldkent.github.io/AudioCal-Hear/hear2/)**. Navegar entre ambas no borra ni transforma los datos V2, pero el almacenamiento del navegador no sustituye una copia de seguridad. Exporta por separado V2 y V3 antes de reemplazar o eliminar datos.
 

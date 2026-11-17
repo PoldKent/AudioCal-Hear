@@ -11,6 +11,10 @@ on:
       - 'index.html'
       - 'hear2/**'
       - 'hear3-preview/**'
+      - 'hear3-exam/**'
+      - 'hear3-library/**'
+      - 'hear3-eq-editor/**'
+      - 'hear3-offline-*'
       - '.github/workflows/source-tests.yml'
   pull_request:
     paths:
@@ -21,6 +25,10 @@ on:
       - 'index.html'
       - 'hear2/**'
       - 'hear3-preview/**'
+      - 'hear3-exam/**'
+      - 'hear3-library/**'
+      - 'hear3-eq-editor/**'
+      - 'hear3-offline-*'
       - '.github/workflows/source-tests.yml'
 
 permissions:

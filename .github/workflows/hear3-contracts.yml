@@ -14,6 +14,11 @@ on:
       - 'index.html'
       - 'hear2/**'
       - 'hear3-preview/**'
+      - 'hear3-exam/**'
+      - 'hear3-library/**'
+      - 'hear3-eq-editor/**'
+      - 'hear3-dual-restore/**'
+      - 'hear3-offline-*.js*'
       - 'src/hear3-entry.html'
   push:
     branches:

@@ -25,7 +25,9 @@ async function installAndVerify(page){
  const cached=await page.evaluate(async()=>{
   const cache=await caches.open('audiocal-hear3-prototype-static-v1');
   return Boolean(await cache.match(new URL('/hear3-preview/',location.origin)))&&
-    Boolean(await cache.match(new URL('/tests/fixtures/hear3-integrated-exam-pilot.html',location.origin)));
+    Boolean(await cache.match(new URL('/tests/fixtures/hear3-integrated-exam-pilot.html',location.origin)))&&
+    Boolean(await cache.match(new URL('/hear3-exam/',location.origin)))&&
+    Boolean(await cache.match(new URL('/hear3-library/',location.origin)));
  });
  expect(cached).toBe(true);
 }
@@ -47,6 +49,11 @@ test('D-060 Chromium emulation reopens cached pilots when navigation is offline'
   await page.goto('/hear3-preview/');
   await expect(page.getByRole('heading',{level:1})).toContainText('La próxima forma de');
   await expect(page.getByTestId('offline-enable')).toBeVisible();
+  await page.goto('/hear3-exam/');
+  await expect(page.getByRole('heading',{level:1})).toContainText('examen de tonos');
+  await expect(page.getByTestId('sweep-start')).toBeEnabled();
+  await page.goto('/hear3-library/');
+  await expect(page.getByRole('heading',{level:1})).toContainText('Mi historial');
   await page.goto('/tests/fixtures/hear3-integrated-exam-pilot.html');
   await expect(page.locator('main h1')).toContainText('barrido → tonos');
   await expect(page.getByTestId('tone-next')).toBeDisabled();
