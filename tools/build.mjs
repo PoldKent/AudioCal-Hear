@@ -43,14 +43,14 @@ if (!publicEntry.startsWith('<!doctype html>') || !publicEntry.trimEnd().endsWit
 
 if (process.argv.includes('--check')) {
   if (output !== read('hear2/index.html') || publicEntry !== read('index.html')) {
-    console.error('Generated Hear 2.0 fallback or Hear 3.0 primary entry differs from committed HTML. Run npm run build and commit both files.');
+    console.error('Generated legacy rollback and unified Hear app differ from committed HTML. Run npm run build and commit both.');
     process.exitCode = 1;
   } else {
-    console.log('Verified: Hear 2 fallback is byte-identical to the generated standalone bundle, and the primary root redirects to Hear 3 beta.');
+    console.log('Verified: independent rollback bundle and unified Hear homepage are byte-identical to source artifacts.');
   }
 } else {
   fs.mkdirSync(path.join(ROOT, 'hear2'), {recursive:true});
   fs.writeFileSync(path.join(ROOT, 'hear2/index.html'), output, 'utf8');
   fs.writeFileSync(path.join(ROOT, 'index.html'), publicEntry, 'utf8');
-  console.log('Built Hear 2 legacy bundle (' + Buffer.byteLength(output, 'utf8') + ' bytes) and Hear 3 beta root.');
+  console.log('Built a private rollback bundle (' + Buffer.byteLength(output, 'utf8') + ' bytes) and the single public Hear application.');
 }
