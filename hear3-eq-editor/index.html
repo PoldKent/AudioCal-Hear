@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hear 3.0 · Editor y exportación de EQ provisional</title>
+<style>
+:root{color-scheme:light dark;--line:#8395a7;--accent:#257db5}
+*{box-sizing:border-box}body{font:16px/1.55 system-ui,sans-serif;max-width:76rem;margin:auto;padding:1rem clamp(1rem,3vw,2.2rem) 3rem}
+h1,h2{line-height:1.2}a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
+button,input,select{font:inherit;min-height:44px}
+button{padding:.65rem .9rem;cursor:pointer}button:disabled{opacity:.6;cursor:not-allowed}
+select{max-width:100%;padding:.5rem}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.notice{border:1px solid var(--line);border-radius:12px;padding:1rem;margin:1rem 0}
+.controls{display:flex;gap:.65rem;flex-wrap:wrap;margin:1rem 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.7rem}
+.card{padding:.8rem;border:1px solid var(--line);border-radius:12px}
+.card strong{display:block} .card span{font-variant-numeric:tabular-nums}
+.chart-scroll{overflow-x:auto;padding:.5rem 0}
+.chart{display:flex;align-items:stretch;gap:8px;min-width:max-content;min-height:315px;padding:.5rem 0}
+.band{width:clamp(92px,9vw,116px);border:1px solid var(--line);border-radius:8px;padding:.45rem;display:flex;flex-direction:column;gap:.35rem}
+.band label{font-weight:700;text-align:center;font-size:.91rem}
+.bar-canvas{position:relative;height:170px;margin:.25rem auto 0;width:52px;border-left:1px solid var(--line)}
+.zero{position:absolute;top:50%;left:0;right:0;border-top:1px dashed var(--line)}
+.bar{position:absolute;left:12px;width:29px;border-radius:4px;background:var(--accent);min-height:2px}
+.band input{width:100%;min-height:44px;text-align:center;font-variant-numeric:tabular-nums}
+.muted{opacity:.83;font-size:.87rem}.error{min-height:1.5rem}
+hr{border:none;border-top:1px solid var(--line);margin:1.4rem 0}
+.skip{position:absolute;left:-9999px}.skip:focus{left:1rem;top:.5rem;background:Canvas;padding:.7rem;z-index:10}
+@media(max-width:560px){body{padding:1rem}.chart{gap:6px}.controls button{flex:1 1 100%}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style></head>
+<body>
+<a href="#main" class="skip">Saltar al contenido principal</a>
+<main id="main">
+<p><a href="../hear3-preview/">← Volver a la vista previa</a></p>
+<h1>Editor de EQ provisional</h1>
+<p class="notice"><strong>Una sola curva conjunta, guardada localmente y revisable.</strong>
+ Las ganancias provienen de observaciones subjetivas de tonos digitales: no
+ constituyen una calibración auditiva, un diagnóstico, una medición acústica ni una
+ garantía contra clipping. <strong>Nunca se aplican automáticamente a audio, equipos o presets.</strong>
+ Los límites ±2/±3 dB son de investigación matemática, no de seguridad física.</p>
+<section aria-labelledby="choose-title">
+<h2 id="choose-title">1 · Elegir un resultado guardado</h2>
+<label for="result-select">Resultado experimental con EQ provisional</label>
+<select id="result-select" data-testid="result-select"><option value="">Selecciona un resultado</option></select>
+<p id="catalog-status" data-testid="catalog-status" role="status" aria-live="polite"></p>
+</section>
+<section aria-labelledby="chart-title">
+<h2 id="chart-title">2 · Revisar la curva y editar valores</h2>
+<p>Las barras representan los dB declarados, no una respuesta acústica medida. Cada número
+ se puede ajustar en pasos de 0,5 dB dentro del tope de investigación.</p>
+<div class="cards" id="metadata" data-testid="metadata"></div>
+<div class="chart-scroll"><div id="chart" class="chart" data-testid="chart"
+ role="group" aria-label="Bandas de EQ editables por teclado"></div></div>
+<p id="edit-status" data-testid="edit-status" role="status" aria-live="polite">
+Selecciona un resultado para editar.</p>
+<div class="controls">
+<button id="review" data-testid="review" type="button" disabled>Revisar cambios antes de guardar</button>
+<button id="restore" data-testid="restore" type="button" disabled>Preparar restauración de valores originales</button>
+<button id="commit" data-testid="commit" type="button" disabled>Confirmar y guardar cambios</button>
+</div>
+<p id="preview-status" data-testid="preview-status" role="status" aria-live="polite">
+No hay cambios revisados.</p>
+</section>
+<section aria-labelledby="export-title">
+<h2 id="export-title">3 · Copiar y exportar (sin aplicar)</h2>
+<p>Las exportaciones proceden de los <strong>últimos valores guardados</strong> y llevan una
+ advertencia visible. Un archivo descargado no está cifrado ni se borra al vaciar el navegador.</p>
+<div class="controls">
+<button type="button" id="copy" data-testid="copy" disabled>Copiar valores TXT</button>
+<button type="button" id="txt" data-testid="txt" disabled>Descargar TXT</button>
+<button type="button" id="csv" data-testid="csv" disabled>Descargar CSV</button>
+<button type="button" id="json" data-testid="json" disabled>Descargar JSON</button>
+<button type="button" id="png" data-testid="png" disabled>Descargar PNG</button>
+</div>
+<p id="export-status" data-testid="export-status" role="status" aria-live="polite">
+No se ha exportado ningún EQ.</p>
+</section>
+<p id="error" data-testid="error" role="alert" class="error"></p>
+<hr>
+<p><a href="../tests/fixtures/hear3-integrated-exam-pilot.html">Ir al examen integrado experimental</a>
+ · <a href="../tests/fixtures/hear3-catalog-pilot.html">Ver catálogo y respaldos</a></p>
+</main>
+<script type="module">
+import {createHear3CatalogStore} from '../src/hear3/catalog-backup-store.mjs';
+import {createHear3CatalogWriteCoordinator} from '../src/hear3/coordinated-catalog-writer.mjs';
+import {createHear3ProvisionalEqEditor,exportHear3ProvisionalEq}
+ from '../src/hear3/provisional-eq-editor.mjs';
+const $=id=>document.getElementById(id);
+const store=createHear3CatalogStore(),writer=createHear3CatalogWriteCoordinator({store});
+let editor=null,snapshot=null,values=[],reviewed=null,busy=false;
+const valueText=n=>(n>0?'+':'')+n+' dB';
+const getReview=()=>snapshot?exportHear3ProvisionalEq(store.load().catalog,
+ snapshot.resultId,{format:'txt'}):null;
+function discard(){
+ editor?.discard();reviewed=null;
+ $('preview-status').textContent='Sin cambios confirmados. Revisa las modificaciones para guardarlas.';
+}
+function bar(x,cap){
+ const fraction=Math.max(0,Math.min(0.5,Math.abs(x)/(2*cap)));
+ return {top:(x>=0?50-fraction*100:50)+'%',height:Math.max(2,fraction*100)+'%'};
+}
+function renderBars(){
+ $('chart').replaceChildren();
+ if(!snapshot)return;
+ for(const [i,row] of snapshot.rows.entries()){
+  const cell=document.createElement('div');cell.className='band';
+  const label=document.createElement('label');label.textContent=row.frequencyHz+' Hz';
+  label.htmlFor='gain-'+i;
+  const stage=document.createElement('div');stage.className='bar-canvas';
+  stage.setAttribute('aria-hidden','true');
+  const zero=document.createElement('div');zero.className='zero';
+  const fill=document.createElement('div');fill.className='bar';
+  const update=()=>{
+   const pos=bar(values[i],snapshot.capDb);
+   fill.style.top=pos.top;fill.style.height=pos.height;
+   $('edit-status').textContent='Valores pendientes: '+
+    values.filter((v,j)=>v!==snapshot.rows[j].currentGainDb).length+
+    '. Los originales siguen disponibles para restaurar.';
+   $('review').disabled=busy||!values.some((v,j)=>v!==snapshot.rows[j].currentGainDb);
+   $('commit').disabled=true;
+  };
+  stage.append(zero,fill);
+  const field=document.createElement('input');field.type='number';
+  field.id='gain-'+i;field.dataset.testid='gain-'+i;
+  field.min=String(-snapshot.capDb);field.max=String(snapshot.capDb);
+  field.step='0.5';field.value=String(values[i]);
+  field.setAttribute('aria-label',row.frequencyHz+' Hz, ganancia en dB');
+  field.addEventListener('input',()=>{
+   discard();
+   const n=field.value===''?NaN:Number(field.value);
+   values[i]=n;
+   if(Number.isFinite(n))update();
+   else{$('edit-status').textContent='Hay valores vacíos o no válidos.';
+    $('review').disabled=true;$('commit').disabled=true;}
+  });
+  const original=document.createElement('small');original.className='muted';
+  original.textContent='Original: '+valueText(row.originalGainDb);
+  const source=document.createElement('small');source.className='muted';
+  source.textContent='Frecuencia: '+row.frequencyVerification;
+  cell.append(label,stage,field,original,source);
+  $('chart').append(cell);update();
+ }
+}
+function renderSelection(){
+ $('error').textContent='';
+ const id=$('result-select').value;
+ editor=null;snapshot=null;values=[];reviewed=null;
+ if(id){
+  try{
+   editor=createHear3ProvisionalEqEditor({store,resultId:id});
+   snapshot=editor.snapshot();
+   values=snapshot.rows.map(x=>x.currentGainDb);
+  }catch(e){$('error').textContent=e.message;}
+ }
+ $('metadata').replaceChildren();
+ if(snapshot){
+  const data=[
+   ['Dispositivo',snapshot.deviceName],
+   ['Perfil',snapshot.profileName],
+   ['Bandas',snapshot.rows.length],
+   ['Tope matemático','±'+snapshot.capDb+' dB'],
+   ['Ediciones guardadas',snapshot.editCount],
+   ['Almacenamiento',snapshot.persistedOnDevice?'Local verificado':'Persistencia NO confirmada'],
+  ];
+  for(const [label,text] of data){
+   const card=document.createElement('div');card.className='card';
+   const strong=document.createElement('strong'),span=document.createElement('span');
+   strong.textContent=label;span.textContent=String(text);card.append(strong,span);
+   $('metadata').append(card);
+  }
+ }
+ renderBars();
+ $('restore').disabled=busy||!snapshot||snapshot.rows.every(r=>r.originalGainDb===r.currentGainDb);
+ for(const id of ['copy','txt','csv','json','png'])$(id).disabled=busy||!snapshot;
+ $('review').disabled=busy||!snapshot;
+ if(snapshot)$('review').disabled=true;
+ $('commit').disabled=true;
+ $('edit-status').textContent=snapshot?'EQ cargado. El resultado permanece provisional y sin salida de audio.':
+  'Selecciona un resultado experimental con EQ provisional.';
+ $('preview-status').textContent='No hay cambios revisados.';
+ $('catalog-status').textContent=snapshot?'Resultado seleccionado: '+snapshot.resultId+
+  '. Este editor no modifica otros resultados ni la fuente V2.':
+  'Todavía no hay un resultado seleccionado. Finaliza un examen y opta por archivar su EQ para verlo aquí.';
+}
+function refresh(selected=''){
+ const previous=selected||$('result-select').value;
+ const cat=store.load().catalog;
+ $('result-select').replaceChildren(new Option('Selecciona un resultado',''));
+ for(const r of cat.results.filter(r=>
+  r.status==='provisional'&&r.provenance==='experimental-tone-test'&&r.currentEq.length)){
+  const p=cat.profiles.find(x=>x.id===r.profileId);
+  $('result-select').append(new Option(p.name+' · '+r.id,r.id));
+ }
+ if([...$('result-select').options].some(o=>o.value===previous))
+  $('result-select').value=previous;
+ renderSelection();
+}
+function busyState(state){
+ busy=state;
+ for(const id of ['review','restore','commit','copy','txt','csv','json','png','result-select'])$(id).disabled=state;
+ if(!state){
+  $('commit').disabled=!reviewed;
+  $('restore').disabled=!snapshot||snapshot.rows.every(r=>r.originalGainDb===r.currentGainDb);
+  for(const id of ['copy','txt','csv','json','png'])$(id).disabled=!snapshot;
+  $('review').disabled=!snapshot||!values.some((v,j)=>v!==snapshot.rows[j].currentGainDb);
+ }
+ for(const input of $('chart').querySelectorAll('input'))input.disabled=state;
+}
+function withError(cb){
+ $('error').textContent='';
+ try{cb();}catch(error){$('error').textContent=error?.message??String(error);}
+}
+$('result-select').addEventListener('change',renderSelection);
+$('review').addEventListener('click',()=>withError(()=>{
+ if(!editor||!snapshot)throw Error('Elige un EQ antes de revisarlo.');
+ const patch=snapshot.rows.flatMap((row,i)=>
+  values[i]===row.currentGainDb?[]:[{bandId:row.bandId,gainDb:values[i]}]);
+ reviewed=editor.preview({values:patch});
+ $('preview-status').textContent='Cambios: '+reviewed.changeCount+
+  '. Verifica los números antes de guardar; ningún control físico se modificará.';
+ $('commit').disabled=false;
+}));
+$('restore').addEventListener('click',()=>withError(()=>{
+ if(!editor)throw Error('No hay EQ seleccionado.');
+ reviewed=editor.preview({restoreOriginal:true});
+ $('preview-status').textContent='Revisaste restaurar '+reviewed.changeCount+
+  ' bandas a los valores originales; falta confirmación de guardado.';
+ $('commit').disabled=false;
+}));
+$('commit').addEventListener('click',async()=>{
+ $('error').textContent='';
+ if(!reviewed||!editor)return;
+ if(!confirm('¿Guardar estas modificaciones solo en el resultado experimental local? No modifica audio, el equipo ni Hear 2.0.'))return;
+ const selected=snapshot.resultId,sourceRevision=snapshot.revision;
+ busyState(true);
+ try{
+  const {response}=await writer.run(()=>
+   editor.commit({userInitiated:true,confirmed:true}),
+   {expectedRevision:sourceRevision});
+  refresh(selected);
+  $('preview-status').textContent=response.persistedOnDevice
+   ?'EQ experimental guardado con historial de edición. Valores originales disponibles.'
+   :'No se verificó persistencia de dispositivo. Exporta un respaldo inmediatamente.';
+ }catch(error){
+  editor?.discard();reviewed=null;
+  $('error').textContent=error?.message??String(error);
+  refresh(selected);
+ }finally{busyState(false);}
+});
+function download(content,filename,type){
+ const blob=content instanceof Blob?content:new Blob([content],{type});
+ const url=URL.createObjectURL(blob),anchor=document.createElement('a');
+ anchor.href=url;anchor.download=filename;document.body.append(anchor);
+ anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+for(const [id,mime] of [['txt','text/plain'],['csv','text/csv'],['json','application/json']]){
+ $(id).addEventListener('click',()=>withError(()=>{
+  if(!snapshot)throw Error('Elige primero un resultado guardado.');
+  const raw=exportHear3ProvisionalEq(store.load().catalog,snapshot.resultId,{format:id});
+  download(raw,'hear3-eq-provisional-no-calibrado.'+id,mime+';charset=utf-8');
+  $('export-status').textContent='Exportación '+id.toUpperCase()+
+   ' solicitada. Archivo local no cifrado; no es un preset de equipo.';
+ }));
+}
+$('copy').addEventListener('click',async()=>{
+ $('error').textContent='';
+ try{
+  if(!navigator.clipboard?.writeText)throw Error('Portapapeles no compatible en este navegador.');
+  await navigator.clipboard.writeText(getReview());
+  $('export-status').textContent='Se copiaron los valores guardados con advertencia; nada se envió automáticamente.';
+ }catch(e){$('error').textContent=e.message;}
+});
+$('png').addEventListener('click',()=>withError(()=>{
+ if(!snapshot)throw Error('Selecciona un resultado antes de exportar.');
+ const canvas=document.createElement('canvas');
+ canvas.width=Math.max(1000,snapshot.rows.length*58+160);canvas.height=490;
+ const g=canvas.getContext('2d');
+ if(!g)throw Error('Canvas no disponible en este navegador.');
+ g.fillStyle='#ffffff';g.fillRect(0,0,canvas.width,canvas.height);
+ g.fillStyle='#10283d';g.font='bold 28px system-ui';
+ g.fillText('HEAR 3.0 — EQ PROVISIONAL',36,48);
+ g.font='16px system-ui';g.fillText('NO CALIBRADO · NO APLICAR AUTOMÁTICAMENTE',36,76);
+ g.fillText('Perfil: '+snapshot.profileName.slice(0,75),36,109);
+ const baseline=275;
+ g.strokeStyle='#64748b';g.beginPath();g.moveTo(36,baseline);g.lineTo(canvas.width-36,baseline);g.stroke();
+ const stride=(canvas.width-120)/snapshot.rows.length;
+ snapshot.rows.forEach((row,i)=>{
+  const x=60+i*stride,h=row.currentGainDb/snapshot.capDb*125;
+  g.fillStyle='#087aa6';
+  g.fillRect(x,h>=0?baseline-h:baseline,Math.min(37,stride-8),Math.max(2,Math.abs(h)));
+  g.fillStyle='#10283d';g.font='13px system-ui';
+  g.fillText(String(row.frequencyHz)+' Hz',x,baseline+28);
+  g.fillText(valueText(row.currentGainDb),x,baseline+(h>0?-Math.abs(h)-10:55));
+ });
+ g.fillStyle='#10283d';g.font='16px system-ui';
+ g.fillText('Valores originales y actuales editables en el catálogo V3. Sin garantía de headroom.',36,430);
+ g.fillText('Bandas, filtros y equipo físico no verificados acústicamente.',36,457);
+ canvas.toBlob(blob=>{
+  if(!blob){$('error').textContent='No se pudo codificar PNG.';return;}
+  download(blob,'hear3-eq-provisional-no-calibrado.png','image/png');
+  $('export-status').textContent='Se solicitó descargar un PNG local, no un preset de equipo.';
+ },'image/png');
+}));
+refresh();
+</script>
+</body></html>
