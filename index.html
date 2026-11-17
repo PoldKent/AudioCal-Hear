@@ -2,30 +2,188 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#071321">
-<meta name="description" content="Hear 3.0 beta experimental: examen auditivo subjetivo, historial local y ecualizador provisional. Hear 2.0 sigue disponible como versión anterior.">
-<meta http-equiv="refresh" content="0;url=./hear3-preview/">
-<title>Hear 3.0 · Beta experimental · AudioCal Hear</title>
-<style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#071321;color:#edf7ff}
-body{margin:0;min-height:100vh;display:grid;place-items:center;padding:1.5rem;line-height:1.6}
-main{max-width:46rem}h1{line-height:1.2}
-a{color:#89dcff}a:focus-visible{outline:3px solid #ffd178;outline-offset:4px}
-p{overflow-wrap:anywhere}
-</style>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#081420">
+<meta name="description" content="AudioCal Hear: examen de tonos, ecualizador, resultados y equipos en un solo lugar.">
+<title>AudioCal Hear · Personaliza tu sonido</title>
+<link rel="stylesheet" href="./src/hear3/app-shell.css">
 </head>
 <body>
-<main id="main">
-<h1>Hear 3.0 · Beta experimental</h1>
-<p>La aplicación principal se abre en Hear 3.0. Si la redirección no funciona,
-<a href="./hear3-preview/">continuar a Hear 3.0</a>.</p>
-<p><strong>La ecualización aún no está calibrada acústicamente.</strong>
-Ningún resultado constituye un diagnóstico de audición o una certificación de
-nivel físico seguro. El audio nunca se inicia al entrar.</p>
-<p>La versión anterior continúa disponible en
-<a href="./hear2/">Hear 2.0 · Acceso y recuperación de perfiles anteriores</a>.
-No se borran ni convierten automáticamente los datos guardados en este navegador.</p>
+<a href="#contenido" class="app-sr-only" id="skip-link">Saltar al contenido</a>
+<header class="app-topbar">
+ <a class="app-brand" href="./" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal">
+  <a href="./" aria-current="page">Inicio</a>
+  <a href="./hear3-exam/">Examen</a>
+  <a href="./hear3-eq-editor/">Mi ecualizador</a>
+  <a href="./hear3-library/">Historial</a>
+  <a href="#ajustes">Ajustes</a>
+ </nav>
+</header>
+<main id="contenido" class="app-shell">
+ <section class="app-hero" aria-labelledby="inicio-titulo">
+  <div>
+   <p class="app-kicker">Tu espacio de sonido</p>
+   <h1 id="inicio-titulo">Escucha. Ajusta.<br>Disfruta.</h1>
+   <p class="app-lead">Personaliza tu audio con un examen de tonos, un ecualizador editable y tus resultados guardados. Todo desde una sola aplicación.</p>
+   <div class="app-actions">
+    <a class="app-button primary" href="./hear3-exam/" data-testid="begin-exam">Comenzar examen</a>
+    <a class="app-button" href="./hear3-eq-editor/">Ver mi ecualizador</a>
+   </div>
+  </div>
+  <div class="app-illustration" aria-hidden="true">
+   <div class="app-waves">
+    <span style="--wave-height:28%"></span><span style="--wave-height:56%"></span>
+    <span style="--wave-height:90%"></span><span style="--wave-height:48%"></span>
+    <span style="--wave-height:75%"></span><span style="--wave-height:100%"></span>
+    <span style="--wave-height:62%"></span><span style="--wave-height:84%"></span>
+    <span style="--wave-height:41%"></span><span style="--wave-height:66%"></span>
+    <span style="--wave-height:30%"></span>
+   </div>
+  </div>
+ </section>
+ <section class="app-section" aria-labelledby="tu-actividad">
+  <h2 id="tu-actividad" class="app-section-heading">Tu actividad</h2>
+  <div class="app-grid">
+   <article class="app-card">
+    <h3>Examen</h3>
+    <strong class="app-metric" id="exam-state" data-testid="exam-state">Listo</strong>
+    <p id="resume-note" data-testid="resume-note" role="status" aria-live="polite">Puedes empezar cuando quieras. El sonido nunca se reproduce automáticamente.</p>
+    <a href="./hear3-exam/" id="resume-link" data-testid="resume-link">Ir al examen</a>
+   </article>
+   <article class="app-card">
+    <h3>Mis perfiles</h3>
+    <strong class="app-metric" id="profile-count" data-testid="profile-count">—</strong>
+    <p id="profile-summary">Dispositivos y perfiles guardados en este navegador.</p>
+    <a href="./hear3-library/">Ver historial</a>
+   </article>
+   <article class="app-card">
+    <h3>Ecualizador</h3>
+    <strong class="app-metric" id="eq-count" data-testid="eq-count">—</strong>
+    <p>Revisa, ajusta y exporta las curvas que hayas guardado.</p>
+    <a href="./hear3-eq-editor/">Abrir ecualizador</a>
+   </article>
+  </div>
+ </section>
+ <section class="app-section" aria-labelledby="como-funciona">
+  <h2 id="como-funciona" class="app-section-heading">Cómo funciona</h2>
+  <div class="app-grid">
+   <article class="app-card"><h3>1. Tu equipo</h3>
+    <p>Elige auriculares, parlantes u otro sistema e introduce las bandas reales de su ecualizador.</p>
+   </article>
+   <article class="app-card"><h3>2. Tu escucha</h3>
+    <p>Escucha los tonos voluntariamente y responde si los percibes. Puedes detener o recuperar el examen.</p>
+   </article>
+   <article class="app-card"><h3>3. Tu EQ</h3>
+    <p>Consulta el resultado orientativo, guárdalo si quieres y edita su curva sin cambiar tu equipo automáticamente.</p>
+   </article>
+  </div>
+ </section>
+ <aside class="app-alert" aria-label="Información sobre el sonido">
+  <strong>Antes de escuchar</strong>
+  <p class="app-subtle">Mantén el volumen físico bajo y cómodo. El examen utiliza señales digitales sin calibración de presión sonora; no sirve como diagnóstico médico ni garantiza un nivel de escucha seguro. Detén cualquier sonido molesto.</p>
+ </aside>
+ <section class="app-section app-settings" id="ajustes" aria-labelledby="ajustes-titulo">
+  <h2 class="app-section-heading" id="ajustes-titulo">Ajustes y privacidad</h2>
+  <div class="app-settings-grid">
+   <div class="app-card">
+    <h3>Apariencia</h3>
+    <label for="hear3-theme-choice">Tema</label>
+    <select id="hear3-theme-choice" data-testid="hear3-theme-choice" aria-label="Apariencia">
+     <option value="system">Según el sistema</option>
+     <option value="light">Claro</option>
+     <option value="dark">Oscuro</option>
+    </select>
+    <p>Tu preferencia se guarda solo en este navegador.</p>
+    <a href="./hear3-privacy/">Administrar y borrar datos locales</a>
+   </div>
+   <div class="app-card">
+    <h3>Uso sin conexión</h3>
+    <p>Guarda voluntariamente los recursos de la aplicación. Los resultados personales no forman parte de esa caché.</p>
+    <div class="app-actions">
+     <button type="button" id="offline-enable" data-testid="offline-enable">Guardar para usar sin conexión</button>
+     <button type="button" id="offline-disable" data-testid="offline-disable">Retirar descarga</button>
+    </div>
+    <p id="offline-status" data-testid="offline-status" role="status" aria-live="polite">Comprobando compatibilidad…</p>
+   </div>
+  </div>
+  <p class="app-subtle">Tus resultados se almacenan localmente y pueden perderse si el navegador borra sus datos.
+    <a href="./hear3-library/">Exportar o restaurar respaldos</a>.
+    <a href="./hear3-diagnostics/">Diagnóstico técnico local</a>.</p>
+ </section>
+ <footer class="app-footer">AudioCal Hear · Tus datos y decisiones de escucha permanecen bajo tu control.</footer>
 </main>
+<script type="module">
+import {createHear3AdaptiveProgressStore} from './src/hear3/adaptive-progress-store.mjs';
+import {createHear3CatalogStore} from './src/hear3/catalog-backup-store.mjs';
+import {detectHear3OfflineSupport,enableHear3Offline,disableHear3Offline}
+ from './src/hear3/offline-optin.mjs';
+const $=id=>document.getElementById(id);
+const THEME_KEY='hear3:ui-theme:v1';
+const validThemes=new Set(['system','light','dark']);
+const themeChoice=$('hear3-theme-choice');
+const media=typeof matchMedia==='function'?matchMedia('(prefers-color-scheme:dark)'):null;
+let theme='system';
+try{const saved=localStorage.getItem(THEME_KEY);if(validThemes.has(saved))theme=saved;}catch{}
+function applyTheme(){
+ document.documentElement.dataset.hear3Theme=theme==='system'?(media?.matches?'dark':'light'):theme;
+ themeChoice.value=theme;
+}
+themeChoice.addEventListener('change',()=>{
+ if(!validThemes.has(themeChoice.value))return;
+ theme=themeChoice.value;
+ try{if(theme==='system')localStorage.removeItem(THEME_KEY);
+ else localStorage.setItem(THEME_KEY,theme);}catch{}
+ applyTheme();
+});
+if(media?.addEventListener)media.addEventListener('change',()=>{if(theme==='system')applyTheme();});
+else if(media?.addListener)media.addListener(()=>{if(theme==='system')applyTheme();});
+applyTheme();
+
+try{
+ const saved=createHear3AdaptiveProgressStore({profileId:'hear3-integrated-pilot'}).load();
+ if(saved.checkpoint){
+  $('exam-state').textContent='Por continuar';
+  $('resume-note').textContent='Tienes un examen guardado. Ábrelo y elige «Recuperar examen guardado». No se iniciará sonido.';
+  $('resume-link').textContent='Continuar mi examen';
+  $('resume-link').href='./hear3-exam/#recovery-heading';
+ }
+}catch{
+ $('resume-note').textContent='No se pudo verificar el progreso local. El examen puede comenzar sin reproducción automática.';
+}
+try{
+ const catalog=createHear3CatalogStore().load().catalog;
+ $('profile-count').textContent=String(catalog.profiles.length);
+ $('profile-summary').textContent=catalog.devices.length+' equipos · '+catalog.profiles.length+' perfiles';
+ $('eq-count').textContent=String(catalog.results.filter(result=>
+  Array.isArray(result.currentEq)&&result.currentEq.length>0).length);
+}catch{
+ $('profile-count').textContent='—';$('eq-count').textContent='—';
+ $('profile-summary').textContent='No se pudo leer el historial local. Revisa tus respaldos sin borrar datos.';
+}
+const enable=$('offline-enable'),disable=$('offline-disable'),status=$('offline-status');
+const supported=detectHear3OfflineSupport().supported;
+if(!supported){
+ enable.disabled=true;disable.disabled=true;
+ status.textContent='El modo sin conexión no está disponible aquí. Puedes seguir utilizando Hear con Internet.';
+}else status.textContent='Disponible si decides activarlo. No se descarga nada automáticamente.';
+enable.addEventListener('click',async()=>{
+ enable.disabled=true;status.textContent='Guardando recursos estáticos…';
+ try{const result=await enableHear3Offline();
+ status.textContent='Recursos estáticos verificados: '+result.staticResources+'. '+result.warning;
+ }catch(error){
+ status.textContent='No se pudo verificar el modo sin conexión: '+(error?.message??String(error));
+ }finally{enable.disabled=!supported;}
+});
+disable.addEventListener('click',async()=>{
+ disable.disabled=true;status.textContent='Retirando recursos sin conexión…';
+ try{const result=await disableHear3Offline();
+ status.textContent=result.complete
+ ?'Se solicitó retirar los recursos offline de Hear 3.0. '+result.warning
+ :'No se pudo verificar la eliminación completa de los recursos.';
+ }catch(error){status.textContent='No se pudieron retirar todos los recursos: '+(error?.message??String(error));}
+ finally{disable.disabled=!supported;}
+});
+</script>
 </body>
 </html>
