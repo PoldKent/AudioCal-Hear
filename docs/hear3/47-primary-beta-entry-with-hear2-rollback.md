@@ -20,6 +20,14 @@
 4. Comprobar que `/hear3-preview/` no inicia ningún tono ni ejecuta migraciones. Importaciones V2/V3 requieren vista previa, respaldo y autorización individual.
 5. Publicar por el pipeline GitHub Pages habitual después de CI verde en SHA exacto, luego verificar manualmente `/`, `/hear2/`, recursos y ruta de recuperación real, y confirmar logs de build/deploy.
 
+## Mitigación específica para iPhone/Safari WebKit: escrituras con pestañas abiertas
+
+En el run CI #44145490121 se observó, dos veces, que **dos pestañas WebKit anunciaban un commit V2 persistido en una prueba concurrente**. La causa precisa (Web Locks, visibilidad de localStorage u otra) aún no está certificada. Una beta no debe permitir ese caso sin control.
+
+`src/hear3/coordinated-catalog-writer.mjs` incorpora por eso una **comprobación conservadora de presencia de otra pestaña** mediante `BroadcastChannel` antes del bloqueo Web Locks en WebKit (iOS/macOS Safari). Cuando responde otra pestaña, o si BroadcastChannel no está disponible, **se rechaza la operación local**. El usuario debe cerrar las otras pestañas de Hear 3 y repetir la revisión, sin guardar automáticamente. La UI sigue mostrando error; las pruebas entre pestañas en WebKit deben verificar **cero cambios** y no esperar una escritura vencedora. En Chromium con CAS/Web Locks, el segundo escritor obsoleto se rechaza.
+
+Esta mitigación **no es una transacción atómica ni una prueba de exclusividad física**. Un navegador suspendido puede impedir que otra pestaña responda al sondeo; la entrega de mensajes entre pestañas no es garantizada ni entre navegadores/perfiles distintos. Los backups V2/V3 continúan siendo obligatorios antes de operaciones destructivas. No acreditar D-063, ni escribir que se resolvió definitivamente la causa técnica de WebKit.
+
 ## Rollback real del acceso y del software
 
 **Primero** conservar copias exportadas del historial V2 y catálogo V3, de existir. Para el usuario que solo quiera volver a la experiencia anterior, abrir `/hear2/`: **no borra ni transforma** `/hear3-preview/`, sus perfiles, originales o archivos. Un cambio de interfaz no exige borrar el almacenamiento compartido.
