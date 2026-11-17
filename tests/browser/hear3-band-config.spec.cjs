@@ -27,6 +27,7 @@ test('nominal 31-band EQ layout uses the same confirmed adaptive exam without as
  await fakeAudio(page);
  await page.goto('/hear3-exam/');
  await page.getByTestId('layout-choice').selectOption('31');
+ await expect(page.getByTestId('sweep-start')).toBeDisabled();
  await page.getByTestId('layout-apply').click();
  await expect(page.getByTestId('layout-status')).toContainText('31 bandas entre 20 y 20000 Hz');
  await expect(page.getByTestId('sweep-description')).toContainText('20–20000 Hz');
@@ -44,6 +45,7 @@ test('a custom user-declared 3-band EQ can be configured, but never auto-plays',
  await page.getByTestId('layout-choice').selectOption('custom');
  await expect(page.getByTestId('layout-custom')).toBeEnabled();
  await page.getByTestId('layout-custom').fill('100, 350, 2000');
+ await expect(page.getByTestId('sweep-start')).toBeDisabled();
  await page.getByTestId('layout-apply').click();
  await expect(page.getByTestId('layout-status')).toContainText('3 bandas entre 100 y 2000 Hz');
  expect(await page.evaluate(()=>window.hear3IntegratedPilot.snapshot())).toBeNull();
@@ -59,10 +61,12 @@ test('unsafe custom frequencies are rejected without mutating the default preset
   await page.getByTestId('layout-custom').fill(bad);
   await page.getByTestId('layout-apply').click();
   await expect(page.getByTestId('error')).not.toBeEmpty();
-  await expect(page.getByTestId('layout-status')).toContainText('Distribución inicial: 5 bandas');
+  await expect(page.getByTestId('layout-status')).toContainText('Cambios sin confirmar');
+  await expect(page.getByTestId('sweep-start')).toBeDisabled();
   await expect(page.getByTestId('sweep-description')).toContainText('125–2.000 Hz');
  }
  await page.getByTestId('layout-choice').selectOption('5');
  await page.getByTestId('layout-apply').click();
  await expect(page.getByTestId('error')).toBeEmpty();
+ await expect(page.getByTestId('sweep-start')).toBeEnabled();
 });
