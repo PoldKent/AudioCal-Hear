@@ -100,3 +100,32 @@ test('edit bounds and 0.5 step reject values outside the experimental policy',as
  await expect(page.getByTestId('error')).toContainText('0.5 dB steps');
  expect((await stored(page)).edits).toBe(0);
 });
+
+test('two editor tabs reject stale changes instead of overwriting a newer EQ',async({context,page})=>{
+ test.setTimeout(60000);
+ await seed(page);
+ const second=await context.newPage();
+ try{
+  await page.goto(EDITOR);
+  await second.goto(EDITOR);
+  for(const tab of [page,second])
+   await tab.getByTestId('result-select').selectOption('qa-result');
+  await page.getByTestId('gain-0').fill('2');
+  await second.getByTestId('gain-1').fill('-1');
+  await page.getByTestId('review').click();
+  await second.getByTestId('review').click();
+  page.once('dialog',d=>d.accept());
+  await page.getByTestId('commit').click();
+  await expect(page.getByTestId('preview-status')).toContainText('guardado');
+  second.once('dialog',d=>d.accept());
+  await second.getByTestId('commit').click();
+  await expect(second.getByTestId('error')).toContainText('Catalog changed in another tab');
+  const saved=await stored(second);
+  expect(saved.current).toEqual([2,0,-1]);
+  expect(saved.edits).toBe(1);
+  expect(saved.historic).toBe('DO_NOT_EDIT_V2');
+  await second.reload();
+  await second.getByTestId('result-select').selectOption('qa-result');
+  await expect(second.getByTestId('gain-0')).toHaveValue('2');
+ }finally{await second.close();}
+});
