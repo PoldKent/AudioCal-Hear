@@ -6,29 +6,17 @@
 
 **AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Test your ability to hear tones at different digital levels and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
-**[Open Hear 3.0 beta](https://poldkent.github.io/AudioCal-Hear/)** · [Experimental hearing workflow](https://poldkent.github.io/AudioCal-Hear/hear3-exam/) · [My local records and backups](https://poldkent.github.io/AudioCal-Hear/hear3-library/) · **[Open Hear 2.0 legacy](https://poldkent.github.io/AudioCal-Hear/hear2/)** · [Product decisions](docs/HEAR-V2-PRODUCT-DECISIONS.md) · [Roadmap](docs/HEAR-V2-ROADMAP.md) · [Changelog](CHANGELOG.md)
+**[Open AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Start hearing workflow](https://poldkent.github.io/AudioCal-Hear/hear3-exam/) · [My EQ](https://poldkent.github.io/AudioCal-Hear/hear3-eq-editor/) · [Saved records](https://poldkent.github.io/AudioCal-Hear/hear3-library/)
 
-> **Main website: Hear 3.0 beta (`3.0.0-beta.1`) — not a stable/acoustically validated release.** The official URL now opens the experimental Hear 3.0 workspace. The complete standalone Hear 2.0 application remains available at **[Open Hear 2.0 legacy](https://poldkent.github.io/AudioCal-Hear/hear2/)**. Both versions use the same website origin, so browser data are not deleted or converted on navigation, but local browser storage is not a guaranteed backup. Export V2 and V3 independently before replacing or clearing data.
+## One application
 
-### Hear 3.0 primary beta (November 2026)
+The public website opens **AudioCal Hear**, with no version chooser or experimental developer dashboard. Users have one home screen, a tone exam with 2–31 user-declared graphic EQ bands, saved results, an editable EQ, backups, privacy and optional offline access. Navigation and appearance preferences are shared.
 
-[Hear 3.0](https://poldkent.github.io/AudioCal-Hear/) now provides a guided beta entry, a combined experimental sweep/tone exam, review-only bounded subjective EQ, an optional local V3 archive with an editable EQ, TXT/CSV/JSON/PNG export, independent V2 history preservation, guarded V2+V3 restore, privacy and diagnostic previews. **None of these results is a clinical hearing threshold, a physically calibrated EQ or an automatic device preset.** Acoustic SPL, hardware DSP, Bluetooth routing, screen-reader audit, actual device rollback and the 13 physical release audits remain pending. `stableReleaseClaim:false` must stay in force until the D-063 gate is met.
+**Existing browser data are preserved** and never silently transformed. A separate legacy engine remains available as an internal recovery artifact, not a public competing app. Previous preview bookmarks redirect home.
 
-The beta exam now accepts nominal 4/5/7/10/15/31-band layouts or a custom 2–31-frequency graphic EQ. These are user-declared frequencies, not automatically detected or acoustically calibrated hardware.
+**Safety scope:** Digital test tones are not calibrated in acoustic SPL; EQ outputs are neither a medical diagnosis nor verified physical-device presets. Hardware measurements, DSP headroom and the D-063 release gate remain pending. `stableReleaseClaim:false` stays in force. No autoplay or automatic EQ deployment.
 
-The project keeps a byte-exact, generated **Hear 2.0 fallback** under `hear2/index.html`; `npm run build` produces both the primary `index.html` beta router and `hear2/index.html` legacy standalone, and `npm run verify` checks both. See [transition and rollback protocol](docs/hear3/47-primary-beta-entry-with-hear2-rollback.md).
-
-## Current Hear 2.0 workflow — tones only
-
-1. Choose headphones, car audio or speakers, then **the actual EQ bands**. No music, room or ANC questionnaire is required.
-2. Keep the physical volume **low, comfortable and fixed**. Confirm left/right tone channels if testing ears separately, then answer heard/not-heard for the test tones.
-3. After the last frequency, get **one editable EQ with a gain value for every band**, calculated from the relative digital tone detection levels. The suggested correction uses only a fraction of those differences (up to ±3 dB, or ±2 dB at frequency extremes). Missing or contradictory bands remain neutral.
-4. **Copy the values**, export PNG/TXT, or use the equipment-transfer guide. Physical knob steps need a known scale; Hear does not invent one.
-5. Local profiles preserve tone observations. There is **no music A/B test or additional relative-loudness exercise** in the active flow.
-
-**Product decision:** users are not asked to repeat completed tests or do hardware QA to obtain the EQ. Physical device research is an independent internal task, not an app prerequisite. See the [current product contract](docs/HEAR-V2-PRODUCT-DECISIONS.md).
-
-**Limits:** dBFS is digital amplitude, not sound pressure at the ear. These are experimental perceptual settings, not clinical audiometry or objective acoustic calibration.
+Engineering details: [single-app integration](docs/hear3/49-single-app-experience.md) · [product decisions](https://github.com/PoldKent/AudioCal-Hear/issues/30) · [release evidence](docs/hear3/release-evidence-gate.json).
 
 ## Historical release notes (v1.9 and earlier)
 
