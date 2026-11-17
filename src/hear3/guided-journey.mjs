@@ -8,7 +8,7 @@ const labels=Object.freeze({
  prepare:'1 · Mi equipo',sweep:'2 · Barrido',tones:'3 · Tonos',result:'4 · Mi EQ',
 });
 export function determineHear3JourneyStage({sweep=null,sweepResult=null,exam=null,eq=null}={}){
- if(eq?.resultAvailable===true)return 'result';
+ if(eq?.resultAvailable===true||(Array.isArray(eq?.rows)&&eq.rows.length>=2))return 'result';
  if(exam?.status&&exam.status!=='unstarted')return 'tones';
  if(sweepResult?.status==='completed')return 'tones';
  if(sweep?.status==='playing'||sweep?.status==='starting')return 'sweep';

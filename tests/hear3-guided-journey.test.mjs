@@ -20,3 +20,18 @@ test('only actual engine progression marks stages as reached',()=>{
  assert.deepEqual(model.items.map(x=>x.current),[false,false,true,false]);
  assert.ok(Object.isFrozen(model));
 });
+
+test('D-018 final stage reflects an actual returned bounded EQ, not an absent flag',()=>{
+ const draft={rows:[
+  {frequencyHz:125,gainDb:0},{frequencyHz:1000,gainDb:-1},
+ ]};
+ assert.equal(determineHear3JourneyStage({
+  exam:{status:'completed'},eq:draft,
+ }),'result');
+ assert.equal(determineHear3JourneyStage({
+  exam:{status:'completed'},eq:{rows:[]},
+ }),'tones');
+ assert.equal(createHear3JourneyModel({
+  exam:{status:'completed'},eq:draft,
+ }).items.at(-1).current,true);
+});
