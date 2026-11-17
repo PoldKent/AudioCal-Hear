@@ -35,3 +35,12 @@ test('device recommendation is explicit choice rather than fake hardware detecti
  assert.equal(recommendedHear3DeviceLayout('speaker').preset,null);
  assert.equal(HEAR3_PHOTO_MAX_BYTES,8*1024*1024);
 });
+test('D-044: full previously declared EQ layouts may be recognized without unit labels',()=>{
+ const car=proposeHear3PhotoBandFrequencies('64 160 400 1000 2500 6250 15625');
+ const headphones=proposeHear3PhotoBandFrequencies(
+  '30 60 120 250 500 1000 2000 4000 8000 16000');
+ assert.deepEqual(car.frequencies,[64,160,400,1000,2500,6250,15625]);
+ assert.equal(car.hardwareVerified,false);
+ assert.equal(car.requiresUserConfirmation,true);
+ assert.equal(headphones.frequencies.length,10);
+});
