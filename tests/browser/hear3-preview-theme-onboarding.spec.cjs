@@ -23,7 +23,7 @@ test('the new guide has a safe start, explicit recovery instruction and no autop
  await expect(page.getByRole('heading',{name:/Primeros pasos/})).toBeVisible();
  await expect(page.getByTestId('resume-note')).toContainText('Ninguna prueba se reproduce');
  await expect(page.getByRole('link',{name:'Comenzar examen experimental'}))
-  .toHaveAttribute('href','../tests/fixtures/hear3-integrated-exam-pilot.html');
+  .toHaveAttribute('href','../hear3-exam/');
  await expect(page.getByRole('link',{name:'Revisar perfiles y EQ archivados'}))
   .toHaveAttribute('href','../hear3-eq-editor/');
  await expect(page.locator('#pilotos article')).toHaveCount(5);
