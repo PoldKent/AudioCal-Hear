@@ -29,6 +29,7 @@
     "src/hear3/app-shell.css",
     "src/hear3/app-theme.mjs",
     "src/hear3/immediate-eq-result.mjs",
+    "src/hear3/digital-tone-visualizer.mjs",
     "src/hear3/eq-digital-transfer-model.mjs",
     "src/hear3/provisional-eq-editor.mjs",
     "src/hear3/guarded-dual-archive-restore.mjs",
