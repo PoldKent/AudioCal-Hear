@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hear 3 · restauración conjunta protegida V2/V3 · experimento</title>
+<title>Restaurar respaldos · AudioCal Hear</title>
 <style>
 :root{color-scheme:light dark;font-family:system-ui,sans-serif}
 body{max-width:49rem;margin:1.5rem auto;padding:0 1rem;line-height:1.55}
@@ -19,13 +19,23 @@ label{display:block;font-weight:600}
 .skip{position:absolute;left:-10000px}.skip:focus{position:static}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
+<link rel="stylesheet" href="../src/hear3/app-shell.css">
 </head>
 <body>
 <a href="#main" class="skip">Saltar al contenido principal</a>
-<main id="main" tabindex="-1">
-<h1>Restaurar V2 y V3 juntos · piloto experimental</h1>
-<p class="notice"><strong>No modifica Hear 2.0.</strong> Esta opción solo sirve si ya existen
-un catálogo V3 y una copia histórica V2 guardados en este navegador. No reproduce audio ni aplica
+<header class="app-topbar">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal">
+  <a href="../">Inicio</a>
+  <a href="../hear3-exam/">Examen</a>
+  <a href="../hear3-eq-editor/">Mi ecualizador</a>
+  <a href="../hear3-library/">Historial</a>
+  <a href="../#ajustes">Ajustes</a>
+ </nav>
+</header>
+<main id="main" class="app-page" tabindex="-1">
+<h1>Restaurar respaldos completos</h1>
+<p class="notice"><strong>Restauración avanzada, con confirmación.</strong> Esta función requiere un catálogo actual y un archivo de historial antiguo previamente conservado. No reproduce audio ni aplica
 ecualización. Las restauraciones en dos claves <strong>NO son atómicas</strong>; un corte puede
 exigir volver a restaurar manualmente ambos archivos.</p>
 <p>Antes de reemplazar, conservarás <strong>dos respaldos del estado anterior</strong> fuera del
@@ -68,11 +78,11 @@ No se ha iniciado ninguna restauración.</p>
 El diario bloquea restauraciones repetidas y permite detectar el estado tras recargar,
 pero <strong>no repara automáticamente datos parciales</strong>. Usa entonces los dos respaldos
 anteriores desde los importadores independientes del
-<a href="../tests/fixtures/hear3-catalog-pilot.html">catálogo V3/V2</a>,
+<a href="../hear3-library/#datos-anteriores">historial</a>,
 comprueba ambos y vuelve a esta pantalla para reconocer la recuperación.</p>
 </section>
 <p id="error" data-testid="error" role="alert"></p>
-<p><a href="../hear3-preview/">Volver a Hear 3.0 experimental</a></p>
+<p><a href="../">Volver al inicio</a></p>
 </main>
 <script type="module">
 import {createHear3CatalogStore} from '../src/hear3/catalog-backup-store.mjs';
