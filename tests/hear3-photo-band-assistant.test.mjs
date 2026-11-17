@@ -22,7 +22,7 @@ test('D-044: invalid or ambiguous photo candidates require manual verification',
  const invalid=[
   '', '55, 100, 200', '80Hz', '1000Hz 500Hz',
   '100Hz 100Hz', '100Hz 100000Hz', '0Hz 200Hz',
-  '+4 dB -3 dB 2 dB', '20Hz 21Hz 100dB',
+  '+4 dB -3 dB 2 dB',
   'x'.repeat(12001),
  ];
  for(const text of invalid)assert.throws(()=>proposeHear3PhotoBandFrequencies(text),undefined,text.slice(0,60));
@@ -43,4 +43,10 @@ test('D-044: full previously declared EQ layouts may be recognized without unit 
  assert.equal(car.hardwareVerified,false);
  assert.equal(car.requiresUserConfirmation,true);
  assert.equal(headphones.frequencies.length,10);
+});
+
+test('photo reading ignores dB gain labels rather than treating them as frequencies',()=>{
+ const result=proposeHear3PhotoBandFrequencies('20Hz 21Hz 100dB');
+ assert.deepEqual(result.frequencies,[20,21]);
+ assert.equal(result.requiresUserConfirmation,true);
 });
