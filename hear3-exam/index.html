@@ -71,9 +71,38 @@ input,select{accent-color:#70cfff}
 Para detener audio iniciado, pulsa Escape.</p>
 <p id="audio-preflight" data-testid="audio-preflight" role="status">
 Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automáticamente.</p>
+<section aria-labelledby="layout-heading">
+<h2 id="layout-heading">0. Configuración del equipo y sus bandas</h2>
+<p>Elige las frecuencias reales de tu EQ gráfico; los presets son nominales y no detectan tu hardware.
+Mantén el volumen físico bajo. Puedes utilizar entre 2 y 31 bandas sin atribuirles equivalencias físicas.</p>
+<label for="archive-category">Categoría del equipo (no verificada automáticamente)</label>
+<select id="archive-category" data-testid="archive-category">
+<option value="headphones">Auriculares</option>
+<option value="speaker">Parlantes</option>
+<option value="car">Sistema de automóvil</option>
+<option value="application">Aplicación</option>
+<option value="interface">Interfaz de audio</option>
+</select>
+<label for="layout-choice">Distribución gráfica</label>
+<select id="layout-choice" data-testid="layout-choice">
+<option value="4">4 bandas nominales</option>
+<option value="5" selected>5 bandas nominales</option>
+<option value="7">7 bandas nominales</option>
+<option value="10">10 bandas nominales</option>
+<option value="15">15 bandas nominales</option>
+<option value="31">31 bandas nominales</option>
+<option value="custom">Personalizada · 2 a 31 bandas</option>
+</select>
+<label for="layout-custom">Frecuencias personalizadas en Hz, ordenadas y separadas por comas; punto decimal</label>
+<input type="text" id="layout-custom" data-testid="layout-custom" autocomplete="off"
+ placeholder="80, 160, 315, 630, 1250, 2500" maxlength="360" disabled>
+<button type="button" id="layout-apply" data-testid="layout-apply">Confirmar las bandas del EQ</button>
+<p id="layout-status" data-testid="layout-status" role="status" aria-live="polite">
+Distribución inicial: 5 bandas declaradas, de 125 a 2000 Hz. No verificada físicamente.</p>
+</section>
 <section aria-labelledby="sweep-heading">
 <h2 id="sweep-heading">1. Exploración de frecuencias</h2>
-<p>Recorrido 125–2.000 Hz · máximo 20 s · −60 dBFS · ambos canales.
+<p id="sweep-description" data-testid="sweep-description">Recorrido 125–2.000 Hz · máximo 20 s · −60 dBFS · ambos canales.
  Las respuestas durante el barrido son informativas, no umbrales.</p>
 <p id="sweep-status" role="status" data-testid="sweep-status">Sin iniciar</p>
 <div class="sweep-readouts" aria-label="Indicadores técnicos de barrido">
@@ -205,14 +234,7 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 <label for="archive-profile">Nombre del perfil de prueba</label>
 <input id="archive-profile" data-testid="archive-profile" type="text" maxlength="120" value="Mi perfil experimental"
  autocomplete="off">
-<label for="archive-category">Categoría del equipo (no verificada automáticamente)</label>
-<select id="archive-category" data-testid="archive-category">
-<option value="headphones">Auriculares</option>
-<option value="speaker">Parlantes</option>
-<option value="car">Sistema de automóvil</option>
-<option value="application">Aplicación</option>
-<option value="interface">Interfaz de audio</option>
-</select>
+
 <label><input type="checkbox" id="archive-eq-optin" data-testid="archive-eq-optin">
  Guardar también el EQ matemático provisional, sin calibración ni aplicación automática</label>
 <div class="controls">
@@ -246,6 +268,7 @@ import {previewHear3EqControlTransfer}
 import {createHear3ContextualToneComparison,planHear3ContradictionComparison}
  from '../src/hear3/contextual-tone-comparison.mjs';
 
+import {resolveHear3GraphicBandLayout} from '../src/hear3/eq-band-layouts.mjs';
 const $=id=>document.getElementById(id);
 function setLiveText(id,value){
  const node=$(id),text=String(value);
@@ -259,8 +282,8 @@ $('audio-preflight').textContent=audioReady
   audioPreflight.missingEssential.join(', ')+
   '). Las pruebas sonoras permanecen desactivadas; puedes revisar y gestionar datos locales cuando existan.';
 
-const bands=[125,250,500,1000,2000].map(f=>({id:'band-'+f,frequencyHz:f}));
-const sweepPlan=createSweepPlan({minHz:125,maxHz:2000,durationSeconds:20});
+let bands=resolveHear3GraphicBandLayout({preset:'5'});
+let sweepPlan=createSweepPlan({minHz:125,maxHz:2000,durationSeconds:20});
 const levelRange={minDbfs:-80,maxDbfs:-42};
 const sweepRunner=createSweepAudioRunner({onEnded:render,onInterrupted:render});
 const profileId='hear3-integrated-pilot';
@@ -272,6 +295,26 @@ let archiveTransfer=null,archiveMessage='Primero termina el examen de tonos. No 
 let exam=null,planning=false,sweepStarting=false;
 let eqDraft=null,eqDigitalModel=null,eqDigitalModelError=null,renderedEq=undefined;
 let eqTransferReview=null,renderedTransfer=undefined;
+function applyBandLayout(){
+ const status=sweepRunner.snapshot();
+ if(exam||sweepStarting||status.status==='playing'||sweepRunner.lastResult())
+  throw Error('La distribución no puede cambiar después de comenzar el barrido. Conserva el plan actual.');
+ const nextBands=resolveHear3GraphicBandLayout({
+  preset:$('layout-choice').value,
+  customFrequencies:$('layout-custom').value,
+ });
+ const nextSweep=createSweepPlan({
+  minHz:nextBands[0].frequencyHz,
+  maxHz:nextBands[nextBands.length-1].frequencyHz,
+  durationSeconds:20,
+ });
+ bands=nextBands;sweepPlan=nextSweep;
+ $('sweep-description').textContent='Recorrido '+nextSweep.minHz+'–'+nextSweep.maxHz+
+  ' Hz · máximo 20 s · −60 dBFS · ambos canales. Las respuestas son informativas, no umbrales.';
+ $('layout-status').textContent='Distribución confirmada: '+bands.length+
+  ' bandas entre '+nextSweep.minHz+' y '+nextSweep.maxHz+
+  ' Hz, declaradas por ti y sin verificación física.';
+}
 function updateEqDraft(){
  eqDraft=null;eqDigitalModel=null;eqDigitalModelError=null;
  eqTransferReview=null;renderedTransfer=undefined;
@@ -401,6 +444,10 @@ function render(){
   Math.ceil(Math.max(0,s.plan.durationSeconds-s.elapsedSeconds))+' s':'—';
  $('sweep-count').textContent='Observaciones informativas: '+
   (s.status==='playing'?s.reports.length:prev?.reports?.length??0);
+ const editableLayout=!exam&&!sweepStarting&&s.status!=='playing'&&!prev;
+ setEnabled('layout-apply',editableLayout);
+ $('layout-choice').disabled=!editableLayout;
+ $('layout-custom').disabled=!editableLayout||$('layout-choice').value!=='custom';
  setEnabled('sweep-start',audioReady&&!exam&&!sweepStarting&&s.status!=='playing');
  setEnabled('sweep-stop',s.status==='playing'||sweepStarting);
  setEnabled('sweep-heard',s.status==='playing');
@@ -486,6 +533,8 @@ async function run(action){
   progressReader.invalidate();render();
  }
 }
+$('layout-choice').addEventListener('change',()=>render());
+$('layout-apply').addEventListener('click',()=>run(()=>applyBandLayout()));
 $('sweep-start').addEventListener('click',()=>run(async()=>{
  if(exam)throw Error('El examen de tonos ya se inició.');
  if(!audioReady)throw Error('El navegador no cumple los mínimos de Web Audio para reproducir tonos.');
@@ -580,6 +629,8 @@ $('recover-exam').addEventListener('click',()=>run(async()=>{
  try{
   await candidate.recover({userInitiated:true});
   exam=candidate;
+  $('layout-status').textContent='Examen recuperado con '+candidate.snapshot().totalBands+
+   ' bandas. Se conservó el plan original sin reprogramar el barrido.';
   $('route-verified').checked=false;
   updateEqDraft();
  }catch(error){await candidate.dispose();throw error;}
