@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const html = fs.readFileSync('index.html', 'utf8');
+const html = fs.readFileSync('hear2/index.html', 'utf8');
 const source = fs.readFileSync('src/js/01-core.js', 'utf8');
 const audio = fs.readFileSync('src/js/05-audio-player.js', 'utf8');
 const translations = JSON.parse(fs.readFileSync('src/translations.json', 'utf8'));
