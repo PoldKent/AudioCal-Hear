@@ -1,63 +1,60 @@
 const {test,expect}=require('@playwright/test');
+const HOME='/';
+const CACHE='audiocal-hear3-prototype-static-v2';
 
 async function supported(page){
  return page.evaluate(()=>Boolean(window.isSecureContext&&navigator.serviceWorker&&window.caches));
 }
-test('D-060 offline opt-in never registers a worker or plays audio merely on visiting preview',async({page})=>{
- await page.goto('/hear3-preview/');
+test('offline support does not register workers or start audio by entering the application',async({page})=>{
+ await page.goto(HOME);
  await expect(page.getByTestId('offline-status')).toBeVisible();
  const active=await page.evaluate(async()=>{
   const reg=await navigator.serviceWorker?.getRegistration?.();
   return Boolean(reg?.active);
  });
  expect(active).toBe(false);
- await expect(page.getByRole('heading',{name:'Acceso sin conexión · Opcional'})).toBeVisible();
- const hasAudio=await page.evaluate(()=>Boolean(window.hear3IntegratedPilot));
- expect(hasAudio).toBe(false);
+ await expect(page.getByRole('heading',{name:'Uso sin conexión'})).toBeVisible();
+ expect(await page.evaluate(()=>Boolean(window.hear3IntegratedPilot))).toBe(false);
 });
 
 async function installAndVerify(page){
- await page.goto('/hear3-preview/');
- if(!await supported(page))test.skip(true,'Service Worker or Cache Storage unavailable in this browser');
+ await page.goto(HOME);
+ if(!await supported(page))test.skip(true,'Service Worker or Cache Storage unavailable');
  await page.getByTestId('offline-enable').click();
  await expect(page.getByTestId('offline-status')).toContainText('Recursos estáticos verificados',{timeout:25000});
  await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller),null,{timeout:10000});
- const cached=await page.evaluate(async()=>{
-  const cache=await caches.open('audiocal-hear3-prototype-static-v1');
-  return Boolean(await cache.match(new URL('/hear3-preview/',location.origin)))&&
-    Boolean(await cache.match(new URL('/tests/fixtures/hear3-integrated-exam-pilot.html',location.origin)))&&
-    Boolean(await cache.match(new URL('/hear3-exam/',location.origin)))&&
-    Boolean(await cache.match(new URL('/hear3-library/',location.origin)));
- });
+ const cached=await page.evaluate(async cacheName=>{
+  const cache=await caches.open(cacheName);
+  const required=['/index.html','/src/hear3/app-shell.css','/src/hear3/app-theme.mjs',
+   '/hear3-exam/','/hear3-library/','/hear3-eq-editor/'];
+  for(const path of required){
+   if(!await cache.match(new URL(path,location.origin)))return false;
+  }
+  return true;
+ },CACHE);
  expect(cached).toBe(true);
 }
-test('D-060 explicit opt-in verifies the static resource cache in supported browsers',async({page})=>{
+test('offline installation is opt-in and verifies the full user-facing application',async({page})=>{
  test.setTimeout(60000);
  await installAndVerify(page);
 });
-test('D-060 Chromium emulation reopens cached pilots when navigation is offline',async({page})=>{
- test.setTimeout(60000);
- // CI Playwright WebKit reports an INTERNAL browser navigation error when
- // BrowserContext.setOffline(true) is used even after a verified install.
- // Do not treat this as a successful iOS offline test: physical Safari
- // navigation remains an explicit unsatisfied D-063 hardware requirement.
+test('Chromium can reopen root, exam, results and editor without network after opt-in',async({page})=>{
+ test.setTimeout(75000);
  if(test.info().project.name==='iphone-webkit')
-  test.skip(true,'WebKit offline navigation simulator crashes; verify on real Safari/iOS');
+  test.skip(true,'Offline WebKit simulator navigation is unstable; physical Safari remains unverified');
  await installAndVerify(page);
  await page.context().setOffline(true);
  try{
-  await page.goto('/hear3-preview/');
-  await expect(page.getByRole('heading',{level:1})).toContainText('La próxima forma de');
-  await expect(page.getByTestId('offline-enable')).toBeVisible();
+  await page.goto(HOME);
+  await expect(page.getByRole('heading',{level:1})).toContainText('Escucha. Ajusta.');
   await page.goto('/hear3-exam/');
-  await expect(page.getByRole('heading',{level:1})).toContainText('examen de tonos');
+  await expect(page.getByRole('heading',{level:1})).toContainText('Examen de tonos');
   await expect(page.getByTestId('sweep-start')).toBeEnabled();
-  await page.goto('/hear3-library/');
-  await expect(page.getByRole('heading',{level:1})).toContainText('Mi historial');
-  await page.goto('/tests/fixtures/hear3-integrated-exam-pilot.html');
-  await expect(page.locator('main h1')).toContainText('barrido → tonos');
   await expect(page.getByTestId('tone-next')).toBeDisabled();
-  expect(await page.evaluate(()=>window.hear3IntegratedPilot?.snapshot())).toBeNull();
+  await page.goto('/hear3-library/');
+  await expect(page.getByRole('heading',{level:1})).toContainText('Mis resultados');
+  await page.goto('/hear3-eq-editor/');
+  await expect(page.getByRole('heading',{level:1})).toContainText('Mi ecualizador');
   await page.goto('/hear3-privacy/');
   await expect(page.getByTestId('inspect')).toBeEnabled();
   await page.goto('/hear3-diagnostics/');
@@ -68,22 +65,22 @@ test('D-060 Chromium emulation reopens cached pilots when navigation is offline'
   await page.context().setOffline(false);
  }
 });
-test('D-060 explicit removal never deletes another cache or stored Hear profiles',async({page})=>{
+test('removing app resources does not erase another cache or saved user data',async({page})=>{
  test.setTimeout(60000);
- await page.goto('/hear3-preview/');
- if(!await supported(page))test.skip(true,'Offline service workers unavailable in this environment');
+ await page.goto(HOME);
+ if(!await supported(page))test.skip(true,'Service Worker or Cache Storage unavailable');
  await page.evaluate(async()=>{
   const other=await caches.open('unrelated-existing-cache');
   await other.put('/other-resource',new Response('unrelated data'));
-  localStorage.setItem('audiocal-hear-profiles-v1','DO_NOT_DELETE_V2');
+  localStorage.setItem('audiocal-hear-profiles-v1','PRESERVE_ORIGINAL');
  });
  await page.getByTestId('offline-enable').click();
  await expect(page.getByTestId('offline-status')).toContainText('Recursos estáticos verificados',{timeout:25000});
  await page.getByTestId('offline-disable').click();
- await expect(page.getByTestId('offline-status')).toContainText('Se solicitó retirar los recursos offline',{timeout:15000});
+ await expect(page.getByTestId('offline-status')).toContainText('Se solicitó retirar los recursos sin conexión',{timeout:15000});
  const keys=await page.evaluate(()=>caches.keys());
  expect(keys).toContain('unrelated-existing-cache');
- expect(keys).not.toContain('audiocal-hear3-prototype-static-v1');
+ expect(keys).not.toContain(CACHE);
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1')))
-  .toBe('DO_NOT_DELETE_V2');
+  .toBe('PRESERVE_ORIGINAL');
 });
