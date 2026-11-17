@@ -283,6 +283,7 @@ $('audio-preflight').textContent=audioReady
   '). Las pruebas sonoras permanecen desactivadas; puedes revisar y gestionar datos locales cuando existan.';
 
 let bands=resolveHear3GraphicBandLayout({preset:'5'});
+let layoutDirty=false;
 let sweepPlan=createSweepPlan({minHz:125,maxHz:2000,durationSeconds:20});
 const levelRange={minDbfs:-80,maxDbfs:-42};
 const sweepRunner=createSweepAudioRunner({onEnded:render,onInterrupted:render});
@@ -308,7 +309,7 @@ function applyBandLayout(){
   maxHz:nextBands[nextBands.length-1].frequencyHz,
   durationSeconds:20,
  });
- bands=nextBands;sweepPlan=nextSweep;
+ bands=nextBands;sweepPlan=nextSweep;layoutDirty=false;
  $('sweep-description').textContent='Recorrido '+nextSweep.minHz+'–'+nextSweep.maxHz+
   ' Hz · máximo 20 s · −60 dBFS · ambos canales. Las respuestas son informativas, no umbrales.';
  $('layout-status').textContent='Distribución confirmada: '+bands.length+
@@ -448,7 +449,7 @@ function render(){
  setEnabled('layout-apply',editableLayout);
  $('layout-choice').disabled=!editableLayout;
  $('layout-custom').disabled=!editableLayout||$('layout-choice').value!=='custom';
- setEnabled('sweep-start',audioReady&&!exam&&!sweepStarting&&s.status!=='playing');
+ setEnabled('sweep-start',audioReady&&!exam&&!sweepStarting&&!layoutDirty&&s.status!=='playing');
  setEnabled('sweep-stop',s.status==='playing'||sweepStarting);
  setEnabled('sweep-heard',s.status==='playing');
  setEnabled('sweep-not',s.status==='playing');
@@ -533,7 +534,13 @@ async function run(action){
   progressReader.invalidate();render();
  }
 }
-$('layout-choice').addEventListener('change',()=>render());
+function markBandLayoutUnconfirmed(){
+ layoutDirty=true;
+ $('layout-status').textContent='Cambios sin confirmar: revisa y confirma las frecuencias antes de iniciar otro sonido.';
+ render();
+}
+$('layout-choice').addEventListener('change',markBandLayoutUnconfirmed);
+$('layout-custom').addEventListener('input',markBandLayoutUnconfirmed);
 $('layout-apply').addEventListener('click',()=>run(()=>applyBandLayout()));
 $('sweep-start').addEventListener('click',()=>run(async()=>{
  if(exam)throw Error('El examen de tonos ya se inició.');
