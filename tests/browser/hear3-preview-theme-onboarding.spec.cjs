@@ -11,9 +11,9 @@ test('appearance follows the operating system unless explicitly overridden',asyn
  await page.getByTestId('hear3-theme-choice').selectOption('light');
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','light');
  expect(await page.evaluate(()=>localStorage.getItem('hear3:ui-theme:v1'))).toBe('light');
- await page.getByRole('link',{name:'Examen'}).click();
+ await page.getByRole('link',{name:'Examen',exact:true}).click();
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','light');
- await page.getByRole('link',{name:'Mi ecualizador'}).click();
+ await page.getByRole('link',{name:'Mi ecualizador',exact:true}).click();
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','light');
  await page.getByRole('link',{name:'Inicio'}).click();
  await expect(page.getByTestId('hear3-theme-choice')).toHaveValue('light');
