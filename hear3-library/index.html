@@ -91,35 +91,35 @@ Permitir borrar los registros dependientes, solo después de verlos y confirmar<
 <details class="app-card" id="datos-anteriores">
 <summary>Importar datos de una instalación anterior (opcional)</summary>
 <h2>Transferir datos de una instalación anterior</h2>
-<p class="warning">Primero revisa los perfiles antiguos y exporta el archivo completo de respaldo V2. La migración solo trasladará equipos y frecuencias; las mediciones y configuraciones anteriores se conservan en el archivo, sin transformarse en resultados V3.</p>
-<label for="legacy-source">Origen de los perfiles Hear 2.0</label>
+<p class="warning">Primero revisa los perfiles antiguos y exporta el archivo completo de respaldo histórico. La migración solo trasladará equipos y frecuencias; las mediciones y configuraciones anteriores se conservan en el archivo, sin transformarse en resultados actual.</p>
+<label for="legacy-source">Origen de los perfiles la instalación anterior</label>
 <select id="legacy-source" data-testid="legacy-source">
-<option value="browser">Datos V2 existentes en este navegador</option>
-<option value="file">Archivo JSON V2 exportado previamente</option>
+<option value="browser">Datos histórico existentes en este navegador</option>
+<option value="file">Archivo JSON histórico exportado previamente</option>
 </select>
-<label for="legacy-file">Archivo oficial Hear 2.0 o matriz JSON de perfiles V2</label>
+<label for="legacy-file">Archivo oficial la instalación anterior o matriz JSON de perfiles histórico</label>
 <input id="legacy-file" data-testid="legacy-file" type="file" accept=".json,application/json">
-<p>El archivo se revisa únicamente aquí: nunca reemplaza los datos V2 locales.
+<p>El archivo se revisa únicamente aquí: nunca reemplaza los datos histórico locales.
  Si confirmas la migración, se importarán solo dispositivos y frecuencias verificadas;
  el archivo original completo debe conservarse aparte.</p>
-<button type="button" id="legacy-preview" data-testid="legacy-preview">Revisar perfiles Hear 2.0</button>
-<button type="button" id="legacy-export" data-testid="legacy-export" disabled>Exportar archivo original V2</button>
+<button type="button" id="legacy-preview" data-testid="legacy-preview">Revisar perfiles la instalación anterior</button>
+<button type="button" id="legacy-export" data-testid="legacy-export" disabled>Exportar archivo original histórico</button>
 <button type="button" id="legacy-import" data-testid="legacy-import" disabled>Importar solo metadatos compatibles</button>
-<h3>Conservar íntegro el historial V2, separado de resultados V3</h3>
-<p>Esta operación es adicional y opcional. Se preserva <strong>todo el texto V2 original
+<h3>Conservar íntegro el historial histórico, separado de resultados actual</h3>
+<p>Esta operación es adicional y opcional. Se preserva <strong>todo el texto histórico original
  como archivo histórico opaco</strong>, incluidos medidas, controles y campos
  desconocidos; no equivale a migrar umbrales clínicos ni ganancias EQ. Exporta
- primero una copia independiente. El respaldo de catálogo V3 por sí solo no
- incluye este historial: descarga también el respaldo V2 conservado.</p>
+ primero una copia independiente. El respaldo de catálogo actual por sí solo no
+ incluye este historial: descarga también el respaldo histórico conservado.</p>
 <button type="button" id="legacy-vault-export" data-testid="legacy-vault-export" disabled>
-Descargar respaldo portátil íntegro V2 para otra instalación</button>
+Descargar respaldo portátil íntegro histórico para otra instalación</button>
 <button type="button" id="legacy-vault-save" data-testid="legacy-vault-save" disabled>
-Guardar historial íntegro V2 en archivo local separado de V3</button>
+Guardar historial íntegro histórico en archivo local separado de actual</button>
 <button type="button" id="legacy-vault-stored-export" data-testid="legacy-vault-stored-export" disabled>
-Volver a descargar historial V2 previamente conservado</button>
+Volver a descargar historial histórico previamente conservado</button>
 <p id="legacy-vault-status" data-testid="legacy-vault-status" role="status">
-Todavía no se ha guardado ningún historial V2 completo en Hear3.</p>
-<p id="legacy-description" data-testid="legacy-description" role="status">Aún no se han revisado los datos de Hear 2.0.</p>
+Todavía no se ha guardado ningún historial histórico completo en AudioCal Hear.</p>
+<p id="legacy-description" data-testid="legacy-description" role="status">Aún no se han revisado los datos de la instalación anterior.</p>
 
 </details>
 <p id="error" data-testid="error" role="alert"></p>
