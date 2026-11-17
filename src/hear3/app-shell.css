@@ -116,6 +116,15 @@ a{color:var(--app-accent)}
  .app-nav{width:100%;margin-left:0;justify-content:space-between;gap:0}
  .app-nav a{font-size:.85rem;padding:.45rem .38rem}
 }
+/* The waveform is an illustration of the programmed digital frequency only. */
+.hear-wave{display:block;width:100%;max-width:620px;height:auto;min-height:70px;
+ margin:.55rem auto;background:var(--app-panel);
+ border:1px solid var(--app-line);border-radius:.8rem;padding:.25rem;
+ opacity:.65;overflow:visible}
+.hear-wave.hear-wave-active{opacity:1}
+.hear-wave.hear-wave-active path{animation:hear-wave-pulse 1.4s ease-in-out infinite alternate}
+@keyframes hear-wave-pulse{from{opacity:.62}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.hear-wave.hear-wave-active path{animation:none}}
 /* Single test-to-result journey: one legible, printable EQ chart. */
 .app-result-card{border:1px solid var(--app-line);border-radius:1rem;
  background:var(--app-panel-hi);padding:clamp(.85rem,2.5vw,1.45rem);margin:1.15rem 0}
