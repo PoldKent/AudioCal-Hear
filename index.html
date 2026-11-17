@@ -179,7 +179,7 @@ disable.addEventListener('click',async()=>{
  disable.disabled=true;status.textContent='Retirando recursos sin conexión…';
  try{const result=await disableHear3Offline();
  status.textContent=result.complete
- ?'Se solicitó retirar los recursos offline de Hear 3.0. '+result.warning
+ ?'Se solicitó retirar los recursos sin conexión. '+result.warning
  :'No se pudo verificar la eliminación completa de los recursos.';
  }catch(error){status.textContent='No se pudieron retirar todos los recursos: '+(error?.message??String(error));}
  finally{disable.disabled=!supported;}
