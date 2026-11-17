@@ -545,6 +545,10 @@ $('layout-apply').addEventListener('click',()=>run(()=>applyBandLayout()));
 $('sweep-start').addEventListener('click',()=>run(async()=>{
  if(exam)throw Error('El examen de tonos ya se inició.');
  if(!audioReady)throw Error('El navegador no cumple los mínimos de Web Audio para reproducir tonos.');
+ // A user must recover or explicitly delete an older checkpoint first:
+ // a new plan must never silently overwrite an unfinished exam.
+ if(progressStore.load().checkpoint)
+  throw Error('Hay un examen guardado. Recupéralo o descarga una copia y elimínalo con confirmación antes de iniciar otro.');
  sweepStarting=true;render();
  try{await sweepRunner.start({
   userInitiated:true,plan:sweepPlan,digitalLevelDbfs:-60,
