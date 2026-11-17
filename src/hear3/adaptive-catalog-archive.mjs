@@ -1,6 +1,7 @@
 /**
  * Hear 3.0 P0 — opt-in archiving of CONFIRMED subjective tone responses.
- * Creates new device/profile/result records in the local V3 catalog.
+ * Appends confirmed results to a selected compatible existing profile, or
+ * creates a new profile/device only with explicit user selection.
  * Defaults to no EQ. An explicitly consented, bounded numerical EQ can
  * be stored as PROVISIONAL, never as calibrated, deployable or clinical.
  * Does not modify Hear 2.0 storage keys or downloaded backup files.
@@ -97,7 +98,7 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
  function discard(){proposed=null;}
  function preview({
   deviceId,profileId,resultId,deviceName,profileName,category='headphones',
-  includeProvisionalEq=false,
+  includeProvisionalEq=false,reuseDeviceId=null,reuseProfileId=null,
  }={}){
   check(typeof includeProvisionalEq==='boolean','Provisional EQ opt-in must be explicit');
   proposed=null;
@@ -108,6 +109,28 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
   const time=now();
   check(Number.isSafeInteger(time)&&time>=0,'Invalid archive timestamp');
   const current=catalogStore.load();
+  check(!(reuseDeviceId!==null&&reuseProfileId!==null),
+   'Choose either an existing device or an existing profile');
+  const reusedProfile=reuseProfileId===null?null:
+   current.catalog.profiles.find(p=>p.id===reuseProfileId);
+  check(reuseProfileId===null||reusedProfile,
+   'Selected saved profile no longer exists');
+  const existingDeviceId=reusedProfile?.deviceId??reuseDeviceId;
+  const reusedDevice=existingDeviceId===null?null:
+   current.catalog.devices.find(d=>d.id===existingDeviceId);
+  check(existingDeviceId===null||reusedDevice,
+   'Selected saved device no longer exists');
+  check(!reusedDevice||reusedDevice.category===category,
+   'Stored device category differs from the current exam; review it');
+  if(reusedProfile){
+   const savedBands=reusedProfile.graphicEq.bands;
+   check(savedBands.length===evidence.eqBands.length&&
+    savedBands.every((b,i)=>b.id===evidence.eqBands[i].id&&
+     b.frequencyHz===evidence.eqBands[i].frequencyHz),
+    'Existing profile EQ frequencies or identities differ from the completed test');
+  }
+  const targetDeviceId=reusedDevice?.id??deviceId;
+  const targetProfileId=reusedProfile?.id??profileId;
   const eq=includeProvisionalEq?calculateHear3BoundedJointEq({
    examSnapshot:evidence.status,sessionSnapshot:evidence.session,
    deviceCategory:category,
@@ -120,21 +143,27 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
   const originalEq=eq?clone(eq.originalEq):[];
   const next=validateHear3Catalog({
    ...current.catalog,
-   devices:[...current.catalog.devices,{id:deviceId,name:deviceName,category}],
-   profiles:[...current.catalog.profiles,{id:profileId,deviceId,name:profileName,
-    graphicEq:{type:'graphic',deviceId,bands:evidence.eqBands}}],
+   devices:reusedDevice?current.catalog.devices:
+    [...current.catalog.devices,{id:deviceId,name:deviceName,category}],
+   profiles:reusedProfile?current.catalog.profiles:
+    [...current.catalog.profiles,{id:profileId,deviceId:targetDeviceId,
+     name:profileName,graphicEq:{type:'graphic',
+      deviceId:targetDeviceId,bands:evidence.eqBands}}],
    results:[...current.catalog.results,{
-    id:resultId,profileId,capturedAt:time,
+    id:resultId,profileId:targetProfileId,capturedAt:time,
     status:eq?'provisional':'inconclusive',provenance:'experimental-tone-test',
     originalEq,currentEq,observations:evidence.observations,editHistory:[],
    }],
-   activeProfileId:current.catalog.activeProfileId??profileId,
+   activeProfileId:current.catalog.activeProfileId??targetProfileId,
   });
   proposed={next,catalogAtPreview:catalogToken(current),
    examAtPreview:examToken(evidence),revision:current.revision,
    includeProvisionalEq};
   return Object.freeze({
-   deviceId,profileId,resultId,deviceName,profileName,category,
+   deviceId:targetDeviceId,profileId:targetProfileId,resultId,
+   deviceName:reusedDevice?.name??deviceName,
+   profileName:reusedProfile?.name??profileName,category,
+   reusedDevice:Boolean(reusedDevice),reusedProfile:Boolean(reusedProfile),
    subjectiveResponses:evidence.observations.length,
    bands:evidence.eqBands.length,
    status:eq?'provisional':'inconclusive',
