@@ -6,14 +6,15 @@
 
 **AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite escuchar tonos a diferentes niveles digitales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
 
-**[Abrir Hear](https://poldkent.github.io/AudioCal-Hear/)** · **[Vista previa pública Hear 3.0](https://poldkent.github.io/AudioCal-Hear/hear3-preview/)** · [Decisiones de producto](docs/HEAR-V2-PRODUCT-DECISIONS.md) · [Hoja de ruta](docs/HEAR-V2-ROADMAP.md) · [Historial](CHANGELOG.es.md)
+**[Abrir Hear 3.0 beta](https://poldkent.github.io/AudioCal-Hear/)** · **[Abrir Hear 2.0 anterior](https://poldkent.github.io/AudioCal-Hear/hear2/)** · [Decisiones de producto](docs/HEAR-V2-PRODUCT-DECISIONS.md) · [Hoja de ruta](docs/HEAR-V2-ROADMAP.md) · [Historial](CHANGELOG.es.md)
 
-> **Código actual: v1.11.0 · versión preliminar Hear 2.0 · noviembre de 2026.** La aplicación publicada en GitHub Pages es un asistente experimental, no una audiometría clínica ni un instrumento acústico calibrado. Las pruebas automatizadas no verifican rutas Bluetooth, niveles físicos de sonido ni respuesta de equipos reales.
+> **Web principal: Hear 3.0 beta (`3.0.0-beta.1`), no lanzamiento estable ni calibración acústica certificada.** La dirección oficial abre el entorno experimental Hear 3.0. La versión independiente Hear 2.0 permanece en **[Abrir Hear 2.0 anterior](https://poldkent.github.io/AudioCal-Hear/hear2/)**. Navegar entre ambas no borra ni transforma los datos V2, pero el almacenamiento del navegador no sustituye una copia de seguridad. Exporta por separado V2 y V3 antes de reemplazar o eliminar datos.
 
+### Hear 3.0 como beta principal (noviembre de 2026)
 
-### Vista previa pública experimental de Hear 3.0 (5 de noviembre de 2026)
+[Hear 3.0](https://poldkent.github.io/AudioCal-Hear/) ofrece ahora entrada guiada, un recorrido integrado experimental de barrido y tonos, un EQ matemático provisional y editable opcional, exportación TXT/CSV/JSON/PNG, catálogo V3, conservación íntegra y separada del historial V2, recuperación dual protegida y herramientas locales de privacidad/diagnóstico. **No constituye audiometría clínica, EQ calibrado físicamente ni preset aplicable automáticamente.** Siguen pendientes SPL medido, DSP físico, rutas Bluetooth reales, auditoría con lectores de pantalla y recuperación en equipos físicos. `stableReleaseClaim:false` permanece hasta superar D-063.
 
-La [vista previa Hear 3.0](https://poldkent.github.io/AudioCal-Hear/hear3-preview/) enlaza cuatro pilotos de ingeniería probados de forma independiente: control de tono y recuperación, barrido subjetivo, catálogo/respaldo/historial V3 y visor de historial V2 de solo lectura. **No es aún un examen Hear 3.0 integrado, una medición acústica calibrada ni un lanzamiento estable.** Hear 2.0 continúa siendo la aplicación principal y sus datos V2 no se migran ni borran automáticamente. No se añaden cuentas ni sincronización en la nube. Siguen vigentes las 63 decisiones y el criterio D-063 para publicar estable. Ver [alcance publicado](docs/hear3/14-public-preview-release.md).
+La versión Hear 2.0 se conserva en `hear2/index.html`. `npm run build` genera tanto el inicio beta de `index.html` como la aplicación independiente `hear2/index.html`, y `npm run verify` verifica ambos. Consulta [el protocolo de cambio y reversión](docs/hear3/47-primary-beta-entry-with-hear2-rollback.md).
 
 ## Flujo actual de Hear 2.0 — solo tonos
 
