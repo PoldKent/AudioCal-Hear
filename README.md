@@ -6,7 +6,7 @@
 
 **AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Test your ability to hear tones at different digital levels and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
-**[Open Hear 3.0 beta](https://poldkent.github.io/AudioCal-Hear/)** · **[Open Hear 2.0 legacy](https://poldkent.github.io/AudioCal-Hear/hear2/)** · [Product decisions](docs/HEAR-V2-PRODUCT-DECISIONS.md) · [Roadmap](docs/HEAR-V2-ROADMAP.md) · [Changelog](CHANGELOG.md)
+**[Open Hear 3.0 beta](https://poldkent.github.io/AudioCal-Hear/)** · [Experimental hearing workflow](https://poldkent.github.io/AudioCal-Hear/hear3-exam/) · [My local records and backups](https://poldkent.github.io/AudioCal-Hear/hear3-library/) · **[Open Hear 2.0 legacy](https://poldkent.github.io/AudioCal-Hear/hear2/)** · [Product decisions](docs/HEAR-V2-PRODUCT-DECISIONS.md) · [Roadmap](docs/HEAR-V2-ROADMAP.md) · [Changelog](CHANGELOG.md)
 
 > **Main website: Hear 3.0 beta (`3.0.0-beta.1`) — not a stable/acoustically validated release.** The official URL now opens the experimental Hear 3.0 workspace. The complete standalone Hear 2.0 application remains available at **[Open Hear 2.0 legacy](https://poldkent.github.io/AudioCal-Hear/hear2/)**. Both versions use the same website origin, so browser data are not deleted or converted on navigation, but local browser storage is not a guaranteed backup. Export V2 and V3 independently before replacing or clearing data.
 
