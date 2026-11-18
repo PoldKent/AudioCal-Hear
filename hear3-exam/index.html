@@ -191,6 +191,9 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
   digital programada, no la presión sonora real. Mantén el volumen físico bajo.
   No se reproduce sonido automáticamente.</p>
 </div>
+<details class="hear-advanced-tools" id="hear-advanced-tools" data-testid="hear-advanced-tools">
+ <summary>Configuración y controles avanzados de la prueba</summary>
+ <p class="app-subtle">Solo necesitas esto si quieres cambiar las frecuencias de tu ecualizador, corregir la configuración o consultar las mediciones técnicas.</p>
 <div id="guided-journey" class="app-exam-journey" aria-label="Etapas de mi examen">
  <nav data-journey="nav" class="app-exam-journey-nav" aria-label="Recorrido guiado">
   <a href="#layout-heading" data-journey-stage="prepare" aria-current="step" data-hear-i18n="exam.stage.prepare">1 · Mi equipo</a>
@@ -340,7 +343,8 @@ Estos valores muestran el programa digital, no la frecuencia acústica realmente
 <button type="button" id="tone-finish" data-testid="tone-finish" disabled>Finalizar y ver resumen</button>
 </div>
 </section>
-<section aria-labelledby="eq-heading">
+</details>
+<section id="eq-panel" aria-labelledby="eq-heading" hidden>
 <h2 id="eq-heading" tabindex="-1">4. Tu ecualizador</h2>
 <p class="notice">Las ganancias indicadas son ajustes orientativos derivados de
  tus respuestas subjetivas con señales en dBFS. No miden una pérdida auditiva,
@@ -404,6 +408,8 @@ Finaliza el examen para consultar una curva orientativa.</p>
 <button type="button" id="eq-export" data-testid="eq-export" disabled>
 Descargar mi curva (JSON, sin aplicar al equipo)</button>
 </section>
+<details class="hear-secondary-extras" data-testid="hear-secondary-extras">
+ <summary>Guardar resultados, recuperar pruebas y herramientas avanzadas</summary>
 <section aria-labelledby="archive-heading">
 <h2 id="archive-heading">5. Guardar mi resultado</h2>
 <p>Tu EQ aparece automáticamente al terminar el examen. Puedes copiarlo o descargarlo sin guardarlo. Si decides conservarlo,
@@ -481,6 +487,7 @@ Descargar informe de transferencia (no preset)</button>
 Primero finaliza un examen y selecciona un perfil de controles.</p>
 <div id="transfer-rows" data-testid="transfer-rows" aria-label="Equivalencia provisional de controles"></div>
 </section>
+</details>
 <p id="error" data-testid="error" role="alert"></p>
 <details id="exam-error-help" class="app-result-details app-error-assistant" data-testid="exam-error-help" hidden>
  <summary>Ayuda para resolver este problema</summary>
