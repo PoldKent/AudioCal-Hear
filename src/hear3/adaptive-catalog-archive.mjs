@@ -35,7 +35,13 @@ function evidenceFromExam(exam){
    'Invalid adaptive band count');
  check(Array.isArray(session.observations)&&session.observations.length<=2000,
    'Invalid recorded tone observations');
- const ids=new Set(),toneIds=new Set(),observations=[];
+ check(session.invalidatedToneIds===undefined||
+   Array.isArray(session.invalidatedToneIds),
+   'Invalid audio invalidation record');
+ const invalidated=new Set(session.invalidatedToneIds??[]);
+ check(invalidated.size===(session.invalidatedToneIds??[]).length,
+   'Duplicate audio invalidation record');
+ const ids=new Set(),toneIds=new Set(),observations=[],rawObservations=[];
  let previous=0;
  const eqBands=status.bands.map((band,i)=>{
   check(band&&validId(band.id)&&!ids.has(band.id)&&
@@ -44,7 +50,7 @@ function evidenceFromExam(exam){
    ['inconclusive','bounded-subjective-interval'].includes(band.status),
    'Unverified finished band layout');
   ids.add(band.id);previous=band.frequencyHz;
-  check(Array.isArray(band.observations)&&band.observations.length<=20,
+  check(Array.isArray(band.observations)&&band.observations.length<=40,
    'Invalid band response history');
   const heard=[],misses=[];
   for(const o of band.observations){
@@ -57,8 +63,11 @@ function evidenceFromExam(exam){
     ['left','right','joint'].includes(o.channel)&&
     o.channel===status.channel&&o.provenance==='user-response',
     'Unverified or duplicate subjective tone response');
-   toneIds.add(o.toneId);observations.push(clone(o));
-   (o.response==='heard'?heard:misses).push(o.digitalLevelDbfs);
+   toneIds.add(o.toneId);
+   rawObservations.push(clone(o));
+   observations.push(invalidated.has(o.toneId)?{...clone(o),retired:true}:clone(o));
+   if(!invalidated.has(o.toneId))
+    (o.response==='heard'?heard:misses).push(o.digitalLevelDbfs);
   }
   if(band.status==='bounded-subjective-interval'){
    const lower=misses.length?Math.max(...misses):null;
@@ -74,8 +83,12 @@ function evidenceFromExam(exam){
   return {id:band.id,frequencyHz:band.frequencyHz,
    source:'provisional',verification:'unverified'};
  });
- check(JSON.stringify(session.observations)===JSON.stringify(observations),
+ check(JSON.stringify(session.observations)===JSON.stringify(rawObservations),
   'Recorded Web Audio responses disagree with the adaptive evidence');
+ for(const band of status.bands)
+  if(band.reviewedOnce===true)check(
+   band.observations.some(o=>invalidated.has(o.toneId)),
+   'Reviewed frequency must preserve its retired responses');
  return {status,session,eqBands,observations};
 }
 
@@ -164,7 +177,8 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
    deviceName:reusedDevice?.name??deviceName,
    profileName:reusedProfile?.name??profileName,category,
    reusedDevice:Boolean(reusedDevice),reusedProfile:Boolean(reusedProfile),
-   subjectiveResponses:evidence.observations.length,
+   subjectiveResponses:evidence.observations.filter(o=>o.retired!==true).length,
+   retiredResponses:evidence.observations.filter(o=>o.retired===true).length,
    bands:evidence.eqBands.length,
    status:eq?'provisional':'inconclusive',
    originalEqBands:originalEq.length,currentEqBands:currentEq.length,
