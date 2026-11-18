@@ -188,6 +188,7 @@ export function mountHear3ImmediateEq({root,source,getDraft,categorySelector=nul
     values[i]=n;
     if(Number.isFinite(n)){setBar(bar,n);number.textContent=signed(n)+' dB';}
     else number.textContent='—';
+    bandReset.disabled=busy||n===r.gainDb;
     sync();
     if(review)setText('save-status',resultId
      ?unsaved()?'Tienes ediciones nuevas. Confirma «Guardar mis cambios al EQ».':
