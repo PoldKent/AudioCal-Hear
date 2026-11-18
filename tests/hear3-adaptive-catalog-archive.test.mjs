@@ -275,3 +275,32 @@ test('profile reuse refuses unknown targets, changed device category and mismatc
   reuseProfileId:'mismatched'}),/frequencies or identities differ/);
  assert.equal(f.cat.load().catalog.results.length,1);
 });
+
+test('archiving after a frequency correction marks retired answers and preserves the final EQ',async()=>{
+ const f=fixture();
+ for(let i=0;i<4;i++)await answer(f.exam,'not-heard');
+ const first=f.exam.getSession().observations.map(o=>structuredClone(o));
+ assert.equal(f.exam.snapshot().canReviewPreviousBand,true);
+ f.exam.retakePreviousBand({userConfirmed:true});
+ for(const response of ['heard','not-heard','heard','not-heard','heard'])
+  await answer(f.exam,response);
+ for(let i=0;i<4;i++)await answer(f.exam,'not-heard');
+ assert.equal(f.exam.snapshot().status,'completed');
+ f.exam.finish();
+ const proposed=f.archive.preview({...f.args,includeProvisionalEq:true});
+ assert.equal(proposed.retiredResponses,4);
+ assert.equal(proposed.subjectiveResponses,9);
+ assert.equal(proposed.provisionalEqOptIn,true);
+ const saved=f.archive.commit({userInitiated:true,confirmed:true,confirmProvisionalEq:true});
+ assert.equal(saved.archived,true);
+ const result=f.cat.load().catalog.results[0];
+ assert.equal(result.observations.length,13);
+ assert.equal(result.observations.filter(o=>o.retired===true).length,4);
+ assert.deepEqual(result.observations.slice(0,4).map(({retired,...o})=>o),first);
+ assert.equal(result.originalEq.length,2);
+ assert.equal(result.currentEq.length,2);
+ const reloaded=createHear3CatalogStore({deviceStorage:f.local,tabStorage:null})
+  .load().catalog.results[0];
+ assert.deepEqual(reloaded.observations,result.observations,
+  'round-trip keeps retired markers and exact historical responses');
+});

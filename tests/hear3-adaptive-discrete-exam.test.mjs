@@ -177,3 +177,48 @@ test('asynchronously expired tone pauses the coordinator and requires explicit r
  assert.equal(resumed.nextDigitalLevelDbfs,-60);
  assert.equal(f.exam.snapshot().thresholdsEstimated,0);
 });
+
+test('revising the just-finished frequency preserves historical answers without contamination',async()=>{
+ const f=fixture();
+ while(f.exam.snapshot().currentBandId==='bass')await reply(f,'not-heard');
+ const original=f.controller.getSession().observations;
+ assert.equal(original.length,4);
+ assert.equal(f.exam.snapshot().canReviewPreviousBand,true);
+ assert.equal(f.exam.snapshot().reviewableFrequencyHz,125);
+ assert.throws(()=>f.exam.retakePreviousBand(),/Explicit frequency review confirmation/);
+ assert.equal(f.controller.getSession().invalidatedToneIds.length,0);
+ const beforeSound=f.calls.filter(x=>x[0]==='start').length;
+ const review=f.exam.retakePreviousBand({userConfirmed:true});
+ assert.equal(review.currentBandId,'bass');
+ assert.equal(review.completedBands,0);
+ assert.equal(review.canReviewPreviousBand,false);
+ assert.equal(f.calls.filter(x=>x[0]==='start').length,beforeSound,
+  'review does not initiate audio');
+ assert.deepEqual(f.controller.getSession().observations,original,
+  'original audio responses stay immutable');
+ assert.deepEqual(f.controller.getSession().invalidatedToneIds,
+  original.map(o=>o.toneId));
+ await reply(f,'heard');
+ assert.equal(f.exam.snapshot().nextDigitalLevelDbfs,-66,
+  'old unheard reports do not influence the new adaptive search');
+ for(const response of ['not-heard','heard','not-heard','heard'])await reply(f,response);
+ const updated=f.exam.snapshot();
+ assert.equal(updated.bands[0].status,'bounded-subjective-interval');
+ assert.deepEqual(updated.bands[0].intervalDbfs,
+  {notHeardAtDbfs:-64.5,heardAtDbfs:-63});
+ assert.equal(updated.bands[0].confidence,'medium');
+ assert.equal(updated.bands[0].reviewedOnce,true);
+ assert.equal(updated.bands[0].observations.length,9);
+ assert.equal(updated.currentBandId,'mid');
+ assert.equal(updated.canReviewPreviousBand,false,
+  'a band cannot be reset repeatedly without a cap');
+ assert.equal(updated.authorizedDigitalRangeDbfs.maxDbfs,-42);
+});
+
+test('frequency review is blocked once the next band already has responses',async()=>{
+ const f=fixture();
+ while(f.exam.snapshot().currentBandId==='bass')await reply(f,'not-heard');
+ await reply(f,'heard');
+ assert.equal(f.exam.snapshot().canReviewPreviousBand,false);
+ assert.throws(()=>f.exam.retakePreviousBand({userConfirmed:true}),/cannot be safely reviewed/);
+});

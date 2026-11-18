@@ -19,7 +19,7 @@ const choices=frozen([
 export const HEAR3_CONSOLE_SOURCES=frozen([
  'sweep-start','sweep-stop','sweep-heard','sweep-not','plan','tone-next',
  'tone-stop','tone-heard','tone-not','tone-confirm','tone-skip',
- 'tone-resume','tone-finish','recover-exam',
+ 'tone-resume','tone-finish','tone-review-previous','recover-exam',
  ...choices.map(choice=>choice.id),
 ]);
 export function chooseHear3ListeningConsoleState({enabled=[],eqReady=false}={}){
@@ -78,12 +78,12 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  const action=$('action'),prompt=$('prompt'),modeText=$('mode');
  const frequency=$('frequency'),level=$('level'),answerRow=$('answers');
  const heard=$('heard'),notHeard=$('not'),stop=$('stop');
- const comparison=$('comparison'),skip=$('skip'),recover=$('recover');
+ const comparison=$('comparison'),skip=$('skip'),recover=$('recover'),review=$('review');
  const route=$('route'),routeInput=$('route-input');
  const live=$('live'),wave=$('wave'),wavePath=$('wave-path');
  const progress=$('progress'),remaining=$('remaining');
  if([action,prompt,modeText,frequency,level,answerRow,heard,notHeard,
-  stop,comparison,skip,recover,route,routeInput,live,wave,wavePath,progress,
+  stop,comparison,skip,recover,review,route,routeInput,live,wave,wavePath,progress,
   remaining,source('route-verified')]
   .some(element=>!element))
   throw Error('El panel principal no tiene todos sus controles.');
@@ -193,6 +193,8 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   recover.hidden=view.mode==='recover'||!active('recover-exam')||
    !!view.answers||view.mode==='result';
   recover.disabled=!active('recover-exam');
+  review.hidden=!active('tone-review-previous')||!!view.answers||view.mode==='result';
+  review.disabled=!active('tone-review-previous');
  }
  function clickSource(id){
   if(id==='__view-eq'){
@@ -222,6 +224,7 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  skip.addEventListener('click',()=>clickSource(view.mode==='contradiction'?
   'tone-skip':null));
  recover.addEventListener('click',()=>clickSource('recover-exam'));
+ review.addEventListener('click',()=>clickSource('tone-review-previous'));
  routeInput.addEventListener('change',()=>{
   if(view.mode!=='resume')return;
   const original=source('route-verified');

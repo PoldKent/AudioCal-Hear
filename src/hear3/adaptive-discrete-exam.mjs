@@ -21,6 +21,7 @@ export function createHear3AdaptiveDiscreteExam({
     && typeof sessionController.startTone==='function'
     && typeof sessionController.answer==='function'
     && typeof sessionController.interrupt==='function'
+    && typeof sessionController.invalidateReviewedTones==='function'
     && typeof sessionController.resume==='function', 'Verified audio-session controller required');
   const base=sessionController.getSession();
   check((restoredProgress===null?base?.status==='ready':
@@ -45,7 +46,8 @@ export function createHear3AdaptiveDiscreteExam({
       && b.mustConfirmWithDiscreteTone===true,'Invalid discrete band');
     uniqueIds.add(b.id);
     return {id:b.id,frequencyHz:b.frequencyHz,observations:[],
-      status:'pending',intervalDbfs:null,confidence:'inconclusive',verificationAsked:false};
+      status:'pending',intervalDbfs:null,confidence:'inconclusive',
+      verificationAsked:false,reviewedOnce:false};
   });
   let position=0,sequence=0,phase='ready',nextDbfs=initialDbfs;
   let activeTone=null,requestEpoch=0,contradiction=null;
@@ -107,12 +109,18 @@ export function createHear3AdaptiveDiscreteExam({
       check(b&&b.id===original.id&&b.frequencyHz===original.frequencyHz&&
         ['pending','inconclusive','bounded-subjective-interval'].includes(b.status)&&
         typeof b.verificationAsked==='boolean'&&
+        (b.reviewedOnce===undefined||typeof b.reviewedOnce==='boolean')&&
         ['inconclusive','low','medium'].includes(b.confidence)&&
-        Array.isArray(b.observations)&&b.observations.length<=maxTrialsPerBand,
+        Array.isArray(b.observations)&&
+        b.observations.length<=maxTrialsPerBand*(b.reviewedOnce===true?2:1),
         'Invalid saved band status or observations');
       check((i<p.position)===(b.status!=='pending'),
         'Recovered band coverage is inconsistent');
       const hears=[],misses=[];
+      const invalidated=new Set(sessionController.getSession().invalidatedToneIds);
+      if(b.reviewedOnce===true)check(
+        b.observations.some(o=>invalidated.has(o.toneId)),
+        'Reviewed band has no corresponding invalidated evidence');
       for(const observation of b.observations){
         check(observation&&typeof observation.toneId==='string'&&
           /^hear3-[1-9][0-9]*$/.test(observation.toneId)&&
@@ -128,7 +136,8 @@ export function createHear3AdaptiveDiscreteExam({
           ['heard','not-heard'].includes(observation.response)&&
           observation.provenance==='user-response',
           'Recovered observation is incompatible with authorized audio');
-        (observation.response==='heard'?hears:misses).push(observation.digitalLevelDbfs);
+        if(!invalidated.has(observation.toneId))
+          (observation.response==='heard'?hears:misses).push(observation.digitalLevelDbfs);
         recorded.push(observation);
       }
       if(b.status==='bounded-subjective-interval'){
@@ -137,7 +146,7 @@ export function createHear3AdaptiveDiscreteExam({
         check(lower!==null&&upper!==null&&lower<upper&&
           b.intervalDbfs?.notHeardAtDbfs===lower&&
           b.intervalDbfs?.heardAtDbfs===upper&&
-          b.confidence===(b.observations.length>=4?'medium':'low'),
+          b.confidence===(b.observations.filter(o=>!invalidated.has(o.toneId)).length>=4?'medium':'low'),
           'Recovered interval is not supported by recorded responses');
       }else{
         check(b.intervalDbfs===null&&b.confidence==='inconclusive',
@@ -145,6 +154,9 @@ export function createHear3AdaptiveDiscreteExam({
       }
       if(i>p.position)check(b.observations.length===0&&!b.verificationAsked,
         'Future bands cannot contain recorded observations');
+      // An ordinary in-progress band may contain valid responses while still
+      // pending. A reviewed one may also contain both retired and new answers;
+      // the original evidence is preserved and checked against the session.
     }
     const session=sessionController.getSession();
     check(JSON.stringify(session.observations)===JSON.stringify(recorded),
@@ -180,12 +192,15 @@ export function createHear3AdaptiveDiscreteExam({
   function snapshot() {
     const data=syncControllerStatus();
     const status=data.status==='paused'?'paused':phase;
+    const reviewIndex=reviewableBandIndex();
     return clone({
       status,profileId:base.profileId,channel,
       authorizedDigitalRangeDbfs:limits,
       sweepReportCount:plan.reportCount,
       bands,completedBands:bands.filter(b=>b.status!=='pending').length,
       totalBands:bands.length,currentBandId:bands[position]?.id??null,
+      canReviewPreviousBand:reviewIndex>=0,
+      reviewableFrequencyHz:reviewIndex<0?null:bands[reviewIndex].frequencyHz,
       nextDigitalLevelDbfs:status==='ready'?nextDbfs:null,
       activeToneId:status==='playing'?activeTone?.toneId??null:null,
       needsContradictionConfirmation:status==='awaiting-confirmation',
@@ -196,11 +211,45 @@ export function createHear3AdaptiveDiscreteExam({
     });
   }
 
+  const effectiveObservations=band=>{
+    const retired=new Set(sessionController.getSession().invalidatedToneIds);
+    return band.observations.filter(o=>!retired.has(o.toneId));
+  };
+  function reviewableBandIndex(){
+    if(!['ready','completed'].includes(phase)||position<1)return -1;
+    const session=sessionController.getSession();
+    if(session.status!=='ready'||session.routeCheckRequired)return -1;
+    const current=bands[position];
+    if(current&&(current.status!=='pending'||current.observations.length>0))return -1;
+    const previous=bands[position-1];
+    if(!previous||previous.status==='pending'||previous.reviewedOnce===true)return -1;
+    const valid=effectiveObservations(previous);
+    if(valid.length===0)return -1;
+    const allValid=session.observations.filter(o=>!session.invalidatedToneIds.includes(o.toneId));
+    return valid.every((o,i)=>allValid.at(i-valid.length)?.toneId===o.toneId)
+      ?position-1:-1;
+  }
+  function retakePreviousBand({userConfirmed=false}={}){
+    check(userConfirmed===true,'Explicit frequency review confirmation required');
+    const index=reviewableBandIndex();
+    check(index>=0,'Previous frequency cannot be safely reviewed in this state');
+    const band=bands[index];
+    const ids=effectiveObservations(band).map(o=>o.toneId);
+    // Preserve immutable recorded answers; only remove their influence.
+    sessionController.invalidateReviewedTones({toneIds:ids,userConfirmed:true});
+    band.reviewedOnce=true;band.status='pending';
+    band.intervalDbfs=null;band.confidence='inconclusive';
+    band.verificationAsked=false;
+    position=index;phase='ready';nextDbfs=initialDbfs;
+    contradiction=null;activeTone=null;requestEpoch++;
+    return snapshot();
+  }
   function completeBand(status) {
     const band=bands[position];
     check(band,'No pending band');
-    const heard=band.observations.filter(o=>o.response==='heard').map(o=>o.digitalLevelDbfs);
-    const notHeard=band.observations.filter(o=>o.response==='not-heard').map(o=>o.digitalLevelDbfs);
+    const effective=effectiveObservations(band);
+    const heard=effective.filter(o=>o.response==='heard').map(o=>o.digitalLevelDbfs);
+    const notHeard=effective.filter(o=>o.response==='not-heard').map(o=>o.digitalLevelDbfs);
     const quietestHeard=heard.length?Math.min(...heard):null;
     const loudestNotHeard=notHeard.length?Math.max(...notHeard):null;
     const coherent=quietestHeard!==null&&loudestNotHeard!==null&&loudestNotHeard<quietestHeard;
@@ -209,7 +258,7 @@ export function createHear3AdaptiveDiscreteExam({
     band.intervalDbfs=band.status==='bounded-subjective-interval'&&coherent
       ?{notHeardAtDbfs:loudestNotHeard,heardAtDbfs:quietestHeard}:null;
     band.confidence=band.status==='bounded-subjective-interval'
-      ?(band.observations.length>=4?'medium':'low'):'inconclusive';
+      ?(effective.length>=4?'medium':'low'):'inconclusive';
     position++;
     contradiction=null;activeTone=null;
     if(position>=bands.length){phase='completed';nextDbfs=null;}
@@ -218,12 +267,13 @@ export function createHear3AdaptiveDiscreteExam({
 
   function planAfterAnswer() {
     const band=bands[position];
-    const hears=band.observations.filter(o=>o.response==='heard').map(o=>o.digitalLevelDbfs);
-    const misses=band.observations.filter(o=>o.response==='not-heard').map(o=>o.digitalLevelDbfs);
+    const effective=effectiveObservations(band);
+    const hears=effective.filter(o=>o.response==='heard').map(o=>o.digitalLevelDbfs);
+    const misses=effective.filter(o=>o.response==='not-heard').map(o=>o.digitalLevelDbfs);
     const quietestHeard=hears.length?Math.min(...hears):null;
     const loudestMiss=misses.length?Math.max(...misses):null;
     const conflicting=hears.length>0&&misses.length>0&&loudestMiss>=quietestHeard;
-    if(band.observations.length>=maxTrialsPerBand) {
+    if(effective.length>=maxTrialsPerBand) {
       completeBand(conflicting?'inconclusive':'bounded-subjective-interval');
       return;
     }
@@ -240,7 +290,7 @@ export function createHear3AdaptiveDiscreteExam({
         // A disagreeing answer at that same digital level is an explicit
         // contradiction and MUST enter the consent gate rather than being
         // silently replaced by the latest observation.
-        if(!band.verificationAsked && band.observations.length<maxTrialsPerBand) {
+        if(!band.verificationAsked && effective.length<maxTrialsPerBand) {
           band.verificationAsked=true;
           nextDbfs=quietestHeard;phase='ready';return;
         }
@@ -257,7 +307,7 @@ export function createHear3AdaptiveDiscreteExam({
 
     // Repeating exactly the same level after exhausting its useful
     // information is not a valid reason to continue indefinitely.
-    const previouslyTested=band.observations.some(o=>o.digitalLevelDbfs===target);
+    const previouslyTested=effective.some(o=>o.digitalLevelDbfs===target);
     if(previouslyTested){completeBand('inconclusive');return;}
     nextDbfs=target;phase='ready';
   }
@@ -349,5 +399,6 @@ export function createHear3AdaptiveDiscreteExam({
     check(phase==='completed','All bands must be reviewed before finishing');
     return sessionController.finish();
   }
-  return Object.freeze({snapshot,exportProgress,playNext,answer,confirmContradiction,interrupt,confirmRoute,resume,finish});
+  return Object.freeze({snapshot,exportProgress,playNext,answer,retakePreviousBand,
+    confirmContradiction,interrupt,confirmRoute,resume,finish});
 }

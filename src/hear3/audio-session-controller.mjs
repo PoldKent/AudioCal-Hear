@@ -115,6 +115,16 @@ export function createHear3AudioSession({
     return pause({ type: 'INTERRUPT', routeMayHaveChanged });
   }
 
+  function invalidateReviewedTones({toneIds, userConfirmed = false} = {}) {
+    assertLive();
+    // A correction changes only which previous answers count toward the
+    // provisional interval. It never starts audio or deletes its audit trail.
+    session = transitionSession(session, {
+      type:'INVALIDATE_REVIEWED_TONES',toneIds,confirmed:userConfirmed===true,
+    });
+    return getSession();
+  }
+
   function routeChanged(routeId = null) {
     assertLive();
     return pause({ type: 'ROUTE_CHANGED', routeId });
@@ -155,5 +165,5 @@ export function createHear3AudioSession({
     await adapter.dispose();
   }
 
-  return Object.freeze({ getSession, startTone, answer, interrupt, routeChanged, confirmRoute, resume, finish, dispose });
+  return Object.freeze({ getSession, startTone, answer, invalidateReviewedTones, interrupt, routeChanged, confirmRoute, resume, finish, dispose });
 }
