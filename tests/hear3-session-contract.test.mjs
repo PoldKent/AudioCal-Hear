@@ -52,3 +52,22 @@ test('completed session cannot restart and input values are checked', () => {
   assert.throws(() => createSession({ profileId: 'a', minDbfs: -35, maxDbfs: -80 }), /Invalid authorized/);
   assert.throws(() => transitionSession(begin(), { ...tone, frequencyHz: NaN }), /Invalid frequency/);
 });
+
+test('review invalidates only trailing verified answers and keeps immutable audio evidence',()=>{
+ const first=transitionSession(transitionSession(begin(),tone),{type:'ANSWER',response:'heard'});
+ const next=transitionSession(transitionSession(first,{...tone,toneId:'t2',frequencyHz:2000}),
+  {type:'ANSWER',response:'not-heard'});
+ const original=JSON.stringify(next.observations);
+ assert.throws(()=>transitionSession(next,{type:'INVALIDATE_REVIEWED_TONES',
+  toneIds:['t2']}),/Explicit review confirmation/);
+ assert.throws(()=>transitionSession(next,{type:'INVALIDATE_REVIEWED_TONES',
+  toneIds:['t1'],confirmed:true}),/most recent/);
+ const corrected=transitionSession(next,{type:'INVALIDATE_REVIEWED_TONES',
+  toneIds:['t2'],confirmed:true});
+ assert.equal(JSON.stringify(corrected.observations),original);
+ assert.deepEqual(corrected.invalidatedToneIds,['t2']);
+ assert.throws(()=>transitionSession(corrected,{...tone,toneId:'t2'}),/already been used/);
+ assert.throws(()=>transitionSession(corrected,{...tone,toneId:'t1'}),/already been used/);
+ const newTone=transitionSession(corrected,{...tone,toneId:'t3'});
+ assert.equal(newTone.status,'playing');
+});
