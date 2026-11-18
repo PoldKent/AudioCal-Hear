@@ -206,3 +206,28 @@ test('rejects unfinished, mismatched, per-ear and invalid digital evidence befor
   assert.throws(()=>compute(input));
  }
 });
+
+test('EQ excludes explicitly reviewed old tones but keeps full immutable evidence',()=>{
+ const reviewed=makeCase();
+ const band=reviewed.examSnapshot.bands[0];
+ const old=band.observations.map(o=>o.toneId);
+ band.reviewedOnce=true;
+ const newer=Array.from({length:4},(_,i)=>({
+  toneId:'revision-'+i,frequencyHz:band.frequencyHz,
+  digitalLevelDbfs:i%2===0?-48:-54,channel:'joint',
+  response:i%2===0?'heard':'not-heard',provenance:'user-response',
+ }));
+ band.observations.push(...newer);
+ band.intervalDbfs={notHeardAtDbfs:-54,heardAtDbfs:-48};
+ band.confidence='medium';
+ reviewed.sessionSnapshot.observations=reviewed.examSnapshot.bands.flatMap(b=>b.observations);
+ reviewed.sessionSnapshot.invalidatedToneIds=old;
+ const result=compute(reviewed);
+ const fresh=compute(makeCase([-51,-63,-63,-63,-63]));
+ assert.deepEqual(result.rows.map(r=>r.gainDb),fresh.rows.map(r=>r.gainDb),
+  'retired answers must not affect any resulting EQ gain');
+ assert.equal(reviewed.sessionSnapshot.observations.length,24);
+ assert.throws(()=>compute({...reviewed,sessionSnapshot:{
+  ...reviewed.sessionSnapshot,invalidatedToneIds:[]}}),
+ /Subjective interval is inconsistent/);
+});
