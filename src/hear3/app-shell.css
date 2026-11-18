@@ -451,3 +451,12 @@ body{margin:0;padding:0;min-width:320px;max-width:none;color:var(--app-text);
  color:var(--app-action-text);border-color:var(--app-action);font-weight:750}
 @media(max-width:960px){.app-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.app-settings-grid{grid-template-columns:1fr}}
+
+/* D-027: contextual troubleshooting remains collapsed and absent until error. */
+.app-error-assistant[hidden]{display:none!important}
+.app-error-assistant{margin:1rem 0;background:var(--app-panel);
+ border:1px solid var(--app-line);border-radius:1rem;padding:.85rem 1.1rem}
+.app-error-assistant summary{font-weight:760;cursor:pointer;min-height:44px}
+.app-error-assistant ol{padding-left:1.45rem;line-height:1.65}
+.app-error-assistant li+li{margin-top:.35rem}
+.app-error-assistant .app-subtle{font-size:.85rem}
