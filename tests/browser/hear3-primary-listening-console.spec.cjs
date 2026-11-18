@@ -138,6 +138,7 @@ test('D-021 main console shows real sweep frequency, remaining time and progress
  });
  await page.goto('/hear3-exam/');
  await expect(page.getByTestId('hear-console-progress')).toBeHidden();
+ await page.getByTestId('hear-console-safety').check();
  await page.getByTestId('hear-console-action').click();
  await expect(page.getByTestId('hear-console-progress')).toBeVisible();
  await expect(page.getByTestId('hear-console-frequency')).toHaveText('125 Hz');
