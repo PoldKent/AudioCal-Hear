@@ -99,13 +99,16 @@ No hay cambios revisados.</p>
 <p>Las exportaciones reflejan <strong>los valores que ves en pantalla</strong>, incluso si todavía
  no los guardaste en el historial. Los archivos no están cifrados ni se eliminan al vaciar el navegador.
  Los cambios sin guardar se indican en los archivos.</p>
-<div class="controls">
-<button type="button" id="copy" data-testid="copy" disabled>Copiar valores TXT</button>
-<button type="button" id="txt" data-testid="txt" disabled>Descargar TXT</button>
-<button type="button" id="csv" data-testid="csv" disabled>Descargar CSV</button>
-<button type="button" id="json" data-testid="json" disabled>Descargar JSON</button>
-<button type="button" id="png" data-testid="png" disabled>Descargar PNG</button>
-</div>
+<details class="app-result-details app-export-menu" open>
+ <summary data-hear-i18n="editor.export.more">Formatos disponibles · Copiar, TXT, CSV, JSON y PNG</summary>
+ <div class="controls" role="group" aria-label="Opciones de exportación del ecualizador">
+  <button type="button" id="copy" data-testid="copy" disabled>Copiar valores TXT</button>
+  <button type="button" id="txt" data-testid="txt" disabled>Descargar TXT</button>
+  <button type="button" id="csv" data-testid="csv" disabled>Descargar CSV</button>
+  <button type="button" id="json" data-testid="json" disabled>Descargar JSON</button>
+  <button type="button" id="png" data-testid="png" disabled>Descargar PNG</button>
+ </div>
+</details>
 <p id="export-status" data-testid="export-status" role="status" aria-live="polite">
 No se ha exportado ningún EQ.</p>
 </section>

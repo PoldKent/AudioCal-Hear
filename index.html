@@ -95,7 +95,9 @@
  </section>
  <section class="app-section" aria-labelledby="como-funciona">
   <h2 id="como-funciona" class="app-section-heading" data-hear-i18n="home.how">Cómo funciona</h2>
-  <div class="app-grid">
+  <details class="app-how-disclosure">
+   <summary data-hear-i18n="home.how.more">Ver las tres etapas de la experiencia</summary>
+   <div class="app-grid">
    <article class="app-card"><h3>1. Tu equipo</h3>
     <p>Elige auriculares, parlantes u otro sistema e introduce las bandas reales de su ecualizador.</p>
    </article>
@@ -105,7 +107,8 @@
    <article class="app-card"><h3>3. Tu EQ</h3>
     <p>Consulta el resultado orientativo, guárdalo si quieres y edita su curva sin cambiar tu equipo automáticamente.</p>
    </article>
-  </div>
+   </div>
+  </details>
  </section>
  <aside class="app-alert" aria-label="Información sobre el sonido">
   <strong>Antes de escuchar</strong>
@@ -122,8 +125,7 @@
      <option value="light">Claro</option>
      <option value="dark">Oscuro</option>
     </select>
-    <p>Tu preferencia se guarda solo en este navegador.</p>
-    <a href="./hear3-privacy/">Administrar y borrar datos locales</a>
+    <p>Tu preferencia se guarda solo en este navegador. Cambia el idioma desde el selector superior.</p>
    </div>
    <div class="app-card">
     <h3 data-hear-i18n="home.offline">Uso sin conexión</h3>
@@ -134,10 +136,18 @@
     </div>
     <p id="offline-status" data-testid="offline-status" role="status" aria-live="polite">Comprobando compatibilidad…</p>
    </div>
+   <div class="app-card">
+    <h3 data-hear-i18n="home.data.title">Datos, privacidad y ayuda</h3>
+    <p>Tus perfiles y resultados permanecen en este navegador. Administra los respaldos antes de borrar información.</p>
+    <nav class="app-settings-links" aria-label="Herramientas de datos y soporte">
+     <a href="./hear3-library/" data-hear-i18n="home.data.results">Mis resultados y respaldos</a>
+     <a href="./hear3-dual-restore/" data-hear-i18n="home.data.restore">Restaurar copia de seguridad</a>
+     <a href="./hear3-privacy/" data-hear-i18n="home.data.privacy">Privacidad y borrado local</a>
+     <a href="./hear3-diagnostics/" data-hear-i18n="home.data.diagnostics">Diagnóstico técnico avanzado</a>
+    </nav>
+   </div>
   </div>
-  <p class="app-subtle">Tus resultados se almacenan localmente y pueden perderse si el navegador borra sus datos.
-    <a href="./hear3-library/">Exportar o restaurar respaldos</a>.
-    <a href="./hear3-diagnostics/">Diagnóstico técnico local</a>.</p>
+  <p class="app-subtle">Los datos del navegador pueden perderse si se limpia su almacenamiento. Descarga una copia de seguridad antes de hacer cambios destructivos.</p>
  </section>
  <footer class="app-footer">AudioCal Hear · Tus datos y decisiones de escucha permanecen bajo tu control.</footer>
 </main>

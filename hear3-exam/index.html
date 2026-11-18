@@ -79,14 +79,21 @@ input,select{accent-color:#70cfff}
 <p data-hear-language-note hidden class="app-language-note" role="note"></p>
 <h1 data-hear-i18n="exam.header">Examen de tonos</h1>
 <p>Configura tu equipo, escucha los tonos y guarda tus resultados cuando termines. Puedes pausar el examen en cualquier momento.</p>
-<p class="notice"><strong>No es una audiometría clínica ni un EQ acústicamente validado.</strong>
- Mantén el volumen físico bajo, cómodo y fijo. Detén el sonido ante molestias.
- Los niveles dBFS no miden presión sonora (dB SPL) ni prueban seguridad acústica.
- Cada reproducción requiere una acción explícita. Durante un tono o barrido puedes
- pulsar <kbd>Escape</kbd> para detener el sonido y conservar la sesión como
- interrumpida, sin registrar una respuesta auditiva.
- La curva de ecualización orientativa que aparece
- al finalizar no se aplicará automáticamente ni está calibrado para tu equipo.</p>
+<div class="notice app-exam-safety" role="note">
+ <strong>No es una audiometría clínica ni un EQ acústicamente validado.</strong>
+ <p class="app-safety-summary">Mantén el volumen físico bajo, cómodo y fijo.
+  Detén inmediatamente cualquier sonido molesto. Los niveles dBFS no miden presión
+  sonora real (dB SPL). Ningún sonido se reproduce automáticamente.</p>
+ <details class="app-safety-disclosure">
+  <summary data-hear-i18n="exam.safety.details">Conocer las precauciones y límites del examen</summary>
+  <p>Los niveles digitales no garantizan seguridad acústica. Cada reproducción
+   requiere una acción explícita. Durante un tono o barrido puedes pulsar
+   <kbd>Escape</kbd> para detener el sonido y conservar la sesión interrumpida,
+   sin registrar una respuesta auditiva.</p>
+  <p>La curva orientativa no se aplicará automáticamente ni está calibrada
+   para tu equipo. No constituye diagnóstico médico.</p>
+ </details>
+</div>
 <p id="keyboard-stop-status" data-testid="keyboard-stop-status" role="status" aria-live="polite">
 Para detener audio iniciado, pulsa Escape.</p>
 <p id="audio-preflight" data-testid="audio-preflight" role="status">
