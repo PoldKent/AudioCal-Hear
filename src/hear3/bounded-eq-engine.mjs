@@ -38,10 +38,14 @@ function verifyInputs(exam,session){
   a.minDbfs>=-120&&a.maxDbfs<=0&&a.minDbfs===b.minDbfs&&a.maxDbfs===b.maxDbfs,
   'Digital evidence authorization does not match');
  const observed=[],ids=new Set(),tones=new Set(),flat=[];
- requireValue(Array.isArray(session.invalidatedToneIds),
-  'Missing immutable invalidation history');
- const retired=new Set(session.invalidatedToneIds);
- requireValue(retired.size===session.invalidatedToneIds.length &&
+ // Legacy read-only EQ fixtures may have no invalidation list. An explicit
+ // list, when present, must be well formed and is always authoritative.
+ requireValue(session.invalidatedToneIds===undefined||
+   Array.isArray(session.invalidatedToneIds),
+   'Invalid immutable invalidation history');
+ const retiredList=session.invalidatedToneIds??[];
+ const retired=new Set(retiredList);
+ requireValue(retired.size===retiredList.length &&
    [...retired].every(id=>typeof id==='string'&&id.length>0),
    'Invalid retired tone identities');
  let previous=0;
