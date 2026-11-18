@@ -35,14 +35,15 @@
  </label>
 </header>
 <main id="contenido" class="app-shell">
+<p data-hear-language-note hidden class="app-language-note" role="note"></p>
  <section class="app-hero" aria-labelledby="inicio-titulo">
   <div>
    <p class="app-kicker">Tu espacio de sonido</p>
-   <h1 id="inicio-titulo">Escucha. Ajusta.<br>Disfruta.</h1>
-   <p class="app-lead">Personaliza tu audio con un examen de tonos, un ecualizador editable y tus resultados guardados. Todo desde una sola aplicación.</p>
+   <h1 id="inicio-titulo" data-hear-i18n="home.headline">Escucha. Ajusta. Disfruta.</h1>
+   <p class="app-lead" data-hear-i18n="home.lead">Personaliza tu sonido con un examen de tonos, un ecualizador editable y resultados guardados. Todo en una sola aplicación.</p>
    <div class="app-actions">
-    <a class="app-button primary" href="./hear3-exam/" data-testid="begin-exam">Comenzar examen</a>
-    <a class="app-button" href="./hear3-eq-editor/">Ver mi ecualizador</a>
+    <a class="app-button primary" href="./hear3-exam/" data-testid="begin-exam" data-hear-i18n="home.start">Comenzar examen</a>
+    <a class="app-button" href="./hear3-eq-editor/" data-hear-i18n="home.view">Ver mi ecualizador</a>
    </div>
   </div>
   <div class="app-illustration" aria-hidden="true">
@@ -59,7 +60,7 @@
  <section id="recent-profile" class="app-section" aria-labelledby="recent-title" hidden>
   <div class="app-card">
    <p class="app-kicker">Bienvenido de nuevo</p>
-   <h2 class="app-section-heading" id="recent-title">Continúa con tu equipo</h2>
+   <h2 class="app-section-heading" id="recent-title" data-hear-i18n="home.return">Continúa con tu equipo</h2>
    <p id="recent-device" data-testid="recent-device" class="app-lead"></p>
    <p id="recent-session" data-testid="recent-session" class="app-subtle"></p>
    <div class="app-actions">
@@ -70,7 +71,7 @@
   </div>
  </section>
  <section class="app-section" aria-labelledby="tu-actividad">
-  <h2 id="tu-actividad" class="app-section-heading">Tu actividad</h2>
+  <h2 id="tu-actividad" class="app-section-heading" data-hear-i18n="home.activity">Tu actividad</h2>
   <div class="app-grid">
    <article class="app-card">
     <h3>Examen</h3>
@@ -93,7 +94,7 @@
   </div>
  </section>
  <section class="app-section" aria-labelledby="como-funciona">
-  <h2 id="como-funciona" class="app-section-heading">Cómo funciona</h2>
+  <h2 id="como-funciona" class="app-section-heading" data-hear-i18n="home.how">Cómo funciona</h2>
   <div class="app-grid">
    <article class="app-card"><h3>1. Tu equipo</h3>
     <p>Elige auriculares, parlantes u otro sistema e introduce las bandas reales de su ecualizador.</p>
@@ -114,7 +115,7 @@
   <h2 class="app-section-heading" id="ajustes-titulo">Ajustes y privacidad</h2>
   <div class="app-settings-grid">
    <div class="app-card">
-    <h3>Apariencia</h3>
+    <h3 data-hear-i18n="home.appearance">Apariencia</h3>
     <label for="hear3-theme-choice">Tema</label>
     <select id="hear3-theme-choice" data-testid="hear3-theme-choice" aria-label="Apariencia">
      <option value="system">Según el sistema</option>
@@ -125,7 +126,7 @@
     <a href="./hear3-privacy/">Administrar y borrar datos locales</a>
    </div>
    <div class="app-card">
-    <h3>Uso sin conexión</h3>
+    <h3 data-hear-i18n="home.offline">Uso sin conexión</h3>
     <p>Guarda voluntariamente los recursos de la aplicación. Los resultados personales no forman parte de esa caché.</p>
     <div class="app-actions">
      <button type="button" id="offline-enable" data-testid="offline-enable">Guardar para usar sin conexión</button>
