@@ -83,6 +83,8 @@ hr{border:none;border-top:1px solid var(--line);margin:1.4rem 0}
 <p id="edit-status" data-testid="edit-status" role="status" aria-live="polite">
 Selecciona un resultado para editar.</p>
 <div class="controls">
+<button id="undo" data-testid="saved-eq-undo" type="button" disabled>Deshacer edición</button>
+<button id="redo" data-testid="saved-eq-redo" type="button" disabled>Rehacer edición</button>
 <button id="review" data-testid="review" type="button" disabled>Revisar cambios antes de guardar</button>
 <button id="restore" data-testid="restore" type="button" disabled>Preparar restauración de valores originales</button>
 <button id="commit" data-testid="commit" type="button" disabled>Confirmar y guardar cambios</button>
@@ -92,8 +94,9 @@ No hay cambios revisados.</p>
 </section>
 <section aria-labelledby="export-title">
 <h2 id="export-title">3 · Copiar y exportar (sin aplicar)</h2>
-<p>Las exportaciones proceden de los <strong>últimos valores guardados</strong> y llevan una
- advertencia visible. Un archivo descargado no está cifrado ni se borra al vaciar el navegador.</p>
+<p>Las exportaciones reflejan <strong>los valores que ves en pantalla</strong>, incluso si todavía
+ no los guardaste en el historial. Los archivos no están cifrados ni se eliminan al vaciar el navegador.
+ Los cambios sin guardar se indican en los archivos.</p>
 <div class="controls">
 <button type="button" id="copy" data-testid="copy" disabled>Copiar valores TXT</button>
 <button type="button" id="txt" data-testid="txt" disabled>Descargar TXT</button>
@@ -114,12 +117,13 @@ import {createHear3CatalogStore} from '../src/hear3/catalog-backup-store.mjs';
 import {createHear3CatalogWriteCoordinator} from '../src/hear3/coordinated-catalog-writer.mjs';
 import {createHear3ProvisionalEqEditor,exportHear3ProvisionalEq}
  from '../src/hear3/provisional-eq-editor.mjs';
+import {createHear3EqEditHistory} from '../src/hear3/eq-edit-history.mjs';
 const $=id=>document.getElementById(id);
 const store=createHear3CatalogStore(),writer=createHear3CatalogWriteCoordinator({store});
-let editor=null,snapshot=null,values=[],reviewed=null,busy=false;
+let editor=null,snapshot=null,values=[],reviewed=null,busy=false,history=null;
 const valueText=n=>(n>0?'+':'')+n+' dB';
 const getReview=()=>snapshot?exportHear3ProvisionalEq(store.load().catalog,
- snapshot.resultId,{format:'txt'}):null;
+ snapshot.resultId,{format:'txt',draftGains:values}):null;
 function discard(){
  editor?.discard();reviewed=null;
  $('preview-status').textContent='Sin cambios confirmados. Revisa las modificaciones para guardarlas.';
@@ -127,6 +131,18 @@ function discard(){
 function bar(x,cap){
  const fraction=Math.max(0,Math.min(0.5,Math.abs(x)/(2*cap)));
  return {top:(x>=0?50-fraction*100:50)+'%',height:Math.max(2,fraction*100)+'%'};
+}
+function validDraft(){
+ return Boolean(snapshot&&values.length===snapshot.rows.length&&
+  values.every(v=>Number.isFinite(v)&&Number.isInteger(v*2)&&
+   Math.abs(v)<=snapshot.capDb));
+}
+function syncHistoryButtons(){
+ const dirty=history&&values.some((v,i)=>v!==history.current()[i]);
+ $('undo').disabled=busy||!history||!(dirty||history.canUndo());
+ $('redo').disabled=busy||!history||!!dirty||!history.canRedo();
+ const exportable=!busy&&validDraft();
+ for(const id of ['copy','txt','csv','json','png'])$(id).disabled=!exportable;
 }
 function renderBars(){
  $('chart').replaceChildren();
@@ -147,6 +163,7 @@ function renderBars(){
     '. Los originales siguen disponibles para restaurar.';
    $('review').disabled=busy||!values.some((v,j)=>v!==snapshot.rows[j].currentGainDb);
    $('commit').disabled=true;
+   syncHistoryButtons();
   };
   stage.append(zero,fill);
   const field=document.createElement('input');field.type='number';
@@ -161,24 +178,41 @@ function renderBars(){
    if(Number.isFinite(n))update();
    else{$('edit-status').textContent='Hay valores vacíos o no válidos.';
     $('review').disabled=true;$('commit').disabled=true;}
+   syncHistoryButtons();
+  });
+  field.addEventListener('change',()=>{
+   if(history&&validDraft())history.record(values);
+   syncHistoryButtons();
   });
   const original=document.createElement('small');original.className='muted';
   original.textContent='Original: '+valueText(row.originalGainDb);
   const source=document.createElement('small');source.className='muted';
   source.textContent='Frecuencia: '+row.frequencyVerification;
-  cell.append(label,stage,field,original,source);
+  const bandReset=document.createElement('button');
+  bandReset.type='button';
+  bandReset.dataset.testid='saved-eq-reset-band-'+i;
+  bandReset.textContent='Restaurar banda';
+  bandReset.setAttribute('aria-label','Restaurar '+row.frequencyHz+' Hz a su ganancia original');
+  bandReset.addEventListener('click',()=>withError(()=>{
+   if(!history||busy||!validDraft())throw Error('Corrige antes los valores de ganancia.');
+   discard();history.record(values);
+   values=history.resetBand(i).slice();
+   renderBars();syncHistoryButtons();
+  }));
+  cell.append(label,stage,field,original,source,bandReset);
   $('chart').append(cell);update();
  }
 }
 function renderSelection(){
  $('error').textContent='';
  const id=$('result-select').value;
- editor=null;snapshot=null;values=[];reviewed=null;
+ editor=null;snapshot=null;values=[];reviewed=null;history=null;
  if(id){
   try{
    editor=createHear3ProvisionalEqEditor({store,resultId:id});
    snapshot=editor.snapshot();
    values=snapshot.rows.map(x=>x.currentGainDb);
+   history=createHear3EqEditHistory({initial:values,capDb:snapshot.capDb});
   }catch(e){$('error').textContent=e.message;}
  }
  $('metadata').replaceChildren();
@@ -204,6 +238,7 @@ function renderSelection(){
  $('review').disabled=busy||!snapshot;
  if(snapshot)$('review').disabled=true;
  $('commit').disabled=true;
+ syncHistoryButtons();
  $('edit-status').textContent=snapshot?'EQ cargado. El resultado permanece provisional y sin salida de audio.':
   'Selecciona un resultado experimental con EQ provisional.';
  $('preview-status').textContent='No hay cambios revisados.';
@@ -226,7 +261,7 @@ function refresh(selected=''){
 }
 function busyState(state){
  busy=state;
- for(const id of ['review','restore','commit','copy','txt','csv','json','png','result-select'])$(id).disabled=state;
+ for(const id of ['review','restore','commit','copy','txt','csv','json','png','result-select','undo','redo'])$(id).disabled=state;
  if(!state){
   $('commit').disabled=!reviewed;
   $('restore').disabled=!snapshot||snapshot.rows.every(r=>r.originalGainDb===r.currentGainDb);
@@ -234,6 +269,8 @@ function busyState(state){
   $('review').disabled=!snapshot||!values.some((v,j)=>v!==snapshot.rows[j].currentGainDb);
  }
  for(const input of $('chart').querySelectorAll('input'))input.disabled=state;
+ for(const button of $('chart').querySelectorAll('button'))button.disabled=state;
+ if(!state)syncHistoryButtons();
 }
 function withError(cb){
  $('error').textContent='';
