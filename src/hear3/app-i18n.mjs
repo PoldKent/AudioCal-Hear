@@ -499,9 +499,9 @@ export function translateHear3Ui(key,language='es'){
 }
 export function createHear3I18nController({doc,env=globalThis}={}){
  if(!doc)throw Error('Missing document for Hear language selector.');
- const storage=env.localStorage??null;
- let stored=null;
- try{stored=storage?.getItem(HEAR3_LANGUAGE_KEY);}catch{}
+ let storage=null,stored=null;
+ // A privacy-restricted browser may throw merely when reading localStorage.
+ try{storage=env.localStorage??null;stored=storage?.getItem(HEAR3_LANGUAGE_KEY);}catch{}
  let locale=resolveHear3Language({stored,browser:env.navigator?.language});
  const selector=doc.querySelector('[data-hear-language]');
  const note=doc.querySelector('[data-hear-language-note]');
@@ -516,7 +516,8 @@ export function createHear3I18nController({doc,env=globalThis}={}){
    note.hidden=locale==='es';
    note.textContent=translateHear3Ui('common.note',locale);
   }
-  doc.defaultView?.dispatchEvent?.(new Event('hear3:language-change'));
+  const Evt=doc.defaultView?.Event??env.Event;
+  if(Evt)doc.defaultView?.dispatchEvent?.(new Evt('hear3:language-change'));
  };
  const change=(next)=>{
   if(!has(next))return false;
