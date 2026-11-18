@@ -76,7 +76,8 @@ input,select{accent-color:#70cfff}
  </label>
 </header>
 <main id="main-content" class="app-page" tabindex="-1">
-<h1>Examen de tonos</h1>
+<p data-hear-language-note hidden class="app-language-note" role="note"></p>
+<h1 data-hear-i18n="exam.header">Tu examen de escucha</h1>
 <p>Configura tu equipo, escucha los tonos y guarda tus resultados cuando termines. Puedes pausar el examen en cualquier momento.</p>
 <p class="notice"><strong>No es una audiometría clínica ni un EQ acústicamente validado.</strong>
  Mantén el volumen físico bajo, cómodo y fijo. Detén el sonido ante molestias.
@@ -93,7 +94,7 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
 <div id="hear-listening-console" class="hear-listening-console"
  aria-labelledby="hear-listen-heading" data-testid="hear-listening-console">
  <p class="hear-listening-kicker" data-console="mode">PREPARACIÓN</p>
- <h2 id="hear-listen-heading">Tu examen de escucha</h2>
+ <h2 id="hear-listen-heading" data-hear-i18n="exam.header">Tu examen de escucha</h2>
  <p class="hear-listening-prompt" data-console="prompt" data-testid="hear-console-prompt"
   role="status" aria-live="polite">Confirma las frecuencias de tu equipo y prepara la salida de sonido.</p>
  <div class="hear-listening-meters" aria-label="Valores digitales programados, no calibrados">
@@ -107,9 +108,9 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
  <div class="hear-listening-answers" data-console="answers" hidden
   role="group" aria-label="Responde a la frecuencia actual">
   <button type="button" class="hear-listening-heard" data-console="heard"
-   data-testid="hear-console-heard" disabled>Lo escucho</button>
+   data-testid="hear-console-heard" data-hear-i18n="console.heard" disabled>Lo escucho</button>
   <button type="button" class="hear-listening-not" data-console="not"
-   data-testid="hear-console-not" disabled>No lo escucho</button>
+   data-testid="hear-console-not" data-hear-i18n="console.not" disabled>No lo escucho</button>
  </div>
  <div class="hear-listening-comparison" data-console="comparison" hidden
   role="group" aria-label="Comparación de tonos">
@@ -130,7 +131,7 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
  <div class="hear-listening-actions">
   <button type="button" class="hear-listening-action" data-console="action"
    data-testid="hear-console-action">Revisar las bandas del equipo</button>
-  <button type="button" data-console="stop" data-testid="hear-console-stop"
+  <button type="button" data-console="stop" data-testid="hear-console-stop" data-hear-i18n="console.pause"
    hidden disabled>Detener sonido</button>
   <button type="button" data-console="skip" data-testid="hear-console-skip"
    hidden disabled>Conservar inconcluso</button>
@@ -143,10 +144,10 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
 </div>
 <div id="guided-journey" class="app-exam-journey" aria-label="Etapas de mi examen">
  <nav data-journey="nav" class="app-exam-journey-nav" aria-label="Recorrido guiado">
-  <a href="#layout-heading" data-journey-stage="prepare" aria-current="step">1 · Mi equipo</a>
-  <a href="#sweep-heading" data-journey-stage="sweep">2 · Barrido</a>
-  <a href="#tones-heading" data-journey-stage="tones">3 · Tonos</a>
-  <a href="#eq-heading" data-journey-stage="result">4 · Mi EQ</a>
+  <a href="#layout-heading" data-journey-stage="prepare" aria-current="step" data-hear-i18n="exam.stage.prepare">1 · Mi equipo</a>
+  <a href="#sweep-heading" data-journey-stage="sweep" data-hear-i18n="exam.stage.sweep">2 · Barrido</a>
+  <a href="#tones-heading" data-journey-stage="tones" data-hear-i18n="exam.stage.tones">3 · Tonos</a>
+  <a href="#eq-heading" data-journey-stage="result" data-hear-i18n="exam.stage.result">4 · Mi EQ</a>
  </nav>
  <p data-journey="status" data-testid="journey-status"
   class="app-subtle" role="status" aria-live="polite">
