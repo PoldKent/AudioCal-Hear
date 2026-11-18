@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hear 3.0 · Privacidad de fotografías (piloto)</title>
+<title>Imagen privada · AudioCal Hear</title>
 <style>
 :root{font-family:system-ui,sans-serif;color-scheme:light dark}
 body{max-width:46rem;margin:1.5rem auto;padding:0 1rem 3rem;line-height:1.55}
@@ -15,10 +15,34 @@ img{max-width:100%;height:auto;border:1px solid}
 label{display:block;margin:1rem 0 .3rem}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
+<link rel="stylesheet" href="../src/hear3/app-shell.css">
+<script type="module" src="../src/hear3/app-theme.mjs"></script>
+<script type="module" src="../src/hear3/app-i18n.mjs"></script>
 </head>
 <body>
-<main>
-<h1>Hear 3.0 · Imagen privada del ecualizador</h1>
+<a class="app-sr-only" href="#main">Saltar al contenido principal</a>
+<header class="app-topbar">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal">
+  <a href="../" data-hear-i18n="nav.home">Inicio</a>
+  <a href="../hear3-exam/" data-hear-i18n="nav.exam">Examen</a>
+  <a href="../hear3-eq-editor/" data-hear-i18n="nav.eq">Mi ecualizador</a>
+  <a href="../hear3-library/" data-hear-i18n="nav.history">Historial</a>
+  <a href="../#ajustes" data-hear-i18n="nav.settings">Ajustes</a>
+ </nav>
+ <label class="app-language-control">
+  <span class="app-sr-only">Idioma de la interfaz principal</span>
+  <select data-hear-language aria-label="Idioma de la interfaz principal">
+   <option value="es">Español</option><option value="en">English</option>
+   <option value="fr">Français</option><option value="pt">Português</option>
+   <option value="it">Italiano</option><option value="de">Deutsch</option>
+   <option value="zh">中文</option><option value="ja">日本語</option>
+  </select>
+ </label>
+</header>
+<main id="main" class="app-page">
+<p data-hear-language-note hidden class="app-language-note" role="note"></p>
+<h1>Herramienta avanzada · Imagen privada del ecualizador</h1>
 <p class="notice"><strong>Proceso local, voluntario y experimental.</strong>
  La fotografía nunca se sube ni se guarda en los perfiles. Solo se abre cuando
  eliges inspeccionarla, se descodifican sus píxeles y se crea una imagen PNG
@@ -39,7 +63,7 @@ Ninguna imagen procesada ni almacenada.</p>
 <p>Revisa manualmente las frecuencias y controles reales del EQ con una fuente fiable.
  Una imagen por sí sola no puede demostrar respuesta acústica ni seguridad del
  volumen. Cierra esta pantalla para liberar la vista previa temporal.</p>
-<p><a href="../hear3-preview/">Volver a Hear 3.0 experimental</a></p>
+<p><a href="../#ajustes">Volver a ajustes</a> · <a href="../hear3-exam/">Preparar las frecuencias del equipo</a></p>
 </main>
 <script type="module">
 import {createHear3PrivatePhotoSession} from '../src/hear3/private-photo-sanitizer.mjs';
