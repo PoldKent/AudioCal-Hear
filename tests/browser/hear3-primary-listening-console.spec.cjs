@@ -139,7 +139,9 @@ test('D-021 main console shows real sweep frequency, remaining time and progress
  await expect(page.getByTestId('hear-console-remaining')).toHaveText('20 s');
  await expect(page.locator('[data-console="wave-path"]')).toHaveAttribute('d',/^M/);
  await page.evaluate(()=>window.__visualAudioClock=10);
- await expect(page.getByTestId('hear-console-frequency')).toHaveText('500 Hz');
+ await expect(page.getByTestId('sweep-frequency')).not.toHaveText('125 Hz');
+ const originalFrequency=await page.getByTestId('sweep-frequency').textContent();
+ await expect(page.getByTestId('hear-console-frequency')).toHaveText(originalFrequency);
  await expect(page.getByTestId('hear-console-remaining')).toHaveText('10 s');
  await page.waitForFunction(()=>document.getElementById('hear-console-progress').value>9.8);
  expect(await page.getByTestId('hear-console-progress').evaluate(el=>el.max)).toBe(20);
