@@ -109,7 +109,9 @@ export function validateHear3Catalog(input) {
     check(Array.isArray(raw.observations) && raw.observations.length <= 2000,
       'Invalid result observations');
     const observations=raw.observations.map(o=>{
-      allowedKeys(o,['toneId','frequencyHz','digitalLevelDbfs','channel','response','provenance'], 'observation');
+      allowedKeys(o,['toneId','frequencyHz','digitalLevelDbfs','channel','response','provenance','retired'], 'observation');
+      check(o.retired===undefined||typeof o.retired==='boolean',
+        'Invalid retired observation marker');
       id(o.toneId,'tone');
       check(typeof o.frequencyHz === 'number' && Number.isFinite(o.frequencyHz)
         && o.frequencyHz>=20 && o.frequencyHz<=20000, 'Invalid observation frequency');
@@ -120,7 +122,7 @@ export function validateHear3Catalog(input) {
         && o.provenance === 'user-response', 'Invalid observation evidence');
       return { toneId:o.toneId, frequencyHz:o.frequencyHz,
         digitalLevelDbfs:o.digitalLevelDbfs, channel:o.channel, response:o.response,
-        provenance:'user-response' };
+        provenance:'user-response',...(o.retired===true?{retired:true}:{}) };
     });
     check(Array.isArray(raw.editHistory) && raw.editHistory.length <= 1000,
       'Invalid edit history');
