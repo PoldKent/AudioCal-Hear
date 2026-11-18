@@ -277,6 +277,20 @@ function withError(cb){
  try{cb();}catch(error){$('error').textContent=error?.message??String(error);}
 }
 $('result-select').addEventListener('change',renderSelection);
+$('undo').addEventListener('click',()=>withError(()=>{
+ if(!history||busy)return;
+ discard();
+ const current=history.current();
+ values=values.some((v,i)=>v!==current[i])?current.slice():history.undo().slice();
+ renderBars();syncHistoryButtons();
+ $('edit-status').textContent='Deshecho en pantalla. No se ha modificado el historial guardado.';
+}));
+$('redo').addEventListener('click',()=>withError(()=>{
+ if(!history||busy||values.some((v,i)=>v!==history.current()[i]))return;
+ discard();values=history.redo().slice();
+ renderBars();syncHistoryButtons();
+ $('edit-status').textContent='Rehecho en pantalla. Puedes revisarlo antes de guardar.';
+}));
 $('review').addEventListener('click',()=>withError(()=>{
  if(!editor||!snapshot)throw Error('Elige un EQ antes de revisarlo.');
  const patch=snapshot.rows.flatMap((row,i)=>
@@ -324,10 +338,14 @@ function download(content,filename,type){
 for(const [id,mime] of [['txt','text/plain'],['csv','text/csv'],['json','application/json']]){
  $(id).addEventListener('click',()=>withError(()=>{
   if(!snapshot)throw Error('Elige primero un resultado guardado.');
-  const raw=exportHear3ProvisionalEq(store.load().catalog,snapshot.resultId,{format:id});
+  const raw=exportHear3ProvisionalEq(store.load().catalog,snapshot.resultId,
+   {format:id,draftGains:values});
   download(raw,'hear3-eq-provisional-no-calibrado.'+id,mime+';charset=utf-8');
   $('export-status').textContent='Exportación '+id.toUpperCase()+
-   ' solicitada. Archivo local no cifrado; no es un preset de equipo.';
+   ' de los valores visibles solicitada'+
+   (values.some((v,i)=>v!==snapshot.rows[i].currentGainDb)?
+    ' (contiene cambios sin guardar).':' (coincide con el guardado).')+
+   ' No es un preset de equipo.';
  }));
 }
 $('copy').addEventListener('click',async()=>{
@@ -335,7 +353,7 @@ $('copy').addEventListener('click',async()=>{
  try{
   if(!navigator.clipboard?.writeText)throw Error('Portapapeles no compatible en este navegador.');
   await navigator.clipboard.writeText(getReview());
-  $('export-status').textContent='Se copiaron los valores guardados con advertencia; nada se envió automáticamente.';
+  $('export-status').textContent='Se copiaron los valores visibles con advertencia; nada se envió automáticamente.';
  }catch(e){$('error').textContent=e.message;}
 });
 $('png').addEventListener('click',()=>withError(()=>{
@@ -349,16 +367,18 @@ $('png').addEventListener('click',()=>withError(()=>{
  g.fillText('HEAR 3.0 — EQ PROVISIONAL',36,48);
  g.font='16px system-ui';g.fillText('NO CALIBRADO · NO APLICAR AUTOMÁTICAMENTE',36,76);
  g.fillText('Perfil: '+snapshot.profileName.slice(0,75),36,109);
+ if(values.some((v,i)=>v!==snapshot.rows[i].currentGainDb))
+  g.fillText('CAMBIOS VISIBLES SIN GUARDAR',36,136);
  const baseline=275;
  g.strokeStyle='#64748b';g.beginPath();g.moveTo(36,baseline);g.lineTo(canvas.width-36,baseline);g.stroke();
  const stride=(canvas.width-120)/snapshot.rows.length;
  snapshot.rows.forEach((row,i)=>{
-  const x=60+i*stride,h=row.currentGainDb/snapshot.capDb*125;
+  const x=60+i*stride,h=values[i]/snapshot.capDb*125;
   g.fillStyle='#087aa6';
   g.fillRect(x,h>=0?baseline-h:baseline,Math.min(37,stride-8),Math.max(2,Math.abs(h)));
   g.fillStyle='#10283d';g.font='13px system-ui';
   g.fillText(String(row.frequencyHz)+' Hz',x,baseline+28);
-  g.fillText(valueText(row.currentGainDb),x,baseline+(h>0?-Math.abs(h)-10:55));
+  g.fillText(valueText(values[i]),x,baseline+(h>0?-Math.abs(h)-10:55));
  });
  g.fillStyle='#10283d';g.font='16px system-ui';
  g.fillText('Valores originales y actuales editables en el catálogo V3. Sin garantía de headroom.',36,430);
@@ -366,7 +386,7 @@ $('png').addEventListener('click',()=>withError(()=>{
  canvas.toBlob(blob=>{
   if(!blob){$('error').textContent='No se pudo codificar PNG.';return;}
   download(blob,'hear3-eq-provisional-no-calibrado.png','image/png');
-  $('export-status').textContent='Se solicitó descargar un PNG local, no un preset de equipo.';
+  $('export-status').textContent='Se descargó la curva visible como PNG, no un preset de equipo.';
  },'image/png');
 }));
 const requested=new URLSearchParams(location.search).get('result');
