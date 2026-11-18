@@ -281,3 +281,153 @@ a{color:var(--app-accent)}
 .app-device-helper [data-photo=proposal]{font-weight:700;overflow-wrap:anywhere}
 
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+/* Hear 3 — premium UX foundation (non-destructive, shared across routes).
+   Visual changes only: never infer acoustic level from graphical indicators.
+   Tokens retain legible light/dark contrast and system reduced-motion behavior. */
+:root{
+ --app-bg:#071521;--app-panel:#102637;--app-panel-hi:#183648;
+ --app-line:#365366;--app-text:#f2f8fb;--app-muted:#c3d5df;
+ --app-accent:#8de5e8;--app-action:#98e8e4;--app-action-text:#092b35;
+ --app-ring:#ffd386;--app-warning:#302c27;
+ --hear-focus-shadow:0 0 0 4px rgba(141,229,232,.12);
+ --hear-card-shadow:0 16px 42px rgba(0,0,0,.14);
+}
+:root[data-hear3-theme="light"]{
+ --app-bg:#f4f7fa;--app-panel:#ffffff;--app-panel-hi:#eaf3f7;
+ --app-line:#aec2cf;--app-text:#183446;--app-muted:#385568;
+ --app-accent:#09677b;--app-action:#135f74;--app-action-text:#ffffff;
+ --app-ring:#96500b;--app-warning:#fff2de;
+ --hear-focus-shadow:0 0 0 4px rgba(9,103,123,.1);
+ --hear-card-shadow:0 14px 36px rgba(29,67,90,.07);
+}
+html{scroll-padding-top:7rem}
+body{margin:0;padding:0;min-width:320px;max-width:none;color:var(--app-text);
+ background:var(--app-bg);-webkit-font-smoothing:antialiased}
+:where(button,input,select,textarea){font-family:inherit}
+:where(button,select,a){-webkit-tap-highlight-color:transparent}
+:where(button,input,select,textarea):disabled{cursor:not-allowed}
+.app-topbar{
+ position:sticky;top:0;z-index:40;margin:0 0 clamp(1.2rem,2.5vw,2rem);
+ padding:.7rem clamp(1rem,3.2vw,2.4rem);
+ background:var(--app-bg);border-bottom:1px solid var(--app-line);
+ box-shadow:0 6px 28px rgba(0,0,0,.07)
+}
+.app-brand{font-size:1.15rem;letter-spacing:-.035em;white-space:nowrap}
+.app-mark{background:linear-gradient(140deg,#8cebe4 0%,#36afcf 100%);
+ color:#062736;border-radius:13px;box-shadow:0 6px 16px rgba(36,170,198,.15)}
+.app-nav{gap:.22rem}
+.app-nav a{border:1px solid transparent;border-radius:.75rem;white-space:nowrap;
+ transition:background-color .18s ease,color .18s ease,border-color .18s ease}
+.app-nav a[aria-current="page"]{border-color:var(--app-line)}
+.app-nav a:hover{background:var(--app-panel-hi)}
+.app-language-control select{border-radius:.75rem;background:var(--app-panel)}
+.app-shell,.app-page{max-width:1180px}
+.app-shell{width:min(1140px,100%)}
+.app-hero{gap:clamp(1.6rem,4vw,3.5rem);padding:clamp(1.3rem,5vw,4rem) 0}
+.app-hero h1{max-width:15ch;letter-spacing:-.055em}
+.app-kicker{letter-spacing:.13em}
+.app-lead{line-height:1.62}
+.app-button{
+ border-radius:.85rem;padding:.8rem 1.25rem;
+ transition:background-color .18s ease,border-color .18s ease,transform .18s ease;
+ box-shadow:0 4px 15px rgba(0,0,0,.07)
+}
+.app-button:hover{border-color:var(--app-accent);transform:translateY(-1px)}
+.app-button.primary{box-shadow:0 8px 25px rgba(23,120,137,.15)}
+.app-illustration{
+ border-color:var(--app-line);border-radius:1.75rem;min-height:230px;
+ background:radial-gradient(ellipse at 50% 40%,#286078 0%,#122b3c 53%,#0a1d2a 100%);
+ box-shadow:var(--hear-card-shadow)
+}
+.app-waves{gap:8px}
+.app-waves span{border-radius:100px;background:linear-gradient(180deg,#a6f6ed,#39b5d0);
+ box-shadow:0 0 16px rgba(57,181,208,.09)}
+.app-grid{gap:1rem}
+.app-card{border-radius:1.15rem;padding:clamp(1.05rem,2.4vw,1.55rem);
+ box-shadow:var(--hear-card-shadow)}
+.app-card h2,.app-card h3{letter-spacing:-.02em}
+.app-metric{letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+.app-section{margin:2.6rem 0}
+.app-section-heading{letter-spacing:-.035em}
+.app-alert{border-radius:1rem}
+.app-settings-grid{gap:1rem}
+.app-settings-grid>.app-card{min-width:0}
+.app-settings{scroll-margin-top:8rem}
+.app-settings select{min-height:44px}
+.app-page h1{font-size:clamp(1.85rem,4.4vw,2.65rem);margin-top:.25rem}
+.app-page h2{letter-spacing:-.025em}
+.app-page > section{border-radius:1.1rem}
+.app-page :is(.notice,.warning){line-height:1.6;border-radius:1rem}
+.app-page :is(input:not([type="checkbox"]),select,textarea){
+ border-radius:.7rem;border:1px solid var(--app-line);background:var(--app-panel);
+ color:var(--app-text)}
+.app-page .controls{gap:.65rem}
+.app-page .chart-scroll,.app-eq-scroll{scrollbar-width:thin;scrollbar-color:var(--app-line) transparent}
+.app-page .chart-scroll{background:var(--app-panel);border:1px solid var(--app-line);
+ border-radius:1rem;padding:clamp(.45rem,1.5vw,.9rem)}
+.app-page .chart .band{background:var(--app-panel-hi);border-color:var(--app-line);
+ border-radius:.8rem}
+.app-page .chart .bar{background:var(--app-accent)}
+.app-page .chart .zero{border-top-color:var(--app-muted)}
+.app-page button:not(:disabled){transition:border-color .18s ease,background-color .18s ease}
+.hear-listening-console{border-radius:1.5rem;padding:clamp(1.1rem,3.5vw,2rem);
+ background:linear-gradient(160deg,var(--app-panel-hi) 0%,var(--app-panel) 74%);
+ box-shadow:var(--hear-card-shadow)}
+.hear-listening-meters>div{border-radius:1rem}
+.hear-listening-meters output{letter-spacing:-.04em}
+.hear-listening-answers button{border-radius:1rem}
+.hear-console-live progress{height:12px}
+.app-result-card{box-shadow:var(--hear-card-shadow)}
+.app-result-details{background:var(--app-panel);border-radius:.9rem}
+.app-result-details summary{min-height:44px;display:list-item;align-content:center;
+ cursor:pointer}
+.app-result-details[open] summary{margin-bottom:.6rem}
+.app-safety-summary{margin:.5rem 0;color:var(--app-muted)}
+.app-safety-disclosure{margin-top:.8rem;border-top:1px solid var(--app-line);
+ padding-top:.6rem}
+.app-safety-disclosure summary{font-weight:700;min-height:44px;cursor:pointer}
+.app-safety-disclosure p{margin:.6rem 0}
+.app-how-disclosure{background:var(--app-panel);border:1px solid var(--app-line);
+ padding:1rem;border-radius:1rem}
+.app-how-disclosure>summary{min-height:44px;cursor:pointer;font-weight:730}
+.app-how-disclosure[open]>summary{margin-bottom:.8rem}
+.app-quick-actions{display:flex;gap:.6rem;flex-wrap:wrap}
+.app-quick-actions a{min-height:44px;display:inline-flex;align-items:center}
+.app-settings-support{margin:1rem 0 0;padding:1rem;
+ background:var(--app-panel);border:1px solid var(--app-line);border-radius:1rem}
+.app-settings-support a{display:inline-flex;align-items:center;min-height:44px;
+ margin-right:1rem}
+@media(max-width:760px){
+ .app-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.55rem;
+   padding:.6rem max(.75rem,env(safe-area-inset-right)) .5rem max(.75rem,env(safe-area-inset-left))}
+ .app-brand{grid-column:1;grid-row:1;min-width:0}
+ .app-language-control{grid-column:2;grid-row:1;justify-self:end}
+ .app-nav{grid-column:1/-1;grid-row:2;display:flex;width:100%;
+  flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;
+  justify-content:flex-start;scrollbar-width:thin;gap:.2rem;
+  padding:.12rem 0 .25rem}
+ .app-nav a{flex:none;font-size:.88rem;padding:.48rem .72rem}
+ .app-hero{padding:1rem 0 1.5rem;gap:1.1rem}
+ .app-hero h1{font-size:clamp(2.25rem,9vw,3.5rem)}
+ .app-illustration{min-height:125px}
+ .app-waves{height:105px}
+ .app-grid{gap:.75rem}
+ .app-section{margin:1.7rem 0}
+ .app-page{padding:0 .85rem 2rem}
+ .app-page > section{padding:1rem}
+ .hear-listening-console{margin:.85rem 0}
+}
+@media(max-width:390px){
+ .app-brand{font-size:1rem}
+ .app-mark{width:31px;height:31px}
+ .app-language-control select{min-width:90px;max-width:115px;font-size:.77rem}
+ .app-hero h1{font-size:clamp(2.05rem,10.5vw,2.7rem)}
+ .app-page .chart .band{width:92px}
+}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto}
+ .app-button,.app-nav a,.app-page button:not(:disabled){transition:none!important}
+ .app-button:hover{transform:none}
+}
