@@ -75,7 +75,7 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   throw Error('Faltan los controles del recorrido principal.');
  const $=id=>root.querySelector('[data-console="'+id+'"]');
  const source=id=>sourceRoot.querySelector('#'+id);
- const action=$('action'),prompt=$('prompt'),modeText=$('mode');
+ const action=$('action'),prompt=$('prompt'),modeText=$('mode'),step=$('step');
  const frequency=$('frequency'),level=$('level'),answerRow=$('answers');
  const setup=$('setup'),device=$('device'),safety=$('safety'),
   setupFeedback=$('setup-feedback'),meters=$('meters');
@@ -84,7 +84,7 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  const route=$('route'),routeInput=$('route-input');
  const live=$('live'),wave=$('wave'),wavePath=$('wave-path');
  const progress=$('progress'),remaining=$('remaining');
- if([action,prompt,modeText,frequency,level,answerRow,setup,device,safety,
+ if([action,prompt,modeText,step,frequency,level,answerRow,setup,device,safety,
   setupFeedback,meters,heard,notHeard,
   stop,comparison,skip,recover,review,route,routeInput,live,wave,wavePath,progress,
   remaining,source('route-verified')]
@@ -135,6 +135,11 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   const preparing=['start','setup'].includes(view.mode);
   setup.hidden=!preparing;
   meters.hidden=preparing||view.mode==='recover';
+  const isResult=view.mode==='result',isTest=
+   ['sweep-running','sweep-response','plan','next-tone','tone-response',
+    'contradiction','comparison','resume','finish'].includes(view.mode);
+  step.textContent=isResult?'Paso 3 de 3 · Tu ecualizador':
+   isTest?'Paso 2 de 3 · Escucha y responde':'Paso 1 de 3 · Tu equipo';
   const [freqId,levelId]=currentSourceIds();
   const f=shown(source(freqId)),l=shown(source(levelId));
   if(frequency.textContent!==f)frequency.textContent=f;
