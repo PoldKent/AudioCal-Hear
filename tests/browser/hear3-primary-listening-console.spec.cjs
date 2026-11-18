@@ -155,3 +155,42 @@ test('D-021 main console shows real sweep frequency, remaining time and progress
  await expect(page.getByTestId('hear-console-progress')).toBeHidden();
  await expect(page.getByTestId('hear-console-remaining')).toHaveText('—');
 });
+
+test('D-021 correcting the previous frequency is opt-in and never erases verified audio evidence',async({page})=>{
+ test.setTimeout(60000);
+ await virtualAudio(page);
+ await page.goto('/hear3-exam/');
+ await expect(page.getByTestId('hear-console-review')).toBeHidden();
+ await page.getByTestId('hear-console-action').click();
+ await expect(page.getByTestId('plan')).toBeEnabled();
+ await page.getByTestId('hear-console-action').click();
+ for(let i=0;i<4;i++){
+  await page.getByTestId('hear-console-action').click();
+  await expect(page.getByTestId('hear-console-not')).toBeEnabled();
+  await page.getByTestId('hear-console-not').click();
+ }
+ await expect(page.getByTestId('hear-console-review')).toBeVisible();
+ await expect(page.getByTestId('hear-console-review')).toBeEnabled();
+ const before=await page.evaluate(()=>{
+  const s=window.hear3IntegratedPilot.snapshot();
+  return {observations:s.bands[0].observations,started:window.__consoleStarts};
+ });
+ page.once('dialog',dialog=>dialog.accept());
+ await page.getByTestId('hear-console-review').click();
+ await expect(page.getByTestId('frequency')).toHaveText('125 Hz');
+ await expect(page.getByTestId('dbfs')).toHaveText('-60 dBFS');
+ await expect(page.getByTestId('hear-console-review')).toBeHidden();
+ const after=await page.evaluate(()=>{
+  const s=window.hear3IntegratedPilot.snapshot();
+  return {observations:s.bands[0].observations,reviewed:s.bands[0].reviewedOnce,
+    started:window.__consoleStarts,canReview:s.canReviewPreviousBand};
+ });
+ expect(after.observations).toEqual(before.observations);
+ expect(after.reviewed).toBe(true);
+ expect(after.started).toBe(before.started);
+ expect(after.canReview).toBe(false);
+ await page.getByTestId('hear-console-action').click();
+ await expect(page.getByTestId('hear-console-heard')).toBeEnabled();
+ await page.getByTestId('hear-console-heard').click();
+ await expect(page.getByTestId('dbfs')).toHaveText('-66 dBFS');
+});
