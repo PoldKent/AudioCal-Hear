@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {HEAR3_LANGUAGE_CHOICES,translateHear3Ui} from '../src/hear3/app-i18n.mjs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -50,4 +51,15 @@ test('shared styles protect responsive navigation and reduced-motion preferences
  assert.match(css,/overflow-x:auto/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.match(css,/\.app-settings-links/);
+});
+
+test('secondary menus have an explicit translation in all eight UI languages',()=>{
+ const keys=["home.how.more","home.data.title","home.data.results","home.data.restore","home.data.privacy","home.data.diagnostics","exam.safety.details","editor.export.more"];
+ for(const code of HEAR3_LANGUAGE_CHOICES){
+  for(const key of keys){
+   const translation=translateHear3Ui(key,code);
+   assert.equal(typeof translation,'string',code+': '+key);
+   assert.ok(translation.length>2,code+': '+key);
+  }
+ }
 });
