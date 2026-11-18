@@ -35,17 +35,31 @@ a:focus-visible{outline:3px solid #ffd178;outline-offset:3px}
 </style>
 <link rel="stylesheet" href="../src/hear3/app-shell.css">
 <script type="module" src="../src/hear3/app-theme.mjs"></script>
+<script type="module" src="../src/hear3/app-i18n.mjs"></script>
 </head>
 <body>
 <header class="app-topbar">
  <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
  <nav class="app-nav" aria-label="Navegación principal">
-  <a href="../">Inicio</a>
-  <a href="../hear3-exam/">Examen</a>
-  <a href="../hear3-eq-editor/">Mi ecualizador</a>
-  <a href="../hear3-library/" aria-current="page">Historial</a>
-  <a href="../#ajustes">Ajustes</a>
- </nav>
+  <a href="../" data-hear-i18n="nav.home">Inicio</a>
+  <a href="../hear3-exam/" data-hear-i18n="nav.exam">Examen</a>
+  <a href="../hear3-eq-editor/" data-hear-i18n="nav.eq">Mi ecualizador</a>
+  <a href="../hear3-library/" aria-current="page" data-hear-i18n="nav.history">Historial</a>
+  <a href="../#ajustes" data-hear-i18n="nav.settings">Ajustes</a>
+ </nav> <label class="app-language-control">
+  <span class="app-sr-only">Idioma de la interfaz principal</span>
+  <select data-hear-language data-testid="hear-language"
+    aria-label="Idioma de la interfaz principal">
+   <option value="es">Español</option>
+   <option value="en">English</option>
+   <option value="fr">Français</option>
+   <option value="pt">Português</option>
+   <option value="it">Italiano</option>
+   <option value="de">Deutsch</option>
+   <option value="zh">中文</option>
+   <option value="ja">日本語</option>
+  </select>
+ </label>
 </header>
 <main class="app-page">
 <h1>Mis resultados e historial</h1>
