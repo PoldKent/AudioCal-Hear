@@ -154,10 +154,9 @@ export function createHear3AdaptiveDiscreteExam({
       }
       if(i>p.position)check(b.observations.length===0&&!b.verificationAsked,
         'Future bands cannot contain recorded observations');
-      if(b.status==='pending'&&b.observations.length>0)
-        check(i===p.position&&b.reviewedOnce===true&&
-          b.observations.every(o=>invalidated.has(o.toneId)),
-          'Pending reviewed band may only retain invalidated old responses');
+      // An ordinary in-progress band may contain valid responses while still
+      // pending. A reviewed one may also contain both retired and new answers;
+      // the original evidence is preserved and checked against the session.
     }
     const session=sessionController.getSession();
     check(JSON.stringify(session.observations)===JSON.stringify(recorded),
