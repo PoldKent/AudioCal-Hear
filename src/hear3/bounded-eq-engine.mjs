@@ -38,6 +38,12 @@ function verifyInputs(exam,session){
   a.minDbfs>=-120&&a.maxDbfs<=0&&a.minDbfs===b.minDbfs&&a.maxDbfs===b.maxDbfs,
   'Digital evidence authorization does not match');
  const observed=[],ids=new Set(),tones=new Set(),flat=[];
+ requireValue(Array.isArray(session.invalidatedToneIds),
+  'Missing immutable invalidation history');
+ const retired=new Set(session.invalidatedToneIds);
+ requireValue(retired.size===session.invalidatedToneIds.length &&
+   [...retired].every(id=>typeof id==='string'&&id.length>0),
+   'Invalid retired tone identities');
  let previous=0;
  for(const band of exam.bands){
   requireValue(band&&typeof band.id==='string'&&ID.test(band.id)&&!ids.has(band.id)&&
@@ -46,10 +52,11 @@ function verifyInputs(exam,session){
    'Invalid EQ band ordering or identity');
   previous=band.frequencyHz;ids.add(band.id);
   requireValue(['bounded-subjective-interval','inconclusive'].includes(band.status)&&
-   Array.isArray(band.observations)&&band.observations.length<=20 &&
+   Array.isArray(band.observations)&&band.observations.length<=40 &&
    ['low','medium','inconclusive'].includes(band.confidence),
    'Invalid adaptive evidence state');
   const heard=[],unheard=[];
+  let validCount=0;
   for(const o of band.observations){
    requireValue(o&&typeof o.toneId==='string'&&ID.test(o.toneId)&&!tones.has(o.toneId)&&
     o.frequencyHz===band.frequencyHz&&o.channel==='joint'&&
@@ -58,7 +65,10 @@ function verifyInputs(exam,session){
     ['heard','not-heard'].includes(o.response)&&o.provenance==='user-response',
     'Invalid or cross-channel tone observation');
    tones.add(o.toneId);
-   (o.response==='heard'?heard:unheard).push(o.digitalLevelDbfs);
+   if(!retired.has(o.toneId)){
+    (o.response==='heard'?heard:unheard).push(o.digitalLevelDbfs);
+    validCount++;
+   }
    flat.push(o);
   }
   let bracket=null,reason='inconclusive';
@@ -68,7 +78,7 @@ function verifyInputs(exam,session){
    requireValue(low!==null&&high!==null&&low<high&&
     band.intervalDbfs?.notHeardAtDbfs===low&&
     band.intervalDbfs?.heardAtDbfs===high&&
-    band.confidence===(band.observations.length>=4?'medium':'low'),
+    band.confidence===(validCount>=4?'medium':'low'),
     'Subjective interval is inconsistent with explicit tone responses');
    const width=high-low;
    if(width<=12){
@@ -82,12 +92,20 @@ function verifyInputs(exam,session){
   observed.push({
    id:band.id,frequencyHz:band.frequencyHz,
    bracket,reason,confidence:band.confidence,
-   observationCount:band.observations.length,status:band.status,
+   observationCount:validCount,status:band.status,
   });
  }
  // The audio-session record is the source of truth for a played/answered tone.
  requireValue(JSON.stringify(flat)===JSON.stringify(session.observations),
   'Adaptive bands and Web Audio evidence disagree');
+ // Old reviewed answers remain in the audit trail but never influence the
+ // second trial or final EQ. Invalidated IDs can also represent interrupted
+ // tones which never became confirmed observations.
+ for(const band of exam.bands){
+  if(band.reviewedOnce===true)requireValue(
+   band.observations.some(o=>retired.has(o.toneId)),
+   'Reviewed frequency must preserve its retired evidence');
+ }
  return observed;
 }
 function localReference(data,index,anchor){
