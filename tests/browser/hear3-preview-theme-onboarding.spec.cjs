@@ -4,6 +4,7 @@ const HOME='/';
 test('appearance follows the operating system unless explicitly overridden',async({page})=>{
  await page.emulateMedia({colorScheme:'light'});
  await page.goto(HOME);
+ await page.locator('#ajustes').evaluate(el=>{el.open=true;});
  await expect(page.getByTestId('hear3-theme-choice')).toHaveValue('system');
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','light');
  await page.emulateMedia({colorScheme:'dark'});
@@ -24,11 +25,12 @@ test('appearance follows the operating system unless explicitly overridden',asyn
 
 test('the home has a safe start, data status and no automatic audio',async({page})=>{
  await page.goto(HOME);
- await expect(page.getByRole('heading',{name:/Cómo funciona/})).toBeVisible();
+ await page.locator('#ajustes').evaluate(el=>{el.open=true;});
+ await expect(page.locator('.hear-home-extra')).not.toHaveAttribute('open');
  await expect(page.getByTestId('resume-note')).toContainText('nunca se reproduce');
- await expect(page.getByRole('link',{name:'Comenzar examen'}))
+ await expect(page.getByRole('link',{name:'Comenzar mi prueba'}))
   .toHaveAttribute('href','./hear3-exam/');
- await expect(page.getByRole('link',{name:'Ver mi ecualizador'}))
+ await expect(page.getByRole('link',{name:'Mi ecualizador'}))
   .toHaveAttribute('href','./hear3-eq-editor/');
  await expect(page.locator('audio')).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=
@@ -36,8 +38,10 @@ test('the home has a safe start, data status and no automatic audio',async({page
 });
 test('theme choice cannot alter previously saved profiles',async({page})=>{
  await page.goto(HOME);
+ await page.locator('#ajustes').evaluate(el=>{el.open=true;});
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','OLDER_RECORDS_STAY'));
  await page.getByTestId('hear3-theme-choice').selectOption('dark');
+ await page.locator('.app-nav-more > summary').click();
  await page.getByRole('link',{name:'Historial',exact:true}).click();
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1')))
   .toBe('OLDER_RECORDS_STAY');
