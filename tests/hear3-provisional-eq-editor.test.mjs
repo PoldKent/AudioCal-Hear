@@ -152,3 +152,27 @@ test('independent existing results and original catalog survive selective editin
  assert.deepEqual(after.results[0].originalEq,before.results[0].originalEq);
  assert.equal(after.results[0].currentEq[0].gainDb,1.5);
 });
+
+test('D-049/D-050 exported drafts must reflect visible gains while persisted EQ stays intact',()=>{
+ const f=factory(),catalog=f.store.load().catalog;
+ const current=catalog.results[0].currentEq.map(r=>r.gainDb);
+ const draft=[-0.5,1,2.5];
+ const txt=exportHear3ProvisionalEq(catalog,'result-one',{format:'txt',draftGains:draft});
+ const csv=exportHear3ProvisionalEq(catalog,'result-one',{format:'csv',draftGains:draft});
+ const json=JSON.parse(exportHear3ProvisionalEq(catalog,'result-one',{
+  format:'json',draftGains:draft,
+ }));
+ assert.match(txt,/125 Hz: -0.5 dB/);
+ assert.match(txt,/VALORES VISIBLES AUN NO GUARDADOS/);
+ assert.match(csv,/"125","-0.5","1"/);
+ assert.deepEqual(json.rows.map(r=>r.currentGainDb),draft);
+ assert.equal(json.draftUnsaved,true);
+ assert.deepEqual(f.store.load().catalog.results[0].currentEq.map(r=>r.gainDb),current);
+ for(const invalid of [[1,0],[0,NaN,0],[0,3.5,0],[0,1.25,0]]){
+  assert.throws(()=>exportHear3ProvisionalEq(catalog,'result-one',{
+   format:'txt',draftGains:invalid,
+  }),/Invalid visible EQ gains/);
+ }
+ const original=JSON.parse(exportHear3ProvisionalEq(catalog,'result-one',{format:'json'}));
+ assert.equal(original.draftUnsaved,undefined);
+});
