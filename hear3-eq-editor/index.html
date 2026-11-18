@@ -31,22 +31,37 @@ hr{border:none;border-top:1px solid var(--line);margin:1.4rem 0}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style><link rel="stylesheet" href="../src/hear3/app-shell.css">
 <script type="module" src="../src/hear3/app-theme.mjs"></script>
+<script type="module" src="../src/hear3/app-i18n.mjs"></script>
 </head>
 <body>
 <a href="#main" class="skip">Saltar al contenido principal</a>
 <header class="app-topbar">
  <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
  <nav class="app-nav" aria-label="Navegación principal">
-  <a href="../">Inicio</a>
-  <a href="../hear3-exam/">Examen</a>
-  <a href="../hear3-eq-editor/" aria-current="page">Mi ecualizador</a>
-  <a href="../hear3-library/">Historial</a>
-  <a href="../#ajustes">Ajustes</a>
- </nav>
+  <a href="../" data-hear-i18n="nav.home">Inicio</a>
+  <a href="../hear3-exam/" data-hear-i18n="nav.exam">Examen</a>
+  <a href="../hear3-eq-editor/" aria-current="page" data-hear-i18n="nav.eq">Mi ecualizador</a>
+  <a href="../hear3-library/" data-hear-i18n="nav.history">Historial</a>
+  <a href="../#ajustes" data-hear-i18n="nav.settings">Ajustes</a>
+ </nav> <label class="app-language-control">
+  <span class="app-sr-only">Idioma de la interfaz principal</span>
+  <select data-hear-language data-testid="hear-language"
+    aria-label="Idioma de la interfaz principal">
+   <option value="es">Español</option>
+   <option value="en">English</option>
+   <option value="fr">Français</option>
+   <option value="pt">Português</option>
+   <option value="it">Italiano</option>
+   <option value="de">Deutsch</option>
+   <option value="zh">中文</option>
+   <option value="ja">日本語</option>
+  </select>
+ </label>
 </header>
 <main id="main" class="app-page">
+<p data-hear-language-note hidden class="app-language-note" role="note"></p>
 <p><a href="../">← Volver al inicio</a></p>
-<h1>Mi ecualizador</h1>
+<h1 data-hear-i18n="editor.title">Mi ecualizador</h1>
 <p class="notice"><strong>Una sola curva conjunta, guardada localmente y revisable.</strong>
  Las ganancias provienen de observaciones subjetivas de tonos digitales: no
  constituyen una calibración auditiva, un diagnóstico, una medición acústica ni una

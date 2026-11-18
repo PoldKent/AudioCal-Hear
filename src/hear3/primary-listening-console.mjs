@@ -1,3 +1,5 @@
+import {translateHear3Ui} from './app-i18n.mjs';
+
 /**
  * Hear's human-first listening console.
  * Delegates every user-initiated action to existing exam controls. It never
@@ -99,14 +101,30 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
    enabled:enabled(),eqReady:!!eqReady(),
   });
   view=newState;
-  modeText.textContent={
+  const language=(env.document?.documentElement?.lang??'es').split('-')[0];
+  const translated=(key,fallback)=>translateHear3Ui(key,language)??fallback;
+  const modeKey={
+   'sweep-running':'console.sweep','sweep-response':'console.sweep',
+   'tone-response':'console.tone',comparison:'console.comparison',
+   result:'console.result',
+  }[view.mode];
+  const modeFallback={
    setup:'PREPARACIÓN',start:'PREPARACIÓN',recover:'RECUPERACIÓN',
    'sweep-running':'BARRIDO','sweep-response':'BARRIDO',
-   plan:'TONOS', 'next-tone':'TONOS','tone-response':'TONO ACTUAL',
+   plan:'TONOS','next-tone':'TONOS','tone-response':'TONO ACTUAL',
    contradiction:'CONFIRMACIÓN',comparison:'COMPARACIÓN',
    resume:'EXAMEN EN PAUSA',finish:'FINALIZAR',result:'MI ECUALIZADOR',
   }[view.mode]??'EXAMEN';
-  if(prompt.textContent!==view.prompt)prompt.textContent=view.prompt;
+  modeText.textContent=modeKey?translated(modeKey,modeFallback):modeFallback;
+  const promptKey={
+   setup:'prompt.setup',start:'prompt.start',recover:'prompt.recover',
+   'sweep-running':'prompt.running','sweep-response':'prompt.sweep',
+   plan:'prompt.plan','next-tone':'prompt.next','tone-response':'prompt.heard',
+   contradiction:'prompt.contradiction',comparison:'prompt.compare',
+   resume:'prompt.resume',finish:'prompt.finish',result:'prompt.result',
+  }[view.mode];
+  const localizedPrompt=promptKey?translated(promptKey,view.prompt):view.prompt;
+  if(prompt.textContent!==localizedPrompt)prompt.textContent=localizedPrompt;
   const [freqId,levelId]=currentSourceIds();
   const f=shown(source(freqId)),l=shown(source(levelId));
   if(frequency.textContent!==f)frequency.textContent=f;
@@ -124,7 +142,13 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
    button.disabled=!active(item.id);
   }
   action.hidden=isAnswer||view.mode==='sweep-running';
-  action.textContent=view.primaryLabel;
+  const actionKey={
+   setup:'console.setup',start:'console.start',plan:'console.plan',
+   'next-tone':'console.next',finish:'console.finish',result:'console.view',
+   resume:'console.resume',recover:'console.recover',
+   contradiction:'console.compare',
+  }[view.mode];
+  action.textContent=actionKey?translated(actionKey,view.primaryLabel):view.primaryLabel;
   route.hidden=view.mode!=='resume';
   routeInput.checked=Boolean(source('route-verified').checked);
   routeInput.disabled=view.mode!=='resume';
@@ -186,6 +210,7 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   queued=true;
   Promise.resolve().then(()=>{queued=false;render();});
  }
+ env.addEventListener?.('hear3:language-change',schedule);
  const observer=new MutationObserver(schedule);
  for(const id of [...ids,'sweep-frequency','sweep-level','frequency','dbfs',
   'sweep-status','tone-status','eq-rows','eq-status','coverage']){
@@ -196,5 +221,6 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   });
  }
  render();
- return frozen({render,dispose:()=>observer.disconnect()});
+ return frozen({render,dispose:()=>{observer.disconnect();
+   env.removeEventListener?.('hear3:language-change',schedule);}});
 }

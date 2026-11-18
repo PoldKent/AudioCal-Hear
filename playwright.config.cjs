@@ -11,6 +11,7 @@ module.exports = defineConfig({
   workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]] : 'list',
   use: {
+    locale: 'es-BO',
     baseURL: 'http://127.0.0.1:4177',
     actionTimeout: 12000,
     trace: 'retain-on-failure',
