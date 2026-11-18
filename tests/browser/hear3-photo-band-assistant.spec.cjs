@@ -19,6 +19,7 @@ test('camera helper is part of one app, proposes bands only after local detectio
   }});
  });
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  const startLayout=await page.getByTestId('layout-choice').inputValue();
  expect(startLayout).toBe('5');
  await page.getByTestId('photo-band-details').locator('summary').click();
@@ -44,6 +45,7 @@ test('no OCR support is a legitimate photo reference + manual band entry, no upl
  await page.addInitScript(()=>Object.defineProperty(window,'TextDetector',
   {configurable:true,value:undefined}));
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  await page.getByTestId('photo-band-details').locator('summary').click();
  await page.getByTestId('eq-photo-input').setInputFiles(await drawnEqImage(page));
  await expect(page.getByTestId('eq-photo-status')).toContainText('reconocimiento automático no está disponible');
@@ -58,6 +60,7 @@ test('no OCR support is a legitimate photo reference + manual band entry, no upl
 });
 test('device shortcut requires conscious selection and never claims hardware detection',async({page})=>{
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  await page.getByTestId('archive-category').selectOption('car');
  await expect(page.getByTestId('device-suggest-layout')).toContainText('automóvil');
  await expect(page.getByTestId('layout-choice')).toHaveValue('5');
@@ -70,6 +73,7 @@ test('device shortcut requires conscious selection and never claims hardware det
 
 test('the four visible journey steps allow preview and safe backwards review without running audio',async({page})=>{
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  await expect(page.getByTestId('journey-status')).toContainText('Etapa actual: 1 · Mi equipo');
  await expect(page.locator('[data-journey-stage=prepare]')).toHaveAttribute('aria-current','step');
  await expect(page.getByTestId('journey-back')).toBeDisabled();
