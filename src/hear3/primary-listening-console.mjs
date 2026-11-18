@@ -1,4 +1,5 @@
 import {translateHear3Ui} from './app-i18n.mjs';
+import {buildHear3DigitalToneWavePath} from './digital-tone-visualizer.mjs';
 
 /**
  * Hear's human-first listening console.
@@ -79,8 +80,11 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  const heard=$('heard'),notHeard=$('not'),stop=$('stop');
  const comparison=$('comparison'),skip=$('skip'),recover=$('recover');
  const route=$('route'),routeInput=$('route-input');
+ const live=$('live'),wave=$('wave'),wavePath=$('wave-path');
+ const progress=$('progress'),remaining=$('remaining');
  if([action,prompt,modeText,frequency,level,answerRow,heard,notHeard,
-  stop,comparison,skip,recover,route,routeInput,source('route-verified')]
+  stop,comparison,skip,recover,route,routeInput,live,wave,wavePath,progress,
+  remaining,source('route-verified')]
   .some(element=>!element))
   throw Error('El panel principal no tiene todos sus controles.');
  let view=null;
@@ -129,6 +133,32 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   const f=shown(source(freqId)),l=shown(source(levelId));
   if(frequency.textContent!==f)frequency.textContent=f;
   if(level.textContent!==l)level.textContent=l;
+  // The existing audio engine owns these readings. Mirroring them does not
+  // estimate a new duration, create Web Audio or invent acoustic measurements.
+  const sweeping=['sweep-response','sweep-running'].includes(view.mode);
+  const playingTone=view.mode==='tone-response';
+  const playing=sweeping||playingTone;
+  const sourceProgress=source(sweeping?'sweep-progress':'tone-progress');
+  const maximum=Number(sourceProgress?.max);
+  const elapsed=Number(sourceProgress?.value);
+  const usable=playing&&Number.isFinite(maximum)&&maximum>0&&
+   Number.isFinite(elapsed)&&elapsed>=0;
+  live.hidden=!usable;
+  if(usable){
+   progress.max=maximum;
+   progress.value=Math.min(maximum,elapsed);
+   const rem=sweeping?shown(source('sweep-remaining')):
+    ((Math.max(0,maximum-elapsed))/1000).toFixed(1)+' s';
+   if(remaining.textContent!==rem)remaining.textContent=rem;
+   const hz=Number.parseFloat(f);
+   const path=buildHear3DigitalToneWavePath(hz);
+   if(wavePath.getAttribute('d')!==path)wavePath.setAttribute('d',path);
+  }else{
+   progress.value=0;
+   remaining.textContent='—';
+   wavePath.removeAttribute('d');
+  }
+  wave.classList.toggle('hear-wave-active',usable);
   const isAnswer=!!view.answers;
   answerRow.hidden=!['tone','sweep'].includes(view.answers);
   comparison.hidden=view.answers!=='comparison';
@@ -213,10 +243,11 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  env.addEventListener?.('hear3:language-change',schedule);
  const observer=new MutationObserver(schedule);
  for(const id of [...ids,'sweep-frequency','sweep-level','frequency','dbfs',
-  'sweep-status','tone-status','eq-rows','eq-status','coverage']){
+  'sweep-status','tone-status','eq-rows','eq-status','coverage',
+  'sweep-progress','tone-progress','sweep-remaining']){
   const el=source(id);
   if(el)observer.observe(el,{
-   attributes:true,attributeFilter:['disabled'],
+   attributes:true,attributeFilter:['disabled','value','max'],
    subtree:true,characterData:true,childList:true,
   });
  }
