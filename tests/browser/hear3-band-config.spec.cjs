@@ -26,6 +26,7 @@ test('nominal 31-band EQ layout uses the same confirmed adaptive exam without as
  test.setTimeout(60000);
  await fakeAudio(page);
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  await page.getByTestId('layout-choice').selectOption('31');
  await expect(page.getByTestId('sweep-start')).toBeDisabled();
  await page.getByTestId('layout-apply').click();
@@ -42,6 +43,7 @@ test('nominal 31-band EQ layout uses the same confirmed adaptive exam without as
 test('a custom user-declared 3-band EQ can be configured, but never auto-plays',async({page})=>{
  await fakeAudio(page);
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  await page.getByTestId('layout-choice').selectOption('custom');
  await expect(page.getByTestId('layout-custom')).toBeEnabled();
  await page.getByTestId('layout-custom').fill('100, 350, 2000');
@@ -56,6 +58,7 @@ test('a custom user-declared 3-band EQ can be configured, but never auto-plays',
 });
 test('unsafe custom frequencies are rejected without mutating the default preset',async({page})=>{
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  await page.getByTestId('layout-choice').selectOption('custom');
  for(const bad of ['200, 100','100, 100','10, 400','100, 25000']){
   await page.getByTestId('layout-custom').fill(bad);
@@ -74,6 +77,7 @@ test('unsafe custom frequencies are rejected without mutating the default preset
 test('a saved unfinished exam is not silently overwritten by a new frequency selection',async({page})=>{
  await fakeAudio(page);
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','V2_UNCHANGED'));
  await page.getByTestId('sweep-start').click();
  await expect(page.getByTestId('plan')).toBeEnabled();
@@ -83,8 +87,9 @@ test('a saved unfinished exam is not silently overwritten by a new frequency sel
  await expect(page.getByTestId('recover-exam')).toBeEnabled();
  await page.getByTestId('layout-choice').selectOption('7');
  await page.getByTestId('layout-apply').click();
- await page.getByTestId('sweep-start').click();
- await expect(page.getByTestId('error')).toContainText('Hay un examen guardado');
+ await expect(page.getByTestId('sweep-start')).toBeDisabled();
+ await expect(page.getByTestId('hear-console-action')).toContainText('Continuar mi examen');
+ await expect(page.getByTestId('error')).toBeEmpty();
  await expect(page.getByTestId('recover-exam')).toBeEnabled();
  expect(await page.evaluate(()=>window.hear3IntegratedPilot.snapshot())).toBeNull();
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('V2_UNCHANGED');
