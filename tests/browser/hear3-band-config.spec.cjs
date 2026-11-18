@@ -84,6 +84,7 @@ test('a saved unfinished exam is not silently overwritten by a new frequency sel
  await page.getByTestId('plan').click();
  await expect(page.getByTestId('tone-next')).toBeEnabled();
  await page.reload();
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  await expect(page.getByTestId('recover-exam')).toBeEnabled();
  await page.getByTestId('layout-choice').selectOption('7');
  await page.getByTestId('layout-apply').click();
