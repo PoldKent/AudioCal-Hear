@@ -233,6 +233,8 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   if(id==='__review-setup'){
    setupFeedback.textContent=source('audio-preflight')?.textContent?.trim()||
     'Revisa la salida y confirma las frecuencias antes de comenzar.';
+   const details=source('hear-advanced-tools');
+   if(details)details.open=true;
    source('layout-heading')?.scrollIntoView({block:'start',behavior:'auto'});
    return;
   }
@@ -272,13 +274,20 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  safety.addEventListener('change',()=>{
   if(safety.checked)setupFeedback.textContent='Equipo listo. Ya puedes comenzar.';
  });
+ setup.querySelector('a[href="#layout-heading"]')?.addEventListener('click',()=>{
+  const details=source('hear-advanced-tools');
+  if(details)details.open=true;
+ });
  // Report real backend errors next to the primary action; never let the
  // user click and see an error only at the bottom of a long document.
  const sourceError=source('error');
- if(sourceError)new MutationObserver(()=>{
+ const errorObserver=sourceError?new MutationObserver(()=>{
   const message=sourceError.textContent?.trim();
   if(message)setupFeedback.textContent=message;
- }).observe(sourceError,{childList:true,characterData:true,subtree:true});
+ }):null;
+ if(errorObserver)errorObserver.observe(sourceError,{
+  childList:true,characterData:true,subtree:true,
+ });
  for(const item of choices){
   const button=comparison.querySelector('[data-console-choice="'+item.id+'"]');
   button.addEventListener('click',()=>clickSource(view.mode==='comparison'?item.id:null));
@@ -302,5 +311,6 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  }
  render();
  return frozen({render,dispose:()=>{observer.disconnect();
+   errorObserver?.disconnect();
    env.removeEventListener?.('hear3:language-change',schedule);}});
 }
