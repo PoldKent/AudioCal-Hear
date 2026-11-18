@@ -58,7 +58,13 @@ const STRINGS=Object.freeze({
     "prompt.resume": "El examen está pausado. Comprueba la salida de audio y el volumen físico antes de reanudar.",
     "prompt.recover": "Encontramos un examen anterior. Recupéralo si quieres continuar sin repetir los tonos.",
     "prompt.compare": "Escuchaste dos tonos. Elige cuál se percibió más claramente.",
-    "prompt.contradiction": "Hay una respuesta contradictoria. Puedes confirmar la comparación, o conservar la banda inconclusa."
+    "prompt.contradiction": "Hay una respuesta contradictoria. Puedes confirmar la comparación, o conservar la banda inconclusa.",
+    "choice.first": "El primer tono",
+    "choice.second": "El segundo tono",
+    "choice.similar": "Los escuché parecido",
+    "choice.neither": "Ninguno",
+    "choice.uncertain": "No estoy seguro",
+    "route.confirm": "He comprobado la salida de audio y mantendré el volumen físico bajo y cómodo"
   },
   "en": {
     "nav.home": "Home",
@@ -112,7 +118,13 @@ const STRINGS=Object.freeze({
     "prompt.resume": "The test is paused. Check the audio output and physical volume before resuming.",
     "prompt.recover": "A previous test was found. Recover it to continue without repeating tones.",
     "prompt.compare": "You heard two tones. Choose which one sounded clearer.",
-    "prompt.contradiction": "A response was inconsistent. You can compare the tones or leave the band inconclusive."
+    "prompt.contradiction": "A response was inconsistent. You can compare the tones or leave the band inconclusive.",
+    "choice.first": "The first tone",
+    "choice.second": "The second tone",
+    "choice.similar": "Both sounded similar",
+    "choice.neither": "Neither",
+    "choice.uncertain": "I'm not sure",
+    "route.confirm": "I checked the audio output and will keep the physical volume low and comfortable"
   },
   "pt": {
     "nav.home": "Início",
@@ -166,7 +178,13 @@ const STRINGS=Object.freeze({
     "prompt.resume": "O teste está pausado. Confira a saída de áudio e o volume físico antes de retomar.",
     "prompt.recover": "Foi encontrado um teste anterior. Recupere-o para continuar sem repetir tons.",
     "prompt.compare": "Você ouviu dois tons. Escolha qual deles soou mais claro.",
-    "prompt.contradiction": "Uma resposta foi contraditória. Compare os tons ou mantenha a banda inconclusiva."
+    "prompt.contradiction": "Uma resposta foi contraditória. Compare os tons ou mantenha a banda inconclusiva.",
+    "choice.first": "O primeiro tom",
+    "choice.second": "O segundo tom",
+    "choice.similar": "Os dois parecidos",
+    "choice.neither": "Nenhum",
+    "choice.uncertain": "Não tenho certeza",
+    "route.confirm": "Verifiquei a saída de áudio e manterei o volume físico baixo e confortável"
   },
   "fr": {
     "nav.home": "Accueil",
@@ -220,7 +238,13 @@ const STRINGS=Object.freeze({
     "prompt.resume": "Le test est en pause. Vérifiez la sortie audio et le volume avant de reprendre.",
     "prompt.recover": "Un test précédent a été trouvé. Récupérez-le sans répéter les sons.",
     "prompt.compare": "Vous avez entendu deux sons. Choisissez celui qui était le plus clair.",
-    "prompt.contradiction": "Une réponse était contradictoire. Comparez les sons ou laissez la bande incertaine."
+    "prompt.contradiction": "Une réponse était contradictoire. Comparez les sons ou laissez la bande incertaine.",
+    "choice.first": "Le premier son",
+    "choice.second": "Le deuxième son",
+    "choice.similar": "Ils étaient similaires",
+    "choice.neither": "Aucun des deux",
+    "choice.uncertain": "Je ne sais pas",
+    "route.confirm": "J’ai vérifié la sortie audio et je garderai le volume physique faible et confortable"
   },
   "it": {
     "nav.home": "Inizio",
@@ -274,7 +298,13 @@ const STRINGS=Object.freeze({
     "prompt.resume": "Il test è in pausa. Controlla l’uscita audio e il volume prima di riprendere.",
     "prompt.recover": "È stato trovato un test precedente. Recuperalo senza ripetere i toni.",
     "prompt.compare": "Hai ascoltato due toni. Scegli quello che hai percepito più chiaramente.",
-    "prompt.contradiction": "Una risposta era contraddittoria. Confronta i toni o lascia la banda inconcludente."
+    "prompt.contradiction": "Una risposta era contraddittoria. Confronta i toni o lascia la banda inconcludente.",
+    "choice.first": "Il primo tono",
+    "choice.second": "Il secondo tono",
+    "choice.similar": "Erano simili",
+    "choice.neither": "Nessuno",
+    "choice.uncertain": "Non sono sicuro",
+    "route.confirm": "Ho verificato l’uscita audio e terrò il volume fisico basso e confortevole"
   },
   "de": {
     "nav.home": "Start",
@@ -328,7 +358,13 @@ const STRINGS=Object.freeze({
     "prompt.resume": "Der Test ist pausiert. Prüfe Ausgang und Lautstärke vor dem Fortsetzen.",
     "prompt.recover": "Ein früherer Test wurde gefunden. Setze ihn ohne Wiederholung der Töne fort.",
     "prompt.compare": "Du hast zwei Töne gehört. Welcher war deutlicher?",
-    "prompt.contradiction": "Eine Antwort war widersprüchlich. Vergleiche die Töne oder lass das Band unklar."
+    "prompt.contradiction": "Eine Antwort war widersprüchlich. Vergleiche die Töne oder lass das Band unklar.",
+    "choice.first": "Der erste Ton",
+    "choice.second": "Der zweite Ton",
+    "choice.similar": "Beide ähnlich",
+    "choice.neither": "Keiner",
+    "choice.uncertain": "Ich bin unsicher",
+    "route.confirm": "Ich habe den Audioausgang überprüft und halte die physische Lautstärke niedrig und angenehm"
   },
   "zh": {
     "nav.home": "首页",
@@ -382,7 +418,13 @@ const STRINGS=Object.freeze({
     "prompt.resume": "测试已暂停。继续之前请检查音频输出和设备音量。",
     "prompt.recover": "发现以前的测试。恢复后可继续，无须重复音调。",
     "prompt.compare": "你听到了两个音调。请选择更清晰的一个。",
-    "prompt.contradiction": "回答存在矛盾。你可以比较音调，也可以保留不确定结果。"
+    "prompt.contradiction": "回答存在矛盾。你可以比较音调，也可以保留不确定结果。",
+    "choice.first": "第一个音调",
+    "choice.second": "第二个音调",
+    "choice.similar": "两个差不多",
+    "choice.neither": "都没听到",
+    "choice.uncertain": "我不确定",
+    "route.confirm": "我已检查音频输出，并将设备音量保持在较低且舒适的水平"
   },
   "ja": {
     "nav.home": "ホーム",
@@ -436,7 +478,13 @@ const STRINGS=Object.freeze({
     "prompt.resume": "テストは一時停止中です。再開前に出力と機器の音量を確認してください。",
     "prompt.recover": "以前のテストが見つかりました。復元してトーンの繰り返しを避けられます。",
     "prompt.compare": "二つのトーンを聞きました。より明瞭だった方を選んでください。",
-    "prompt.contradiction": "回答に矛盾があります。比較するか、不確定のままにできます。"
+    "prompt.contradiction": "回答に矛盾があります。比較するか、不確定のままにできます。",
+    "choice.first": "最初のトーン",
+    "choice.second": "二番目のトーン",
+    "choice.similar": "両方同じくらい",
+    "choice.neither": "どちらも聞こえない",
+    "choice.uncertain": "わからない",
+    "route.confirm": "音声出力を確認しました。機器の音量を低く快適に保ちます"
   }
 });
 const has=code=>HEAR3_LANGUAGE_CHOICES.includes(code);
