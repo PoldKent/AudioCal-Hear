@@ -21,7 +21,7 @@ const STRINGS=Object.freeze({
     "home.how": "Cómo funciona",
     "home.appearance": "Apariencia",
     "home.offline": "Uso sin conexión",
-    "exam.header": "Tu examen de escucha",
+    "exam.header": "Examen de tonos",
     "exam.stage.prepare": "1 · Mi equipo",
     "exam.stage.sweep": "2 · Barrido",
     "exam.stage.tones": "3 · Tonos",
