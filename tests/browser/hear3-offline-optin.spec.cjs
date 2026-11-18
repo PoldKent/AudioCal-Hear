@@ -1,6 +1,6 @@
 const {test,expect}=require('@playwright/test');
 const HOME='/';
-const CACHE='audiocal-hear3-prototype-static-v7';
+const CACHE='audiocal-hear3-prototype-static-v8';
 
 async function supported(page){
  return page.evaluate(()=>Boolean(window.isSecureContext&&navigator.serviceWorker&&window.caches));
@@ -26,7 +26,7 @@ async function installAndVerify(page){
  const cached=await page.evaluate(async cacheName=>{
   const cache=await caches.open(cacheName);
   const required=['/index.html','/src/hear3/app-shell.css','/src/hear3/app-theme.mjs',
-   '/hear3-exam/','/hear3-library/','/hear3-eq-editor/',
+   '/hear3-exam/','/hear3-library/','/hear3-eq-editor/','/hear3-photo-privacy/',
    '/src/hear3/immediate-eq-result.mjs','/src/hear3/manual-eq-application-guide.mjs',
    '/src/hear3/eq-edit-history.mjs'];
   for(const path of required){
@@ -59,6 +59,8 @@ test('Chromium can reopen root, exam, results and editor without network after o
   await expect(page.getByRole('heading',{level:1})).toContainText('Mi ecualizador');
   await page.goto('/hear3-privacy/');
   await expect(page.getByTestId('inspect')).toBeEnabled();
+  await page.goto('/hear3-photo-privacy/');
+  await expect(page.getByTestId('photo')).toBeVisible();
   await page.goto('/hear3-diagnostics/');
   await expect(page.getByTestId('preview')).toBeEnabled();
   await page.getByTestId('preview').click();

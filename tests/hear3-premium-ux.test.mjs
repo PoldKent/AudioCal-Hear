@@ -12,7 +12,8 @@ test('the redesigned public home remains byte-identical to its build source',()=
 test('main navigation still exposes exam, EQ, library, settings and theme/offline',()=>{
  const home=read('index.html');
  for(const href of ['./hear3-exam/','./hear3-eq-editor/','./hear3-library/','#ajustes',
-  './hear3-privacy/','./hear3-dual-restore/','./hear3-diagnostics/']){
+  './hear3-privacy/','./hear3-dual-restore/','./hear3-diagnostics/',
+  './hear3-photo-privacy/']){
   assert.ok(home.includes('href="'+href+'"'),'Missing access: '+href);
  }
  for(const id of ['hear3-theme-choice','offline-enable','offline-disable',
@@ -54,7 +55,7 @@ test('shared styles protect responsive navigation and reduced-motion preferences
 });
 
 test('secondary menus have an explicit translation in all eight UI languages',()=>{
- const keys=["home.how.more","home.data.title","home.data.results","home.data.restore","home.data.privacy","home.data.diagnostics","exam.safety.details","editor.export.more"];
+ const keys=["home.how.more","home.data.title","home.data.results","home.data.restore","home.data.privacy","home.data.diagnostics","home.data.photo","exam.safety.details","editor.export.more"];
  for(const code of HEAR3_LANGUAGE_CHOICES){
   for(const key of keys){
    const translation=translateHear3Ui(key,code);

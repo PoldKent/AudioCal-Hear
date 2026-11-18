@@ -60,7 +60,7 @@ The A/B player keeps the same overall output gain and headroom between versions,
 
 **Hearing threshold improvement in v1.8.2:** a contradictory response now triggers additional adjacent-level checks instead of immediately discarding the frequency. If a repeatable limit cannot be confirmed, only that frequency can be retried, without inventing an EQ adjustment. [Bilingual release notes](RELEASE_NOTES_v1.8.2.md).
 
-## What you can do
+## Historical Hear 1.x capabilities (not all part of the current Hear 3)
 
 - **Guided listening:** an adaptive descending-tone test with 3 seconds at each digital level; a coarse search is followed by 1 dB steps near the perceived threshold.
 - **Personalize with music:** compare A/B sound choices for bass, vocals and treble, then fine-tune each band manually.
@@ -75,9 +75,9 @@ The adaptive test schedules at most **42 seconds of playback** for the first att
 
 1. Visit **https://poldkent.github.io/AudioCal-Hear/** on your phone in a modern browser.
 2. Connect your headphones, speaker or car audio using the phone's Bluetooth/audio settings. If testing a car, remain **parked**.
-3. Select your device, EQ preset and test mode. Set a **low, comfortable, fixed volume** in a quiet environment.
+3. Select your device and its real EQ bands. Hear 3 uses one adaptive listening workflow. Set a **low, comfortable, fixed volume** in a quiet environment.
 4. Respond when each test tone becomes inaudible. Never increase the volume to chase a tone.
-5. Compare your own music, review the suggestions and **manually** enter the EQ values in your hardware or headphone app.
+5. Review the suggested EQ, its uncertainty and **manually** enter supported values in your hardware or headphone app; the current workflow does not require music A/B.
 
 The app does not detect every Bluetooth model, control the phone's system-wide EQ or update external devices automatically. Suggested settings may not yield a noticeable or preferable improvement on every device.
 
@@ -89,7 +89,7 @@ The app does not detect every Bluetooth model, control the phone's system-wide E
 
 ## Privacy
 
-The current app runs as a static page with **no AudioCal Hear accounts, app analytics or application-controlled backend**. Profiles and EQ preferences are stored in this browser's local storage. Selected music is handled locally in the browser. You can export backups yourself; anyone with access to your browser/device or exported files may be able to see them. GitHub, as the hosting provider, may process technical access information under its own policies.
+The current app runs as a static page with **no AudioCal Hear accounts, app analytics or application-controlled backend**. Profiles and EQ preferences are stored in this browser's local storage. The historical Hear 1.x music tool handled selected audio locally; Hear 3 does not require music uploads or A/B playback. You can export backups yourself; anyone with access to your browser/device or exported files may be able to see them. GitHub, as the hosting provider, may process technical access information under its own policies.
 
 Read [Privacy notice](PRIVACY.md) · [Privacy notice in Spanish](PRIVACY.es.md).
 
