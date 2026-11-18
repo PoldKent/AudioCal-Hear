@@ -104,3 +104,19 @@ test('pilot inspection and navigation do not clear old Hear 2.0 profiles',async(
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1')))
   .toBe('UNCHANGED_LEGACY');
 });
+
+test('D-027 invalid EQ layout reveals optional contextual recovery without sound or data loss',async({page})=>{
+ await page.goto('/hear3-exam/');
+ await expect(page.getByTestId('exam-error-help')).toBeHidden();
+ await page.getByTestId('layout-choice').selectOption('custom');
+ await page.getByTestId('layout-custom').fill('not-a-frequency');
+ await page.getByTestId('layout-apply').click();
+ await expect(page.getByTestId('error')).not.toBeEmpty();
+ await expect(page.getByTestId('exam-error-help')).toBeVisible();
+ await expect(page.getByTestId('exam-error-help-title')).toContainText('frecuencias');
+ await expect(page.getByTestId('exam-error-help')).not.toHaveAttribute('open');
+ await page.getByTestId('exam-error-help').locator('summary').click();
+ await expect(page.getByTestId('exam-error-help-steps').locator('li')).toHaveCount(4);
+ const source=await page.evaluate(()=>window.hear3IntegratedPilot?.snapshot());
+ expect(source).toBeNull();
+});
