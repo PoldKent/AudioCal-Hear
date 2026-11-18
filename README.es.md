@@ -60,7 +60,7 @@ El reproductor conserva un nivel general de salida fijo y margen contra saturaci
 
 **Mejora del umbral auditivo v1.8.2:** una respuesta contradictoria activa comprobaciones adicionales en niveles vecinos; ya no descarta de inmediato toda la frecuencia. Si no se confirma el límite, puedes repetir solo esa frecuencia, sin inventar ganancias de EQ. [Notas bilingües](RELEASE_NOTES_v1.8.2.md).
 
-## Funciones principales
+## Funciones históricas de Hear 1.x (no todas forman parte de Hear 3)
 
 - **Prueba auditiva guiada:** sonidos descendentes que se mantienen 3 segundos en cada nivel digital; búsqueda inicial rápida y luego pasos de 1 dB cerca del umbral.
 - **Personalización musical:** comparación A/B de graves, voces y agudos, con ajustes individuales editables.
@@ -75,9 +75,9 @@ La prueba adaptativa utiliza como máximo **42 segundos de reproducción automá
 
 1. Abre **https://poldkent.github.io/AudioCal-Hear/** desde tu celular con un navegador moderno.
 2. Conecta los auriculares, parlantes o el automóvil desde la configuración Bluetooth/audio del teléfono. Para probar el automóvil, permanece **estacionado**.
-3. Selecciona equipo, ecualizador y modo. Utiliza un **volumen bajo, cómodo y fijo**, en un ambiente silencioso.
+3. Selecciona tu equipo y sus bandas reales de EQ. Hear 3 ofrece un solo recorrido adaptativo. Utiliza un **volumen bajo, cómodo y fijo** en un ambiente silencioso.
 4. Marca cuándo dejas de escuchar cada tono. Nunca aumentes el volumen para perseguir un sonido que no escuchas.
-5. Compara con tu música, revisa las recomendaciones y copia **manualmente** los valores al ecualizador de tu dispositivo.
+5. Revisa la curva de EQ y sus limitaciones. Copia **manualmente** los valores compatibles al ecualizador de tu equipo; Hear 3 no requiere comparación musical A/B.
 
 La app no detecta todos los modelos Bluetooth, no controla el ecualizador global del teléfono ni modifica automáticamente equipos externos. Sus recomendaciones pueden no producir una mejoría perceptible o preferible en todos los dispositivos.
 
@@ -89,7 +89,7 @@ La app no detecta todos los modelos Bluetooth, no controla el ecualizador global
 
 ## Privacidad
 
-La aplicación actual es una página estática **sin cuentas de AudioCal Hear, sin analíticas propias y sin servidor de perfiles controlado por la app**. Tus perfiles y preferencias se guardan en el almacenamiento local del navegador. La música elegida se procesa en el propio navegador. Puedes exportar respaldos; otras personas con acceso a tu dispositivo, navegador o archivos exportados podrían consultarlos. GitHub, como proveedor de alojamiento, puede tratar datos técnicos de acceso conforme a sus propias políticas.
+La aplicación actual es una página estática **sin cuentas de AudioCal Hear, sin analíticas propias y sin servidor de perfiles controlado por la app**. Tus perfiles y preferencias se guardan en el almacenamiento local del navegador. La herramienta musical histórica de Hear 1.x procesaba la música localmente; Hear 3 no requiere subir canciones ni compararlas con A/B. Puedes exportar respaldos; otras personas con acceso a tu dispositivo, navegador o archivos exportados podrían consultarlos. GitHub, como proveedor de alojamiento, puede tratar datos técnicos de acceso conforme a sus propias políticas.
 
 [Política de privacidad](PRIVACY.es.md) · [Privacy notice](PRIVACY.md).
 
