@@ -61,28 +61,31 @@ export function chooseHear3ListeningConsoleState({enabled=[],eqReady=false}={}){
   prompt:'El barrido está sonando. Escucha con volumen bajo y marca las zonas cuando lo necesites.',
   answers:null,stopId:'sweep-stop',
  });
- if(has(available,'sweep-start'))return source('sweep-start',
-  'Iniciar exploración','start',
-  'Confirma las bandas del equipo. Empieza cuando la salida y el volumen estén preparados.');
  if(has(available,'recover-exam'))return source('recover-exam',
-  'Recuperar mi examen','recover',
-  'Encontramos un examen anterior. Recupéralo si quieres continuar sin repetir los tonos.');
- return source(null,'Revisar las bandas del equipo','setup',
-  'Primero confirma las frecuencias de tu ecualizador y revisa la salida de sonido.');
+  'Continuar mi examen guardado','recover',
+  'Encontramos tu examen anterior. Continúa cuando quieras, sin volver a empezar ni reproducir sonido automáticamente.');
+ if(has(available,'sweep-start'))return source('sweep-start',
+  'Comenzar mi prueba','start',
+  'Elige dónde escuchas, comprueba que el volumen esté bajo y pulsa comenzar.');
+ return source(null,'Comprobar preparación','setup',
+  'Hear todavía no puede iniciar la prueba. Revisa el aviso de audio o los cambios de bandas pendientes.');
 }
 export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,env=globalThis}={}){
  if(!root||!sourceRoot||typeof eqReady!=='function')
   throw Error('Faltan los controles del recorrido principal.');
  const $=id=>root.querySelector('[data-console="'+id+'"]');
  const source=id=>sourceRoot.querySelector('#'+id);
- const action=$('action'),prompt=$('prompt'),modeText=$('mode');
+ const action=$('action'),prompt=$('prompt'),modeText=$('mode'),step=$('step');
  const frequency=$('frequency'),level=$('level'),answerRow=$('answers');
+ const setup=$('setup'),device=$('device'),safety=$('safety'),
+  setupFeedback=$('setup-feedback'),meters=$('meters');
  const heard=$('heard'),notHeard=$('not'),stop=$('stop');
  const comparison=$('comparison'),skip=$('skip'),recover=$('recover'),review=$('review');
  const route=$('route'),routeInput=$('route-input');
  const live=$('live'),wave=$('wave'),wavePath=$('wave-path');
  const progress=$('progress'),remaining=$('remaining');
- if([action,prompt,modeText,frequency,level,answerRow,heard,notHeard,
+ if([action,prompt,modeText,step,frequency,level,answerRow,setup,device,safety,
+  setupFeedback,meters,heard,notHeard,
   stop,comparison,skip,recover,review,route,routeInput,live,wave,wavePath,progress,
   remaining,source('route-verified')]
   .some(element=>!element))
@@ -129,6 +132,14 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   }[view.mode];
   const localizedPrompt=promptKey?translated(promptKey,view.prompt):view.prompt;
   if(prompt.textContent!==localizedPrompt)prompt.textContent=localizedPrompt;
+  const preparing=['start','setup'].includes(view.mode);
+  setup.hidden=!preparing;
+  meters.hidden=preparing||view.mode==='recover';
+  const isResult=view.mode==='result',isTest=
+   ['sweep-running','sweep-response','plan','next-tone','tone-response',
+    'contradiction','comparison','resume','finish'].includes(view.mode);
+  step.textContent=isResult?'Paso 3 de 3 · Tu ecualizador':
+   isTest?'Paso 2 de 3 · Escucha y responde':'Paso 1 de 3 · Tu equipo';
   const [freqId,levelId]=currentSourceIds();
   const f=shown(source(freqId)),l=shown(source(levelId));
   if(frequency.textContent!==f)frequency.textContent=f;
@@ -196,14 +207,40 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   review.hidden=!active('tone-review-previous')||!!view.answers||view.mode==='result';
   review.disabled=!active('tone-review-previous');
  }
+ function startGuidedExam(){
+  if(!safety.checked){
+   setupFeedback.textContent='Para continuar, confirma que conectaste tu equipo y bajaste el volumen físico.';
+   safety.focus();
+   return;
+  }
+  if(!active('sweep-start')){
+   setupFeedback.textContent=source('audio-preflight')?.textContent?.trim()||
+    'Revisa las bandas de tu equipo y confirma los cambios antes de comenzar.';
+   return;
+  }
+  const category=source('archive-category');
+  if(category){
+   category.value=device.value;
+   category.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+  setupFeedback.textContent='Preparando la exploración. Escucha a volumen bajo.';
+  // This click is synchronous with the user's explicit button activation.
+  // The original engine still enforces sound limits, state and opt-in.
+  source('sweep-start').click();
+ }
  function clickSource(id){
+  if(id==='__guided-start'){startGuidedExam();return;}
+  if(id==='__review-setup'){
+   setupFeedback.textContent=source('audio-preflight')?.textContent?.trim()||
+    'Revisa la salida y confirma las frecuencias antes de comenzar.';
+   const details=source('hear-advanced-tools');
+   if(details)details.open=true;
+   source('layout-heading')?.scrollIntoView({block:'start',behavior:'auto'});
+   return;
+  }
   if(id==='__view-eq'){
    source('eq-heading')?.scrollIntoView({block:'start',behavior:'auto'});
    source('eq-heading')?.focus({preventScroll:true});
-   return;
-  }
-  if(id==='__setup'){
-   source('layout-heading')?.scrollIntoView({block:'start',behavior:'auto'});
    return;
   }
   if(!id||!active(id))return;
@@ -214,7 +251,8 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  }
  action.addEventListener('click',()=>{
   clickSource(view.mode==='result'?'__view-eq':
-   view.mode==='setup'?'__setup':view.primaryId);
+   view.mode==='start'?'__guided-start':
+   view.mode==='setup'?'__review-setup':view.primaryId);
  });
  heard.addEventListener('click',()=>clickSource(view.answers==='tone'?
   'tone-heard':view.answers==='sweep'?'sweep-heard':null));
@@ -233,6 +271,23 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
   render();
  });
  source('route-verified').addEventListener('change',render);
+ safety.addEventListener('change',()=>{
+  if(safety.checked)setupFeedback.textContent='Equipo listo. Ya puedes comenzar.';
+ });
+ setup.querySelector('a[href="#layout-heading"]')?.addEventListener('click',()=>{
+  const details=source('hear-advanced-tools');
+  if(details)details.open=true;
+ });
+ // Report real backend errors next to the primary action; never let the
+ // user click and see an error only at the bottom of a long document.
+ const sourceError=source('error');
+ const errorObserver=sourceError?new MutationObserver(()=>{
+  const message=sourceError.textContent?.trim();
+  if(message)setupFeedback.textContent=message;
+ }):null;
+ if(errorObserver)errorObserver.observe(sourceError,{
+  childList:true,characterData:true,subtree:true,
+ });
  for(const item of choices){
   const button=comparison.querySelector('[data-console-choice="'+item.id+'"]');
   button.addEventListener('click',()=>clickSource(view.mode==='comparison'?item.id:null));
@@ -256,5 +311,6 @@ export function mountHear3ListeningConsole({root,sourceRoot,eqReady=()=>false,en
  }
  render();
  return frozen({render,dispose:()=>{observer.disconnect();
+   errorObserver?.disconnect();
    env.removeEventListener?.('hear3:language-change',schedule);}});
 }

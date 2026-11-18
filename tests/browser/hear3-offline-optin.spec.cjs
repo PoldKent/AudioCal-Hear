@@ -1,12 +1,13 @@
 const {test,expect}=require('@playwright/test');
 const HOME='/';
-const CACHE='audiocal-hear3-prototype-static-v9';
+const CACHE='audiocal-hear3-prototype-static-v10';
 
 async function supported(page){
  return page.evaluate(()=>Boolean(window.isSecureContext&&navigator.serviceWorker&&window.caches));
 }
 test('offline support does not register workers or start audio by entering the application',async({page})=>{
  await page.goto(HOME);
+ await page.locator('#ajustes').evaluate(el=>{el.open=true;});
  await expect(page.getByTestId('offline-status')).toBeVisible();
  const active=await page.evaluate(async()=>{
   const reg=await navigator.serviceWorker?.getRegistration?.();
@@ -19,6 +20,7 @@ test('offline support does not register workers or start audio by entering the a
 
 async function installAndVerify(page){
  await page.goto(HOME);
+ await page.locator('#ajustes').evaluate(el=>{el.open=true;});
  if(!await supported(page))test.skip(true,'Service Worker or Cache Storage unavailable');
  await page.getByTestId('offline-enable').click();
  await expect(page.getByTestId('offline-status')).toContainText('Recursos estáticos verificados',{timeout:25000});
@@ -48,9 +50,10 @@ test('Chromium can reopen root, exam, results and editor without network after o
  await page.context().setOffline(true);
  try{
   await page.goto(HOME);
-  await expect(page.getByRole('heading',{level:1})).toContainText('Escucha. Ajusta.');
+ await page.locator('#ajustes').evaluate(el=>{el.open=true;});
+  await expect(page.getByRole('heading',{level:1})).toContainText('Encuentra tu sonido.');
   await page.goto('/hear3-exam/');
-  await expect(page.getByRole('heading',{level:1})).toContainText('Examen de tonos');
+  await expect(page.getByRole('heading',{level:1})).toContainText('Tu prueba de sonido');
   await expect(page.getByTestId('sweep-start')).toBeEnabled();
   await expect(page.getByTestId('tone-next')).toBeDisabled();
   await page.goto('/hear3-library/');
@@ -72,6 +75,7 @@ test('Chromium can reopen root, exam, results and editor without network after o
 test('removing app resources does not erase another cache or saved user data',async({page})=>{
  test.setTimeout(60000);
  await page.goto(HOME);
+ await page.locator('#ajustes').evaluate(el=>{el.open=true;});
  if(!await supported(page))test.skip(true,'Service Worker or Cache Storage unavailable');
  await page.evaluate(async()=>{
   const other=await caches.open('unrelated-existing-cache');

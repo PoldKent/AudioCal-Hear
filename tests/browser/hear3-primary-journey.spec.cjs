@@ -30,13 +30,14 @@ test('official beta is a navigable exam -> history -> editor journey, without au
  await page.goto('/hear2/');
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','V2_UNALTERED'));
  await page.goto('/');
- await page.getByRole('link',{name:'Comenzar examen'}).click();
+ await page.getByRole('link',{name:'Comenzar mi prueba'}).click();
  await expect(page).toHaveURL(/\/hear3-exam\/$/);
- await expect(page.getByRole('heading',{level:1})).toContainText('Examen de tonos');
+ await expect(page.getByRole('heading',{level:1})).toContainText('Tu prueba de sonido');
  await expect(page.getByTestId('sweep-start')).toBeEnabled();
  await expect(page.getByTestId('tone-next')).toBeDisabled();
  await expect(page.getByTestId('archive-commit')).toBeDisabled();
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('V2_UNALTERED');
+ await page.locator('.app-nav-more > summary').click();
  await page.getByRole('link',{name:'Historial',exact:true}).click();
  await expect(page).toHaveURL(/\/hear3-library\/$/);
  await expect(page.getByTestId('summary')).toContainText('0 dispositivos, 0 perfiles, 0 resultados');
@@ -51,6 +52,7 @@ test('public exam can complete, save opt-in provisional EQ, reopen history and e
  test.setTimeout(120000);
  await virtualAudio(page);
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','PRESERVE_V2'));
  expect(await page.evaluate(()=>window.__hear3VirtualStarts)).toBe(0);
  await page.getByTestId('sweep-start').click();
@@ -101,6 +103,7 @@ test('public exam can complete, save opt-in provisional EQ, reopen history and e
  await expect(page.getByTestId('eq-guide-rows').locator('li').first()).toContainText('125 Hz · +1 dB');
  await expect(page.getByTestId('eq-immediate-action')).toContainText('Cambios manuales');
  await expect(page.getByTestId('eq-immediate-save')).toBeDisabled();
+ await page.getByTestId('hear-secondary-extras').locator('summary').first().click();
  await page.getByTestId('archive-device').fill('Auriculares para la prueba');
  await page.getByTestId('archive-eq-optin').check();
  await page.getByTestId('archive-preview').click();

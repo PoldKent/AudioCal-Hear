@@ -45,6 +45,7 @@ test('returning user sees most recent result across all devices without rewritin
 test('user can target a saved device or profile while preparing an exam without creating duplicates',async({page})=>{
  await seedTwoProfiles(page);
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-secondary-extras').locator('summary').first().click();
  const target=page.getByTestId('archive-target');
  await expect(target.locator('option')).toHaveCount(5); // New, 2 devices, 2 profiles
  await target.selectOption('device:device-2');

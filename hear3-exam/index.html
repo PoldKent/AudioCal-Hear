@@ -58,8 +58,13 @@ input,select{accent-color:#70cfff}
   <a href="../" data-hear-i18n="nav.home">Inicio</a>
   <a href="../hear3-exam/" aria-current="page" data-hear-i18n="nav.exam">Examen</a>
   <a href="../hear3-eq-editor/" data-hear-i18n="nav.eq">Mi ecualizador</a>
-  <a href="../hear3-library/" data-hear-i18n="nav.history">Historial</a>
-  <a href="../#ajustes" data-hear-i18n="nav.settings">Ajustes</a>
+  <details class="app-nav-more">
+   <summary data-hear-i18n="nav.more">Más</summary>
+   <div class="app-nav-more-links">
+    <a href="../hear3-library/" data-hear-i18n="nav.history">Historial</a>
+    <a href="../#ajustes" data-hear-i18n="nav.settings">Ajustes</a>
+   </div>
+  </details>
  </nav> <label class="app-language-control">
   <span class="app-sr-only">Idioma de la interfaz principal</span>
   <select data-hear-language data-testid="hear-language"
@@ -77,8 +82,8 @@ input,select{accent-color:#70cfff}
 </header>
 <main id="main-content" class="app-page" tabindex="-1">
 <p data-hear-language-note hidden class="app-language-note" role="note"></p>
-<h1 data-hear-i18n="exam.header">Examen de tonos</h1>
-<p>Configura tu equipo, escucha los tonos y guarda tus resultados cuando termines. Puedes pausar el examen en cualquier momento.</p>
+<h1 data-hear-i18n="exam.header">Encuentra tu sonido ideal</h1>
+<p class="hear-easy-lead">Elige tu equipo, escucha los tonos y recibe un ecualizador para ajustar manualmente. Sin menús complicados.</p>
 <div class="notice app-exam-safety" role="note">
  <strong>No es una audiometría clínica ni un EQ acústicamente validado.</strong>
  <p class="app-safety-summary">Mantén el volumen físico bajo, cómodo y fijo.
@@ -101,10 +106,33 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
 <div id="hear-listening-console" class="hear-listening-console"
  aria-labelledby="hear-listen-heading" data-testid="hear-listening-console">
  <p class="hear-listening-kicker" data-console="mode">PREPARACIÓN</p>
- <h2 id="hear-listen-heading" data-hear-i18n="exam.header">Tu examen de escucha</h2>
+ <p class="hear-easy-step" data-console="step">Paso 1 de 3 · Tu equipo</p>
+ <h2 id="hear-listen-heading">Tu prueba de sonido</h2>
  <p class="hear-listening-prompt" data-console="prompt" data-testid="hear-console-prompt"
   role="status" aria-live="polite">Confirma las frecuencias de tu equipo y prepara la salida de sonido.</p>
- <div class="hear-listening-meters" aria-label="Valores digitales programados, no calibrados">
+ <div class="hear-easy-setup" data-console="setup" data-testid="hear-console-setup">
+  <label for="hear-console-device">¿Dónde escucharás?</label>
+  <select id="hear-console-device" data-console="device" data-testid="hear-console-device">
+   <option value="headphones">Auriculares</option>
+   <option value="speaker">Parlantes</option>
+   <option value="car">Audio del automóvil (detenido)</option>
+   <option value="application">Una aplicación</option>
+   <option value="interface">Interfaz de audio</option>
+  </select>
+  <label class="hear-easy-check" for="hear-console-safety">
+   <input type="checkbox" id="hear-console-safety" data-console="safety"
+    data-testid="hear-console-safety">
+   <span>Mi equipo está conectado y el volumen físico está bajo y cómodo.</span>
+  </label>
+  <p class="hear-easy-feedback" data-console="setup-feedback" data-testid="hear-console-setup-feedback"
+   role="status" aria-live="polite">Después pulsa «Comenzar mi prueba». El primer sonido solo comienza cuando tú lo pidas.</p>
+  <details class="hear-easy-options">
+   <summary>¿Tu ecualizador tiene otras frecuencias? Personalízalas aquí</summary>
+   <p>Para un ajuste específico de tu equipo, introduce sus bandas reales antes de iniciar la prueba.</p>
+   <a href="#layout-heading">Ver bandas y opciones avanzadas</a>
+  </details>
+ </div>
+ <div class="hear-listening-meters" data-console="meters" aria-label="Valores digitales programados, no calibrados">
   <div><span class="hear-listening-label">Frecuencia</span>
    <output data-console="frequency" data-testid="hear-console-frequency"
     aria-live="off">—</output></div>
@@ -168,6 +196,9 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
   digital programada, no la presión sonora real. Mantén el volumen físico bajo.
   No se reproduce sonido automáticamente.</p>
 </div>
+<details class="hear-advanced-tools" id="hear-advanced-tools" data-testid="hear-advanced-tools">
+ <summary>Configuración y controles avanzados de la prueba</summary>
+ <p class="app-subtle">Solo necesitas esto si quieres cambiar las frecuencias de tu ecualizador, corregir la configuración o consultar las mediciones técnicas.</p>
 <div id="guided-journey" class="app-exam-journey" aria-label="Etapas de mi examen">
  <nav data-journey="nav" class="app-exam-journey-nav" aria-label="Recorrido guiado">
   <a href="#layout-heading" data-journey-stage="prepare" aria-current="step" data-hear-i18n="exam.stage.prepare">1 · Mi equipo</a>
@@ -317,7 +348,8 @@ Estos valores muestran el programa digital, no la frecuencia acústica realmente
 <button type="button" id="tone-finish" data-testid="tone-finish" disabled>Finalizar y ver resumen</button>
 </div>
 </section>
-<section aria-labelledby="eq-heading">
+</details>
+<section id="eq-panel" aria-labelledby="eq-heading" hidden>
 <h2 id="eq-heading" tabindex="-1">4. Tu ecualizador</h2>
 <p class="notice">Las ganancias indicadas son ajustes orientativos derivados de
  tus respuestas subjetivas con señales en dBFS. No miden una pérdida auditiva,
@@ -381,6 +413,8 @@ Finaliza el examen para consultar una curva orientativa.</p>
 <button type="button" id="eq-export" data-testid="eq-export" disabled>
 Descargar mi curva (JSON, sin aplicar al equipo)</button>
 </section>
+<details class="hear-secondary-extras" data-testid="hear-secondary-extras">
+ <summary>Guardar resultados, recuperar pruebas y herramientas avanzadas</summary>
 <section aria-labelledby="archive-heading">
 <h2 id="archive-heading">5. Guardar mi resultado</h2>
 <p>Tu EQ aparece automáticamente al terminar el examen. Puedes copiarlo o descargarlo sin guardarlo. Si decides conservarlo,
@@ -458,6 +492,7 @@ Descargar informe de transferencia (no preset)</button>
 Primero finaliza un examen y selecciona un perfil de controles.</p>
 <div id="transfer-rows" data-testid="transfer-rows" aria-label="Equivalencia provisional de controles"></div>
 </section>
+</details>
 <p id="error" data-testid="error" role="alert"></p>
 <details id="exam-error-help" class="app-result-details app-error-assistant" data-testid="exam-error-help" hidden>
  <summary>Ayuda para resolver este problema</summary>
@@ -560,6 +595,7 @@ function updateEqDraft(){
    eqDigitalModelError=error?.message??'No se pudo modelar este filtro digital.';
   }
  }
+ $('eq-panel')?.toggleAttribute('hidden',!eqDraft);
 }
 function renderTransfer(){
  setEnabled('transfer-preview',Boolean(eqDraft));
@@ -667,18 +703,19 @@ function render(){
   Math.ceil(Math.max(0,s.plan.durationSeconds-s.elapsedSeconds))+' s':'—';
  $('sweep-count').textContent='Observaciones informativas: '+
   (s.status==='playing'?s.reports.length:prev?.reports?.length??0);
+ const local=progressReader.get();
  const editableLayout=!exam&&!sweepStarting&&s.status!=='playing'&&!prev;
  setEnabled('layout-apply',editableLayout);
  $('layout-choice').disabled=!editableLayout;
  $('layout-custom').disabled=!editableLayout||$('layout-choice').value!=='custom';
- setEnabled('sweep-start',audioReady&&!exam&&!sweepStarting&&!layoutDirty&&s.status!=='playing');
+ setEnabled('sweep-start',audioReady&&!exam&&!sweepStarting&&!layoutDirty&&
+  !local.checkpoint&&s.status!=='playing');
  setEnabled('sweep-stop',s.status==='playing'||sweepStarting);
  setEnabled('sweep-heard',s.status==='playing');
  setEnabled('sweep-not',s.status==='playing');
  setEnabled('plan',!exam&&prev?.status==='completed'&&s.status!=='playing'&&!sweepStarting&&!planning);
  // D-062: avoid parsing/checksumming both persisted checkpoint slots on
  // every 120 ms visual tick; user actions invalidate the cache immediately.
- const local=progressReader.get();
  setEnabled('recover-exam',!exam&&Boolean(local.checkpoint));
  setEnabled('export-exam',Boolean(local.checkpoint));
  setEnabled('delete-exam',Boolean(local.checkpoint));

@@ -31,8 +31,13 @@ td:last-child{text-align:right;font-variant-numeric:tabular-nums}
   <a href="../" data-hear-i18n="nav.home">Inicio</a>
   <a href="../hear3-exam/" data-hear-i18n="nav.exam">Examen</a>
   <a href="../hear3-eq-editor/" data-hear-i18n="nav.eq">Mi ecualizador</a>
-  <a href="../hear3-library/" data-hear-i18n="nav.history">Historial</a>
-  <a href="../#ajustes" data-hear-i18n="nav.settings">Ajustes</a>
+  <details class="app-nav-more">
+   <summary data-hear-i18n="nav.more">Más</summary>
+   <div class="app-nav-more-links">
+    <a href="../hear3-library/" data-hear-i18n="nav.history">Historial</a>
+    <a href="../#ajustes" data-hear-i18n="nav.settings">Ajustes</a>
+   </div>
+  </details>
  </nav> <label class="app-language-control">
   <span class="app-sr-only">Idioma de la interfaz principal</span>
   <select data-hear-language data-testid="hear-language"

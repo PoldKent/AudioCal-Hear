@@ -24,8 +24,8 @@ test('the official root is the application, not a preview or version chooser',()
  const home=file('index.html'),exam=file('hear3-exam/index.html');
  const lib=file('hear3-library/index.html'),editor=file('hear3-eq-editor/index.html');
  const oldEntry=file('hear3-preview/index.html');
- assert.match(home,/<h1 id="inicio-titulo" data-hear-i18n="home.headline">Escucha\. Ajusta\./);
- assert.match(home,/href="\.\/hear3-exam\/".*Comenzar examen/);
+ assert.match(home,/<h1 id="inicio-titulo" data-hear-i18n="home.headline">Encuentra tu sonido\./);
+ assert.match(home,/href="\.\/hear3-exam\/".*Comenzar mi prueba/);
  assert.match(home,/href="\.\/hear3-library\/".*Historial/);
  assert.match(home,/href="\.\/hear3-eq-editor\/".*Mi ecualizador/);
  assert.match(home,/src\/hear3\/app-shell\.css/);

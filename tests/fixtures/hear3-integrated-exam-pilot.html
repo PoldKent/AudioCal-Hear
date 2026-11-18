@@ -329,6 +329,7 @@ function updateEqDraft(){
    eqDigitalModelError=error?.message??'No se pudo modelar este filtro digital.';
   }
  }
+ $('eq-panel')?.toggleAttribute('hidden',!eqDraft);
 }
 function renderTransfer(){
  setEnabled('transfer-preview',Boolean(eqDraft));
@@ -436,18 +437,19 @@ function render(){
   Math.ceil(Math.max(0,s.plan.durationSeconds-s.elapsedSeconds))+' s':'—';
  $('sweep-count').textContent='Observaciones informativas: '+
   (s.status==='playing'?s.reports.length:prev?.reports?.length??0);
+ const local=progressReader.get();
  const editableLayout=!exam&&!sweepStarting&&s.status!=='playing'&&!prev;
  setEnabled('layout-apply',editableLayout);
  $('layout-choice').disabled=!editableLayout;
  $('layout-custom').disabled=!editableLayout||$('layout-choice').value!=='custom';
- setEnabled('sweep-start',audioReady&&!exam&&!sweepStarting&&!layoutDirty&&s.status!=='playing');
+ setEnabled('sweep-start',audioReady&&!exam&&!sweepStarting&&!layoutDirty&&
+  !local.checkpoint&&s.status!=='playing');
  setEnabled('sweep-stop',s.status==='playing'||sweepStarting);
  setEnabled('sweep-heard',s.status==='playing');
  setEnabled('sweep-not',s.status==='playing');
  setEnabled('plan',!exam&&prev?.status==='completed'&&s.status!=='playing'&&!sweepStarting&&!planning);
  // D-062: avoid parsing/checksumming both persisted checkpoint slots on
  // every 120 ms visual tick; user actions invalidate the cache immediately.
- const local=progressReader.get();
  setEnabled('recover-exam',!exam&&Boolean(local.checkpoint));
  setEnabled('export-exam',Boolean(local.checkpoint));
  setEnabled('delete-exam',Boolean(local.checkpoint));

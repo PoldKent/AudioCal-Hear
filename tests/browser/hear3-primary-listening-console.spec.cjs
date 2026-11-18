@@ -25,16 +25,21 @@ async function virtualAudio(page){
   window.webkitAudioContext=FakeAudioContext;
  });
 }
+async function startSimpleTest(page){
+ await expect(page.getByTestId('hear-console-action')).toContainText('Comenzar mi prueba');
+ await page.getByTestId('hear-console-safety').check();
+ await page.getByTestId('hear-console-action').click();
+}
 test('one listening console completes actual sweep and tones without changing the tested engine',async({page})=>{
  test.setTimeout(120000);
  await virtualAudio(page);
  await page.goto('/hear3-exam/');
  await expect(page.getByTestId('hear-listening-console')).toBeVisible();
- await expect(page.getByTestId('hear-console-action')).toContainText('Iniciar exploración');
+ await expect(page.getByTestId('hear-console-action')).toContainText('Comenzar mi prueba');
  await expect(page.getByTestId('hear-console-heard')).toBeHidden();
  expect(await page.evaluate(()=>window.__consoleStarts)).toBe(0);
 
- await page.getByTestId('hear-console-action').click();
+ await startSimpleTest(page);
  await expect(page.getByTestId('plan')).toBeEnabled();
  await expect(page.getByTestId('hear-console-action')).toContainText('Continuar con los tonos');
  await page.getByTestId('hear-console-action').click();
@@ -67,7 +72,7 @@ test('mirrored action never creates tones or writes a profile without user initi
  await page.getByTestId('hear-console-not').evaluate(el=>el.click());
  expect(await page.evaluate(()=>window.__consoleStarts)).toBe(0);
  await expect(page.getByTestId('hear-console-stop')).toBeHidden();
- await page.getByTestId('hear-console-action').click();
+ await startSimpleTest(page);
  await expect(page.getByTestId('plan')).toBeEnabled();
  expect(await page.evaluate(()=>localStorage.getItem('hear3:catalog:v1:0'))).toBe(records);
 });
@@ -75,7 +80,7 @@ test('mirrored action never creates tones or writes a profile without user initi
 test('paused exam shows verified low-volume route in same console before resume',async({page})=>{
  await virtualAudio(page);
  await page.goto('/hear3-exam/');
- await page.getByTestId('hear-console-action').click();
+ await startSimpleTest(page);
  await expect(page.getByTestId('plan')).toBeEnabled();
  await page.getByTestId('hear-console-action').click();
  await page.getByTestId('hear-console-action').click();
@@ -100,13 +105,14 @@ test('paused exam shows verified low-volume route in same console before resume'
 test('the route checkbox mirrors an original verified user selection without auto-play',async({page})=>{
  await virtualAudio(page);
  await page.goto('/hear3-exam/');
- await page.getByTestId('hear-console-action').click();
+ await startSimpleTest(page);
  await expect(page.getByTestId('plan')).toBeEnabled();
  await page.getByTestId('hear-console-action').click();
  await page.getByTestId('hear-console-action').click();
  await expect(page.getByTestId('tone-stop')).toBeEnabled();
- await page.getByTestId('tone-stop').click();
+ await page.getByTestId('hear-console-stop').click();
  await expect(page.getByTestId('hear-console-route')).toBeVisible();
+ await page.getByTestId('hear-secondary-extras').locator('summary').first().click();
  await page.getByTestId('route-verified').check();
  await expect(page.getByTestId('hear-console-route')).toBeChecked();
  await expect(page.getByTestId('hear-console-action')).toBeEnabled();
@@ -132,6 +138,7 @@ test('D-021 main console shows real sweep frequency, remaining time and progress
  });
  await page.goto('/hear3-exam/');
  await expect(page.getByTestId('hear-console-progress')).toBeHidden();
+ await page.getByTestId('hear-console-safety').check();
  await page.getByTestId('hear-console-action').click();
  await expect(page.getByTestId('hear-console-progress')).toBeVisible();
  await expect(page.getByTestId('hear-console-frequency')).toHaveText('125 Hz');
@@ -161,7 +168,7 @@ test('D-021 correcting the previous frequency is opt-in and never erases verifie
  await virtualAudio(page);
  await page.goto('/hear3-exam/');
  await expect(page.getByTestId('hear-console-review')).toBeHidden();
- await page.getByTestId('hear-console-action').click();
+ await startSimpleTest(page);
  await expect(page.getByTestId('plan')).toBeEnabled();
  await page.getByTestId('hear-console-action').click();
  for(let i=0;i<4;i++){
@@ -193,4 +200,22 @@ test('D-021 correcting the previous frequency is opt-in and never erases verifie
  await expect(page.getByTestId('hear-console-heard')).toBeEnabled();
  await page.getByTestId('hear-console-heard').click();
  await expect(page.getByTestId('dbfs')).toHaveText('-66 dBFS');
+});
+
+test('the first main CTA always responds, even before volume confirmation',async({page})=>{
+ await virtualAudio(page);
+ await page.goto('/hear3-exam/');
+ await expect(page.getByTestId('hear-console-setup')).toBeVisible();
+ await expect(page.getByTestId('hear-console-action')).toContainText('Comenzar mi prueba');
+ await expect(page.getByTestId('hear-advanced-tools')).not.toHaveAttribute('open');
+ await page.getByTestId('hear-console-action').click();
+ await expect(page.getByTestId('hear-console-setup-feedback')).toContainText('confirma');
+ expect(await page.evaluate(()=>window.__consoleStarts)).toBe(0);
+ await expect(page.getByTestId('plan')).toBeDisabled();
+ await page.getByTestId('hear-console-device').selectOption('speaker');
+ await startSimpleTest(page);
+ await expect(page.getByTestId('plan')).toBeEnabled();
+ const category=await page.getByTestId('archive-category').inputValue();
+ expect(category).toBe('speaker');
+ await expect(page.getByTestId('hear-console-setup')).toBeHidden();
 });
