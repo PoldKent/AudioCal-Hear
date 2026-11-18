@@ -161,6 +161,8 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
    hidden disabled>Conservar inconcluso</button>
   <button type="button" data-console="recover" data-testid="hear-console-recover"
    hidden disabled>Recuperar examen anterior</button>
+  <button type="button" data-console="review" data-testid="hear-console-review"
+   hidden disabled>Corregir la frecuencia anterior</button>
  </div>
  <p class="hear-listening-disclaimer">La frecuencia y el nivel indican la señal
   digital programada, no la presión sonora real. Mantén el volumen físico bajo.
@@ -307,6 +309,8 @@ Estos valores muestran el programa digital, no la frecuencia acústica realmente
 <button type="button" id="tone-stop" data-testid="tone-stop" disabled>Detener y pausar</button>
 <button type="button" id="tone-heard" data-testid="tone-heard" disabled>Lo escucho</button>
 <button type="button" id="tone-not" data-testid="tone-not" disabled>No lo escucho</button>
+<button type="button" id="tone-review-previous" data-testid="tone-review-previous" disabled
+ title="Repetir solo la última frecuencia revisada, sin borrar el historial">Corregir la frecuencia anterior</button>
 <button type="button" id="tone-confirm" data-testid="tone-confirm" disabled>Confirmar y comparar dos tonos</button>
 <button type="button" id="tone-skip" data-testid="tone-skip" disabled>Conservar como inconclusa</button>
 <button type="button" id="tone-resume" data-testid="tone-resume" disabled>Reanudar manualmente</button>
@@ -637,8 +641,8 @@ function createExam(plan){
 }
 let toneStartVisual=0;
 const buttons=['sweep-start','sweep-stop','sweep-heard','sweep-not','plan',
- 'tone-next','tone-stop','tone-heard','tone-not','tone-confirm','tone-skip',
- 'tone-resume','tone-finish'];
+ 'tone-next','tone-stop','tone-heard','tone-not','tone-review-previous',
+ 'tone-confirm','tone-skip','tone-resume','tone-finish'];
 function setEnabled(id,enabled){$(id).disabled=!enabled;}
 function render(){
  const s=sweepRunner.snapshot();
@@ -717,6 +721,7 @@ function render(){
  setEnabled('tone-stop',['starting','playing','ready'].includes(data.status)||comparing);
  setEnabled('tone-heard',data.status==='playing'&&!comparing);
  setEnabled('tone-not',data.status==='playing'&&!comparing);
+ setEnabled('tone-review-previous',data.canReviewPreviousBand===true&&!comparing);
  setEnabled('tone-confirm',audioReady&&data.status==='awaiting-confirmation'&&!comparing&&!needsComparisonReply);
  setEnabled('tone-skip',data.status==='awaiting-confirmation'&&!comparing&&!needsComparisonReply);
  setEnabled('tone-resume',audioReady&&data.status==='paused');
@@ -788,6 +793,17 @@ $('tone-next').addEventListener('click',()=>run(async()=>{
 }));
 $('tone-heard').addEventListener('click',()=>run(()=>exam.answer('heard')));
 $('tone-not').addEventListener('click',()=>run(()=>exam.answer('not-heard')));
+$('tone-review-previous').addEventListener('click',()=>run(()=>{
+ const data=exam?.snapshot();
+ if(!data?.canReviewPreviousBand)throw Error('Esta frecuencia ya no puede corregirse sin perder continuidad.');
+ if(!confirm('¿Repetir los tonos de '+data.reviewableFrequencyHz+
+  ' Hz? Las respuestas anteriores quedarán registradas como anuladas, sin afectar las demás frecuencias. No sonará audio hasta que pulses reproducir.'))return;
+ const updated=exam.retakePreviousBand({userConfirmed:true});
+ // Do not leave a previously generated EQ attached to an unfinished exam.
+ updateEqDraft();archiveTransfer?.discard();archiveTransfer=null;
+ archiveMessage='El examen fue corregido: revisa nuevamente las frecuencias antes de archivar.';
+ return updated;
+}));
 $('tone-stop').addEventListener('click',()=>run(()=>{
  const state=comparison.snapshot().state;
  if(['first','gap','second'].includes(state))return comparison.interrupt('user-stop');
