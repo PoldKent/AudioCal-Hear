@@ -329,6 +329,7 @@ function updateEqDraft(){
    eqDigitalModelError=error?.message??'No se pudo modelar este filtro digital.';
   }
  }
+ $('eq-panel')?.toggleAttribute('hidden',!eqDraft);
 }
 function renderTransfer(){
  setEnabled('transfer-preview',Boolean(eqDraft));
