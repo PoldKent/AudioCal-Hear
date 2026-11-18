@@ -27,7 +27,8 @@ async function installAndVerify(page){
   const cache=await caches.open(cacheName);
   const required=['/index.html','/src/hear3/app-shell.css','/src/hear3/app-theme.mjs',
    '/hear3-exam/','/hear3-library/','/hear3-eq-editor/',
-   '/src/hear3/immediate-eq-result.mjs','/src/hear3/manual-eq-application-guide.mjs'];
+   '/src/hear3/immediate-eq-result.mjs','/src/hear3/manual-eq-application-guide.mjs',
+   '/src/hear3/eq-edit-history.mjs'];
   for(const path of required){
    if(!await cache.match(new URL(path,location.origin)))return false;
   }
