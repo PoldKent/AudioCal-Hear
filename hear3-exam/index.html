@@ -114,17 +114,17 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
  </div>
  <div class="hear-listening-comparison" data-console="comparison" hidden
   role="group" aria-label="Comparación de tonos">
-  <button type="button" data-console-choice="comparison-first">El primer tono</button>
-  <button type="button" data-console-choice="comparison-second">El segundo tono</button>
-  <button type="button" data-console-choice="comparison-similar">Los escuché parecido</button>
-  <button type="button" data-console-choice="comparison-neither">Ninguno</button>
-  <button type="button" data-console-choice="comparison-uncertain">No estoy seguro</button>
+  <button type="button" data-console-choice="comparison-first" data-hear-i18n="choice.first">El primer tono</button>
+  <button type="button" data-console-choice="comparison-second" data-hear-i18n="choice.second">El segundo tono</button>
+  <button type="button" data-console-choice="comparison-similar" data-hear-i18n="choice.similar">Los escuché parecido</button>
+  <button type="button" data-console-choice="comparison-neither" data-hear-i18n="choice.neither">Ninguno</button>
+  <button type="button" data-console-choice="comparison-uncertain" data-hear-i18n="choice.uncertain">No estoy seguro</button>
  </div>
  <div class="hear-listening-route" data-console="route" hidden>
   <label for="hear-console-route">
    <input type="checkbox" id="hear-console-route"
     data-console="route-input" data-testid="hear-console-route">
-   He comprobado la salida de audio y mantendré el volumen físico bajo y cómodo
+   <span data-hear-i18n="route.confirm">He comprobado la salida de audio y mantendré el volumen físico bajo y cómodo</span>
   </label>
   <p>Hear no puede comprobar el volumen físico: confirma esto personalmente antes de reanudar.</p>
  </div>
