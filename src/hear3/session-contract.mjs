@@ -74,9 +74,13 @@ export function transitionSession(session, event) {
         'Invalid reviewed tone IDs');
       const eligible = session.observations.filter(o =>
         !session.invalidatedToneIds.includes(o.toneId));
+      const tail=eligible.slice(-toneIds.length);
       ensure(eligible.length >= toneIds.length &&
-        eligible.slice(-toneIds.length).every((o,i) => o.toneId === toneIds[i]),
+        tail.every((o,i) => o.toneId === toneIds[i]),
         'Review can only invalidate the most recent verified observations');
+      ensure(tail.every(o => o.frequencyHz === tail[0].frequencyHz &&
+        o.channel === tail[0].channel),
+        'Review must target only one frequency and channel');
       return {
         ...session,
         invalidatedToneIds: [...session.invalidatedToneIds,...toneIds],
