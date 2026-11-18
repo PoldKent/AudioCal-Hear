@@ -228,6 +228,12 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 <p><a href="hear3-catalog-pilot.html">Consultar catálogo e historial V3</a> · <a href="../../hear3-eq-editor/">Editar EQ provisional guardado</a></p>
 </section>
 <p id="error" data-testid="error" role="alert"></p>
+<details id="exam-error-help" class="app-result-details app-error-assistant" data-testid="exam-error-help" hidden>
+ <summary>Ayuda para resolver este problema</summary>
+ <p id="exam-error-help-title" data-testid="exam-error-help-title"></p>
+ <ol id="exam-error-help-steps" data-testid="exam-error-help-steps"></ol>
+ <p class="app-subtle">La guía no mide SPL ni verifica físicamente la salida de audio.</p>
+</details>
 <p><a href="../../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
 </main>
 <script type="module">
@@ -239,6 +245,7 @@ import {createSweepAudioRunner} from '../../src/hear3/sweep-audio-runner.mjs';
 import {createHear3AdaptiveProgressStore} from '../../src/hear3/adaptive-progress-store.mjs';
 import {createHear3ReadThrottle} from '../../src/hear3/read-throttle.mjs';
 import {createHear3ResumableAdaptiveExam} from '../../src/hear3/resumable-adaptive-exam.mjs';
+import {explainHear3ExamError} from '../../src/hear3/contextual-error-guide.mjs';
 import {createHear3CatalogStore} from '../../src/hear3/catalog-backup-store.mjs';
 import {createHear3AdaptiveCatalogArchive} from '../../src/hear3/adaptive-catalog-archive.mjs';
 import {createHear3CatalogWriteCoordinator}
@@ -509,10 +516,25 @@ function render(){
  if(list.childElementCount)result.replaceChildren(list);
  else result.textContent='Sin resultados confirmados.';
 }
+function setExamErrorHelp(error){
+ const root=$('exam-error-help'),title=$('exam-error-help-title');
+ const steps=$('exam-error-help-steps');
+ if(!error){root.hidden=true;root.open=false;steps.replaceChildren();return;}
+ const guide=explainHear3ExamError(error?.message??String(error));
+ title.textContent=guide.title;
+ steps.replaceChildren(...guide.steps.map(step=>{
+  const item=document.createElement('li');item.textContent=step;return item;
+ }));
+ root.open=false;root.hidden=false;
+}
 async function run(action){
  $('error').textContent='';
+ setExamErrorHelp(null);
  try{await action();}
- catch(e){$('error').textContent=e?.message??String(e);}
+ catch(e){
+  $('error').textContent=e?.message??String(e);
+  setExamErrorHelp(e);
+ }
  finally{
   // Deliberate actions must immediately refresh checkpoint buttons and
   // durability warnings, even if the 1-second idle interval has not elapsed.
