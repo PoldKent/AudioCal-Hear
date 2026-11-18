@@ -39,6 +39,11 @@ export function transitionSession(session, event) {
       ensure(session.status === 'ready' && !session.routeCheckRequired, 'Session cannot play a tone');
       const { toneId, frequencyHz, digitalLevelDbfs, channel = 'joint' } = event;
       ensure(typeof toneId === 'string' && toneId.length > 0, 'toneId is required');
+      // A retired or interrupted tone ID is never eligible for reuse. This
+      // prevents an old, stale Web Audio callback matching a fresh trial.
+      ensure(!session.observations.some(o => o.toneId === toneId)
+        && !session.invalidatedToneIds.includes(toneId),
+        'Tone ID has already been used or invalidated');
       ensure(Number.isFinite(frequencyHz) && frequencyHz > 0, 'Invalid frequency');
       ensure(Number.isFinite(digitalLevelDbfs), 'Invalid digital level');
       ensure(['left', 'right', 'joint'].includes(channel), 'Invalid channel');
@@ -53,6 +58,28 @@ export function transitionSession(session, event) {
         status: 'ready',
         currentTone: null,
         observations: [...session.observations, { ...session.currentTone, response: event.response, provenance: 'user-response' }],
+      };
+    }
+    case 'INVALIDATE_REVIEWED_TONES': {
+      // Keep an immutable log of what the user actually answered. A confirmed
+      // correction excludes only the trailing active evidence from future
+      // estimates; it never deletes or rewrites the original observations.
+      ensure(session.status === 'ready' && !session.currentTone
+        && !session.routeCheckRequired, 'Review requires a silent ready session');
+      ensure(event.confirmed === true, 'Explicit review confirmation required');
+      const toneIds = event.toneIds;
+      ensure(Array.isArray(toneIds) && toneIds.length >= 1 && toneIds.length <= 20
+        && new Set(toneIds).size === toneIds.length
+        && toneIds.every(id => typeof id === 'string' && id.length > 0),
+        'Invalid reviewed tone IDs');
+      const eligible = session.observations.filter(o =>
+        !session.invalidatedToneIds.includes(o.toneId));
+      ensure(eligible.length >= toneIds.length &&
+        eligible.slice(-toneIds.length).every((o,i) => o.toneId === toneIds[i]),
+        'Review can only invalidate the most recent verified observations');
+      return {
+        ...session,
+        invalidatedToneIds: [...session.invalidatedToneIds,...toneIds],
       };
     }
     case 'INTERRUPT':
