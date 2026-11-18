@@ -77,8 +77,8 @@ input,select{accent-color:#70cfff}
 </header>
 <main id="main-content" class="app-page" tabindex="-1">
 <p data-hear-language-note hidden class="app-language-note" role="note"></p>
-<h1 data-hear-i18n="exam.header">Examen de tonos</h1>
-<p>Configura tu equipo, escucha los tonos y guarda tus resultados cuando termines. Puedes pausar el examen en cualquier momento.</p>
+<h1 data-hear-i18n="exam.header">Encuentra tu sonido ideal</h1>
+<p class="hear-easy-lead">Elige tu equipo, escucha los tonos y recibe un ecualizador para ajustar manualmente. Sin menús complicados.</p>
 <div class="notice app-exam-safety" role="note">
  <strong>No es una audiometría clínica ni un EQ acústicamente validado.</strong>
  <p class="app-safety-summary">Mantén el volumen físico bajo, cómodo y fijo.
@@ -101,10 +101,33 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
 <div id="hear-listening-console" class="hear-listening-console"
  aria-labelledby="hear-listen-heading" data-testid="hear-listening-console">
  <p class="hear-listening-kicker" data-console="mode">PREPARACIÓN</p>
- <h2 id="hear-listen-heading" data-hear-i18n="exam.header">Tu examen de escucha</h2>
+ <p class="hear-easy-step" data-console="step">Paso 1 de 3 · Tu equipo</p>
+ <h2 id="hear-listen-heading">Tu prueba de sonido</h2>
  <p class="hear-listening-prompt" data-console="prompt" data-testid="hear-console-prompt"
   role="status" aria-live="polite">Confirma las frecuencias de tu equipo y prepara la salida de sonido.</p>
- <div class="hear-listening-meters" aria-label="Valores digitales programados, no calibrados">
+ <div class="hear-easy-setup" data-console="setup" data-testid="hear-console-setup">
+  <label for="hear-console-device">¿Dónde escucharás?</label>
+  <select id="hear-console-device" data-console="device" data-testid="hear-console-device">
+   <option value="headphones">Auriculares</option>
+   <option value="speaker">Parlantes</option>
+   <option value="car">Audio del automóvil (detenido)</option>
+   <option value="application">Una aplicación</option>
+   <option value="interface">Interfaz de audio</option>
+  </select>
+  <label class="hear-easy-check" for="hear-console-safety">
+   <input type="checkbox" id="hear-console-safety" data-console="safety"
+    data-testid="hear-console-safety">
+   <span>Mi equipo está conectado y el volumen físico está bajo y cómodo.</span>
+  </label>
+  <p class="hear-easy-feedback" data-console="setup-feedback" data-testid="hear-console-setup-feedback"
+   role="status" aria-live="polite">Después pulsa «Comenzar mi prueba». El primer sonido solo comienza cuando tú lo pidas.</p>
+  <details class="hear-easy-options">
+   <summary>¿Tu ecualizador tiene otras frecuencias? Personalízalas aquí</summary>
+   <p>Para un ajuste específico de tu equipo, introduce sus bandas reales antes de iniciar la prueba.</p>
+   <a href="#layout-heading">Ver bandas y opciones avanzadas</a>
+  </details>
+ </div>
+ <div class="hear-listening-meters" data-console="meters" aria-label="Valores digitales programados, no calibrados">
   <div><span class="hear-listening-label">Frecuencia</span>
    <output data-console="frequency" data-testid="hear-console-frequency"
     aria-live="off">—</output></div>
