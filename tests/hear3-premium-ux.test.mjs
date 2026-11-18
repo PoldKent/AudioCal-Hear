@@ -28,7 +28,7 @@ test('safety summary is always visible and extended guidance is selectable',()=>
  assert.match(visible,/No es una audiometría clínica/i);
  assert.match(visible,/volumen físico bajo/i);
  assert.match(visible,/dB SPL/i);
- assert.match(exam,/Escape<\\/kbd>/);
+ assert.ok(exam.includes('<kbd>Escape</kbd>'));
  for(const id of ['hear-listening-console','hear-console-heard','hear-console-not',
   'hear-console-stop','hear-console-route']){
   assert.ok(exam.includes('data-testid="'+id+'"'),'Missing exam safety control: '+id);
