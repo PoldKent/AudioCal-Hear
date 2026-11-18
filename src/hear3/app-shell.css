@@ -533,3 +533,9 @@ body{margin:0;padding:0;min-width:320px;max-width:none;color:var(--app-text);
  .hear-advanced-tools>section,.hear-secondary-extras>section{
   margin:.8rem .65rem}
 }
+
+/* The secondary navigation popover must not be clipped by mobile tab scrolling. */
+@media(max-width:760px){
+ .app-nav{overflow:visible;flex-wrap:wrap;justify-content:flex-start}
+ .app-nav-more-links{left:0;right:auto;z-index:60}
+}
