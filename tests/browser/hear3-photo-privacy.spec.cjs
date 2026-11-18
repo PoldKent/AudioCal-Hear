@@ -72,6 +72,7 @@ test('D-059 dangerous SVG and mismatched image signature are blocked without sto
 
 test('private photo tool is discoverable in the single app and returns to settings',async({page})=>{
  await page.goto('/');
+ await page.locator('#ajustes').evaluate(el=>{el.open=true;});
  await page.getByRole('link',{name:'Preparar una imagen privada del ecualizador'}).click();
  await expect(page).toHaveURL(/\/hear3-photo-privacy\/$/);
  await expect(page.getByRole('navigation',{name:'Navegación principal'})).toBeVisible();
@@ -79,5 +80,6 @@ test('private photo tool is discoverable in the single app and returns to settin
  await expect(page.getByTestId('download')).toBeDisabled();
  await page.getByRole('link',{name:'Volver a ajustes'}).click();
  await expect(page).toHaveURL(/\/#ajustes$/);
- await expect(page.getByRole('heading',{name:'Ajustes y privacidad'})).toBeVisible();
+ await expect(page.locator('#ajustes')).toHaveAttribute('open');
+ await expect(page.locator('#ajustes > summary')).toContainText('Ajustes y otras herramientas');
 });
