@@ -22,6 +22,7 @@
     "src/hear3/catalog-selective-deletion.mjs",
     "src/hear3/checkpoint-backup-transfer.mjs",
     "src/hear3/checkpointed-audio-session.mjs",
+    "src/hear3/contextual-error-guide.mjs",
     "src/hear3/contextual-tone-comparison.mjs",
     "src/hear3/coordinated-catalog-writer.mjs",
     "src/hear3/device-profile-contract.mjs",
