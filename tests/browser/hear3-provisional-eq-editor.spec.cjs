@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+const fs=require('node:fs');
 const EDITOR='/hear3-eq-editor/',PILOT='/tests/fixtures/hear3-catalog-pilot.html';
 async function seed(page){
  await page.goto(PILOT);
@@ -143,4 +144,33 @@ test('two editor tabs reject stale changes instead of overwriting a newer EQ',as
   await second.getByTestId('result-select').selectOption('qa-result');
   await expect(second.getByTestId('gain-0')).toHaveValue(iOS?'1':'2');
  }finally{await second.close();}
+});
+
+test('saved EQ undo/redo and exports always reflect visible unsaved values',async({page})=>{
+ await seed(page);
+ await page.goto(EDITOR);
+ await page.getByTestId('result-select').selectOption('qa-result');
+ await expect(page.getByTestId('saved-eq-undo')).toBeDisabled();
+ await page.getByTestId('gain-0').fill('2');
+ await expect(page.getByTestId('saved-eq-undo')).toBeEnabled();
+ const txtDownload=page.waitForEvent('download');
+ await page.getByTestId('txt').click();
+ const txt=fs.readFileSync(await (await txtDownload).path(),'utf8');
+ expect(txt).toContain('125 Hz: +2 dB');
+ expect(txt).toContain('VALORES VISIBLES AUN NO GUARDADOS');
+ const jsonDownload=page.waitForEvent('download');
+ await page.getByTestId('json').click();
+ const json=JSON.parse(fs.readFileSync(await (await jsonDownload).path(),'utf8'));
+ expect(json.rows[0].currentGainDb).toBe(2);
+ expect(json.draftUnsaved).toBe(true);
+ await page.getByTestId('saved-eq-undo').click();
+ await expect(page.getByTestId('gain-0')).toHaveValue('1');
+ await page.getByTestId('saved-eq-redo').click();
+ await expect(page.getByTestId('gain-0')).toHaveValue('2');
+ await page.getByTestId('saved-eq-reset-band-0').click();
+ await expect(page.getByTestId('gain-0')).toHaveValue('1');
+ await page.getByTestId('saved-eq-undo').click();
+ await expect(page.getByTestId('gain-0')).toHaveValue('2');
+ expect((await stored(page)).current).toEqual([1,0,-1]);
+ expect((await stored(page)).edits).toBe(0);
 });
