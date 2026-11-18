@@ -9,9 +9,10 @@
     "build": "node tools/build.mjs",
     "check:build": "node tools/build.mjs --check",
     "test": "node --test tests/*.test.mjs",
-    "verify": "npm run check:build && npm test",
+    "verify": "npm run check:build && npm test && npm run audit:repo",
     "test:browser": "playwright test --config playwright.config.cjs",
-    "beta": "node tools/serve-beta.mjs"
+    "beta": "node tools/serve-beta.mjs",
+    "audit:repo": "node tools/audit-hear3.mjs"
   },
   "engines": {
     "node": ">=20"
