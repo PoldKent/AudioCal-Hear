@@ -4,8 +4,8 @@ const APP='/',INTERNAL_RECOVERY='/hear2/';
 test('official website opens the one AudioCal Hear app without any version choice',async({page})=>{
  await page.goto(APP);
  await expect(page).toHaveURL(/\/$/);
- await expect(page.getByRole('heading',{level:1})).toContainText('Escucha. Ajusta.');
- await expect(page.getByRole('link',{name:'Comenzar examen'})).toBeVisible();
+ await expect(page.getByRole('heading',{level:1})).toContainText('Encuentra tu sonido.');
+ await expect(page.getByRole('link',{name:'Comenzar mi prueba'})).toBeVisible();
  await expect(page.locator('a[href*="/hear2/"]')).toHaveCount(0);
  await expect(page.locator('a[href*="hear3-preview"]')).toHaveCount(0);
  await expect(page.locator('audio')).toHaveCount(0);
