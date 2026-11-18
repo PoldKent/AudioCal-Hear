@@ -112,7 +112,7 @@ test('the route checkbox mirrors an original verified user selection without aut
  await expect(page.getByTestId('tone-stop')).toBeEnabled();
  await page.getByTestId('hear-console-stop').click();
  await expect(page.getByTestId('hear-console-route')).toBeVisible();
- await page.getByTestId('hear-advanced-tools').evaluate(el=>el.open=true);
+ await page.getByTestId('hear-secondary-extras').locator('summary').first().click();
  await page.getByTestId('route-verified').check();
  await expect(page.getByTestId('hear-console-route')).toBeChecked();
  await expect(page.getByTestId('hear-console-action')).toBeEnabled();
