@@ -105,6 +105,23 @@ Comprobando requisitos mínimos de Web Audio. No se iniciará sonido automática
    <output data-console="level" data-testid="hear-console-level"
     aria-live="off">—</output></div>
  </div>
+ <div class="hear-console-live" data-console="live" hidden
+  aria-label="Animación y tiempo orientativos de la señal digital">
+  <svg class="hear-wave hear-console-wave" data-console="wave"
+   viewBox="0 0 480 84" role="img"
+   aria-label="Representación visual de la frecuencia digital programada; no mide el sonido real">
+   <path data-console="wave-path" stroke="#39c7d5" stroke-width="2.4"
+    stroke-linecap="round" fill="none"></path>
+  </svg>
+  <div class="hear-console-time">
+   <label for="hear-console-progress">Progreso estimado del sonido</label>
+   <output data-console="remaining" data-testid="hear-console-remaining"
+    aria-live="off">—</output>
+  </div>
+  <progress id="hear-console-progress" data-console="progress"
+   data-testid="hear-console-progress" max="1" value="0"></progress>
+  <small class="app-subtle">Visualización del programa digital; no indica si oyes el tono.</small>
+ </div>
  <div class="hear-listening-answers" data-console="answers" hidden
   role="group" aria-label="Responde a la frecuencia actual">
   <button type="button" class="hear-listening-heard" data-console="heard"
@@ -318,6 +335,10 @@ Finaliza el examen para consultar una curva orientativa.</p>
  <p data-immediate-eq="action-status" role="status" aria-live="polite"
   data-testid="eq-immediate-action">El EQ no se aplica automáticamente.</p>
  <div class="app-actions app-result-actions">
+  <button type="button" data-immediate-eq="undo" data-testid="eq-immediate-undo"
+   disabled>Deshacer edición</button>
+  <button type="button" data-immediate-eq="redo" data-testid="eq-immediate-redo"
+   disabled>Rehacer edición</button>
   <button type="button" data-immediate-eq="restore" data-testid="eq-immediate-restore" disabled>
    Restaurar propuesta original</button>
   <button type="button" data-immediate-eq="save" data-testid="eq-immediate-save" disabled>

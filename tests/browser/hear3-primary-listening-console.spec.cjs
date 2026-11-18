@@ -111,3 +111,47 @@ test('the route checkbox mirrors an original verified user selection without aut
  await expect(page.getByTestId('hear-console-route')).toBeChecked();
  await expect(page.getByTestId('hear-console-action')).toBeEnabled();
 });
+
+test('D-021 main console shows real sweep frequency, remaining time and progress without faking SPL',async({page})=>{
+ await page.addInitScript(()=>{
+  window.__visualAudioClock=0;
+  class Param{
+   setValueAtTime(){}linearRampToValueAtTime(){}
+   exponentialRampToValueAtTime(){}cancelScheduledValues(){}
+  }
+  class FakeContext{
+   constructor(){this.sampleRate=48000;this.destination={};this.state='running';}
+   get currentTime(){return window.__visualAudioClock;}
+   createOscillator(){return {frequency:new Param(),type:'sine',
+    connect(){},disconnect(){},start(){},stop(){}};}
+   createGain(){return {gain:new Param(),connect(){},disconnect(){}};}
+   addEventListener(){}removeEventListener(){}
+   async resume(){this.state='running';}async close(){this.state='closed';}
+  }
+  window.AudioContext=FakeContext;window.webkitAudioContext=FakeContext;
+ });
+ await page.goto('/hear3-exam/');
+ await expect(page.getByTestId('hear-console-progress')).toBeHidden();
+ await page.getByTestId('hear-console-action').click();
+ await expect(page.getByTestId('hear-console-progress')).toBeVisible();
+ await expect(page.getByTestId('hear-console-frequency')).toHaveText('125 Hz');
+ await expect(page.getByTestId('hear-console-level')).toHaveText('-60 dBFS');
+ await expect(page.getByTestId('hear-console-remaining')).toHaveText('20 s');
+ await expect(page.locator('[data-console="wave-path"]')).toHaveAttribute('d',/^M/);
+ await page.evaluate(()=>window.__visualAudioClock=10);
+ await expect(page.getByTestId('sweep-frequency')).not.toHaveText('125 Hz');
+ const originalFrequency=await page.getByTestId('sweep-frequency').textContent();
+ await expect(page.getByTestId('hear-console-frequency')).toHaveText(originalFrequency);
+ const originalTime=await page.getByTestId('sweep-remaining').textContent();
+ await expect(page.getByTestId('hear-console-remaining')).toHaveText(originalTime);
+ await page.waitForFunction(()=>document.getElementById('sweep-progress').value>0);
+ await page.waitForFunction(()=>{
+  const original=document.getElementById('sweep-progress');
+  const mirrored=document.getElementById('hear-console-progress');
+  return Math.abs(original.value-mirrored.value)<0.2;
+ });
+ expect(await page.getByTestId('hear-console-progress').evaluate(el=>el.max)).toBe(20);
+ await page.getByTestId('hear-console-stop').click();
+ await expect(page.getByTestId('hear-console-progress')).toBeHidden();
+ await expect(page.getByTestId('hear-console-remaining')).toHaveText('—');
+});

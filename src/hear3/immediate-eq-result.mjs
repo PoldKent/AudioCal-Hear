@@ -9,6 +9,7 @@ import {createHear3CatalogStore} from './catalog-backup-store.mjs';
 import {createHear3CatalogWriteCoordinator} from './coordinated-catalog-writer.mjs';
 import {createHear3ProvisionalEqEditor} from './provisional-eq-editor.mjs';
 import {planHear3ManualEqApplication} from './manual-eq-application-guide.mjs';
+import {createHear3EqEditHistory} from './eq-edit-history.mjs';
 
 const check=(ok,message)=>{if(!ok)throw Error(message);};
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
@@ -93,6 +94,7 @@ export function mountHear3ImmediateEq({root,source,getDraft,categorySelector=nul
  const store=createHear3CatalogStore();
  const writer=createHear3CatalogWriteCoordinator({store});
  let original=null,review=null,values=[],savedValues=[],fingerprint=null,resultId=null,busy=false;
+ let history=null;
  const setText=(id,message)=>{$(id).textContent=message;};
  function download(content,name,mime){
   const blob=content instanceof Blob?content:new Blob([content],{type:mime});
@@ -138,7 +140,10 @@ export function mountHear3ImmediateEq({root,source,getDraft,categorySelector=nul
   )}):null;
   const canExport=Boolean(review);
   for(const id of ['copy','txt','csv','png'])$(id).disabled=!canExport;
-  $('restore').disabled=busy||!valid()||!altered();
+  $('restore').disabled=busy||!original||(!altered()&&valid());
+  const dirtyDraft=history&&values.some((v,i)=>v!==history.current()[i]);
+  $('undo').disabled=busy||!history||!(dirtyDraft||history.canUndo());
+  $('redo').disabled=busy||!history||!!dirtyDraft||!history.canRedo();
   $('save').disabled=busy||!review||!resultId||!unsaved();
   updateGuide();
   if(!valid()&&original)setText('action-status',
@@ -183,13 +188,32 @@ export function mountHear3ImmediateEq({root,source,getDraft,categorySelector=nul
     values[i]=n;
     if(Number.isFinite(n)){setBar(bar,n);number.textContent=signed(n)+' dB';}
     else number.textContent='—';
+    bandReset.disabled=busy||n===r.gainDb;
     sync();
     if(review)setText('save-status',resultId
      ?unsaved()?'Tienes ediciones nuevas. Confirma «Guardar mis cambios al EQ».':
       'Esta curva coincide con el último resultado guardado.'
      :'Las ediciones están solo en esta vista. Para guardarlas, archiva el resultado incluyendo EQ.');
    });
-   cell.append(graph,freq,field,number,detail);stage.append(cell);
+   const bandReset=document.createElement('button');
+   bandReset.type='button';bandReset.className='app-eq-band-reset';
+   bandReset.dataset.testid='eq-inline-restore-'+i;
+   bandReset.textContent='Restaurar banda';
+   bandReset.setAttribute('aria-label','Restaurar ganancia original de '+r.frequencyHz+' Hz');
+   bandReset.disabled=busy||values[i]===r.gainDb;
+   bandReset.addEventListener('click',()=>{
+    if(!history||busy)return;
+    if(!valid()){setText('action-status','Corrige los valores inválidos antes de restaurar una banda.');return;}
+    history.record(values);
+    values=history.resetBand(i).slice();
+    showRows();sync();
+    setText('save-status','Se restauró únicamente la banda de '+r.frequencyHz+
+     ' Hz. Guarda si deseas conservar la modificación.');
+   });
+   field.addEventListener('change',()=>{
+    if(!busy&&history&&valid()){history.record(values);sync();}
+   });
+   cell.append(graph,freq,field,number,detail,bandReset);stage.append(cell);
   }
  }
  function render(){
@@ -197,7 +221,7 @@ export function mountHear3ImmediateEq({root,source,getDraft,categorySelector=nul
   const fingerprintNew=draft?JSON.stringify([draft.deviceCategory,draft.capDb,
    draft.rows.map(r=>[r.frequencyHz,r.gainDb,r.source])]):'';
   if(fingerprintNew===fingerprint)return;
-  fingerprint=fingerprintNew;original=null;review=null;resultId=null;
+  fingerprint=fingerprintNew;original=null;review=null;resultId=null;history=null;
   values=[];savedValues=[];
   if(!draft){
    $('chart').replaceChildren();
@@ -213,6 +237,7 @@ export function mountHear3ImmediateEq({root,source,getDraft,categorySelector=nul
    sync();return;
   }
   values=original.rows.map(r=>r.gainDb);
+  history=createHear3EqEditHistory({initial:values,capDb:original.capDb});
   savedValues=values.slice();
   setText('status',original.resultStatus+' '+original.warning);
   setText('save-status','Puedes editar y exportar ahora. Para conservar las ediciones, guarda el resultado incluyendo el EQ.');
@@ -249,9 +274,23 @@ export function mountHear3ImmediateEq({root,source,getDraft,categorySelector=nul
    },'image/png');
   }catch(e){error(e?.message??String(e));}
  });
+ $('undo').addEventListener('click',()=>{
+  if(!history||busy)return;
+  const current=history.current();
+  values=values.some((v,i)=>v!==current[i])?current.slice():history.undo().slice();
+  showRows();sync();
+  setText('save-status','Edición deshecha en pantalla. El historial guardado permanece intacto.');
+ });
+ $('redo').addEventListener('click',()=>{
+  if(!history||busy||values.some((v,i)=>v!==history.current()[i]))return;
+  values=history.redo().slice();
+  showRows();sync();
+  setText('save-status','Edición rehecha en pantalla. Guarda para conservarla.');
+ });
  $('restore').addEventListener('click',()=>{
   if(!original||busy)return;
-  values=original.rows.map(r=>r.gainDb);
+  if(history&&valid())history.record(values);
+  values=history?history.restoreAll().slice():original.rows.map(r=>r.gainDb);
   showRows();sync();
   setText('save-status',resultId
    ?'Valores originales recuperados en pantalla; guarda si deseas sustituir tus ediciones anteriores.'

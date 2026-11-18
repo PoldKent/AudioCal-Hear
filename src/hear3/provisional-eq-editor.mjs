@@ -56,21 +56,37 @@ export function inspectHear3ProvisionalEq(catalog,resultId){
   warning:'EQ experimental derivado de tonos digitales subjetivos. No calibrado acústicamente, no valida seguridad ni posiciones físicas.',
  });
 }
-export function exportHear3ProvisionalEq(catalog,resultId,{format='csv'}={}){
+export function exportHear3ProvisionalEq(catalog,resultId,{format='csv',draftGains=null}={}){
  check(['txt','csv','json'].includes(format),'Unsupported review export type');
- const review=inspectHear3ProvisionalEq(catalog,resultId);
+ const savedReview=inspectHear3ProvisionalEq(catalog,resultId);
+ if(draftGains!==null){
+  check(Array.isArray(draftGains)&&draftGains.length===savedReview.rows.length&&
+   draftGains.every(v=>finite(v)&&Number.isInteger(v*2)&&
+    Math.abs(v)<=savedReview.capDb),
+   'Invalid visible EQ gains: export aborted rather than returning stale saved values');
+ }
+ const draftUnsaved=draftGains!==null&&
+  draftGains.some((v,i)=>v!==savedReview.rows[i].currentGainDb);
+ const review=draftGains===null?savedReview:{
+  ...savedReview,draftUnsaved,rows:savedReview.rows.map((r,i)=>({
+   ...r,currentGainDb:draftGains[i],
+  })),
+ };
  const heading='HEAR 3.0 - EQ PROVISIONAL / NO CALIBRADO / NO APLICAR AUTOMATICAMENTE';
  const rows=review.rows;
+ const draftWarning=draftUnsaved?'VALORES VISIBLES AUN NO GUARDADOS EN EL HISTORIAL.':null;
  if(format==='json')return JSON.stringify(review,null,2);
  if(format==='txt')return [
   heading,
   'Equipo: '+review.deviceName+' | Perfil: '+review.profileName,
   'Una curva conjunta; +/-'+review.capDb+' dB, pasos de 0.5 dB (limites de investigacion).',
+  ...(draftWarning?[draftWarning]:[]),
   ...rows.map(r=>r.frequencyHz+' Hz: '+sign(r.currentGainDb)+' dB (original: '+sign(r.originalGainDb)+' dB)'),
   'No se verificaron presion sonora, headroom, filtros fisicos o ajustes de equipo.',
  ].join('\n')+'\n';
  return [
   cell(heading),
+  ...(draftWarning?[cell(draftWarning)]:[]),
   ['frecuencia_Hz','ganancia_actual_dB','ganancia_original_dB','fuente_frecuencia','verificacion_frecuencia'].map(cell).join(','),
   ...rows.map(r=>[r.frequencyHz,r.currentGainDb,r.originalGainDb,
    r.frequencySource,r.frequencyVerification].map(cell).join(',')),
