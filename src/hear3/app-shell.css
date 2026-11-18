@@ -186,6 +186,16 @@ a{color:var(--app-accent)}
 .hear-listening-label{display:block;font-size:.8rem;color:var(--app-muted);font-weight:700}
 .hear-listening-meters output{font-size:clamp(1.2rem,5vw,2.2rem);font-weight:850;
  overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.hear-console-live{margin:.9rem 0 1rem;min-width:0}
+.hear-console-live .hear-console-wave{max-width:none;margin:.25rem 0 .45rem;
+ background:var(--app-bg)}
+.hear-console-time{display:flex;align-items:center;justify-content:space-between;
+ gap:.75rem;font-size:.9rem;font-weight:750}
+.hear-console-time output{font-variant-numeric:tabular-nums;white-space:nowrap;
+ font-weight:850;color:var(--app-accent)}
+.hear-console-live progress{display:block;width:100%;height:16px;margin:.45rem 0 .4rem;
+ accent-color:var(--app-accent);border-radius:10px}
+.hear-console-live small{display:block;line-height:1.4}
 .hear-listening-answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin:1.1rem 0}
 .hear-listening-answers button{min-height:72px;font-weight:850;font-size:clamp(1rem,2.5vw,1.24rem);
  width:100%;border-radius:.95rem;border:2px solid var(--app-accent);
