@@ -220,3 +220,28 @@ test('saved contradictions preserve consent gate after explicit route check and 
  restored.confirmContradiction({userConfirmed:false});
  assert.equal(restored.snapshot().bands[0].status,'inconclusive');
 });
+
+test('reviewed frequency checkpoint restores in silence with old evidence retired',async()=>{
+ const f=setup(),exam=f.create();
+ while(exam.snapshot().currentBandId==='a')await toneAndAnswer(exam,'not-heard');
+ const prior=exam.getSession().observations.length;
+ assert.equal(exam.snapshot().canReviewPreviousBand,true);
+ exam.retakePreviousBand({userConfirmed:true});
+ const stored=f.store.load();
+ assert.equal(stored.checkpoint.audioSession.observations.length,prior);
+ assert.equal(stored.checkpoint.audioSession.invalidatedToneIds.length,prior);
+ assert.equal(stored.checkpoint.progress.bands[0].status,'pending');
+ assert.equal(stored.checkpoint.progress.bands[0].reviewedOnce,true);
+ const restored=f.create();
+ const output=await restored.recover({userInitiated:true});
+ assert.equal(output.state.status,'paused');
+ assert.equal(f.starts.length,prior,'recovery starts no audio');
+ restored.confirmRoute({userConfirmed:true});
+ restored.resume({userInitiated:true});
+ const tone=await restored.playNext({userInitiated:true});
+ assert.equal(tone.tone.digitalLevelDbfs,-60);
+ restored.answer('heard');
+ assert.equal(restored.snapshot().nextDigitalLevelDbfs,-66);
+ assert.equal(restored.getSession().observations.length,prior+1);
+ assert.equal(restored.getSession().invalidatedToneIds.length,prior);
+});
