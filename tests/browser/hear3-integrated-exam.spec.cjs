@@ -107,6 +107,7 @@ test('pilot inspection and navigation do not clear old Hear 2.0 profiles',async(
 
 test('D-027 invalid EQ layout reveals optional contextual recovery without sound or data loss',async({page})=>{
  await page.goto('/hear3-exam/');
+ await page.getByTestId('hear-advanced-tools').locator('summary').first().click();
  await expect(page.getByTestId('exam-error-help')).toBeHidden();
  await page.getByTestId('layout-choice').selectOption('custom');
  await page.getByTestId('layout-custom').fill('not-a-frequency');
