@@ -91,14 +91,23 @@
 </main>
 <footer class="foot">
  <span>Hear · Mantén el volumen bajo. Puedes detener el sonido en cualquier momento.</span>
- <details class="foot-more" id="support">
+ <details class="foot-more" id="ajustes">
   <summary>Ayuda y datos</summary>
   <div class="foot-links">
    <a href="./hear3-library/">Resultados guardados</a>
    <a href="./hear3-dual-restore/">Restaurar copia</a>
    <a href="./hear3-privacy/">Privacidad</a>
+   <a href="./hear3-photo-privacy/">Imagen privada del ecualizador</a>
    <a href="./hear3-diagnostics/">Diagnóstico</a>
    <label>Idioma <select data-hear-language data-testid="hear-language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="pt">Português</option><option value="it">Italiano</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option></select></label>
+   <details class="foot-tech" id="foot-tech">
+    <summary>Opciones técnicas</summary>
+    <label>Apariencia<select id="hear3-theme-choice" data-testid="hear3-theme-choice" aria-label="Apariencia"><option value="system">Según el sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></label>
+    <p class="foot-tech-title">Uso sin conexión (opcional)</p>
+    <button type="button" id="offline-enable" data-testid="offline-enable">Guardar app sin conexión</button>
+    <button type="button" id="offline-disable" data-testid="offline-disable">Retirar descarga</button>
+    <p id="offline-status" data-testid="offline-status" role="status">Sin descargar</p>
+   </details>
   </div>
  </details>
 </footer>
