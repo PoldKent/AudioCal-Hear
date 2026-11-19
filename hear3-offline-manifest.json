@@ -28,6 +28,8 @@
     "src/hear3/device-profile-contract.mjs",
     "src/hear3/eq-control-quantization.mjs",
     "src/hear3/eq-band-layouts.mjs",
+    "src/hear3/focus-experience.css",
+    "src/hear3/focus-experience.mjs",
     "src/hear3/app-shell.css",
     "src/hear3/app-theme.mjs",
     "src/hear3/app-i18n.mjs",
