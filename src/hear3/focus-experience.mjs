@@ -190,6 +190,8 @@ export function mountHearFocus({doc=document,env=window}={}){
   element('foot-tech').open=false;
   const checkpoint=readCheckpoint();
   pendingRecovery=Boolean(checkpoint);
+  element('recovery-options').hidden=!pendingRecovery;
+  element('recovery-options').open=false;
   element('volume-ok').checked=false;
   notice('');
   output('confirm',pendingRecovery?'Recuperar mi prueba →':'Empezar a escuchar →');
@@ -197,6 +199,32 @@ export function mountHearFocus({doc=document,env=window}={}){
    output('ready-hint','Tu prueba anterior está guardada. Se recuperará sin reproducir sonido.');
   }
   go('ready');
+ }
+ function downloadProgress(){
+  if(!readCheckpoint())throw Error('No hay una prueba a medias para descargar.');
+  const content=store.exportBackup();
+  const blob=new Blob([content],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=doc.createElement('a');
+  a.href=url;a.download='hear-prueba-en-curso.json';
+  doc.body.append(a);a.click();a.remove();
+  env.setTimeout(()=>URL.revokeObjectURL(url),1200);
+ }
+ async function resetProgress(){
+  if(!readCheckpoint())throw Error('No encontramos una prueba anterior para eliminar.');
+  if(!env.confirm('¿Eliminar solamente la prueba incompleta y comenzar otra? Los perfiles y resultados ya guardados no se borrarán.'))return;
+  let outcome;
+  if(exam){
+   outcome=exam.clearCheckpoint({confirmed:true});
+   await exam.dispose();
+   exam=null;
+  }else outcome=store.clear({confirmed:true});
+  if(!outcome.cleared)throw Error('No pudimos verificar que el progreso anterior se haya eliminado.');
+  pendingRecovery=false;eq=null;review=null;
+  element('recovery-options').hidden=true;
+  element('recovery-options').open=false;
+  element('volume-ok').checked=false;
+  output('confirm','Empezar a escuchar →');
+  notice('La prueba anterior se eliminó. Confirma el volumen para comenzar una nueva.');
  }
  async function confirmReady(){
   if(!element('volume-ok').checked){
@@ -393,6 +421,8 @@ export function mountHearFocus({doc=document,env=window}={}){
  const listen=(id,fn)=>element(id).addEventListener('click',()=>void run(fn));
  listen('begin',begin);
  listen('confirm',confirmReady);
+ listen('download-progress',downloadProgress);
+ listen('reset-progress',resetProgress);
  listen('tone-play',toneAction);
  listen('tone-yes',()=>answer('heard'));
  listen('tone-no',()=>answer('not-heard'));
