@@ -30,10 +30,10 @@
 
   <section id="ready" class="stage" hidden data-testid="focus-ready">
    <span class="eyebrow">ANTES DE COMENZAR</span>
-   <h1>Prepara tus auriculares</h1>
-   <p class="lead">Conéctalos y baja el volumen físico a un nivel cómodo. No lo subas para intentar escuchar un tono.</p>
-   <label class="agree"><input id="volume-ok" type="checkbox" data-testid="focus-volume"><span>Mis auriculares están conectados y el volumen está bajo.</span></label>
-   <button id="confirm" class="primary main-cta" type="button" data-testid="focus-confirm">Continuar <span aria-hidden="true">→</span></button>
+   <h1>Ajusta el volumen y empieza</h1>
+   <p class="lead">Conecta el equipo y baja su volumen a un nivel cómodo. Al continuar escucharás el primer tono. No subas el volumen para intentar oír un sonido.</p>
+   <label class="agree"><input id="volume-ok" type="checkbox" data-testid="focus-volume"><span>Mi equipo está conectado y el volumen está bajo.</span></label>
+   <button id="confirm" class="primary main-cta" type="button" data-testid="focus-confirm">Empezar a escuchar <span aria-hidden="true">→</span></button>
    <p id="ready-hint" class="inline-hint" role="status"></p>
    <details class="quiet-options" id="device-options">
     <summary>¿Quieres configurar otro equipo?</summary>
@@ -47,24 +47,10 @@
    </details>
   </section>
 
-  <section id="sweep" class="stage" hidden data-testid="focus-sweep">
-   <span class="eyebrow">PRIMERA ESCUCHA</span>
-   <h1>Escucha cómo cambia el sonido</h1>
-   <p class="lead">El sonido recorre distintas frecuencias durante 20 segundos. Puedes marcar lo que percibes.</p>
-   <div class="sound-sphere" aria-hidden="true"><div class="pulse"></div><div class="pulse p2"></div><span id="sweep-hz">125 Hz</span></div>
-   <progress id="sweep-progress" max="20" value="0" aria-label="Progreso del sonido"></progress>
-   <p class="counter" id="sweep-time">20 s</p>
-   <div class="answers">
-    <button type="button" class="answer positive" id="sweep-yes" data-testid="focus-sweep-yes">Lo escucho</button>
-    <button type="button" class="answer negative" id="sweep-no" data-testid="focus-sweep-no">No lo escucho</button>
-   </div>
-   <button type="button" class="quiet-link" id="sweep-stop">Detener sonido</button>
-  </section>
-
   <section id="tones" class="stage" hidden data-testid="focus-tones">
    <span class="eyebrow" id="test-step">TU PRUEBA DE SONIDO</span>
    <h1 id="tone-title">Escucha el siguiente tono</h1>
-   <p class="lead" id="tone-note">Pulsa el botón para escuchar. Responde solo mientras suena.</p>
+   <p class="lead" id="tone-note">Escucha cada tono y responde con un toque.</p>
    <div class="tone-orb" id="tone-orb" aria-hidden="true"><span id="tone-hz">125 Hz</span><span class="tone-unit">FRECUENCIA</span></div>
    <p class="counter" id="band-count">Frecuencia 1 de 5</p>
    <progress id="band-progress" max="5" value="0" aria-label="Frecuencias completadas"></progress>
