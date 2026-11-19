@@ -39,6 +39,13 @@ export function mountHearFocus({doc=document,env=window}={}){
  if(!doc?.getElementById)throw Error('Hear necesita una pantalla válida');
  const element=id=>doc.getElementById(id);
  const output=(id,value)=>{const target=element(id);if(target.textContent!==String(value))target.textContent=String(value);};
+ const tr=(key,values={})=>{
+  const lang=doc.documentElement.lang?.split('-')[0]||'es';
+  let result=translateHear3Ui('focus.d.'+key,lang)??key;
+  for(const [name,value] of Object.entries(values))
+   result=result.replaceAll('{'+name+'}',String(value));
+  return result;
+ };
  const store=createHear3AdaptiveProgressStore({profileId:HEAR_FOCUS_PROFILE_ID});
  // Only equipment category and declared EQ frequencies are remembered.
  // The verified tone checkpoint remains the source of truth for progression.
@@ -300,7 +307,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   element('recovery-options').open=false;
   element('volume-ok').checked=false;
   notice('');
-  output('confirm',pendingRecovery?'Recuperar mi prueba →':'Empezar a escuchar →');
+  output('confirm',(pendingRecovery?tr('recover'):tr('confirm'))+' →');
   if(pendingRecovery){
    output('ready-hint','Tu prueba anterior está guardada. Se recuperará sin reproducir sonido.');
   }
@@ -335,7 +342,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   element('recovery-options').hidden=true;
   element('recovery-options').open=false;
   element('volume-ok').checked=false;
-  output('confirm','Empezar a escuchar →');
+  output('confirm',tr('confirm')+' →');
   if(wasResult)go('ready');
   notice('Puedes comenzar otra prueba. Confirma el volumen físico bajo antes de escuchar.');
  }
@@ -406,7 +413,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    pendingRecovery=true;
    element('volume-ok').checked=false;
    notice('La salida de audio cambió. Confirma otra vez el equipo y el volumen antes de continuar.');
-   output('confirm','Reanudar mi prueba →');
+   output('confirm',tr('recover')+' →');
    go('ready');return;
   }
   if(status==='completed'){
@@ -528,22 +535,22 @@ export function mountHearFocus({doc=document,env=window}={}){
    const index=Math.min(state.completedBands+1,state.totalBands);
    const current=state.bands.find(b=>b.id===state.currentBandId);
    output('tone-hz',current?current.frequencyHz+' Hz':'—');
-   output('band-count','Frecuencia '+index+' de '+state.totalBands);
+   output('band-count',tr('bandCount',{i:index,n:state.totalBands}));
    element('band-progress').max=state.totalBands;
    element('band-progress').value=state.completedBands;
    const playing=state.status==='playing';
    const now=env.performance?.now?.()??Date.now();
    const audio=exam.getSession().currentTone;
    const digital=playing?audio?.digitalLevelDbfs:state.nextDigitalLevelDbfs;
-   output('tone-level',Number.isFinite(digital)
-    ?'Nivel digital: '+digital+' dBFS':'Nivel digital: — dBFS');
+   output('tone-level',tr('digitalLevel',{db:Number.isFinite(digital)?digital:'—'}));
    const total=HEAR_FOCUS_TONE_DURATION_SECONDS*1000;
    const progress=playing&&Number.isFinite(activeToneStartedAt)
     ?Math.max(0,Math.min(total,now-activeToneStartedAt)):0;
    element('tone-time-progress').max=total;
    element('tone-time-progress').value=progress;
-   output('tone-time',playing?'Tiempo visual aprox.: '+(Math.max(0,total-progress)/1000).toFixed(1)+' s':
-    'Duración: hasta '+HEAR_FOCUS_TONE_DURATION_SECONDS+' s');
+   output('tone-time',playing
+    ?tr('timeEstimate',{s:(Math.max(0,total-progress)/1000).toFixed(1)})
+    :tr('duration',{s:HEAR_FOCUS_TONE_DURATION_SECONDS}));
    if(!playing)activeToneStartedAt=null;
    const uncertain=state.status==='awaiting-confirmation';
    element('tone-answers').hidden=!playing;
@@ -552,18 +559,15 @@ export function mountHearFocus({doc=document,env=window}={}){
    element('tone-stop').hidden=!['playing','starting'].includes(state.status);
    element('tone-review').hidden=!state.canReviewPreviousBand||playing||uncertain;
    const paused=state.status==='paused';
-   output('tone-title',playing?'¿Escuchas este tono?':paused?'Sonido detenido':
-    uncertain?'Necesitamos confirmar una respuesta':'Escucha el siguiente tono');
+   output('tone-title',tr(playing?'tonePlaying':paused?'tonePaused':
+    uncertain?'toneConflict':'toneNext'));
    const changedRoute=paused&&exam.getSession().routeCheckRequired;
-   output('tone-note',playing?'¿Lo escuchas bien, no lo escuchas o te resulta demasiado fuerte?':
-    changedRoute?'La salida cambió. Confirma el volumen antes de continuar.':
-    paused?'El tono terminó sin respuesta. Puedes escucharlo otra vez.':
-    uncertain?'Puedes repetir el tono o dejar esta frecuencia sin estimación.':
-     'Pulsa el botón. El sonido nunca comenzará automáticamente.');
-   output('tone-play',changedRoute?'Comprobar equipo →':
-    paused?'Repetir tono ▶':'Escuchar tono ▶');
+   output('tone-note',tr(playing?'notePlaying':changedRoute?'noteRoute':
+    paused?'notePaused':uncertain?'noteUncertain':'noteNext'));
+   output('tone-play',tr(changedRoute?'route':paused?'replay':'play')+(changedRoute?' →':' ▶'));
   }
  }
+ env.addEventListener('hear3:language-change',render);
  const listen=(id,fn)=>element(id).addEventListener('click',()=>void run(fn));
  listen('begin',begin);
  listen('confirm',confirmReady);
@@ -615,6 +619,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   }
   doc.removeEventListener('keydown',stopKey);
   env.removeEventListener('hashchange',openHelp);
+  env.removeEventListener('hear3:language-change',render);
   media?.removeEventListener?.('change',onThemeChange);
  };
  env.addEventListener('pagehide',onLeave,{once:true});
