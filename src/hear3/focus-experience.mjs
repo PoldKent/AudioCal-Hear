@@ -4,8 +4,7 @@
  * adaptive state, checkpoint and bounded-EQ modules remain the only engines.
  * No remote requests, autoplay, microphone, hearing diagnosis or EQ auto-apply.
  */
-import {createSweepPlan,planSweepConfirmations,frequencyAtSweepTime} from './sweep-planner.mjs';
-import {createSweepAudioRunner} from './sweep-audio-runner.mjs';
+import {createSweepPlan,planSweepConfirmations} from './sweep-planner.mjs';
 import {resolveHear3GraphicBandLayout} from './eq-band-layouts.mjs';
 import {inspectHear3AudioCapabilities} from './audio-capability-preflight.mjs';
 import {createHear3AdaptiveProgressStore} from './adaptive-progress-store.mjs';
@@ -18,7 +17,7 @@ import {createHear3AdaptiveCatalogArchive} from './adaptive-catalog-archive.mjs'
 export const HEAR_FOCUS_PROFILE_ID='hear3-integrated-pilot';
 export const HEAR_FOCUS_LIMITS=Object.freeze({minDbfs:-80,maxDbfs:-42});
 const $=id=>document.getElementById(id);
-const VIEWS=['welcome','ready','sweep','tones','result'];
+const VIEWS=['welcome','ready','tones','result'];
 const text=(id,value)=>{const node=$(id),next=String(value);if(node.textContent!==next)node.textContent=next;};
 const safeError=e=>typeof e?.message==='string'&&e.message.length<280
  ?e.message:'No pudimos completar esa acción. El sonido permanece detenido.';
@@ -37,13 +36,9 @@ export function mountHearFocus({doc=document,env=window}={}){
  const store=createHear3AdaptiveProgressStore({profileId:HEAR_FOCUS_PROFILE_ID});
  const catalogStore=createHear3CatalogStore();
  let view='welcome',pendingRecovery=false,exam=null,eq=null,review=null;
- let currentPlan=null,bands=null,starting=false,finished=false,disposed=false;
- let lastSweepStatus=null,saveResultId=null;
+ let bands=null,starting=false,disposed=false;
+ let saveResultId=null;
  const preflight=inspectHear3AudioCapabilities(env);
- const sweep=createSweepAudioRunner({
-  onEnded:()=>{if(!disposed)void run(prepareTonesFromSweep);},
-  onInterrupted:()=>{if(!disposed){go('ready');notice('El sonido se detuvo. Comprueba el volumen antes de continuar.');}},
- });
  function error(e){
   const target=element('app-error');
   target.textContent=safeError(e);
@@ -115,14 +110,6 @@ export function mountHearFocus({doc=document,env=window}={}){
   output('eq-quality',review.resultStatus);
   go('result');return true;
  }
- async function prepareTonesFromSweep(){
-  if(exam||view!=='sweep')return;
-  const result=sweep.lastResult();
-  if(result?.status!=='completed')return;
-  const plan=planSweepConfirmations(currentPlan,result.reports,bands);
-  createExam(plan);
-  go('tones');
- }
  async function begin(){
   const checkpoint=readCheckpoint();
   pendingRecovery=Boolean(checkpoint);
@@ -166,19 +153,23 @@ export function mountHearFocus({doc=document,env=window}={}){
   }
   if(readCheckpoint())throw Error('Hay una prueba anterior. Continúala para no borrar tus respuestas.');
   bands=chooseBands();
-  currentPlan=createSweepPlan({
+  // The exploratory 20-second sweep is NOT required for mathematical tone
+  // evidence. Each real EQ band is confirmed through independent tones.
+  // An empty sweep report does not invent hearing evidence or thresholds.
+  const plan=planSweepConfirmations(createSweepPlan({
    minHz:bands[0].frequencyHz,maxHz:bands.at(-1).frequencyHz,
    durationSeconds:20,
-  });
-  go('sweep');
-  try{
-   const started=await sweep.start({
-    plan:currentPlan,digitalLevelDbfs:-60,
-    authorizedDigitalRangeDbfs:HEAR_FOCUS_LIMITS,
-    channel:'joint',userInitiated:true,
-   });
-   if(!started?.started)throw Error('El sonido no pudo comenzar. Vuelve a comprobar la salida.');
-  }catch(e){sweep.stop('failed-to-start');go('ready');throw e;}
+  }),[],bands);
+  createExam(plan);
+  go('tones');
+  // The user deliberately clicked "Empezar a escuchar" *after* confirming
+  // physical volume. This click starts one tone; no autoplay or subsequent
+  // sounds are scheduled without another direct click.
+  const started=await exam.playNext({userInitiated:true});
+  if(!started.started){
+   exam.interrupt({routeMayHaveChanged:true});
+   throw Error('No se reprodujo el tono. Revisa tus auriculares y vuelve a confirmar el volumen.');
+  }
  }
  async function toneAction(){
   if(!exam)throw Error('Todavía no hay tonos preparados.');
@@ -215,10 +206,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   render();
  }
  function interrupt(){
-  if(view==='sweep'){
-   sweep.stop('user-stop');
-   go('ready');notice('Sonido detenido. Comprueba el volumen y comienza cuando quieras.');
-  }else if(exam&&['playing','ready','starting'].includes(exam.snapshot().status)){
+  if(exam&&['playing','ready','starting'].includes(exam.snapshot().status)){
    exam.interrupt({routeMayHaveChanged:false});render();
   }
  }
@@ -280,19 +268,6 @@ export function mountHearFocus({doc=document,env=window}={}){
    const checkpoint=readCheckpoint();
    output('begin',checkpoint?'Continuar mi prueba →':'Empezar prueba →');
   }
-  if(view==='sweep'){
-   const state=sweep.snapshot();
-   if(state.status==='playing'){
-    const elapsed=state.elapsedSeconds;
-    element('sweep-progress').value=elapsed;
-    output('sweep-time',Math.ceil(Math.max(0,20-elapsed))+' s');
-    output('sweep-hz',Math.round(frequencyAtSweepTime(state.plan,elapsed))+' Hz');
-    lastSweepStatus='playing';
-   }else if(lastSweepStatus==='playing'&&sweep.lastResult()?.status==='completed'){
-    lastSweepStatus='completed';
-    void run(prepareTonesFromSweep);
-   }
-  }
   if(view==='tones'&&exam){
    const state=exam.snapshot();
    if(state.status==='completed'){
@@ -325,9 +300,6 @@ export function mountHearFocus({doc=document,env=window}={}){
  const listen=(id,fn)=>element(id).addEventListener('click',()=>void run(fn));
  listen('begin',begin);
  listen('confirm',confirmReady);
- listen('sweep-yes',()=>sweep.recordResponse(true));
- listen('sweep-no',()=>sweep.recordResponse(false));
- listen('sweep-stop',interrupt);
  listen('tone-play',toneAction);
  listen('tone-yes',()=>answer('heard'));
  listen('tone-no',()=>answer('not-heard'));
@@ -346,7 +318,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  element('volume-ok').addEventListener('change',()=>{if(element('volume-ok').checked)notice('');});
  const stopKey=e=>{
   if(e.key==='Escape'&&!e.repeat&&!e.altKey&&!e.metaKey&&!e.ctrlKey){
-   if(view==='sweep'||(view==='tones'&&['playing','starting'].includes(exam?.snapshot().status))){
+   if(view==='tones'&&['playing','starting'].includes(exam?.snapshot().status)){
     e.preventDefault();interrupt();
    }
   }
@@ -357,8 +329,6 @@ export function mountHearFocus({doc=document,env=window}={}){
   if(disposed)return;
   disposed=true;
   env.clearInterval(timer);
-  sweep.stop('pagehide');
-  void sweep.dispose();
   if(exam){
    if(exam.getSession().status!=='completed'){
     try{exam.interrupt({routeMayHaveChanged:true});}catch{}
