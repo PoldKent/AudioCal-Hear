@@ -211,7 +211,10 @@ export function mountHearFocus({doc=document,env=window}={}){
  }
  async function resetProgress(){
   if(!readCheckpoint())throw Error('No encontramos una prueba anterior para eliminar.');
-  if(!env.confirm('¿Eliminar solamente la prueba incompleta y comenzar otra? Los perfiles y resultados ya guardados no se borrarán.'))return;
+  const wasResult=view==='result';
+  if(!env.confirm(wasResult
+   ?'¿Hacer otra prueba? Se descartará la sesión actual y el EQ no guardado. Los resultados que ya guardaste permanecerán intactos.'
+   :'¿Eliminar solamente la prueba incompleta y comenzar otra? Los perfiles y resultados ya guardados no se borrarán.'))return;
   let outcome;
   if(exam){
    outcome=exam.clearCheckpoint({confirmed:true});
@@ -224,7 +227,8 @@ export function mountHearFocus({doc=document,env=window}={}){
   element('recovery-options').open=false;
   element('volume-ok').checked=false;
   output('confirm','Empezar a escuchar →');
-  notice('La prueba anterior se eliminó. Confirma el volumen para comenzar una nueva.');
+  if(wasResult)go('ready');
+  notice('Puedes comenzar otra prueba. Confirma el volumen físico bajo antes de escuchar.');
  }
  async function confirmReady(){
   if(!element('volume-ok').checked){
@@ -423,6 +427,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  listen('confirm',confirmReady);
  listen('download-progress',downloadProgress);
  listen('reset-progress',resetProgress);
+ listen('new-test',resetProgress);
  listen('tone-play',toneAction);
  listen('tone-yes',()=>answer('heard'));
  listen('tone-no',()=>answer('not-heard'));
