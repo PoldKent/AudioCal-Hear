@@ -3,270 +3,121 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#081420">
-<meta name="description" content="AudioCal Hear: examen de tonos, ecualizador, resultados y equipos en un solo lugar.">
-<title>AudioCal Hear · Personaliza tu sonido</title>
-<link rel="stylesheet" href="./src/hear3/app-shell.css">
+<meta name="theme-color" content="#090d18">
+<meta name="description" content="Hear: una prueba guiada para descubrir tu ecualizador orientativo.">
+<title>Hear · Tu sonido, sin complicaciones</title>
+<link rel="stylesheet" href="./src/hear3/focus-experience.css">
 <script type="module" src="./src/hear3/app-i18n.mjs"></script>
+<script type="module" src="./src/hear3/focus-experience.mjs"></script>
 </head>
 <body>
-<a href="#contenido" class="app-sr-only" id="skip-link">Saltar al contenido</a>
-<header class="app-topbar">
- <a class="app-brand" href="./" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
- <nav class="app-nav" aria-label="Navegación principal">
-  <a href="./" aria-current="page" data-hear-i18n="nav.home">Inicio</a>
-  <a href="./hear3-exam/" data-hear-i18n="nav.exam">Examen</a>
-  <a href="./hear3-eq-editor/" data-hear-i18n="nav.eq">Mi ecualizador</a>
-  <details class="app-nav-more">
-   <summary data-hear-i18n="nav.more">Más</summary>
-   <div class="app-nav-more-links">
-    <a href="./hear3-library/" data-hear-i18n="nav.history">Historial</a>
-    <a href="#ajustes" data-hear-i18n="nav.settings">Ajustes</a>
-   </div>
-  </details>
- </nav> <label class="app-language-control">
-  <span class="app-sr-only">Idioma de la interfaz principal</span>
-  <select data-hear-language data-testid="hear-language"
-    aria-label="Idioma de la interfaz principal">
-   <option value="es">Español</option>
-   <option value="en">English</option>
-   <option value="fr">Français</option>
-   <option value="pt">Português</option>
-   <option value="it">Italiano</option>
-   <option value="de">Deutsch</option>
-   <option value="zh">中文</option>
-   <option value="ja">日本語</option>
-  </select>
- </label>
+<a class="skip" href="#experience">Ir a la prueba</a>
+<header class="top">
+ <a class="wordmark" href="./" aria-label="Hear, inicio"><span class="mark" aria-hidden="true">◉</span>hear<span class="dot">.</span></a>
+ <div class="top-right"><span class="top-pill">SONIDO PERSONAL</span></div>
 </header>
-<main id="contenido" class="app-shell">
-<p data-hear-language-note hidden class="app-language-note" role="note"></p>
- <section class="app-hero" aria-labelledby="inicio-titulo">
-  <div>
-   <p class="app-kicker">HEAR · TU PRUEBA DE SONIDO</p>
-   <h1 id="inicio-titulo" data-hear-i18n="home.headline">Encuentra tu sonido.</h1>
-   <p class="app-lead" data-hear-i18n="home.lead">Una prueba guiada, respuestas sencillas y un ecualizador para ajustar manualmente tu equipo.</p>
-   <div class="app-actions">
-    <a class="app-button primary hear-home-cta" href="./hear3-exam/" data-testid="begin-exam" data-hear-i18n="home.start">Comenzar mi prueba</a>
-   </div>
-   <div class="hear-home-path" aria-label="El recorrido en tres pasos">
-    <span>1 · Tu equipo</span><span>2 · Escucha</span><span>3 · Tu ecualizador</span>
-   </div>
-   <p class="hear-home-footnote">Sin crear cuentas. Sin ajustes automáticos. Tú controlas cada sonido.</p>
-  </div>
-  <div class="app-illustration" aria-hidden="true">
-   <div class="app-waves">
-    <span style="--wave-height:28%"></span><span style="--wave-height:56%"></span>
-    <span style="--wave-height:90%"></span><span style="--wave-height:48%"></span>
-    <span style="--wave-height:75%"></span><span style="--wave-height:100%"></span>
-    <span style="--wave-height:62%"></span><span style="--wave-height:84%"></span>
-    <span style="--wave-height:41%"></span><span style="--wave-height:66%"></span>
-    <span style="--wave-height:30%"></span>
-   </div>
-  </div>
- </section>
- <section id="recent-profile" class="app-section" aria-labelledby="recent-title" hidden>
-  <div class="app-card">
-   <p class="app-kicker">Bienvenido de nuevo</p>
-   <h2 class="app-section-heading" id="recent-title" data-hear-i18n="home.return">Continúa con tu equipo</h2>
-   <p id="recent-device" data-testid="recent-device" class="app-lead"></p>
-   <p id="recent-session" data-testid="recent-session" class="app-subtle"></p>
-   <div class="app-actions">
-    <a id="recent-eq-link" data-testid="recent-eq-link" class="app-button primary"
-     href="./hear3-eq-editor/">Ver mi último EQ</a>
-    <a class="app-button hear-home-secondary-link" href="./hear3-library/">Mis perfiles y respaldos</a>
-   </div>
-  </div>
- </section>
- <details class="hear-home-extra">
-  <summary>Mis perfiles y otras opciones</summary>
-  <section class="app-section" aria-labelledby="tu-actividad">
-  <h2 id="tu-actividad" class="app-section-heading" data-hear-i18n="home.activity">Tu actividad</h2>
-  <div class="app-grid">
-   <article class="app-card">
-    <h3>Examen</h3>
-    <strong class="app-metric" id="exam-state" data-testid="exam-state">Listo</strong>
-    <p id="resume-note" data-testid="resume-note" role="status" aria-live="polite">Puedes empezar cuando quieras. El sonido nunca se reproduce automáticamente.</p>
-    <a href="./hear3-exam/" id="resume-link" data-testid="resume-link">Ir al examen</a>
-   </article>
-   <article class="app-card">
-    <h3>Mis perfiles</h3>
-    <strong class="app-metric" id="profile-count" data-testid="profile-count">—</strong>
-    <p id="profile-summary">Dispositivos y perfiles guardados en este navegador.</p>
-    <a href="./hear3-library/">Ver historial</a>
-   </article>
-   <article class="app-card">
-    <h3>Ecualizador</h3>
-    <strong class="app-metric" id="eq-count" data-testid="eq-count">—</strong>
-    <p>Revisa, ajusta y exporta las curvas que hayas guardado.</p>
-    <a href="./hear3-eq-editor/">Abrir ecualizador</a>
-   </article>
-  </div>
- </section>
- <section class="app-section" aria-labelledby="como-funciona">
-  <h2 id="como-funciona" class="app-section-heading" data-hear-i18n="home.how">Cómo funciona</h2>
-  <details class="app-how-disclosure">
-   <summary data-hear-i18n="home.how.more">Ver las tres etapas de la experiencia</summary>
-   <div class="app-grid">
-   <article class="app-card"><h3>1. Tu equipo</h3>
-    <p>Elige auriculares, parlantes u otro sistema e introduce las bandas reales de su ecualizador.</p>
-   </article>
-   <article class="app-card"><h3>2. Tu escucha</h3>
-    <p>Escucha los tonos voluntariamente y responde si los percibes. Puedes detener o recuperar el examen.</p>
-   </article>
-   <article class="app-card"><h3>3. Tu EQ</h3>
-    <p>Consulta el resultado orientativo, guárdalo si quieres y edita su curva sin cambiar tu equipo automáticamente.</p>
-   </article>
-   </div>
-  </details>
- </section>
- </details>
- <aside class="app-alert" aria-label="Información sobre el sonido">
-  <strong>Antes de escuchar</strong>
-  <p class="app-subtle">Mantén el volumen físico bajo y cómodo. El examen utiliza señales digitales sin calibración de presión sonora; no sirve como diagnóstico médico ni garantiza un nivel de escucha seguro. Detén cualquier sonido molesto.</p>
- </aside>
- <details class="hear-home-settings" id="ajustes">
-  <summary id="ajustes-titulo">Ajustes y otras herramientas</summary>
-  <section class="app-section app-settings" aria-labelledby="ajustes-titulo">
-  <div class="app-settings-grid">
-   <div class="app-card">
-    <h3 data-hear-i18n="home.appearance">Apariencia</h3>
-    <label for="hear3-theme-choice">Tema</label>
-    <select id="hear3-theme-choice" data-testid="hear3-theme-choice" aria-label="Apariencia">
-     <option value="system">Según el sistema</option>
-     <option value="light">Claro</option>
-     <option value="dark">Oscuro</option>
-    </select>
-    <p>Tu preferencia se guarda solo en este navegador. Cambia el idioma desde el selector superior.</p>
-   </div>
-   <div class="app-card">
-    <h3 data-hear-i18n="home.offline">Uso sin conexión</h3>
-    <p>Guarda voluntariamente los recursos de la aplicación. Los resultados personales no forman parte de esa caché.</p>
-    <div class="app-actions">
-     <button type="button" id="offline-enable" data-testid="offline-enable">Guardar para usar sin conexión</button>
-     <button type="button" id="offline-disable" data-testid="offline-disable">Retirar descarga</button>
-    </div>
-    <p id="offline-status" data-testid="offline-status" role="status" aria-live="polite">Comprobando compatibilidad…</p>
-   </div>
-   <div class="app-card">
-    <h3 data-hear-i18n="home.data.title">Datos, privacidad y ayuda</h3>
-    <p>Tus perfiles y resultados permanecen en este navegador. Administra los respaldos antes de borrar información.</p>
-    <nav class="app-settings-links" aria-label="Herramientas de datos y soporte">
-     <a href="./hear3-library/" data-hear-i18n="home.data.results">Mis resultados y respaldos</a>
-     <a href="./hear3-dual-restore/" data-hear-i18n="home.data.restore">Restaurar copia de seguridad</a>
-     <a href="./hear3-privacy/" data-hear-i18n="home.data.privacy">Privacidad y borrado local</a>
-     <a href="./hear3-photo-privacy/" data-hear-i18n="home.data.photo">Preparar una imagen privada del ecualizador</a>
-     <a href="./hear3-diagnostics/" data-hear-i18n="home.data.diagnostics">Diagnóstico técnico avanzado</a>
-    </nav>
-   </div>
-  </div>
-  <p class="app-subtle">Los datos del navegador pueden perderse si se limpia su almacenamiento. Descarga una copia de seguridad antes de hacer cambios destructivos.</p>
+<main id="experience" class="experience">
+ <div class="center">
+  <div class="mini-progress" aria-hidden="true"><span class="filled" id="p-1"></span><span id="p-2"></span><span id="p-3"></span></div>
+  <section id="welcome" class="stage" data-testid="focus-welcome">
+   <span class="eyebrow">TU SONIDO, A TU MANERA</span>
+   <h1 data-hear-i18n="home.headline">Encuentra tu sonido.</h1>
+   <p class="lead" data-hear-i18n="home.lead">Una prueba guiada, respuestas sencillas y un ecualizador para ajustar manualmente tu equipo.</p>
+   <div class="orb" aria-hidden="true"><div class="orb-core"><span class="wave-1"></span><span class="wave-2"></span><span class="wave-3"></span><span class="wave-4"></span><span class="wave-5"></span></div></div>
+   <button id="begin" class="primary main-cta" type="button" data-testid="focus-begin">Empezar prueba <span aria-hidden="true">→</span></button>
+   <p class="tiny">Un solo recorrido. No necesitas crear una cuenta.</p>
   </section>
- </details>
- <footer class="app-footer">AudioCal Hear · Tus datos y decisiones de escucha permanecen bajo tu control.</footer>
-</main>
-<script type="module">
-import {createHear3AdaptiveProgressStore} from './src/hear3/adaptive-progress-store.mjs';
-import {createHear3CatalogStore} from './src/hear3/catalog-backup-store.mjs';
-import {detectHear3OfflineSupport,enableHear3Offline,disableHear3Offline}
- from './src/hear3/offline-optin.mjs';
-const $=id=>document.getElementById(id);
-const THEME_KEY='hear3:ui-theme:v1';
-const validThemes=new Set(['system','light','dark']);
-const themeChoice=$('hear3-theme-choice');
-function openSettingsFromHash(){
- if(location.hash==='#ajustes')$('ajustes').open=true;
-}
-window.addEventListener('hashchange',openSettingsFromHash);
-openSettingsFromHash();
-const media=typeof matchMedia==='function'?matchMedia('(prefers-color-scheme:dark)'):null;
-let theme='system';
-try{const saved=localStorage.getItem(THEME_KEY);if(validThemes.has(saved))theme=saved;}catch{}
-function applyTheme(){
- document.documentElement.dataset.hear3Theme=theme==='system'?(media?.matches?'dark':'light'):theme;
- themeChoice.value=theme;
-}
-themeChoice.addEventListener('change',()=>{
- if(!validThemes.has(themeChoice.value))return;
- theme=themeChoice.value;
- try{if(theme==='system')localStorage.removeItem(THEME_KEY);
- else localStorage.setItem(THEME_KEY,theme);}catch{}
- applyTheme();
-});
-if(media?.addEventListener)media.addEventListener('change',()=>{if(theme==='system')applyTheme();});
-else if(media?.addListener)media.addListener(()=>{if(theme==='system')applyTheme();});
-applyTheme();
 
-try{
- const saved=createHear3AdaptiveProgressStore({profileId:'hear3-integrated-pilot'}).load();
- if(saved.checkpoint){
-  $('exam-state').textContent='Por continuar';
-  $('resume-note').textContent='Tienes un examen guardado. Ábrelo y elige «Recuperar examen guardado». No se iniciará sonido.';
-  $('resume-link').textContent='Continuar mi examen';
-  $('resume-link').href='./hear3-exam/';
-  $('begin-exam').textContent='Continuar mi prueba';
-  $('begin-exam').removeAttribute('data-hear-i18n');
- }
-}catch{
- $('resume-note').textContent='No se pudo verificar el progreso local. El examen puede comenzar sin reproducción automática.';
-}
-try{
- const catalog=createHear3CatalogStore().load().catalog;
- $('profile-count').textContent=String(catalog.profiles.length);
- $('profile-summary').textContent=catalog.devices.length+' equipos · '+catalog.profiles.length+' perfiles';
- $('eq-count').textContent=String(catalog.results.filter(result=>
-  Array.isArray(result.currentEq)&&result.currentEq.length>0).length);
- // Return visits show the latest verified local profile, without silently
- // migrating old records, creating profiles or starting any sound.
- if(catalog.profiles.length){
-  // Use the latest saved result across ALL profiles for the return-home
-  // shortcut. Do not silently rewrite the user's persisted active profile.
-  const recent=[...catalog.results].sort((a,b)=>b.capturedAt-a.capturedAt)[0]??null;
-  const active=catalog.profiles.find(p=>p.id===recent?.profileId)??
-   catalog.profiles.find(p=>p.id===catalog.activeProfileId)??catalog.profiles.at(-1);
-  const device=catalog.devices.find(d=>d.id===active.deviceId);
-  const latest=recent?.profileId===active.id?recent:
-   catalog.results.filter(r=>r.profileId===active.id)
-    .sort((a,b)=>b.capturedAt-a.capturedAt)[0]??null;
-  $('recent-profile').hidden=false;
-  $('recent-device').textContent=active.name+
-   (device?' · '+device.name:'');
-  $('recent-session').textContent=latest
-   ?'Último resultado guardado: '+new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(latest.capturedAt)+
-    (latest.currentEq?.length?' · EQ disponible':' · sin curva guardada')
-   :'Todavía no hay resultados guardados en este perfil.';
-  $('recent-eq-link').textContent=latest?.currentEq?.length?'Abrir mi último EQ':'Ver mis perfiles';
-  $('recent-eq-link').href=latest?.currentEq?.length
-   ?'./hear3-eq-editor/?result='+encodeURIComponent(latest.id)
-   :'./hear3-library/';
- }
-}catch{
- $('profile-count').textContent='—';$('eq-count').textContent='—';
- $('profile-summary').textContent='No se pudo leer el historial local. Revisa tus respaldos sin borrar datos.';
-}
-const enable=$('offline-enable'),disable=$('offline-disable'),status=$('offline-status');
-const supported=detectHear3OfflineSupport().supported;
-if(!supported){
- enable.disabled=true;disable.disabled=true;
- status.textContent='El modo sin conexión no está disponible aquí. Puedes seguir utilizando Hear con Internet.';
-}else status.textContent='Disponible si decides activarlo. No se descarga nada automáticamente.';
-enable.addEventListener('click',async()=>{
- enable.disabled=true;status.textContent='Guardando recursos estáticos…';
- try{const result=await enableHear3Offline();
- status.textContent='Recursos estáticos verificados: '+result.staticResources+'. '+result.warning;
- }catch(error){
- status.textContent='No se pudo verificar el modo sin conexión: '+(error?.message??String(error));
- }finally{enable.disabled=!supported;}
-});
-disable.addEventListener('click',async()=>{
- disable.disabled=true;status.textContent='Retirando recursos sin conexión…';
- try{const result=await disableHear3Offline();
- status.textContent=result.complete
- ?'Se solicitó retirar los recursos sin conexión. '+result.warning
- :'No se pudo verificar la eliminación completa de los recursos.';
- }catch(error){status.textContent='No se pudieron retirar todos los recursos: '+(error?.message??String(error));}
- finally{disable.disabled=!supported;}
-});
-</script>
+  <section id="ready" class="stage" hidden data-testid="focus-ready">
+   <span class="eyebrow">ANTES DE COMENZAR</span>
+   <h1>Ajusta el volumen y empieza</h1>
+   <p class="lead">Conecta el equipo y baja su volumen físico a un nivel cómodo. Al continuar escucharás el primer tono. No subas el volumen para intentar oír un sonido.</p>
+   <label class="agree"><input id="volume-ok" type="checkbox" data-testid="focus-volume"><span>Mi equipo está conectado y el volumen está bajo.</span></label>
+   <button id="confirm" class="primary main-cta" type="button" data-testid="focus-confirm">Empezar a escuchar <span aria-hidden="true">→</span></button>
+   <p id="ready-hint" class="inline-hint" role="status"></p>
+   <details class="quiet-options" id="device-options">
+    <summary>¿Quieres configurar otro equipo?</summary>
+    <label for="category">Tipo de equipo</label>
+    <select id="category" data-testid="focus-category"><option value="headphones">Auriculares</option><option value="speaker">Altavoces</option><option value="car">Automóvil (detenido)</option><option value="application">Aplicación</option><option value="interface">Interfaz de audio</option></select>
+    <label for="bands">Bandas de tu ecualizador</label>
+    <select id="bands" data-testid="focus-bands"><option value="5">5 bandas</option><option value="7">7 bandas</option><option value="10">10 bandas</option><option value="31">31 bandas</option><option value="custom">Mis frecuencias</option></select>
+    <label id="custom-label" for="custom-bands" hidden>Frecuencias en Hz, separadas por comas</label>
+    <input id="custom-bands" type="text" maxlength="360" placeholder="125, 250, 500, 1000, 2000" hidden>
+    <p class="tiny">Usa solo las frecuencias reales que muestra tu ecualizador. No se detecta el hardware automáticamente.</p>
+   </details>
+   <details class="quiet-options" id="recovery-options" hidden>
+    <summary>¿Quieres empezar desde cero?</summary>
+    <p class="tiny">Se eliminará solamente la prueba a medias. Los resultados y perfiles guardados seguirán intactos.</p>
+    <button type="button" class="small-action" id="download-progress">Descargar respaldo de esta prueba</button>
+    <button type="button" class="small-action" id="reset-progress" data-testid="focus-reset-progress">Eliminar esta prueba y comenzar otra</button>
+   </details>
+  </section>
+
+  <section id="tones" class="stage" hidden data-testid="focus-tones">
+   <span class="eyebrow" id="test-step">TU PRUEBA DE SONIDO</span>
+   <h1 id="tone-title">Escucha el siguiente tono</h1>
+   <p class="lead" id="tone-note">Escucha cada tono y responde con un toque.</p>
+   <div class="tone-orb" id="tone-orb" aria-hidden="true"><span id="tone-hz">125 Hz</span><span class="tone-unit">FRECUENCIA</span></div>
+   <p class="counter" id="band-count">Frecuencia 1 de 5</p>
+   <progress id="band-progress" max="5" value="0" aria-label="Frecuencias completadas"></progress>
+   <button id="tone-play" class="primary main-cta" type="button" data-testid="focus-tone-play">Escuchar tono <span aria-hidden="true">▶</span></button>
+   <div class="answers" id="tone-answers" hidden>
+    <button type="button" class="answer positive" id="tone-yes" data-testid="focus-tone-yes">Sí, lo escucho</button>
+    <button type="button" class="answer negative" id="tone-no" data-testid="focus-tone-no">No lo escucho</button>
+   </div>
+   <div id="tone-uncertain" hidden>
+    <p class="inline-hint">Hay respuestas diferentes en esta frecuencia.</p>
+    <button id="tone-repeat" class="primary main-cta" type="button">Repetir y confirmar</button>
+    <button id="tone-skip" class="quiet-link" type="button">No estoy seguro</button>
+   </div>
+   <button id="tone-stop" class="quiet-link" type="button">Detener sonido</button>
+   <button id="tone-review" class="quiet-link" type="button" hidden>Repetir frecuencia anterior</button>
+  </section>
+
+  <section id="result" class="stage" hidden data-testid="focus-result">
+   <span class="eyebrow">TU RESULTADO</span>
+   <h1>Tu ecualizador</h1>
+   <p class="lead">Estos son los valores orientativos para ajustar manualmente tu equipo.</p>
+   <div id="eq-rows" class="eq-rows" data-testid="focus-eq-rows" aria-label="Ganancias por frecuencia"></div>
+   <p id="eq-quality" class="inline-hint"></p>
+   <button id="copy-eq" class="primary main-cta" type="button" data-testid="focus-copy">Copiar mis ajustes <span aria-hidden="true">↗</span></button>
+   <button id="new-test" class="quiet-link" type="button" data-testid="focus-new-test">Hacer otra prueba</button>
+   <p id="copy-status" class="inline-hint" role="status"></p>
+   <details class="quiet-options">
+    <summary>Guardar o descargar mi resultado</summary>
+    <button type="button" class="small-action" id="download-eq">Descargar TXT</button>
+    <label class="agree small-agree"><input id="save-consent" type="checkbox"><span>Quiero guardar este resultado provisional en este navegador.</span></label>
+    <button type="button" class="small-action" id="save-eq">Guardar resultado</button>
+    <p id="save-status" class="inline-hint" role="status"></p>
+   </details>
+   <p class="tiny caution">Resultado matemático no calibrado: no mide audición clínica ni dB SPL, no garantiza seguridad de volumen y no modifica ningún dispositivo automáticamente.</p>
+  </section>
+
+  <p id="app-error" class="error" role="alert" hidden data-testid="focus-error"></p>
+ </div>
+</main>
+<footer class="foot">
+ <span>Hear · Mantén el volumen bajo. Puedes detener el sonido en cualquier momento.</span>
+ <details class="foot-more" id="ajustes">
+  <summary>Ayuda y datos</summary>
+  <div class="foot-links">
+   <a href="./hear3-library/">Resultados guardados</a>
+   <a href="./hear3-dual-restore/">Restaurar copia</a>
+   <a href="./hear3-privacy/">Privacidad</a>
+   <a href="./hear3-photo-privacy/">Imagen privada del ecualizador</a>
+   <a href="./hear3-diagnostics/">Diagnóstico</a>
+   <label>Idioma <select data-hear-language data-testid="hear-language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="pt">Português</option><option value="it">Italiano</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option></select></label>
+   <details class="foot-tech" id="foot-tech">
+    <summary>Opciones técnicas</summary>
+    <label>Apariencia<select id="hear3-theme-choice" data-testid="hear3-theme-choice" aria-label="Apariencia"><option value="system">Según el sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></label>
+    <p class="foot-tech-title">Uso sin conexión (opcional)</p>
+    <button type="button" id="offline-enable" data-testid="offline-enable">Guardar app sin conexión</button>
+    <button type="button" id="offline-disable" data-testid="offline-disable">Retirar descarga</button>
+    <p id="offline-status" data-testid="offline-status" role="status">Sin descargar</p>
+   </details>
+  </div>
+ </details>
+</footer>
+<p data-hear-language-note hidden class="language-note" role="note"></p>
 </body>
 </html>

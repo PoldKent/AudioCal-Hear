@@ -26,14 +26,19 @@ jobs:
           import fs from 'node:fs';
           import vm from 'node:vm';
           const entry=fs.readFileSync('index.html','utf8');
-          if(!entry.includes('href="./hear3-exam/"')||
+          if(!entry.includes('data-testid="focus-begin"')||
+             !entry.includes('data-testid="focus-result"')||
+             !entry.includes('src/hear3/focus-experience.mjs')||
+             !entry.includes('src/hear3/focus-experience.css')||
              !entry.includes('href="./hear3-library/"')||
-             !entry.includes('href="./hear3-eq-editor/"')||
-             !entry.includes('src/hear3/app-shell.css')||
-             !entry.includes('no sirve como diagnóstico médico')||
-             entry.includes('url=./hear3-preview/')||
-             entry.includes('href="./hear2/"'))
-            throw Error('Single Hear application entry is incomplete or exposes a version selector');
+             !entry.includes('href="./hear3-privacy/"')||
+             !entry.includes('volumen físico')||
+             entry.includes('href="./hear2/"')||
+             entry.includes('href="./hear3-exam/"'))
+            throw Error('Focused Hear public entry is incomplete or exposes legacy navigation');
+          for(const dependency of ['src/hear3/focus-experience.mjs','src/hear3/focus-experience.css']){
+            if(!fs.existsSync(dependency))throw Error('Missing focused experience asset: '+dependency);
+          }
           const html=fs.readFileSync('hear2/index.html','utf8');
           if(!html.startsWith('<!doctype html>') || !html.trimEnd().endsWith('</html>')) throw Error('HTML wrapper missing');
           const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];

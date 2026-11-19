@@ -1,10 +1,13 @@
 const {test,expect}=require('@playwright/test');
 const HOME='/';
-
-test('appearance follows the operating system unless explicitly overridden',async({page})=>{
+async function technicalOptions(page){
+ await page.locator('#ajustes').evaluate(el=>el.open=true);
+ await page.locator('#foot-tech').evaluate(el=>el.open=true);
+}
+test('appearance follows the system unless explicitly overridden in secondary settings',async({page})=>{
  await page.emulateMedia({colorScheme:'light'});
  await page.goto(HOME);
- await page.locator('#ajustes').evaluate(el=>{el.open=true;});
+ await technicalOptions(page);
  await expect(page.getByTestId('hear3-theme-choice')).toHaveValue('system');
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','light');
  await page.emulateMedia({colorScheme:'dark'});
@@ -12,38 +15,35 @@ test('appearance follows the operating system unless explicitly overridden',asyn
  await page.getByTestId('hear3-theme-choice').selectOption('light');
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','light');
  expect(await page.evaluate(()=>localStorage.getItem('hear3:ui-theme:v1'))).toBe('light');
- await page.getByRole('link',{name:'Examen',exact:true}).click();
+ await page.goto('/hear3-exam/');
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','light');
- await page.getByRole('link',{name:'Mi ecualizador',exact:true}).click();
+ await page.goto('/hear3-eq-editor/');
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','light');
- await page.getByRole('link',{name:'Inicio',exact:true}).click();
- await page.locator('#ajustes').evaluate(el=>{el.open=true;});
+ await page.goto(HOME);
+ await technicalOptions(page);
  await expect(page.getByTestId('hear3-theme-choice')).toHaveValue('light');
  await page.getByTestId('hear3-theme-choice').selectOption('system');
  await expect(page.locator('html')).toHaveAttribute('data-hear3-theme','dark');
  expect(await page.evaluate(()=>localStorage.getItem('hear3:ui-theme:v1'))).toBe(null);
 });
-
-test('the home has a safe start, data status and no automatic audio',async({page})=>{
+test('home offers one safe start, no forced profile or automatic audio',async({page})=>{
  await page.goto(HOME);
- await page.locator('#ajustes').evaluate(el=>{el.open=true;});
- await expect(page.locator('.hear-home-extra')).not.toHaveAttribute('open');
- await expect(page.getByTestId('resume-note')).toContainText('nunca se reproduce');
- await expect(page.getByRole('link',{name:'Comenzar mi prueba'}))
-  .toHaveAttribute('href','./hear3-exam/');
- await expect(page.getByRole('link',{name:'Mi ecualizador'}))
-  .toHaveAttribute('href','./hear3-eq-editor/');
- await expect(page.locator('audio')).toHaveCount(0);
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=
-  document.documentElement.clientWidth+2)).toBe(true);
+ await expect(page.getByTestId('focus-begin')).toBeVisible();
+ await expect(page.locator('#ajustes')).not.toHaveAttribute('open');
+ await expect(page.getByTestId('focus-ready')).toBeHidden();
+ await expect(page.locator('audio,#profile-count,#eq-count,#recent-profile')).toHaveCount(0);
+ await page.getByTestId('focus-begin').click();
+ await expect(page.getByTestId('focus-ready')).toBeVisible();
+ expect(await page.evaluate(()=>localStorage.length)).toBe(0);
+ expect(await page.evaluate(()=>
+  document.documentElement.scrollWidth<=document.documentElement.clientWidth+2)).toBe(true);
 });
-test('theme choice cannot alter previously saved profiles',async({page})=>{
+test('changing appearance cannot alter older saved profiles',async({page})=>{
  await page.goto(HOME);
- await page.locator('#ajustes').evaluate(el=>{el.open=true;});
+ await technicalOptions(page);
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','OLDER_RECORDS_STAY'));
  await page.getByTestId('hear3-theme-choice').selectOption('dark');
- await page.locator('.app-nav-more > summary').click();
- await page.getByRole('link',{name:'Historial',exact:true}).click();
+ await page.getByRole('link',{name:'Resultados guardados'}).click();
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1')))
   .toBe('OLDER_RECORDS_STAY');
 });

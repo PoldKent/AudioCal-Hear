@@ -1,6 +1,6 @@
 const {test,expect}=require('@playwright/test');
 const HOME='/';
-const CACHE='audiocal-hear3-prototype-static-v10';
+const CACHE='audiocal-hear3-prototype-static-v11';
 
 async function supported(page){
  return page.evaluate(()=>Boolean(window.isSecureContext&&navigator.serviceWorker&&window.caches));
@@ -8,26 +8,28 @@ async function supported(page){
 test('offline support does not register workers or start audio by entering the application',async({page})=>{
  await page.goto(HOME);
  await page.locator('#ajustes').evaluate(el=>{el.open=true;});
+ await page.locator('#foot-tech').evaluate(el=>{el.open=true;});
  await expect(page.getByTestId('offline-status')).toBeVisible();
  const active=await page.evaluate(async()=>{
   const reg=await navigator.serviceWorker?.getRegistration?.();
   return Boolean(reg?.active);
  });
  expect(active).toBe(false);
- await expect(page.getByRole('heading',{name:'Uso sin conexión'})).toBeVisible();
+ await expect(page.getByText('Uso sin conexión (opcional)')).toBeVisible();
  expect(await page.evaluate(()=>Boolean(window.hear3IntegratedPilot))).toBe(false);
 });
 
 async function installAndVerify(page){
  await page.goto(HOME);
  await page.locator('#ajustes').evaluate(el=>{el.open=true;});
+ await page.locator('#foot-tech').evaluate(el=>{el.open=true;});
  if(!await supported(page))test.skip(true,'Service Worker or Cache Storage unavailable');
  await page.getByTestId('offline-enable').click();
  await expect(page.getByTestId('offline-status')).toContainText('Recursos estáticos verificados',{timeout:25000});
  await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller),null,{timeout:10000});
  const cached=await page.evaluate(async cacheName=>{
   const cache=await caches.open(cacheName);
-  const required=['/index.html','/src/hear3/app-shell.css','/src/hear3/app-theme.mjs',
+  const required=['/index.html','/src/hear3/focus-experience.css','/src/hear3/focus-experience.mjs','/src/hear3/app-shell.css','/src/hear3/app-theme.mjs',
    '/hear3-exam/','/hear3-library/','/hear3-eq-editor/','/hear3-photo-privacy/',
    '/src/hear3/immediate-eq-result.mjs','/src/hear3/manual-eq-application-guide.mjs',
    '/src/hear3/eq-edit-history.mjs'];
@@ -51,6 +53,7 @@ test('Chromium can reopen root, exam, results and editor without network after o
  try{
   await page.goto(HOME);
  await page.locator('#ajustes').evaluate(el=>{el.open=true;});
+ await page.locator('#foot-tech').evaluate(el=>{el.open=true;});
   await expect(page.getByRole('heading',{level:1})).toContainText('Encuentra tu sonido.');
   await page.goto('/hear3-exam/');
   await expect(page.getByRole('heading',{level:1})).toContainText('Tu prueba de sonido');
@@ -76,6 +79,7 @@ test('removing app resources does not erase another cache or saved user data',as
  test.setTimeout(60000);
  await page.goto(HOME);
  await page.locator('#ajustes').evaluate(el=>{el.open=true;});
+ await page.locator('#foot-tech').evaluate(el=>{el.open=true;});
  if(!await supported(page))test.skip(true,'Service Worker or Cache Storage unavailable');
  await page.evaluate(async()=>{
   const other=await caches.open('unrelated-existing-cache');

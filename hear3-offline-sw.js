@@ -7,7 +7,7 @@
 'use strict';
 
 const CACHE_PREFIX='audiocal-hear3-prototype-static-';
-const CACHE_NAME=CACHE_PREFIX+'v10';
+const CACHE_NAME=CACHE_PREFIX+'v11';
 const SCOPE=new URL(self.registration.scope);
 const MANIFEST_URL=new URL('hear3-offline-manifest.json',SCOPE).href;
 
@@ -21,7 +21,7 @@ function validateManifest(doc){
     !/^[A-Za-z0-9._/-]+$/.test(path)||path.startsWith('/')||
     path.split('/').some(v=>v==='.'||v==='..')||seen.has(path))
    throw Error('Unsafe or duplicated offline asset path');
-  if(!(/^(index\.html$|src\/hear3\/app-shell\.css$|hear3-preview\/|hear3-exam\/$|hear3-library\/$|hear3-eq-editor\/$|hear3-dual-restore\/$|hear3-privacy\/|hear3-photo-privacy\/|hear3-diagnostics\/|tests\/fixtures\/hear3-[a-z0-9-]+\.html$|src\/hear3\/[a-z0-9-]+\.mjs$)/.test(path)))
+  if(!(/^(index\.html$|src\/hear3\/app-shell\.css$|src\/hear3\/focus-experience\.css$|hear3-preview\/|hear3-exam\/$|hear3-library\/$|hear3-eq-editor\/$|hear3-dual-restore\/$|hear3-privacy\/|hear3-photo-privacy\/|hear3-diagnostics\/|tests\/fixtures\/hear3-[a-z0-9-]+\.html$|src\/hear3\/[a-z0-9-]+\.mjs$)/.test(path)))
    throw Error('Unscoped offline resource');
   seen.add(path);
  }
@@ -63,7 +63,7 @@ self.addEventListener('fetch',event=>{
  const relative=url.pathname.slice(SCOPE.pathname.length);
  // Hear 2.0 itself and any other apps are not intercepted, even while
  // this optional worker controls the scope.
- if(relative!==''&&!/^(index\.html$|src\/hear3\/app-shell\.css$|hear3-preview\/|hear3-exam\/|hear3-library\/|hear3-eq-editor\/|hear3-dual-restore\/|hear3-privacy\/|hear3-photo-privacy\/|hear3-diagnostics\/|tests\/fixtures\/hear3-|src\/hear3\/|hear3-offline-manifest\.json$)/.test(relative))
+ if(relative!==''&&!/^(index\.html$|src\/hear3\/app-shell\.css$|src\/hear3\/focus-experience\.css$|hear3-preview\/|hear3-exam\/|hear3-library\/|hear3-eq-editor\/|hear3-dual-restore\/|hear3-privacy\/|hear3-photo-privacy\/|hear3-diagnostics\/|tests\/fixtures\/hear3-|src\/hear3\/|hear3-offline-manifest\.json$)/.test(relative))
   return;
  event.respondWith((async()=>{
   const manifest=await validatedCachedManifest();
