@@ -12,7 +12,7 @@ import {inspectHear3AudioCapabilities} from './audio-capability-preflight.mjs';
 import {createHear3AdaptiveProgressStore} from './adaptive-progress-store.mjs';
 import {createHear3ResumableAdaptiveExam} from './resumable-adaptive-exam.mjs';
 import {calculateHear3BoundedJointEq} from './bounded-eq-engine.mjs';
-import {inspectHear3ImmediateEq,formatHear3ImmediateEq} from './immediate-eq-result.mjs';
+import {inspectHear3ImmediateEq,formatHear3ImmediateEq,paintHear3ImmediateEqPng} from './immediate-eq-result.mjs';
 import {createHear3CatalogStore} from './catalog-backup-store.mjs';
 import {createHear3AdaptiveCatalogArchive} from './adaptive-catalog-archive.mjs';
 import {enableHear3Offline,disableHear3Offline,detectHear3OfflineSupport}
@@ -336,6 +336,8 @@ export function mountHearFocus({doc=document,env=window}={}){
   }else outcome=store.clear({confirmed:true});
   if(!outcome.cleared)throw Error('No pudimos verificar que el progreso anterior se haya eliminado.');
   pendingRecovery=false;eq=null;review=null;
+  saveResultId=null;
+  element('saved-eq-link').hidden=true;
   sweepPlan=null;
   sweep.stop('reset');
   clearLoud();
@@ -472,17 +474,34 @@ export function mountHearFocus({doc=document,env=window}={}){
   await env.navigator.clipboard.writeText(content);
   output('copy-status','Ajustes copiados. Ahora puedes introducirlos manualmente en tu equipo.');
  }
- function downloadEq(){
-  if(!review)throw Error('Primero termina la prueba.');
-  const content=formatHear3ImmediateEq(review,{format:'txt'});
-  const blob=new Blob([content],{type:'text/plain;charset=utf-8'});
+ function downloadBlob(blob,name){
   const url=URL.createObjectURL(blob),a=doc.createElement('a');
-  a.href=url;a.download='hear-ecualizador-orientativo.txt';
+  a.href=url;a.download=name;
   doc.body.append(a);a.click();a.remove();
   env.setTimeout(()=>URL.revokeObjectURL(url),1200);
  }
+ function downloadEq(format='txt'){
+  if(!review)throw Error('Primero termina la prueba.');
+  if(format==='png'){
+   const canvas=paintHear3ImmediateEqPng(doc.createElement('canvas'),review);
+   const a=doc.createElement('a');
+   a.href=canvas.toDataURL('image/png');
+   a.download='hear-ecualizador-experimental.png';
+   doc.body.append(a);a.click();a.remove();
+   return;
+  }
+  if(!['txt','csv'].includes(format))throw Error('Formato de descarga desconocido.');
+  const content=formatHear3ImmediateEq(review,{format});
+  downloadBlob(new Blob([content],{type:format==='csv'?
+   'text/csv;charset=utf-8':'text/plain;charset=utf-8'}),
+   'hear-ecualizador-experimental.'+format);
+ }
  function saveEq(){
   if(!eq||!exam)throw Error('Primero obtén tu ecualizador.');
+  if(saveResultId){
+   output('save-status','Este resultado ya está guardado. Puedes abrir el EQ para editarlo.');
+   return;
+  }
   if(!element('save-consent').checked){
    output('save-status','Confirma primero que deseas conservar los datos en este navegador.');
    return;
@@ -503,7 +522,12 @@ export function mountHearFocus({doc=document,env=window}={}){
   const saved=archive.commit({
    userInitiated:true,confirmed:true,confirmProvisionalEq:true,
   });
-  saveResultId=preview.resultId;
+  if(saved.persistedOnDevice){
+   saveResultId=preview.resultId;
+   const savedLink=element('saved-eq-link');
+   savedLink.href='./hear3-eq-editor/?result='+encodeURIComponent(saveResultId);
+   savedLink.hidden=false;
+  }
   output('save-status',saved.persistedOnDevice
    ?'Guardado en este navegador. Puedes consultarlo en Ayuda y datos.'
    :'No pudimos verificar el guardado permanente. Descarga una copia TXT.');
@@ -588,7 +612,9 @@ export function mountHearFocus({doc=document,env=window}={}){
  listen('tone-stop',interrupt);
  listen('tone-review',reviewPrevious);
  listen('copy-eq',copyEq);
- listen('download-eq',downloadEq);
+ listen('download-eq',()=>downloadEq('txt'));
+ listen('download-eq-csv',()=>downloadEq('csv'));
+ listen('download-eq-png',()=>downloadEq('png'));
  listen('save-eq',saveEq);
  element('bands').addEventListener('change',()=>{
   const custom=element('bands').value==='custom';
