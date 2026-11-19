@@ -1,3 +1,5 @@
+const {test,expect}=require('@playwright/test');
+
 test('official root is one usable single-purpose test, not a version launcher',async({page})=>{
  await page.goto('/');
  await expect(page).toHaveURL(/\/$/);
