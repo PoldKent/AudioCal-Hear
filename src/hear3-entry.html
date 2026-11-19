@@ -30,13 +30,13 @@
 
   <section id="ready" class="stage" hidden data-testid="focus-ready">
    <span class="eyebrow">ANTES DE COMENZAR</span>
-   <h1>Ajusta el volumen y empieza</h1>
-   <p class="lead">Conecta el equipo y baja su volumen físico a un nivel cómodo. Primero escucharás un barrido corto y después los tonos individuales. Nunca subas el volumen para intentar oír un sonido.</p>
-   <label class="agree"><input id="volume-ok" type="checkbox" data-testid="focus-volume"><span>Mi equipo está conectado y el volumen está bajo.</span></label>
+   <h1 data-hear-i18n="focus.ready.title">Ajusta el volumen y empieza</h1>
+   <p class="lead" data-hear-i18n="focus.ready.lead">Conecta el equipo y baja su volumen físico a un nivel cómodo. Primero escucharás un barrido corto y después los tonos individuales. Nunca subas el volumen para intentar oír un sonido.</p>
+   <label class="agree"><input id="volume-ok" type="checkbox" data-testid="focus-volume"><span data-hear-i18n="focus.ready.agree">Mi equipo está conectado y el volumen está bajo.</span></label>
    <button id="confirm" class="primary main-cta" type="button" data-testid="focus-confirm">Empezar a escuchar <span aria-hidden="true">→</span></button>
    <p id="ready-hint" class="inline-hint" role="status"></p>
    <details class="quiet-options" id="device-options">
-    <summary>¿Quieres configurar otro equipo?</summary>
+    <summary data-hear-i18n="focus.device.summary">¿Quieres configurar otro equipo?</summary>
     <label for="category">Tipo de equipo</label>
     <select id="category" data-testid="focus-category"><option value="headphones">Auriculares</option><option value="speaker">Altavoces</option><option value="car">Automóvil (detenido)</option><option value="application">Aplicación</option><option value="interface">Interfaz de audio</option></select>
     <label for="bands">Bandas de tu ecualizador</label>
@@ -55,20 +55,20 @@
 
   <section id="sweep" class="stage" hidden data-testid="focus-sweep">
    <span class="eyebrow">EXPLORA TU SONIDO</span>
-   <h1>Escucha el barrido</h1>
-   <p class="lead">Durante 20 segundos escucharás cómo cambia la frecuencia. Marca lo que percibas, sin tocar el volumen.</p>
+   <h1 data-hear-i18n="focus.sweep.title">Escucha el barrido</h1>
+   <p class="lead" data-hear-i18n="focus.sweep.lead">Durante 20 segundos escucharás cómo cambia la frecuencia. Marca lo que percibas, sin tocar el volumen.</p>
    <div class="sound-sphere" aria-hidden="true"><div class="pulse"></div><div class="pulse p2"></div><span id="sweep-hz">125 Hz</span></div>
    <progress id="sweep-progress" max="20" value="0" aria-label="Progreso del barrido"></progress>
    <p class="counter" id="sweep-time">20 s</p>
    <p class="digital-level" id="sweep-level">Nivel digital de prueba: −60 dBFS</p>
    <div class="answers perceptual-answers">
-    <button class="answer positive" id="sweep-yes" type="button" data-testid="focus-sweep-yes">Lo escucho bien</button>
-    <button class="answer negative" id="sweep-no" type="button" data-testid="focus-sweep-no">No lo escucho</button>
-    <button class="answer loud" id="sweep-loud" type="button" data-testid="focus-sweep-loud">Demasiado fuerte</button>
+    <button class="answer positive" id="sweep-yes" type="button" data-hear-i18n="focus.sweep.yes" data-testid="focus-sweep-yes">Lo escucho bien</button>
+    <button class="answer negative" id="sweep-no" type="button" data-hear-i18n="focus.sweep.no" data-testid="focus-sweep-no">No lo escucho</button>
+    <button class="answer loud" id="sweep-loud" type="button" data-hear-i18n="focus.sweep.loud" data-testid="focus-sweep-loud">Demasiado fuerte</button>
    </div>
    <p id="sweep-feedback" class="inline-hint" role="status">Si incomoda, toca «Demasiado fuerte»: se detendrá.</p>
-   <button id="sweep-skip" class="quiet-link" type="button" data-testid="focus-sweep-skip">Saltar barrido y continuar</button>
-   <button id="sweep-stop" class="quiet-link" type="button">Detener sonido</button>
+   <button id="sweep-skip" class="quiet-link" type="button" data-hear-i18n="focus.sweep.skip" data-testid="focus-sweep-skip">Saltar barrido y continuar</button>
+   <button id="sweep-stop" class="quiet-link" data-hear-i18n="focus.sweep.stop" type="button">Detener sonido</button>
   </section>
 
   <section id="tones" class="stage" hidden data-testid="focus-tones">
@@ -86,30 +86,30 @@
    <p class="tiny level-explainer">dBFS es el nivel de la señal digital, no mide el volumen físico ni la presión acústica.</p>
    <button id="tone-play" class="primary main-cta" type="button" data-testid="focus-tone-play">Escuchar tono <span aria-hidden="true">▶</span></button>
    <div class="answers perceptual-answers" id="tone-answers" hidden>
-    <button type="button" class="answer positive" id="tone-yes" data-testid="focus-tone-yes">Lo escucho bien</button>
-    <button type="button" class="answer negative" id="tone-no" data-testid="focus-tone-no">No lo escucho</button>
-    <button type="button" class="answer loud" id="tone-loud" data-testid="focus-tone-loud">Demasiado fuerte</button>
+    <button type="button" class="answer positive" id="tone-yes" data-hear-i18n="focus.tones.yes" data-testid="focus-tone-yes">Lo escucho bien</button>
+    <button type="button" class="answer negative" id="tone-no" data-hear-i18n="focus.tones.no" data-testid="focus-tone-no">No lo escucho</button>
+    <button type="button" class="answer loud" id="tone-loud" data-hear-i18n="focus.tones.loud" data-testid="focus-tone-loud">Demasiado fuerte</button>
    </div>
    <div id="tone-uncertain" hidden>
     <p class="inline-hint">Hay respuestas diferentes en esta frecuencia.</p>
     <button id="tone-repeat" class="primary main-cta" type="button">Repetir y confirmar</button>
     <button id="tone-skip" class="quiet-link" type="button">No estoy seguro</button>
    </div>
-   <button id="tone-stop" class="quiet-link" type="button">Detener sonido</button>
+   <button id="tone-stop" class="quiet-link" data-hear-i18n="focus.tones.stop" type="button">Detener sonido</button>
    <button id="tone-review" class="quiet-link" type="button" hidden>Repetir frecuencia anterior</button>
   </section>
 
   <section id="result" class="stage" hidden data-testid="focus-result">
-   <span class="eyebrow">TU RESULTADO</span>
-   <h1>Tu ecualizador</h1>
-   <p class="lead">Una propuesta experimental: mantenemos lo que percibes bien, bajamos frecuencias incómodas y exploramos con prudencia las que no escuchas.</p>
+   <span class="eyebrow" data-hear-i18n="focus.result.guidedTitle">TU RESULTADO</span>
+   <h1 data-hear-i18n="focus.result.title">Tu ecualizador</h1>
+   <p class="lead" data-hear-i18n="focus.result.lead">Una propuesta experimental: mantenemos lo que percibes bien, bajamos frecuencias incómodas y exploramos con prudencia las que no escuchas.</p>
    <div class="eq-graph-scroll" role="group" aria-label="Gráfico de ecualización por frecuencia; las cifras exactas aparecen debajo">
     <div id="eq-graph" class="eq-graph" data-testid="focus-eq-graph" aria-hidden="true"></div>
    </div>
    <div id="eq-rows" class="eq-rows" data-testid="focus-eq-rows" aria-label="Ganancias por frecuencia"></div>
    <p id="eq-quality" class="inline-hint"></p>
    <details class="quiet-options" id="eq-howto">
-    <summary>Cómo aplicar mi EQ manualmente</summary>
+    <summary data-hear-i18n="focus.result.guide">Cómo aplicar mi EQ manualmente</summary>
     <ol class="eq-guide">
      <li>Abre el ecualizador del mismo dispositivo que utilizaste para la prueba.</li>
      <li>Verifica las frecuencias reales de sus bandas y anota cada ganancia en dB.</li>
@@ -118,18 +118,18 @@
     </ol>
     <p class="tiny">Hear no modifica controles, preamplificadores ni filtros del equipo automáticamente.</p>
    </details>
-   <p class="tiny" id="eq-experiment-note">Las subidas sin un tono audible son solo una hipótesis pequeña, no una medición de tu oído. Comprueba el sonido sin subir el volumen físico.</p>
-   <button id="copy-eq" class="primary main-cta" type="button" data-testid="focus-copy">Copiar mis ajustes <span aria-hidden="true">↗</span></button>
-   <button id="new-test" class="quiet-link" type="button" data-testid="focus-new-test">Hacer otra prueba</button>
+   <p class="tiny" id="eq-experiment-note" data-hear-i18n="focus.result.info">Las subidas sin un tono audible son solo una hipótesis pequeña, no una medición de tu oído. Comprueba el sonido sin subir el volumen físico.</p>
+   <button id="copy-eq" class="primary main-cta" type="button" data-hear-i18n="focus.result.copy" data-testid="focus-copy">Copiar mis ajustes <span aria-hidden="true">↗</span></button>
+   <button id="new-test" class="quiet-link" type="button" data-hear-i18n="focus.result.new" data-testid="focus-new-test">Hacer otra prueba</button>
    <p id="copy-status" class="inline-hint" role="status"></p>
    <details class="quiet-options">
-    <summary>Guardar o descargar mi resultado</summary>
-    <button type="button" class="small-action" id="download-eq">Descargar TXT</button>
-    <label class="agree small-agree"><input id="save-consent" type="checkbox"><span>Quiero guardar este resultado provisional en este navegador.</span></label>
-    <button type="button" class="small-action" id="save-eq">Guardar resultado</button>
+    <summary data-hear-i18n="focus.result.saveSection">Guardar o descargar mi resultado</summary>
+    <button type="button" class="small-action" id="download-eq" data-hear-i18n="focus.result.download">Descargar TXT</button>
+    <label class="agree small-agree"><input id="save-consent" type="checkbox"><span data-hear-i18n="focus.result.saveConsent">Quiero guardar este resultado provisional en este navegador.</span></label>
+    <button type="button" class="small-action" id="save-eq" data-hear-i18n="focus.result.save">Guardar resultado</button>
     <p id="save-status" class="inline-hint" role="status"></p>
    </details>
-   <p class="tiny caution">Resultado matemático no calibrado: no mide audición clínica ni dB SPL, no garantiza seguridad de volumen y no modifica ningún dispositivo automáticamente.</p>
+   <p class="tiny caution" data-hear-i18n="focus.result.warning">Resultado matemático no calibrado: no mide audición clínica ni dB SPL, no garantiza seguridad de volumen y no modifica ningún dispositivo automáticamente.</p>
   </section>
 
   <p id="app-error" class="error" role="alert" hidden data-testid="focus-error"></p>
