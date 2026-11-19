@@ -1,0 +1,122 @@
+const {test,expect}=require('@playwright/test');
+
+// Browser Web Audio simulation verifies state and consent, not real hearing,
+// device volume, acoustic safety or headphone channel routing.
+async function fakeAudio(page){
+ await page.addInitScript(()=>{
+  window.__hearFocusStarts=0;
+  class Param{
+   setValueAtTime(){}exponentialRampToValueAtTime(){}
+   linearRampToValueAtTime(){}cancelScheduledValues(){}
+  }
+  class Context{
+   constructor(){this.state='running';this.currentTime=0;
+    this.sampleRate=48000;this.destination={};}
+   addEventListener(){}removeEventListener(){}
+   createOscillator(){
+    const osc={
+     frequency:new Param(),type:'sine',onended:null,
+     connect(){},disconnect(){},
+     start(){window.__hearFocusStarts++},
+     stop(at){if(at>15)setTimeout(()=>osc.onended?.(),75)},
+    };
+    return osc;
+   }
+   createGain(){return {gain:new Param(),connect(){},disconnect(){}};}
+   async resume(){this.state='running'}
+   async close(){this.state='closed'}
+  }
+  window.AudioContext=Context;
+  window.webkitAudioContext=Context;
+ });
+}
+test('new Hear has one principal action, no visible dashboard, no autoplay and hidden data tools',async({page})=>{
+ await fakeAudio(page);
+ await page.goto('/');
+ await expect(page.getByTestId('focus-welcome')).toBeVisible();
+ await expect(page.getByTestId('focus-begin')).toBeVisible();
+ await expect(page.getByTestId('focus-ready')).toBeHidden();
+ await expect(page.getByTestId('focus-tones')).toBeHidden();
+ await expect(page.getByTestId('focus-result')).toBeHidden();
+ await expect(page.getByRole('heading',{name:'Encuentra tu sonido.'})).toBeVisible();
+ await expect(page.locator('.foot-more')).not.toHaveAttribute('open');
+ await expect(page.locator('nav,.app-grid,#profile-count,#offline-enable')).toHaveCount(0);
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+ await page.getByTestId('focus-begin').click();
+ await expect(page.getByTestId('focus-ready')).toBeVisible();
+ await expect(page.getByTestId('focus-welcome')).toBeHidden();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByRole('status')).toContainText('Marca la confirmación');
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+});
+
+test('direct path starts sound after consent, receives tones, completes and shows a copyable EQ',async({page})=>{
+ test.setTimeout(100000);
+ await fakeAudio(page);
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-sweep')).toBeVisible();
+ await expect.poll(()=>page.evaluate(()=>window.__hearFocusStarts)).toBeGreaterThan(0);
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ await expect(page.getByTestId('focus-tone-play')).toBeVisible();
+ const starts=await page.evaluate(()=>window.__hearFocusStarts);
+ for(let i=0;i<20;i++){
+  await expect(page.getByTestId('focus-tone-play')).toBeVisible();
+  await page.getByTestId('focus-tone-play').click();
+  await expect(page.getByTestId('focus-tone-no')).toBeVisible();
+  await page.getByTestId('focus-tone-no').click();
+ }
+ await expect(page.getByTestId('focus-result')).toBeVisible();
+ await expect(page.getByTestId('focus-eq-rows').locator('.eq-row')).toHaveCount(5);
+ await expect(page.getByTestId('focus-copy')).toBeVisible();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(starts+20);
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBeGreaterThan(0);
+});
+
+test('an unfinished test continues from a silent verified checkpoint after reload',async({page})=>{
+ await fakeAudio(page);
+ await page.goto('/');
+ await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','V2_MUST_REMAIN'));
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ await page.getByTestId('focus-tone-play').click();
+ await page.getByTestId('focus-tone-yes').click();
+ await page.reload();
+ await expect(page.getByTestId('focus-begin')).toContainText('Continuar');
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ await expect(page.getByTestId('focus-tone-play')).toBeVisible();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+ expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('V2_MUST_REMAIN');
+});
+
+test('user can select a real device EQ distribution without being forced into menus',async({page})=>{
+ await fakeAudio(page);
+ await page.goto('/');
+ await expect(page.locator('#device-options')).toBeHidden();
+ await page.getByTestId('focus-begin').click();
+ await page.locator('#device-options > summary').click();
+ await page.getByTestId('focus-bands').selectOption('7');
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ await expect(page.locator('#band-progress')).toHaveAttribute('max','7');
+});
+
+test('advanced data links remain accessible while opening new Hear never alters old V2 storage',async({page})=>{
+ await page.goto('/');
+ await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','OLD_DATA_UNMODIFIED'));
+ await page.locator('.foot-more > summary').click();
+ await expect(page.getByRole('link',{name:'Privacidad'})).toBeVisible();
+ await expect(page.getByRole('link',{name:'Restaurar copia'})).toBeVisible();
+ await page.getByRole('link',{name:'Resultados guardados'}).click();
+ await expect(page).toHaveURL(/\/hear3-library\/$/);
+ expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('OLD_DATA_UNMODIFIED');
+});
