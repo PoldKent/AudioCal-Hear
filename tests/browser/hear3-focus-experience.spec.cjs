@@ -86,7 +86,7 @@ test('direct path starts sound after consent, receives tones, completes and show
  await expect(page.getByTestId('focus-copy')).toBeVisible();
  // EQ appears immediately, no profile creation or archival step required.
  await expect(page.getByTestId('focus-eq-rows').locator('.eq-row').first()).toContainText('125 Hz');
- await page.locator('#result .quiet-options > summary').click();
+ await page.locator('#result [data-hear-i18n="focus.result.saveSection"]').click();
  const startedDownload=page.waitForEvent('download');
  await page.locator('#download-eq').click();
  const download=await startedDownload;
