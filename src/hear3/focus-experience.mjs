@@ -37,6 +37,31 @@ export function mountHearFocus({doc=document,env=window}={}){
  const element=id=>doc.getElementById(id);
  const output=(id,value)=>{const target=element(id);if(target.textContent!==String(value))target.textContent=String(value);};
  const store=createHear3AdaptiveProgressStore({profileId:HEAR_FOCUS_PROFILE_ID});
+ // Only equipment category and declared EQ frequencies are remembered.
+ // The verified tone checkpoint remains the source of truth for progression.
+ const eqEquipmentKey='hear3:focus-equipment:v1';
+ const allowedCategories=new Set(['headphones','speaker','car','application','interface']);
+ const allowedBandPresets=new Set(['4','5','7','10','15','31','custom']);
+ function restoreEquipment(){
+  try{
+   const saved=JSON.parse(env.localStorage?.getItem(eqEquipmentKey)||'null');
+   if(!saved||!allowedCategories.has(saved.category)||!allowedBandPresets.has(saved.preset))return;
+   const custom=typeof saved.custom==='string'&&saved.custom.length<=360?saved.custom:'';
+   buildHearFocusLayout({preset:saved.preset,custom});
+   element('category').value=saved.category;
+   element('bands').value=saved.preset;
+   element('custom-bands').value=custom;
+   element('custom-bands').hidden=saved.preset!=='custom';
+   element('custom-label').hidden=saved.preset!=='custom';
+  }catch{}
+ }
+ function rememberEquipment(){
+  try{env.localStorage?.setItem(eqEquipmentKey,JSON.stringify({
+   category:element('category').value,preset:element('bands').value,
+   custom:element('custom-bands').value,
+  }));}catch{}
+ }
+ restoreEquipment();
  const catalogStore=createHear3CatalogStore();
  let view='welcome',pendingRecovery=false,exam=null,eq=null,review=null;
  let bands=null,starting=false,disposed=false;
@@ -202,6 +227,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   }
   if(readCheckpoint())throw Error('Hay una prueba anterior. Continúala para no borrar tus respuestas.');
   bands=chooseBands();
+  rememberEquipment();
   // The exploratory 20-second sweep is NOT required for mathematical tone
   // evidence. Each real EQ band is confirmed through independent tones.
   // An empty sweep report does not invent hearing evidence or thresholds.
