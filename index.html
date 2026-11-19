@@ -45,6 +45,12 @@
     <input id="custom-bands" type="text" maxlength="360" placeholder="125, 250, 500, 1000, 2000" hidden>
     <p class="tiny">Usa solo las frecuencias reales que muestra tu ecualizador. No se detecta el hardware automáticamente.</p>
    </details>
+   <details class="quiet-options" id="recovery-options" hidden>
+    <summary>¿Quieres empezar desde cero?</summary>
+    <p class="tiny">Se eliminará solamente la prueba a medias. Los resultados y perfiles guardados seguirán intactos.</p>
+    <button type="button" class="small-action" id="download-progress">Descargar respaldo de esta prueba</button>
+    <button type="button" class="small-action" id="reset-progress" data-testid="focus-reset-progress">Eliminar esta prueba y comenzar otra</button>
+   </details>
   </section>
 
   <section id="tones" class="stage" hidden data-testid="focus-tones">
