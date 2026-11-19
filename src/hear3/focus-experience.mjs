@@ -185,6 +185,9 @@ export function mountHearFocus({doc=document,env=window}={}){
   go('result');return true;
  }
  async function begin(){
+  // The primary journey always takes precedence over secondary tools.
+  support.open=false;
+  element('foot-tech').open=false;
   const checkpoint=readCheckpoint();
   pendingRecovery=Boolean(checkpoint);
   element('volume-ok').checked=false;
