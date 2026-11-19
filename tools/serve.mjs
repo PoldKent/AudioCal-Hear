@@ -23,6 +23,8 @@ const allowedFiles = new Map([
   ['/hear3-eq-editor/index.html', 'hear3-eq-editor/index.html'],
   ['/src/hear3/provisional-eq-editor.mjs', 'src/hear3/provisional-eq-editor.mjs'],
   ['/src/hear3/app-shell.css', 'src/hear3/app-shell.css'],
+  ['/src/hear3/focus-experience.css', 'src/hear3/focus-experience.css'],
+  ['/src/hear3/focus-experience.mjs', 'src/hear3/focus-experience.mjs'],
   ['/src/hear3/app-theme.mjs', 'src/hear3/app-theme.mjs'],
   ['/src/hear3/app-i18n.mjs', 'src/hear3/app-i18n.mjs'],
   ['/src/hear3/immediate-eq-result.mjs', 'src/hear3/immediate-eq-result.mjs'],
