@@ -92,6 +92,11 @@ test('direct path starts sound after consent, receives tones, completes and show
  await page.locator('#save-eq').click();
  await expect(page.locator('#save-status')).toContainText('Guardado en este navegador');
  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(20);
+ page.once('dialog',d=>d.accept());
+ await page.getByTestId('focus-new-test').click();
+ await expect(page.getByTestId('focus-ready')).toBeVisible();
+ await expect(page.getByTestId('focus-result')).toBeHidden();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(20);
  await page.goto('/hear3-library/');
  await expect(page.getByTestId('summary')).toContainText('1 dispositivos, 1 perfiles, 1 resultados');
  expect(await page.getByTestId('summary').textContent()).toContain('1 resultados');
