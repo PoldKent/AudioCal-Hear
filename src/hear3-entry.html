@@ -125,9 +125,12 @@
    <details class="quiet-options">
     <summary data-hear-i18n="focus.result.saveSection">Guardar o descargar mi resultado</summary>
     <button type="button" class="small-action" id="download-eq" data-hear-i18n="focus.result.download">Descargar TXT</button>
+    <button type="button" class="small-action" id="download-eq-csv">Descargar CSV</button>
+    <button type="button" class="small-action" id="download-eq-png">Guardar imagen PNG</button>
     <label class="agree small-agree"><input id="save-consent" type="checkbox"><span data-hear-i18n="focus.result.saveConsent">Quiero guardar este resultado provisional en este navegador.</span></label>
     <button type="button" class="small-action" id="save-eq" data-hear-i18n="focus.result.save">Guardar resultado</button>
     <p id="save-status" class="inline-hint" role="status"></p>
+    <a id="saved-eq-link" class="quiet-link" hidden href="./hear3-eq-editor/" data-testid="focus-saved-eq">Ver y editar mi EQ guardado</a>
    </details>
    <p class="tiny caution" data-hear-i18n="focus.result.warning">Resultado matemático no calibrado: no mide audición clínica ni dB SPL, no garantiza seguridad de volumen y no modifica ningún dispositivo automáticamente.</p>
   </section>
