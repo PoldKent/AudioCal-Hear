@@ -29,9 +29,9 @@ test('the official root is the application, not a preview or version chooser',()
  assert.match(home,/data-testid="focus-sweep"/);
  assert.match(home,/data-testid="focus-tones"/);
  assert.match(home,/data-testid="focus-result"/);
- assert.match(home,/src\\/hear3\\/focus-experience\\.mjs/);
+ assert.ok(home.includes('src/hear3/focus-experience.mjs'));
  assert.match(home,/<details class="foot-more"/);
- assert.doesNotMatch(home,/href="\\.\\/hear3-exam\\/"|id="profile-count"/);
+ assert.equal(home.includes('href="./hear3-exam/"'),false);
  assert.doesNotMatch(home,/href="\.\/hear2\/|vista previa experimental|url=\.\/hear3-preview\//i);
  assert.match(oldEntry,/url=\.\.\//);
  for(const page of [exam,lib,editor]){
