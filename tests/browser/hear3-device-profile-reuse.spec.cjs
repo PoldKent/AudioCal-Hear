@@ -30,12 +30,15 @@ async function seedTwoProfiles(page){
   store.save(catalog,{expectedRevision:base.revision});
  });
 }
-test('returning user sees most recent result across all devices without rewriting active profile',async({page})=>{
+test('returning user retains saved results without a distracting dashboard or rewriting active profile',async({page})=>{
  await seedTwoProfiles(page);
  await page.reload();
- await expect(page.getByTestId('recent-device')).toContainText('Equipo más reciente');
- await expect(page.getByTestId('recent-device')).toContainText('Perfil más reciente');
- await expect(page.getByTestId('recent-eq-link')).toContainText('Ver mis perfiles');
+ await expect(page.getByTestId('focus-begin')).toBeVisible();
+ await expect(page.locator('#recent-profile,#profile-count,#eq-count')).toHaveCount(0);
+ await page.locator('#ajustes > summary').click();
+ await page.getByRole('link',{name:'Resultados guardados'}).click();
+ await expect(page).toHaveURL(/\/hear3-library\/$/);
+ await expect(page.getByTestId('summary')).toContainText('2 dispositivos, 2 perfiles, 2 resultados');
  const actual=await page.evaluate(async()=>{
   const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
   return createHear3CatalogStore().load().catalog.activeProfileId;
