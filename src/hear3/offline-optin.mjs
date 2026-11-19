@@ -4,7 +4,7 @@
  * Does not read, transmit or cache hearing results or personal profiles.
  */
 export const HEAR3_OFFLINE_MANIFEST_FORMAT='hear3-offline-static-manifest-v1';
-export const HEAR3_OFFLINE_CACHE_NAME='audiocal-hear3-prototype-static-v10';
+export const HEAR3_OFFLINE_CACHE_NAME='audiocal-hear3-prototype-static-v11';
 export const HEAR3_OFFLINE_CACHE_PREFIX='audiocal-hear3-prototype-static-';
 const check=(ok,message)=>{if(!ok)throw Error(message);};
 
