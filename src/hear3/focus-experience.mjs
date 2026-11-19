@@ -224,9 +224,18 @@ export function mountHearFocus({doc=document,env=window}={}){
   if(!exam)throw Error('Todavía no hay tonos preparados.');
   const status=exam.snapshot().status;
   if(status==='paused'){
+   // Normal completion without an answer leaves no new hearing evidence.
+   // If the audio route has not changed, a single deliberate replay click
+   // resumes the existing silent session without another setup form.
+   if(!exam.getSession().routeCheckRequired){
+    exam.resume({userInitiated:true});
+    const replay=await exam.playNext({userInitiated:true});
+    if(!replay.started)throw Error('El tono no se pudo repetir. Comprueba el sonido.');
+    render();return;
+   }
    pendingRecovery=true;
    element('volume-ok').checked=false;
-   notice('El audio se interrumpió. Comprueba otra vez la salida y el volumen para continuar.');
+   notice('La salida de audio cambió. Confirma otra vez el equipo y el volumen antes de continuar.');
    output('confirm','Reanudar mi prueba →');
    go('ready');return;
   }
@@ -342,11 +351,14 @@ export function mountHearFocus({doc=document,env=window}={}){
    const paused=state.status==='paused';
    output('tone-title',playing?'¿Escuchas este tono?':paused?'Sonido detenido':
     uncertain?'Necesitamos confirmar una respuesta':'Escucha el siguiente tono');
+   const changedRoute=paused&&exam.getSession().routeCheckRequired;
    output('tone-note',playing?'Responde mientras escuchas.':
-    paused?'Comprueba los auriculares y confirma el volumen antes de reanudar.':
+    changedRoute?'La salida cambió. Confirma el volumen antes de continuar.':
+    paused?'El tono terminó sin respuesta. Puedes escucharlo otra vez.':
     uncertain?'Puedes repetir el tono o dejar esta frecuencia sin estimación.':
      'Pulsa el botón. El sonido nunca comenzará automáticamente.');
-   output('tone-play',paused?'Continuar mi prueba →':'Escuchar tono ▶');
+   output('tone-play',changedRoute?'Comprobar equipo →':
+    paused?'Repetir tono ▶':'Escuchar tono ▶');
   }
  }
  const listen=(id,fn)=>element(id).addEventListener('click',()=>void run(fn));
