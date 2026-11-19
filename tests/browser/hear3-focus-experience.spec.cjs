@@ -60,13 +60,11 @@ test('direct path starts sound after consent, receives tones, completes and show
  await page.getByTestId('focus-confirm').click();
  await expect(page.getByTestId('focus-tones')).toBeVisible();
  await expect.poll(()=>page.evaluate(()=>window.__hearFocusStarts)).toBe(1);
- // A deliberately confirmed start directly plays the first tone. Each
- // subsequent tone requires a new click, with no automatic playback.
+ // The user-confirmed sweep is followed by a SILENT, individually answered
+ // test. There is no automatic audio between frequency confirmations.
  for(let i=0;i<20;i++){
-  if(i>0){
-   await expect(page.getByTestId('focus-tone-play')).toBeVisible();
-   await page.getByTestId('focus-tone-play').click();
-  }
+  await expect(page.getByTestId('focus-tone-play')).toBeVisible();
+  await page.getByTestId('focus-tone-play').click();
   await expect(page.getByTestId('focus-tone-no')).toBeVisible();
   await page.getByTestId('focus-tone-no').click();
  }
@@ -91,12 +89,12 @@ test('direct path starts sound after consent, receives tones, completes and show
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('#save-eq').click();
  await expect(page.locator('#save-status')).toContainText('Guardado en este navegador');
- expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(20);
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(21);
  page.once('dialog',d=>d.accept());
  await page.getByTestId('focus-new-test').click();
  await expect(page.getByTestId('focus-ready')).toBeVisible();
  await expect(page.getByTestId('focus-result')).toBeHidden();
- expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(20);
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(21);
  await page.goto('/hear3-library/');
  await expect(page.getByTestId('summary')).toContainText('1 dispositivos, 1 perfiles, 1 resultados');
  expect(await page.getByTestId('summary').textContent()).toContain('1 resultados');
@@ -110,6 +108,8 @@ test('an unfinished test continues from a silent verified checkpoint after reloa
  await page.getByTestId('focus-volume').check();
  await page.getByTestId('focus-confirm').click();
  await expect(page.getByTestId('focus-tones')).toBeVisible();
+ await expect(page.getByTestId('focus-tone-play')).toBeVisible();
+ await page.getByTestId('focus-tone-play').click();
  await expect(page.getByTestId('focus-tone-yes')).toBeVisible();
  await page.getByTestId('focus-tone-yes').click();
  await page.reload();
@@ -131,6 +131,8 @@ test('a returning user may export and discard an unfinished test without erasing
  await page.getByTestId('focus-begin').click();
  await page.getByTestId('focus-volume').check();
  await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-tone-play')).toBeVisible();
+ await page.getByTestId('focus-tone-play').click();
  await expect(page.getByTestId('focus-tone-yes')).toBeVisible();
  await page.getByTestId('focus-tone-yes').click();
  await page.reload();
