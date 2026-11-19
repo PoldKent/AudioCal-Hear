@@ -21,6 +21,7 @@ import {translateHear3Ui} from './app-i18n.mjs';
 
 export const HEAR_FOCUS_PROFILE_ID='hear3-integrated-pilot';
 export const HEAR_FOCUS_LIMITS=Object.freeze({minDbfs:-80,maxDbfs:-42});
+export const HEAR_FOCUS_TONE_DURATION_SECONDS=3;
 const $=id=>document.getElementById(id);
 const VIEWS=['welcome','ready','sweep','tones','result'];
 const text=(id,value)=>{const node=$(id),next=String(value);if(node.textContent!==next)node.textContent=next;};
@@ -67,6 +68,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  const catalogStore=createHear3CatalogStore();
  let view='welcome',pendingRecovery=false,exam=null,eq=null,review=null;
  let bands=null,sweepPlan=null,starting=false,disposed=false;
+ let activeToneStartedAt=null;
  let saveResultId=null;
  const preflight=inspectHear3AudioCapabilities(env);
  // A perception of 'too loud' is never a hearing threshold or acoustic
@@ -185,7 +187,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   return {plan,profileId:HEAR_FOCUS_PROFILE_ID,
    minDbfs:HEAR_FOCUS_LIMITS.minDbfs,maxDbfs:HEAR_FOCUS_LIMITS.maxDbfs,
    initialDbfs:-60,maxTrialsPerBand:7,coarseStepDb:6,
-   durationSeconds:3,progressStore:store};
+   durationSeconds:HEAR_FOCUS_TONE_DURATION_SECONDS,progressStore:store};
  }
  function createExam(plan){
   if(exam)throw Error('Esta prueba ya está en curso');
@@ -206,6 +208,24 @@ export function mountHearFocus({doc=document,env=window}={}){
    loudToneReports:verifiedLoudReports(session),
   });
   review=inspectHear3ImmediateEq(draft);eq=draft;
+  const graph=element('eq-graph');
+  graph.replaceChildren(...review.rows.map(row=>{
+   const cell=doc.createElement('div');cell.className='eq-graph-band';
+   cell.dataset.direction=row.gainDb>0?'up':row.gainDb<0?'down':'neutral';
+   const area=doc.createElement('div');area.className='eq-graph-area';
+   const zero=doc.createElement('span');zero.className='eq-graph-zero';
+   const bar=doc.createElement('span');bar.className='eq-graph-bar';
+   const height=Math.min(79,Math.abs(row.gainDb)/review.capDb*78);
+   bar.style.height=Math.max(2,height)+'px';
+   bar.style.top=row.gainDb>=0?(80-height)+'px':'80px';
+   area.append(zero,bar);
+   const hz=doc.createElement('small');hz.className='eq-graph-frequency';
+   hz.textContent=row.frequencyHz+' Hz';
+   const db=doc.createElement('small');db.className='eq-graph-gain';
+   db.textContent=formatHearFocusGain(row.gainDb);
+   cell.append(area,db,hz);
+   return cell;
+  }));
   const rows=element('eq-rows');
   rows.replaceChildren(...review.rows.map(row=>{
    const section=doc.createElement('div');
@@ -380,6 +400,7 @@ export function mountHearFocus({doc=document,env=window}={}){
     exam.resume({userInitiated:true});
     const replay=await exam.playNext({userInitiated:true});
     if(!replay.started)throw Error('El tono no se pudo repetir. Comprueba el sonido.');
+    activeToneStartedAt=env.performance?.now?.()??Date.now();
     render();return;
    }
    pendingRecovery=true;
@@ -395,6 +416,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   if(status!=='ready')return;
   const started=await exam.playNext({userInitiated:true});
   if(!started.started)throw Error('El tono no llegó a reproducirse de forma verificable.');
+  activeToneStartedAt=env.performance?.now?.()??Date.now();
   render();
  }
  function answer(response){
@@ -510,6 +532,19 @@ export function mountHearFocus({doc=document,env=window}={}){
    element('band-progress').max=state.totalBands;
    element('band-progress').value=state.completedBands;
    const playing=state.status==='playing';
+   const now=env.performance?.now?.()??Date.now();
+   const audio=exam.getSession().currentTone;
+   const digital=playing?audio?.digitalLevelDbfs:state.nextDigitalLevelDbfs;
+   output('tone-level',Number.isFinite(digital)
+    ?'Nivel digital: '+digital+' dBFS':'Nivel digital: — dBFS');
+   const total=HEAR_FOCUS_TONE_DURATION_SECONDS*1000;
+   const progress=playing&&Number.isFinite(activeToneStartedAt)
+    ?Math.max(0,Math.min(total,now-activeToneStartedAt)):0;
+   element('tone-time-progress').max=total;
+   element('tone-time-progress').value=progress;
+   output('tone-time',playing?'Tiempo visual aprox.: '+(Math.max(0,total-progress)/1000).toFixed(1)+' s':
+    'Duración: hasta '+HEAR_FOCUS_TONE_DURATION_SECONDS+' s');
+   if(!playing)activeToneStartedAt=null;
    const uncertain=state.status==='awaiting-confirmation';
    element('tone-answers').hidden=!playing;
    element('tone-uncertain').hidden=!uncertain;
