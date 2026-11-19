@@ -57,21 +57,22 @@ test('direct path starts sound after consent, receives tones, completes and show
  await page.getByTestId('focus-begin').click();
  await page.getByTestId('focus-volume').check();
  await page.getByTestId('focus-confirm').click();
- await expect(page.getByTestId('focus-sweep')).toBeVisible();
- await expect.poll(()=>page.evaluate(()=>window.__hearFocusStarts)).toBeGreaterThan(0);
  await expect(page.getByTestId('focus-tones')).toBeVisible();
- await expect(page.getByTestId('focus-tone-play')).toBeVisible();
- const starts=await page.evaluate(()=>window.__hearFocusStarts);
+ await expect.poll(()=>page.evaluate(()=>window.__hearFocusStarts)).toBe(1);
+ // A deliberately confirmed start directly plays the first tone. Each
+ // subsequent tone requires a new click, with no automatic playback.
  for(let i=0;i<20;i++){
-  await expect(page.getByTestId('focus-tone-play')).toBeVisible();
-  await page.getByTestId('focus-tone-play').click();
+  if(i>0){
+   await expect(page.getByTestId('focus-tone-play')).toBeVisible();
+   await page.getByTestId('focus-tone-play').click();
+  }
   await expect(page.getByTestId('focus-tone-no')).toBeVisible();
   await page.getByTestId('focus-tone-no').click();
  }
  await expect(page.getByTestId('focus-result')).toBeVisible();
  await expect(page.getByTestId('focus-eq-rows').locator('.eq-row')).toHaveCount(5);
  await expect(page.getByTestId('focus-copy')).toBeVisible();
- expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(starts+20);
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(20);
  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBeGreaterThan(0);
 });
 
@@ -83,7 +84,7 @@ test('an unfinished test continues from a silent verified checkpoint after reloa
  await page.getByTestId('focus-volume').check();
  await page.getByTestId('focus-confirm').click();
  await expect(page.getByTestId('focus-tones')).toBeVisible();
- await page.getByTestId('focus-tone-play').click();
+ await expect(page.getByTestId('focus-tone-yes')).toBeVisible();
  await page.getByTestId('focus-tone-yes').click();
  await page.reload();
  await expect(page.getByTestId('focus-begin')).toContainText('Continuar');
