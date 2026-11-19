@@ -1,7 +1,7 @@
 const {test,expect}=require('@playwright/test');
 const PILOT='/tests/fixtures/hear3-channel-check-pilot.html';
-async function mockAudio(page,{stereo=true}={}){
- await page.addInitScript((stereo)=>{
+async function mockAudio(page,{stereo=true,autoFinish=true}={}){
+ await page.addInitScript(({stereo,autoFinish})=>{
   window.__channelToneStarts=[];
   class Param{
    setValueAtTime(){}
@@ -15,7 +15,7 @@ async function mockAudio(page,{stereo=true}={}){
     const osc={
      onended:null,frequency:new Param(),connect(){},disconnect(){},
      start(){window.__channelToneStarts.push('tone');},
-     stop(when){if(when>=1)setTimeout(()=>osc.onended?.(),65);},
+     stop(when){if(autoFinish&&when>=1)setTimeout(()=>osc.onended?.(),65);},
     };
     return osc;
    }
@@ -29,7 +29,7 @@ async function mockAudio(page,{stereo=true}={}){
    return {pan:new Param(),connect(){},disconnect(){}};
   };
   window.AudioContext=FakeContext;window.webkitAudioContext=FakeContext;
- },stereo);
+ },{stereo,autoFinish});
 }
 async function confirmPhysicalSetup(page){
  await page.getByTestId('route').check();
@@ -115,7 +115,8 @@ test('P0 user stop invalidates the incomplete stereo check and reload is silent'
 
 
 test('D-058 Escape silences a running manual stereo check without attributing any ear',async({page})=>{
- await mockAudio(page);
+ // Keep playback active until Escape; do not race a fake 65ms onended callback.
+ await mockAudio(page,{autoFinish:false});
  await page.goto(PILOT);
  await confirmPhysicalSetup(page);
  await page.getByTestId('play').focus();
