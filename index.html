@@ -60,6 +60,7 @@
    <div class="sound-sphere" aria-hidden="true"><div class="pulse"></div><div class="pulse p2"></div><span id="sweep-hz">125 Hz</span></div>
    <progress id="sweep-progress" max="20" value="0" aria-label="Progreso del barrido"></progress>
    <p class="counter" id="sweep-time">20 s</p>
+   <p class="digital-level" id="sweep-level">Nivel digital de prueba: −60 dBFS</p>
    <div class="answers perceptual-answers">
     <button class="answer positive" id="sweep-yes" type="button" data-testid="focus-sweep-yes">Lo escucho bien</button>
     <button class="answer negative" id="sweep-no" type="button" data-testid="focus-sweep-no">No lo escucho</button>
@@ -77,6 +78,12 @@
    <div class="tone-orb" id="tone-orb" aria-hidden="true"><span id="tone-hz">125 Hz</span><span class="tone-unit">FRECUENCIA</span></div>
    <p class="counter" id="band-count">Frecuencia 1 de 5</p>
    <progress id="band-progress" max="5" value="0" aria-label="Frecuencias completadas"></progress>
+   <div class="playback-details" id="tone-playback-details">
+    <span id="tone-level" data-testid="focus-tone-level">Nivel digital: — dBFS</span>
+    <span id="tone-time" data-testid="focus-tone-time">Duración: hasta 3 s</span>
+   </div>
+   <progress id="tone-time-progress" class="time-progress" max="3000" value="0" data-testid="focus-tone-timer" aria-label="Tiempo visual estimado del tono"></progress>
+   <p class="tiny level-explainer">dBFS es el nivel de la señal digital, no mide el volumen físico ni la presión acústica.</p>
    <button id="tone-play" class="primary main-cta" type="button" data-testid="focus-tone-play">Escuchar tono <span aria-hidden="true">▶</span></button>
    <div class="answers perceptual-answers" id="tone-answers" hidden>
     <button type="button" class="answer positive" id="tone-yes" data-testid="focus-tone-yes">Lo escucho bien</button>
@@ -96,8 +103,21 @@
    <span class="eyebrow">TU RESULTADO</span>
    <h1>Tu ecualizador</h1>
    <p class="lead">Una propuesta experimental: mantenemos lo que percibes bien, bajamos frecuencias incómodas y exploramos con prudencia las que no escuchas.</p>
+   <div class="eq-graph-scroll" role="group" aria-label="Gráfico de ecualización por frecuencia; las cifras exactas aparecen debajo">
+    <div id="eq-graph" class="eq-graph" data-testid="focus-eq-graph" aria-hidden="true"></div>
+   </div>
    <div id="eq-rows" class="eq-rows" data-testid="focus-eq-rows" aria-label="Ganancias por frecuencia"></div>
    <p id="eq-quality" class="inline-hint"></p>
+   <details class="quiet-options" id="eq-howto">
+    <summary>Cómo aplicar mi EQ manualmente</summary>
+    <ol class="eq-guide">
+     <li>Abre el ecualizador del mismo dispositivo que utilizaste para la prueba.</li>
+     <li>Verifica las frecuencias reales de sus bandas y anota cada ganancia en dB.</li>
+     <li>Mantén el volumen físico bajo y aplica valores gradualmente; si notas distorsión o incomodidad, vuelve a 0 dB.</li>
+     <li>Si no tiene las mismas frecuencias o no indica dB, no conviertas posiciones o porcentajes sin verificar su escala.</li>
+    </ol>
+    <p class="tiny">Hear no modifica controles, preamplificadores ni filtros del equipo automáticamente.</p>
+   </details>
    <p class="tiny" id="eq-experiment-note">Las subidas sin un tono audible son solo una hipótesis pequeña, no una medición de tu oído. Comprueba el sonido sin subir el volumen físico.</p>
    <button id="copy-eq" class="primary main-cta" type="button" data-testid="focus-copy">Copiar mis ajustes <span aria-hidden="true">↗</span></button>
    <button id="new-test" class="quiet-link" type="button" data-testid="focus-new-test">Hacer otra prueba</button>
