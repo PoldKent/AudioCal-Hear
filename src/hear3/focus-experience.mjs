@@ -144,12 +144,15 @@ export function mountHearFocus({doc=document,env=window}={}){
    throw Error('Este navegador no permite reproducir los tonos necesarios. Prueba un navegador compatible.');
   }
   if(pendingRecovery){
-   const existing=readCheckpoint();
-   if(!existing)throw Error('No encontramos una prueba anterior recuperable.');
-   if(!exam)createExam(existing.plan);
-   await exam.recover({userInitiated:true});
-   // A recovered checkpoint is always silent. This user interaction confirms
-   // output/volume; neither recover nor resume plays the next sound.
+   if(!exam){
+    const existing=readCheckpoint();
+    if(!existing)throw Error('No encontramos una prueba anterior recuperable.');
+    createExam(existing.plan);
+    await exam.recover({userInitiated:true});
+   }
+   // Recover only for a newly opened page. A still-live paused exam must
+   // resume from its own verified controller, never re-import over itself.
+   // This user click confirms output/volume, not automatic audio playback.
    const session=exam.getSession();
    if(session.status==='paused'){
     if(session.routeCheckRequired)exam.confirmRoute({userConfirmed:true});
