@@ -119,6 +119,36 @@ test('an unfinished test continues from a silent verified checkpoint after reloa
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('V2_MUST_REMAIN');
 });
 
+test('a returning user may export and discard an unfinished test without erasing historic profiles',async({page})=>{
+ await fakeAudio(page);
+ await page.goto('/');
+ await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','V2_KEEP'));
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-tone-yes')).toBeVisible();
+ await page.getByTestId('focus-tone-yes').click();
+ await page.reload();
+ await page.getByTestId('focus-begin').click();
+ await expect(page.locator('#recovery-options')).toBeHidden();
+ await page.locator('#recovery-options > summary').click();
+ const pending=page.waitForEvent('download');
+ await page.locator('#download-progress').click();
+ const downloaded=await pending;
+ const raw=require('node:fs').readFileSync(await downloaded.path(),'utf8');
+ expect(JSON.parse(raw).format).toBe('hear3-adaptive-exam-bundle-v1');
+ page.once('dialog',d=>d.accept());
+ await page.getByTestId('focus-reset-progress').click();
+ await expect(page.getByTestId('focus-ready')).toBeVisible();
+ await expect(page.locator('#recovery-options')).toBeHidden();
+ expect(await page.evaluate(async()=>{
+  const {createHear3AdaptiveProgressStore}=await import('/src/hear3/adaptive-progress-store.mjs');
+  return createHear3AdaptiveProgressStore({profileId:'hear3-integrated-pilot'}).load().checkpoint;
+ })).toBeNull();
+ expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('V2_KEEP');
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+});
+
 test('user can select a real device EQ distribution without being forced into menus',async({page})=>{
  await fakeAudio(page);
  await page.goto('/');
