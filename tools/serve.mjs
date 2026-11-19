@@ -25,6 +25,7 @@ const allowedFiles = new Map([
   ['/src/hear3/app-shell.css', 'src/hear3/app-shell.css'],
   ['/src/hear3/focus-experience.css', 'src/hear3/focus-experience.css'],
   ['/src/hear3/focus-experience.mjs', 'src/hear3/focus-experience.mjs'],
+  ['/src/hear3/experimental-listening-eq.mjs', 'src/hear3/experimental-listening-eq.mjs'],
   ['/src/hear3/app-theme.mjs', 'src/hear3/app-theme.mjs'],
   ['/src/hear3/app-i18n.mjs', 'src/hear3/app-i18n.mjs'],
   ['/src/hear3/immediate-eq-result.mjs', 'src/hear3/immediate-eq-result.mjs'],
