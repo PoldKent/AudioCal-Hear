@@ -8,6 +8,7 @@
  */
 import {validateHear3Catalog} from './catalog-contract.mjs';
 import {calculateHear3BoundedJointEq} from './bounded-eq-engine.mjs';
+import {proposeHear3ExperimentalListeningEq} from './experimental-listening-eq.mjs';
 import {checkpointFingerprint} from './local-checkpoint-store.mjs';
 
 const check=(ok,msg)=>{if(!ok)throw Error(msg);};
@@ -112,6 +113,7 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
  function preview({
   deviceId,profileId,resultId,deviceName,profileName,category='headphones',
   includeProvisionalEq=false,reuseDeviceId=null,reuseProfileId=null,
+  loudToneReports=null,
  }={}){
   check(typeof includeProvisionalEq==='boolean','Provisional EQ opt-in must be explicit');
   proposed=null;
@@ -144,10 +146,20 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
   }
   const targetDeviceId=reusedDevice?.id??deviceId;
   const targetProfileId=reusedProfile?.id??profileId;
-  const eq=includeProvisionalEq?calculateHear3BoundedJointEq({
+  const baseEq=includeProvisionalEq?calculateHear3BoundedJointEq({
    examSnapshot:evidence.status,sessionSnapshot:evidence.session,
    deviceCategory:category,
   }):null;
+  // Optional subjective preference policy is recomputed from the same
+  // verified immutable exam and audio history used for archival.
+  // Unmatched or forged loudness events fail closed.
+  check(loudToneReports===null||includeProvisionalEq,
+   'A preference overlay requires explicit provisional EQ consent');
+  const eq=baseEq&&loudToneReports!==null
+   ?proposeHear3ExperimentalListeningEq({
+     baseEq,examSnapshot:evidence.status,sessionSnapshot:evidence.session,
+     loudToneReports,
+    }):baseEq;
   check(!eq||(eq.autoApplyAllowed===false&&eq.validatedForProduction===false&&
    eq.channel==='joint'&&eq.bandCount===evidence.eqBands.length&&
    eq.originalEq.every((band,i)=>band.bandId===evidence.eqBands[i].id)),
