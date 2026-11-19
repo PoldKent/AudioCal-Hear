@@ -73,10 +73,16 @@ test('direct path starts sound after consent, receives tones, completes and show
   await expect(page.getByTestId('focus-tone-play')).toBeVisible();
   await page.getByTestId('focus-tone-play').click();
   await expect(page.getByTestId('focus-tone-no')).toBeVisible();
+  await expect(page.getByTestId('focus-tone-level')).toContainText('dBFS');
+  await expect(page.getByTestId('focus-tone-time')).toContainText('aprox.');
+  await expect(page.getByTestId('focus-tone-timer')).toHaveAttribute('max','3000');
   await page.getByTestId('focus-tone-no').click();
  }
  await expect(page.getByTestId('focus-result')).toBeVisible();
  await expect(page.getByTestId('focus-eq-rows').locator('.eq-row')).toHaveCount(5);
+ await expect(page.getByTestId('focus-eq-graph').locator('.eq-graph-band')).toHaveCount(5);
+ await expect(page.getByTestId('focus-eq-graph').locator('.eq-graph-band').first()).toContainText('125 Hz');
+ await expect(page.locator('#eq-howto')).not.toHaveAttribute('open');
  await expect(page.getByTestId('focus-copy')).toBeVisible();
  // EQ appears immediately, no profile creation or archival step required.
  await expect(page.getByTestId('focus-eq-rows').locator('.eq-row').first()).toContainText('125 Hz');
@@ -222,6 +228,33 @@ test('user can select a real device EQ distribution without being forced into me
  await page.getByTestId('focus-confirm').click();
  await expect(page.getByTestId('focus-tones')).toBeVisible();
  await expect(page.locator('#band-progress')).toHaveAttribute('max','7');
+});
+
+test('changing language in the middle of a tone test preserves verified evidence and translates live controls',async({page})=>{
+ await fakeAudio(page,{holdSweep:true});
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await page.getByTestId('focus-sweep-skip').click();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ await page.locator('#ajustes > summary').click();
+ await page.getByTestId('hear-language').selectOption('en');
+ await expect(page.getByTestId('focus-tone-play')).toContainText('Play tone');
+ await expect(page.getByTestId('focus-tone-level')).toContainText('Digital level');
+ await page.getByTestId('focus-tone-play').click();
+ await expect(page.getByTestId('focus-tone-yes')).toContainText('I hear it comfortably');
+ const starts=await page.evaluate(()=>window.__hearFocusStarts);
+ await page.getByTestId('hear-language').selectOption('ja');
+ await expect(page.getByTestId('focus-tone-yes')).toContainText('快適に聞こえる');
+ await page.getByTestId('focus-tone-yes').click();
+ const count=await page.evaluate(async()=>{
+  const {createHear3AdaptiveProgressStore}=await import('/src/hear3/adaptive-progress-store.mjs');
+  return createHear3AdaptiveProgressStore({profileId:'hear3-integrated-pilot'}).load()
+   .checkpoint?.audioSession.observations.length;
+ });
+ expect(count).toBe(1);
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(starts);
 });
 
 test('advanced data links remain accessible while opening new Hear never alters old V2 storage',async({page})=>{
