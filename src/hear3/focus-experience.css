@@ -90,5 +90,11 @@ progress::-moz-progress-bar{background:var(--mint2);border-radius:10px}
 .foot-tech p{font-size:.76rem;line-height:1.5}
 .foot-tech button{width:100%;min-height:39px;padding:8px 10px;margin:4px 0;background:var(--surface2);border:1px solid var(--outline);color:var(--text);border-radius:8px;text-align:left;font-size:.78rem}
 .foot-tech button:hover{border-color:var(--mint2)}
-@media(max-width:560px){.top{padding:17px 23px}.top-pill{font-size:.55rem}.experience{padding:15px 20px 23px}.orb{width:165px;margin:22px auto 30px}.lead{margin-bottom:16px}.answers{flex-direction:column}.answer{min-height:59px}.eq-row{gap:10px;grid-template-columns:60px 1fr 60px}.foot{align-items:flex-start;line-height:1.5}.foot>span{max-width:245px}h1{font-size:clamp(2.2rem,9vw,3.1rem)}}
+@media(max-width:560px){
+/* The help drawer participates in page layout on phones; no overlay may
+   intercept the primary test action or obscure listening controls. */
+.foot{flex-wrap:wrap}
+.foot-more{width:100%}
+.foot-links{position:static;width:100%;max-height:none;overflow:visible;box-shadow:none;margin-top:7px}
+.top{padding:17px 23px}.top-pill{font-size:.55rem}.experience{padding:15px 20px 23px}.orb{width:165px;margin:22px auto 30px}.lead{margin-bottom:16px}.answers{flex-direction:column}.answer{min-height:59px}.eq-row{gap:10px;grid-template-columns:60px 1fr 60px}.foot{align-items:flex-start;line-height:1.5}.foot>span{max-width:245px}h1{font-size:clamp(2.2rem,9vw,3.1rem)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
