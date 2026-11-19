@@ -85,6 +85,12 @@ export function mountHearFocus({doc=document,env=window}={}){
   loudReports=[];
   try{env.sessionStorage?.removeItem(loudKey);}catch{}
  }
+ function verifiedLoudReports(session){
+  const retired=new Set(session.invalidatedToneIds??[]);
+  // Revisited or interrupted observations remain auditable in the exam, but
+  // never carry an old loudness preference into a new measurement.
+  return loudReports.filter(r=>!retired.has(r.toneId));
+ }
  function markLoud(report){
   if(loudReports.some(x=>x.toneId===report.toneId))return;
   loudReports.push({toneId:report.toneId,frequencyHz:report.frequencyHz});
@@ -197,13 +203,14 @@ export function mountHearFocus({doc=document,env=window}={}){
   // All three perceptions affect a bounded hypothesis, never raw hardware.
   const draft=proposeHear3ExperimentalListeningEq({
    baseEq:base,examSnapshot:state,sessionSnapshot:session,
-   loudToneReports:loudReports,
+   loudToneReports:verifiedLoudReports(session),
   });
   review=inspectHear3ImmediateEq(draft);eq=draft;
   const rows=element('eq-rows');
   rows.replaceChildren(...review.rows.map(row=>{
    const section=doc.createElement('div');
    section.className='eq-row';
+   section.dataset.direction=row.gainDb>0?'up':row.gainDb<0?'down':'neutral';
    const hz=doc.createElement('span');hz.className='hz';
    hz.textContent=row.frequencyHz+' Hz';
    const reason=doc.createElement('small');
@@ -257,7 +264,9 @@ export function mountHearFocus({doc=document,env=window}={}){
   if(view!=='sweep'||sweep.snapshot().status!=='playing')return;
   // A discomfort indication immediately silences this continuous tone.
   // Sweep reports are only navigation hints and must be retested separately.
-  try{sweep.recordResponse(true);}finally{sweep.stop('reported-uncomfortable');}
+  try{sweep.recordResponse(true);}
+  catch{/* The stop remains mandatory even if the audio clock rejects the mark. */}
+  finally{sweep.stop('reported-uncomfortable');}
   output('sweep-feedback','Barrido detenido por incomodidad. No subas el volumen físico.');
   return prepareTonesFromSweep();
  }
@@ -459,7 +468,8 @@ export function mountHearFocus({doc=document,env=window}={}){
   const preview=archive.preview({
    deviceId:'v3-device-'+uuid(),profileId:'v3-profile-'+uuid(),
    resultId:'v3-result-'+uuid(),deviceName:name,profileName:'Mi prueba Hear',
-   category,includeProvisionalEq:true,loudToneReports:loudReports,
+   category,includeProvisionalEq:true,
+   loudToneReports:verifiedLoudReports(exam.getSession()),
   });
   const saved=archive.commit({
    userInitiated:true,confirmed:true,confirmProvisionalEq:true,
