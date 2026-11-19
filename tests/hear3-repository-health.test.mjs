@@ -30,7 +30,7 @@ test('health auditor is read-only and detects a broken public navigation route',
    const dest=join(scratch,target);
    mkdirSync(dirname(dest),{recursive:true});
    writeFileSync(dest,target===path
-     ?value.replace('href="./hear3-exam/"','href="./missing-screen/"')
+     ?value.replace('href="./hear3-library/"','href="./missing-screen/"')
      :readFileSync(join(root,target),'utf8'));
   }
   // An incomplete disposable source fixture is expected to produce failures.
