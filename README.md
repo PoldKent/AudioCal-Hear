@@ -6,17 +6,21 @@
 
 **AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Test your ability to hear tones at different digital levels and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
 
-**[Open AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Start hearing workflow](https://poldkent.github.io/AudioCal-Hear/hear3-exam/) · [My EQ](https://poldkent.github.io/AudioCal-Hear/hear3-eq-editor/) · [Saved records](https://poldkent.github.io/AudioCal-Hear/hear3-library/)
+**[Open Hear 3 — start the test](https://poldkent.github.io/AudioCal-Hear/)** · [Edit a saved EQ](https://poldkent.github.io/AudioCal-Hear/hear3-eq-editor/) · [Saved records](https://poldkent.github.io/AudioCal-Hear/hear3-library/)
 
 ## One application
 
-The public website opens **AudioCal Hear**, with no version chooser or experimental developer dashboard. Users have one home screen, a tone exam with 2–31 user-declared graphic EQ bands, saved results, an editable EQ, backups, privacy and optional offline access. Navigation and appearance preferences are shared.
+The public site now presents a simple flow: **Start → confirm low physical volume → frequency sweep → individual tones → experimental EQ**. Responses are «I hear it comfortably», «I cannot hear it» or «Too loud». The sweep can be skipped; every tone is user-initiated and stoppable. The result includes a vertical EQ graphic, exact dB numbers, manual application guidance, TXT/CSV/PNG downloads and optional saving/editing. History, privacy, diagnostics and optional offline mode remain behind secondary «Help and data» controls. Users can specify 2–31 actual graphic EQ bands.
 
 **Existing browser data are preserved** and never silently transformed. A separate legacy engine remains available as an internal recovery artifact, not a public competing app. Previous preview bookmarks redirect home.
 
 **Safety scope:** Digital test tones are not calibrated in acoustic SPL; EQ outputs are neither a medical diagnosis nor verified physical-device presets. Hardware measurements, DSP headroom and the D-063 release gate remain pending. `stableReleaseClaim:false` stays in force. No autoplay or automatic EQ deployment.
 
 Engineering details: [single-app integration](docs/hear3/49-single-app-experience.md) · [product decisions](https://github.com/PoldKent/AudioCal-Hear/issues/30) · [release evidence](docs/hear3/release-evidence-gate.json).
+
+## Hear 3 status (functional beta, not acoustically validated)
+
+This public experience is **experimental**, not a clinically certified hearing product. Test signal levels are shown in **dBFS**, and visual timing is approximate. The three responses generate a bounded EQ hypothesis, not a calibrated SPL threshold. EQ is never applied automatically. Older saved data are preserved. The main flow is translated into eight languages; some technical pages remain partly in Spanish. See the [software completion and release evidence status](docs/hear3/62-software-closure-and-release-gate.md).
 
 ## Historical release notes (v1.9 and earlier)
 

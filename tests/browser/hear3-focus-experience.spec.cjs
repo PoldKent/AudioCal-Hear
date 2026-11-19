@@ -73,20 +73,37 @@ test('direct path starts sound after consent, receives tones, completes and show
   await expect(page.getByTestId('focus-tone-play')).toBeVisible();
   await page.getByTestId('focus-tone-play').click();
   await expect(page.getByTestId('focus-tone-no')).toBeVisible();
+  await expect(page.getByTestId('focus-tone-level')).toContainText('dBFS');
+  await expect(page.getByTestId('focus-tone-time')).toContainText('aprox.');
+  await expect(page.getByTestId('focus-tone-timer')).toHaveAttribute('max','3000');
   await page.getByTestId('focus-tone-no').click();
  }
  await expect(page.getByTestId('focus-result')).toBeVisible();
  await expect(page.getByTestId('focus-eq-rows').locator('.eq-row')).toHaveCount(5);
+ await expect(page.getByTestId('focus-eq-graph').locator('.eq-graph-band')).toHaveCount(5);
+ await expect(page.getByTestId('focus-eq-graph').locator('.eq-graph-band').first()).toContainText('125 Hz');
+ await expect(page.locator('#eq-howto')).not.toHaveAttribute('open');
  await expect(page.getByTestId('focus-copy')).toBeVisible();
  // EQ appears immediately, no profile creation or archival step required.
  await expect(page.getByTestId('focus-eq-rows').locator('.eq-row').first()).toContainText('125 Hz');
- await page.locator('#result .quiet-options > summary').click();
+ await page.locator('#result [data-hear-i18n="focus.result.saveSection"]').click();
  const startedDownload=page.waitForEvent('download');
  await page.locator('#download-eq').click();
  const download=await startedDownload;
  const txt=require('node:fs').readFileSync(await download.path(),'utf8');
  expect(txt).toContain('125 Hz');
  expect(txt.toLowerCase()).toContain('no calibrado');
+ const csvReady=page.waitForEvent('download');
+ await page.locator('#download-eq-csv').click();
+ const csv=await csvReady;
+ expect(csv.suggestedFilename()).toMatch(/\.csv$/);
+ expect(require('node:fs').readFileSync(await csv.path(),'utf8')).toContain('frecuencia_Hz');
+ const pngReady=page.waitForEvent('download');
+ await page.locator('#download-eq-png').click();
+ const png=await pngReady;
+ expect(png.suggestedFilename()).toMatch(/\.png$/);
+ const pngBytes=require('node:fs').readFileSync(await png.path());
+ expect(pngBytes.subarray(1,4).toString('ascii')).toBe('PNG');
  expect(txt).toContain('125 Hz = +0.5 dB'); // No sound at the digital test ceiling: a *bounded* hypothesis.
  // Saving is optional and requires a separate affirmative user choice.
  expect(await page.evaluate(async()=>{
@@ -97,6 +114,12 @@ test('direct path starts sound after consent, receives tones, completes and show
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('#save-eq').click();
  await expect(page.locator('#save-status')).toContainText('Guardado en este navegador');
+ await expect(page.getByTestId('focus-saved-eq')).toHaveAttribute('href',/hear3-eq-editor\/\?result=/);
+ await page.locator('#save-eq').click(); // A second click must never duplicate history.
+ expect((await page.evaluate(async()=>{
+  const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
+  return createHear3CatalogStore().load().catalog.results.length;
+ }))).toBe(1);
  const archived=await page.evaluate(async()=>{
   const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
   return createHear3CatalogStore().load().catalog.results.at(-1);
@@ -222,6 +245,44 @@ test('user can select a real device EQ distribution without being forced into me
  await page.getByTestId('focus-confirm').click();
  await expect(page.getByTestId('focus-tones')).toBeVisible();
  await expect(page.locator('#band-progress')).toHaveAttribute('max','7');
+});
+
+test('a 31-band EQ graphic remains scrollable without widening the page',async({page})=>{
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await page.locator('#device-options > summary').click();
+ await page.getByTestId('focus-bands').selectOption('31');
+ await expect(page.getByTestId('focus-bands')).toHaveValue('31');
+ await expect(page.locator('body')).toBeVisible();
+ const wide=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+2);
+ expect(wide).toBe(false);
+});
+
+test('changing language in the middle of a tone test preserves verified evidence and translates live controls',async({page})=>{
+ await fakeAudio(page,{holdSweep:true});
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await page.getByTestId('focus-sweep-skip').click();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ await page.locator('#ajustes > summary').click();
+ await page.getByTestId('hear-language').selectOption('en');
+ await expect(page.getByTestId('focus-tone-play')).toContainText('Play tone');
+ await expect(page.getByTestId('focus-tone-level')).toContainText('Digital level');
+ await page.getByTestId('focus-tone-play').click();
+ await expect(page.getByTestId('focus-tone-yes')).toContainText('I hear it comfortably');
+ const starts=await page.evaluate(()=>window.__hearFocusStarts);
+ await page.getByTestId('hear-language').selectOption('ja');
+ await expect(page.getByTestId('focus-tone-yes')).toContainText('快適に聞こえる');
+ await page.getByTestId('focus-tone-yes').click();
+ const count=await page.evaluate(async()=>{
+  const {createHear3AdaptiveProgressStore}=await import('/src/hear3/adaptive-progress-store.mjs');
+  return createHear3AdaptiveProgressStore({profileId:'hear3-integrated-pilot'}).load()
+   .checkpoint?.audioSession.observations.length;
+ });
+ expect(count).toBe(1);
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(starts);
 });
 
 test('advanced data links remain accessible while opening new Hear never alters old V2 storage',async({page})=>{

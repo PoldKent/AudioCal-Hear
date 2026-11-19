@@ -84,6 +84,31 @@ progress::-moz-progress-bar{background:var(--mint2);border-radius:10px}
 .language-note{max-width:300px;font-size:.75rem;color:var(--muted);margin:0 auto 8px;text-align:center}
 @keyframes appear{from{opacity:.3;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
 @keyframes ring{0%,100%{opacity:.3;transform:scale(.96)}50%{opacity:.8;transform:scale(1.05)}}
+/* A single compact playing-status line and progress bar, not a new menu. */
+.digital-level,.playback-details{font-size:.81rem;color:var(--muted);line-height:1.5}
+.digital-level{margin:8px auto 3px}
+.playback-details{display:flex;justify-content:space-between;gap:14px;max-width:470px;margin:10px auto 5px;font-variant-numeric:tabular-nums}
+.playback-details span{white-space:nowrap}
+.time-progress{height:5px;margin:3px auto 0}
+.level-explainer{margin:8px auto 13px}
+/* Vertical EQ has independent horizontal scrolling at 31 bands.
+   The page itself never needs sideways scrolling, and values remain
+   accessible in the explicit text rows below the visual. */
+.eq-graph-scroll{width:100%;max-width:650px;overflow-x:auto;overscroll-behavior-inline:contain;margin:20px auto 6px;padding:4px 2px 11px}
+.eq-graph{min-width:100%;width:max-content;display:flex;justify-content:space-evenly;gap:8px;padding:6px 12px 2px}
+.eq-graph-band{width:57px;flex:0 0 57px;display:flex;align-items:center;flex-direction:column;gap:7px;font-variant-numeric:tabular-nums}
+.eq-graph-area{height:162px;width:100%;position:relative;border-radius:9px;background:var(--surface);border:1px solid var(--outline);overflow:hidden}
+.eq-graph-zero{position:absolute;left:0;right:0;top:80px;border-top:1px solid var(--muted);opacity:.65}
+.eq-graph-bar{display:block;position:absolute;width:58%;left:21%;border-radius:6px;background:var(--mint2);min-height:2px}
+.eq-graph-band[data-direction=down] .eq-graph-bar{background:#e3a37e}
+.eq-graph-gain{font-size:.77rem;font-weight:750;color:var(--text)}
+.eq-graph-frequency{font-size:.71rem;color:var(--muted);white-space:nowrap}
+.eq-guide{text-align:left;line-height:1.7;color:var(--muted);padding-left:24px;font-size:.88rem}
+.eq-guide li{margin:10px auto}
+@media(max-width:560px){
+ .playback-details{flex-wrap:wrap;justify-content:center;gap:3px 13px}
+ .eq-graph-band{width:49px;flex-basis:49px}
+}
 /* Theme preference lives only in the secondary tools; the main journey remains unchanged. */
 :root[data-hear3-theme="light"]{color-scheme:light;--bg:#f4f8f8;--surface:#e3ecee;--surface2:#d2e0e3;--text:#11272c;--muted:#536875;--outline:#bed1d6;--mint:#13755f;--mint2:#1a806a;--alert:#9d2e1c}
 :root[data-hear3-theme="light"] body{background:radial-gradient(ellipse 70% 40% at 50% 35%,#cde9e1 0%,transparent 80%),var(--bg)}

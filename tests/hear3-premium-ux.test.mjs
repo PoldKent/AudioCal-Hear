@@ -73,6 +73,34 @@ test('new visual surface is responsive, keyboard reachable and respects reduced 
  assert.match(css,/#?min-height:60px|min-height:60px/);
 });
 
+test('principal listening path is translated to eight languages without changing audio units',()=>{
+ const html=read('index.html');
+ for(const code of HEAR3_LANGUAGE_CHOICES){
+  for(const key of [
+   'focus.ready.title','focus.ready.lead','focus.ready.agree',
+   'focus.sweep.title','focus.sweep.lead','focus.sweep.yes',
+   'focus.sweep.no','focus.sweep.loud','focus.sweep.skip',
+   'focus.tones.yes','focus.tones.no','focus.tones.loud',
+   'focus.result.title','focus.result.lead','focus.result.warning',
+   'focus.result.save','focus.result.copy',
+   'focus.d.tonePlaying','focus.d.notePlaying','focus.d.digitalLevel',
+   'focus.d.bandCount','focus.d.timeEstimate',
+  ]){
+   const text=translateHear3Ui(key,code);
+   assert.equal(typeof text,'string',code+': '+key);
+   assert.ok(text.length>0,code+': '+key);
+   if(!key.startsWith('focus.d.'))assert.ok(html.includes('data-hear-i18n="'+key+'"'),key);
+  }
+  assert.match(translateHear3Ui('focus.d.digitalLevel',code),/dBFS/);
+ }
+ assert.match(html,/data-testid="focus-tone-level"/);
+ assert.match(html,/data-testid="focus-tone-timer"/);
+ assert.match(html,/id="eq-graph"/);
+ assert.match(html,/id="eq-howto"/);
+ for(const id of ['download-eq','download-eq-csv','download-eq-png','saved-eq-link'])
+  assert.ok(html.includes('id="'+id+'"'),id);
+});
+
 test('core language options remain available in eight languages',()=>{
  for(const language of HEAR3_LANGUAGE_CHOICES)
   for(const key of ['home.headline','home.lead','console.heard','console.not']){
