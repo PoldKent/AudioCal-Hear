@@ -12,7 +12,7 @@ test('Hear home and build source are identical, without the old dashboard',()=>{
  assert.equal(home,read('src/hear3-entry.html'));
  assert.match(home,/data-testid="focus-begin"/);
  assert.match(home,/data-testid="focus-ready"/);
- assert.match(home,/data-testid="focus-sweep"/);
+ assert.doesNotMatch(home,/data-testid="focus-sweep"/);
  assert.match(home,/data-testid="focus-tones"/);
  assert.match(home,/data-testid="focus-result"/);
  assert.doesNotMatch(home,/class="app-grid"|id="profile-count"|id="offline-enable"|app-topbar|app-settings-grid/);
@@ -25,7 +25,7 @@ test('Hear home and build source are identical, without the old dashboard',()=>{
 
 test('first click responds with safety consent and never auto-starts audio',()=>{
  const app=read('src/hear3/focus-experience.mjs');
- for(const id of ['volume-ok','confirm','tone-play','tone-yes','tone-no','sweep-stop','tone-stop']){
+ for(const id of ['volume-ok','confirm','tone-play','tone-yes','tone-no','tone-stop']){
   assert.match(read('index.html'),new RegExp('id="'+id+'"'));
  }
  assert.match(app,/userInitiated:true/);
