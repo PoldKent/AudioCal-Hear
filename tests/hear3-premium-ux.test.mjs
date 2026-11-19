@@ -15,7 +15,9 @@ test('Hear home and build source are identical, without the old dashboard',()=>{
  assert.doesNotMatch(home,/data-testid="focus-sweep"/);
  assert.match(home,/data-testid="focus-tones"/);
  assert.match(home,/data-testid="focus-result"/);
- assert.doesNotMatch(home,/class="app-grid"|id="profile-count"|id="offline-enable"|app-topbar|app-settings-grid/);
+ assert.doesNotMatch(home,/class="app-grid"|id="profile-count"|app-topbar|app-settings-grid/);
+ assert.match(home,/<details class="foot-tech" id="foot-tech">/);
+ assert.match(home,/id="offline-enable"/); // Technical option exists, but is hidden by default.
  assert.doesNotMatch(home,/href="\.\/hear3-exam\/"|href="\.\/hear2\/"|href="\.\/hear3-preview\//);
  for(const href of ['./hear3-library/','./hear3-privacy/','./hear3-dual-restore/','./hear3-diagnostics/']){
   assert.ok(home.includes('href="'+href+'"'));
