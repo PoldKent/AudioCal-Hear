@@ -12,7 +12,9 @@ test('Hear home and build source are identical, without the old dashboard',()=>{
  assert.equal(home,read('src/hear3-entry.html'));
  assert.match(home,/data-testid="focus-begin"/);
  assert.match(home,/data-testid="focus-ready"/);
- assert.doesNotMatch(home,/data-testid="focus-sweep"/);
+ assert.match(home,/data-testid="focus-sweep"/);
+ assert.match(home,/data-testid="focus-sweep-loud"/);
+ assert.match(home,/data-testid="focus-tone-loud"/);
  assert.match(home,/data-testid="focus-tones"/);
  assert.match(home,/data-testid="focus-result"/);
  assert.doesNotMatch(home,/class="app-grid"|id="profile-count"|app-topbar|app-settings-grid/);

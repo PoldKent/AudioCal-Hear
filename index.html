@@ -31,7 +31,7 @@
   <section id="ready" class="stage" hidden data-testid="focus-ready">
    <span class="eyebrow">ANTES DE COMENZAR</span>
    <h1>Ajusta el volumen y empieza</h1>
-   <p class="lead">Conecta el equipo y baja su volumen físico a un nivel cómodo. Al continuar escucharás el primer tono. No subas el volumen para intentar oír un sonido.</p>
+   <p class="lead">Conecta el equipo y baja su volumen físico a un nivel cómodo. Primero escucharás un barrido corto y después los tonos individuales. Nunca subas el volumen para intentar oír un sonido.</p>
    <label class="agree"><input id="volume-ok" type="checkbox" data-testid="focus-volume"><span>Mi equipo está conectado y el volumen está bajo.</span></label>
    <button id="confirm" class="primary main-cta" type="button" data-testid="focus-confirm">Empezar a escuchar <span aria-hidden="true">→</span></button>
    <p id="ready-hint" class="inline-hint" role="status"></p>
@@ -53,6 +53,23 @@
    </details>
   </section>
 
+  <section id="sweep" class="stage" hidden data-testid="focus-sweep">
+   <span class="eyebrow">EXPLORA TU SONIDO</span>
+   <h1>Escucha el barrido</h1>
+   <p class="lead">Durante 20 segundos escucharás cómo cambia la frecuencia. Marca lo que percibas, sin tocar el volumen.</p>
+   <div class="sound-sphere" aria-hidden="true"><div class="pulse"></div><div class="pulse p2"></div><span id="sweep-hz">125 Hz</span></div>
+   <progress id="sweep-progress" max="20" value="0" aria-label="Progreso del barrido"></progress>
+   <p class="counter" id="sweep-time">20 s</p>
+   <div class="answers perceptual-answers">
+    <button class="answer positive" id="sweep-yes" type="button" data-testid="focus-sweep-yes">Lo escucho bien</button>
+    <button class="answer negative" id="sweep-no" type="button" data-testid="focus-sweep-no">No lo escucho</button>
+    <button class="answer loud" id="sweep-loud" type="button" data-testid="focus-sweep-loud">Demasiado fuerte</button>
+   </div>
+   <p id="sweep-feedback" class="inline-hint" role="status">Si incomoda, toca «Demasiado fuerte»: se detendrá.</p>
+   <button id="sweep-skip" class="quiet-link" type="button" data-testid="focus-sweep-skip">Saltar barrido y continuar</button>
+   <button id="sweep-stop" class="quiet-link" type="button">Detener sonido</button>
+  </section>
+
   <section id="tones" class="stage" hidden data-testid="focus-tones">
    <span class="eyebrow" id="test-step">TU PRUEBA DE SONIDO</span>
    <h1 id="tone-title">Escucha el siguiente tono</h1>
@@ -61,9 +78,10 @@
    <p class="counter" id="band-count">Frecuencia 1 de 5</p>
    <progress id="band-progress" max="5" value="0" aria-label="Frecuencias completadas"></progress>
    <button id="tone-play" class="primary main-cta" type="button" data-testid="focus-tone-play">Escuchar tono <span aria-hidden="true">▶</span></button>
-   <div class="answers" id="tone-answers" hidden>
-    <button type="button" class="answer positive" id="tone-yes" data-testid="focus-tone-yes">Sí, lo escucho</button>
+   <div class="answers perceptual-answers" id="tone-answers" hidden>
+    <button type="button" class="answer positive" id="tone-yes" data-testid="focus-tone-yes">Lo escucho bien</button>
     <button type="button" class="answer negative" id="tone-no" data-testid="focus-tone-no">No lo escucho</button>
+    <button type="button" class="answer loud" id="tone-loud" data-testid="focus-tone-loud">Demasiado fuerte</button>
    </div>
    <div id="tone-uncertain" hidden>
     <p class="inline-hint">Hay respuestas diferentes en esta frecuencia.</p>
@@ -77,9 +95,10 @@
   <section id="result" class="stage" hidden data-testid="focus-result">
    <span class="eyebrow">TU RESULTADO</span>
    <h1>Tu ecualizador</h1>
-   <p class="lead">Estos son los valores orientativos para ajustar manualmente tu equipo.</p>
+   <p class="lead">Una propuesta experimental: mantenemos lo que percibes bien, bajamos frecuencias incómodas y exploramos con prudencia las que no escuchas.</p>
    <div id="eq-rows" class="eq-rows" data-testid="focus-eq-rows" aria-label="Ganancias por frecuencia"></div>
    <p id="eq-quality" class="inline-hint"></p>
+   <p class="tiny" id="eq-experiment-note">Las subidas sin un tono audible son solo una hipótesis pequeña, no una medición de tu oído. Comprueba el sonido sin subir el volumen físico.</p>
    <button id="copy-eq" class="primary main-cta" type="button" data-testid="focus-copy">Copiar mis ajustes <span aria-hidden="true">↗</span></button>
    <button id="new-test" class="quiet-link" type="button" data-testid="focus-new-test">Hacer otra prueba</button>
    <p id="copy-status" class="inline-hint" role="status"></p>

@@ -26,7 +26,7 @@ test('the official root is the application, not a preview or version chooser',()
  const oldEntry=file('hear3-preview/index.html');
  assert.match(home,/data-testid="focus-begin"/);
  assert.match(home,/data-testid="focus-ready"/);
- assert.doesNotMatch(home,/data-testid="focus-sweep"/);
+ assert.match(home,/data-testid="focus-sweep"/);
  assert.match(home,/data-testid="focus-tones"/);
  assert.match(home,/data-testid="focus-result"/);
  assert.ok(home.includes('src/hear3/focus-experience.mjs'));
