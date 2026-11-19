@@ -130,7 +130,7 @@ test('a returning user may export and discard an unfinished test without erasing
  await page.getByTestId('focus-tone-yes').click();
  await page.reload();
  await page.getByTestId('focus-begin').click();
- await expect(page.locator('#recovery-options')).toBeHidden();
+ await expect(page.locator('#recovery-options')).not.toHaveAttribute('open');
  await page.locator('#recovery-options > summary').click();
  const pending=page.waitForEvent('download');
  await page.locator('#download-progress').click();
