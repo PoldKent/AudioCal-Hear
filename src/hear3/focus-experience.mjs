@@ -13,6 +13,9 @@ import {calculateHear3BoundedJointEq} from './bounded-eq-engine.mjs';
 import {inspectHear3ImmediateEq,formatHear3ImmediateEq} from './immediate-eq-result.mjs';
 import {createHear3CatalogStore} from './catalog-backup-store.mjs';
 import {createHear3AdaptiveCatalogArchive} from './adaptive-catalog-archive.mjs';
+import {enableHear3Offline,disableHear3Offline,detectHear3OfflineSupport}
+ from './offline-optin.mjs';
+import {translateHear3Ui} from './app-i18n.mjs';
 
 export const HEAR_FOCUS_PROFILE_ID='hear3-integrated-pilot';
 export const HEAR_FOCUS_LIMITS=Object.freeze({minDbfs:-80,maxDbfs:-42});
@@ -39,6 +42,52 @@ export function mountHearFocus({doc=document,env=window}={}){
  let bands=null,starting=false,disposed=false;
  let saveResultId=null;
  const preflight=inspectHear3AudioCapabilities(env);
+ const themeKey='hear3:ui-theme:v1',themeChoice=element('hear3-theme-choice');
+ const allowedThemes=new Set(['system','light','dark']);
+ const media=env.matchMedia?.('(prefers-color-scheme: dark)');
+ let theme='system';
+ try{const stored=env.localStorage?.getItem(themeKey);
+  if(allowedThemes.has(stored))theme=stored;}catch{}
+ function applyTheme(){
+  doc.documentElement.dataset.hear3Theme=theme==='system'
+   ?media?.matches?'dark':'light':theme;
+  themeChoice.value=theme;
+ }
+ applyTheme();
+ themeChoice.addEventListener('change',()=>{
+  if(!allowedThemes.has(themeChoice.value))return;
+  theme=themeChoice.value;
+  try{if(theme==='system')env.localStorage.removeItem(themeKey);
+   else env.localStorage.setItem(themeKey,theme);}catch{}
+  applyTheme();
+ });
+ const onThemeChange=()=>{if(theme==='system')applyTheme();};
+ media?.addEventListener?.('change',onThemeChange);
+ const support=element('ajustes');
+ const openHelp=()=>{if(env.location?.hash==='#ajustes')support.open=true;};
+ env.addEventListener('hashchange',openHelp);
+ openHelp();
+ const offlineStatus=element('offline-status');
+ const offlineOn=element('offline-enable'),offlineOff=element('offline-disable');
+ const offlineSupported=detectHear3OfflineSupport(env).supported;
+ if(!offlineSupported){
+  offlineOn.disabled=true;offlineOff.disabled=true;
+  offlineStatus.textContent='La instalación sin conexión no está disponible.';
+ }else offlineStatus.textContent='Disponible, sin descargar nada automáticamente.';
+ async function optOffline(enable){
+  const action=enable?offlineOn:offlineOff;action.disabled=true;
+  offlineStatus.textContent=enable?'Guardando recursos…':'Retirando recursos…';
+  try{
+   const result=enable?await enableHear3Offline({env}):await disableHear3Offline({env});
+   offlineStatus.textContent=enable
+    ?'Recursos estáticos verificados: '+result.staticResources+'. '+result.warning
+    :result.complete?'Se solicitó retirar los recursos sin conexión. '+result.warning
+      :'No pudimos confirmar la retirada total de la descarga.';
+  }catch(e){offlineStatus.textContent=safeError(e);}
+  finally{action.disabled=!offlineSupported;}
+ }
+ offlineOn.addEventListener('click',()=>void optOffline(true));
+ offlineOff.addEventListener('click',()=>void optOffline(false));
  function error(e){
   const target=element('app-error');
   target.textContent=safeError(e);
@@ -266,7 +315,10 @@ export function mountHearFocus({doc=document,env=window}={}){
   if(disposed)return;
   if(view==='welcome'){
    const checkpoint=readCheckpoint();
-   output('begin',checkpoint?'Continuar mi prueba →':'Empezar prueba →');
+   const lang=doc.documentElement.lang?.split('-')[0]||'es';
+   const beginText=translateHear3Ui('home.start',lang)||'Comenzar mi prueba';
+   const resumeText=translateHear3Ui('console.recover',lang)||'Continuar mi prueba';
+   output('begin',(checkpoint?resumeText:beginText)+' →');
   }
   if(view==='tones'&&exam){
    const state=exam.snapshot();
@@ -336,6 +388,8 @@ export function mountHearFocus({doc=document,env=window}={}){
    void exam.dispose();
   }
   doc.removeEventListener('keydown',stopKey);
+  env.removeEventListener('hashchange',openHelp);
+  media?.removeEventListener?.('change',onThemeChange);
  };
  env.addEventListener('pagehide',onLeave,{once:true});
  render();
