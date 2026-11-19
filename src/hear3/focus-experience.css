@@ -75,5 +75,20 @@ progress::-moz-progress-bar{background:var(--mint2);border-radius:10px}
 .language-note{max-width:300px;font-size:.75rem;color:var(--muted);margin:0 auto 8px;text-align:center}
 @keyframes appear{from{opacity:.3;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
 @keyframes ring{0%,100%{opacity:.3;transform:scale(.96)}50%{opacity:.8;transform:scale(1.05)}}
+/* Theme preference lives only in the secondary tools; the main journey remains unchanged. */
+:root[data-hear3-theme="light"]{color-scheme:light;--bg:#f4f8f8;--surface:#e3ecee;--surface2:#d2e0e3;--text:#11272c;--muted:#536875;--outline:#bed1d6;--mint:#13755f;--mint2:#1a806a;--alert:#9d2e1c}
+:root[data-hear3-theme="light"] body{background:radial-gradient(ellipse 70% 40% at 50% 35%,#cde9e1 0%,transparent 80%),var(--bg)}
+:root[data-hear3-theme="light"] .primary{color:#fff;box-shadow:0 10px 28px #176a4624}
+:root[data-hear3-theme="light"] .primary:hover:not(:disabled){background:#076c54}
+:root[data-hear3-theme="light"] .tone-orb{background:radial-gradient(circle,#b5e3db,#e6f5f0 68%)}
+:root[data-hear3-theme="light"] .negative{background:#e9eff3}
+:root[data-hear3-theme="light"] .foot-links{background:#fff}
+:root[data-hear3-theme="light"] .error{background:#fff0ec}
+.foot-links{max-height:70dvh;overflow-y:auto}
+.foot-tech{border-top:1px solid var(--outline);padding-top:9px}
+.foot-tech summary{font-size:.82rem;cursor:pointer}
+.foot-tech p{font-size:.76rem;line-height:1.5}
+.foot-tech button{width:100%;min-height:39px;padding:8px 10px;margin:4px 0;background:var(--surface2);border:1px solid var(--outline);color:var(--text);border-radius:8px;text-align:left;font-size:.78rem}
+.foot-tech button:hover{border-color:var(--mint2)}
 @media(max-width:560px){.top{padding:17px 23px}.top-pill{font-size:.55rem}.experience{padding:15px 20px 23px}.orb{width:165px;margin:22px auto 30px}.lead{margin-bottom:16px}.answers{flex-direction:column}.answer{min-height:59px}.eq-row{gap:10px;grid-template-columns:60px 1fr 60px}.foot{align-items:flex-start;line-height:1.5}.foot>span{max-width:245px}h1{font-size:clamp(2.2rem,9vw,3.1rem)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
