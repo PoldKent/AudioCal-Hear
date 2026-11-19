@@ -2,23 +2,30 @@ const {test,expect}=require('@playwright/test');
 
 // Browser Web Audio simulation verifies state and consent, not real hearing,
 // device volume, acoustic safety or headphone channel routing.
-async function fakeAudio(page){
- await page.addInitScript(()=>{
+async function fakeAudio(page,{holdSweep=false}={}){
+ await page.addInitScript((holdSweep)=>{
   window.__hearFocusStarts=0;
   class Param{
    setValueAtTime(){}exponentialRampToValueAtTime(){}
    linearRampToValueAtTime(){}cancelScheduledValues(){}
   }
   class Context{
-   constructor(){this.state='running';this.currentTime=0;
+   constructor(){this.state='running';this.createdAt=performance.now();
     this.sampleRate=48000;this.destination={};}
+   get currentTime(){return (performance.now()-this.createdAt)/1000;}
    addEventListener(){}removeEventListener(){}
    createOscillator(){
+    const ctx=this;
     const osc={
      frequency:new Param(),type:'sine',onended:null,
      connect(){},disconnect(){},
      start(){window.__hearFocusStarts++},
-     stop(at){if(at>15)setTimeout(()=>osc.onended?.(),75)},
+     stop(at){
+      if(at-ctx.currentTime>15){
+       if(holdSweep)window.__hearSweepFinish=()=>osc.onended?.();
+       else setTimeout(()=>osc.onended?.(),120);
+      }
+     },
     };
     return osc;
    }
@@ -28,7 +35,7 @@ async function fakeAudio(page){
   }
   window.AudioContext=Context;
   window.webkitAudioContext=Context;
- });
+ },holdSweep);
 }
 test('new Hear has one principal action, no visible dashboard, no autoplay and hidden data tools',async({page})=>{
  await fakeAudio(page);
