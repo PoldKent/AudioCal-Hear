@@ -72,7 +72,27 @@ test('direct path starts sound after consent, receives tones, completes and show
  await expect(page.getByTestId('focus-result')).toBeVisible();
  await expect(page.getByTestId('focus-eq-rows').locator('.eq-row')).toHaveCount(5);
  await expect(page.getByTestId('focus-copy')).toBeVisible();
+ // EQ appears immediately, no profile creation or archival step required.
+ await expect(page.getByTestId('focus-eq-rows').locator('.eq-row').first()).toContainText('125 Hz');
+ await page.locator('#result .quiet-options > summary').click();
+ const startedDownload=page.waitForEvent('download');
+ await page.locator('#download-eq').click();
+ const download=await startedDownload;
+ const txt=require('node:fs').readFileSync(await download.path(),'utf8');
+ expect(txt).toContain('125 Hz');
+ expect(txt.toLowerCase()).toContain('no calibrado');
+ // Saving is optional and requires a separate affirmative user choice.
+ expect(await page.evaluate(async()=>{
+  const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
+  return createHear3CatalogStore().load().catalog.results.length;
+ })).toBe(0);
+ await page.locator('#save-consent').check();
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#save-eq').click();
+ await expect(page.locator('#save-status')).toContainText('Guardado en este navegador');
  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(20);
+ await page.goto('/hear3-library/');
+ await expect(page.getByTestId('summary')).toContainText('1 dispositivos, 1 perfiles, 1 resultados');
  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBeGreaterThan(0);
 });
 
