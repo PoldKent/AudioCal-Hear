@@ -6,17 +6,21 @@
 
 **AudioCal Hear** es un asistente web gratuito, adaptable a celulares, para personalizar tu experiencia de audio. Permite escuchar tonos a diferentes niveles digitales y obtener **ajustes sugeridos de ecualización** para auriculares, parlantes y sistemas de sonido de automóviles, sin crear una cuenta ni instalar aplicaciones para abrir la página.
 
-**[Abrir AudioCal Hear](https://poldkent.github.io/AudioCal-Hear/)** · [Comenzar examen](https://poldkent.github.io/AudioCal-Hear/hear3-exam/) · [Mi ecualizador](https://poldkent.github.io/AudioCal-Hear/hear3-eq-editor/) · [Mis resultados](https://poldkent.github.io/AudioCal-Hear/hear3-library/)
+**[Abrir Hear 3 — iniciar la prueba](https://poldkent.github.io/AudioCal-Hear/)** · [Editar un EQ guardado](https://poldkent.github.io/AudioCal-Hear/hear3-eq-editor/) · [Resultados](https://poldkent.github.io/AudioCal-Hear/hear3-library/)
 
 ## Una sola aplicación
 
-La página principal abre **AudioCal Hear**, sin selectores de versión ni enlaces visibles a pilotos internos. El usuario dispone de un inicio con estado de sesión, examen con bandas de 2–31 frecuencias declaradas, resultados orientativos, un ecualizador editable, historial, exportación, privacidad y funcionamiento offline opcional. La navegación utiliza un mismo encabezado y preferencias de apariencia.
+La página principal abre una experiencia mínima: **Comenzar → comprobar volumen físico bajo → barrido de frecuencias → tonos → EQ experimental**. Responde «Lo escucho bien», «No lo escucho» o «Demasiado fuerte». El barrido puede saltarse; los tonos son deliberados y se pueden detener. El resultado se presenta inmediatamente en una gráfica de EQ, con sus números en dB, explicación, descarga TXT/CSV/PNG y aplicación manual. Guardar y editar el resultado es opcional; historial, privacidad, diagnóstico e instalación offline permanecen en «Ayuda y datos», sin saturar el inicio. Se admiten de 2 a 31 bandas reales declaradas por el usuario.
 
 El historial guardado anteriormente **no se borra ni transforma automáticamente**. Una copia independiente del motor anterior permanece como recurso técnico de recuperación, sin anunciarse como otra versión de la aplicación. Las URLs antiguas de vista previa redirigen al inicio.
 
 **Alcance de seguridad:** Los tonos digitales no están calibrados en dB SPL, y las curvas EQ no son un diagnóstico ni un preset validado físicamente. Las pruebas de dispositivos reales, headroom y el criterio de aceptación D-063 siguen pendientes. El estado interno de publicación estable permanece en `stableReleaseClaim:false`. No se inicia audio ni se aplica EQ automáticamente.
 
 Detalles técnicos: [integración de la aplicación](docs/hear3/49-single-app-experience.md) · [decisiones de producto](https://github.com/PoldKent/AudioCal-Hear/issues/30) · [control de calidad](docs/hear3/release-evidence-gate.json).
+
+## Estado de Hear 3 (beta funcional, sin validación acústica física)
+
+Esta versión está publicada como **herramienta experimental**, no como producto auditivo certificado. El nivel de prueba se indica en **dBFS**; el temporizador visual es aproximado. Los tres tipos de respuesta proporcionan una hipótesis de ganancia conservadora, no un umbral medido en dB SPL. No se aplica automáticamente ninguna corrección. Los resultados guardados anteriores siguen disponibles. Las traducciones abarcan el recorrido principal en ocho idiomas; algunas herramientas técnicas todavía tienen textos en español. Consulta [estado de cierre y pruebas pendientes](docs/hear3/62-software-closure-and-release-gate.md).
 
 ## Historial de versiones anteriores (v1.9 y previas)
 
