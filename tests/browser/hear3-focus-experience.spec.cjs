@@ -93,6 +93,17 @@ test('direct path starts sound after consent, receives tones, completes and show
  const txt=require('node:fs').readFileSync(await download.path(),'utf8');
  expect(txt).toContain('125 Hz');
  expect(txt.toLowerCase()).toContain('no calibrado');
+ const csvReady=page.waitForEvent('download');
+ await page.locator('#download-eq-csv').click();
+ const csv=await csvReady;
+ expect(csv.suggestedFilename()).toMatch(/\.csv$/);
+ expect(require('node:fs').readFileSync(await csv.path(),'utf8')).toContain('frecuencia_Hz');
+ const pngReady=page.waitForEvent('download');
+ await page.locator('#download-eq-png').click();
+ const png=await pngReady;
+ expect(png.suggestedFilename()).toMatch(/\.png$/);
+ const pngBytes=require('node:fs').readFileSync(await png.path());
+ expect(pngBytes.subarray(1,4).toString('ascii')).toBe('PNG');
  expect(txt).toContain('125 Hz = +0.5 dB'); // No sound at the digital test ceiling: a *bounded* hypothesis.
  // Saving is optional and requires a separate affirmative user choice.
  expect(await page.evaluate(async()=>{
@@ -103,6 +114,12 @@ test('direct path starts sound after consent, receives tones, completes and show
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('#save-eq').click();
  await expect(page.locator('#save-status')).toContainText('Guardado en este navegador');
+ await expect(page.getByTestId('focus-saved-eq')).toHaveAttribute('href',/hear3-eq-editor\/\?result=/);
+ await page.locator('#save-eq').click(); // A second click must never duplicate history.
+ expect((await page.evaluate(async()=>{
+  const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
+  return createHear3CatalogStore().load().catalog.results.length;
+ }))).toBe(1);
  const archived=await page.evaluate(async()=>{
   const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
   return createHear3CatalogStore().load().catalog.results.at(-1);
@@ -228,6 +245,17 @@ test('user can select a real device EQ distribution without being forced into me
  await page.getByTestId('focus-confirm').click();
  await expect(page.getByTestId('focus-tones')).toBeVisible();
  await expect(page.locator('#band-progress')).toHaveAttribute('max','7');
+});
+
+test('a 31-band EQ graphic remains scrollable without widening the page',async({page})=>{
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await page.locator('#device-options > summary').click();
+ await page.getByTestId('focus-bands').selectOption('31');
+ await expect(page.getByTestId('focus-bands')).toHaveValue('31');
+ await expect(page.locator('body')).toBeVisible();
+ const wide=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+2);
+ expect(wide).toBe(false);
 });
 
 test('changing language in the middle of a tone test preserves verified evidence and translates live controls',async({page})=>{
