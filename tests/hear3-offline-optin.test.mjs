@@ -13,7 +13,7 @@ const root=resolve(here,'..');
 const manifest=JSON.parse(readFileSync(resolve(root,'hear3-offline-manifest.json'),'utf8'));
 test('static offline manifest contains real local, public pilot assets and no user records',()=>{
  const validated=validateHear3OfflineManifest(manifest);
- assert.equal(validated.paths.length,55);
+ assert.equal(validated.paths.length,57);
  const required=[
   'hear3-preview/','hear3-privacy/','hear3-photo-privacy/','hear3-diagnostics/','src/hear3/local-diagnostics.mjs',
   'src/hear3/private-photo-sanitizer.mjs',
@@ -21,6 +21,7 @@ test('static offline manifest contains real local, public pilot assets and no us
   'src/hear3/provisional-eq-editor.mjs','src/hear3/guarded-dual-archive-restore.mjs',
   'src/hear3/manual-eq-application-guide.mjs',
   'src/hear3/contextual-error-guide.mjs',
+  'src/hear3/focus-experience.css','src/hear3/focus-experience.mjs',
   'src/hear3/contextual-tone-comparison.mjs',
   'src/hear3/adaptive-progress-store.mjs',
   'src/hear3/audio-capability-preflight.mjs',
