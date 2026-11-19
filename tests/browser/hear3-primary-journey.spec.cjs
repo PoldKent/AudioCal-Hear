@@ -26,19 +26,17 @@ async function virtualAudio(page){
  });
 }
 
-test('official beta is a navigable exam -> history -> editor journey, without autoplay or hidden V2 migration',async({page})=>{
+test('official root starts the safe tonal exam; history and editor are optional',async({page})=>{
  await page.goto('/hear2/');
  await page.evaluate(()=>localStorage.setItem('audiocal-hear-profiles-v1','V2_UNALTERED'));
  await page.goto('/');
- await page.getByRole('link',{name:'Comenzar mi prueba'}).click();
- await expect(page).toHaveURL(/\/hear3-exam\/$/);
- await expect(page.getByRole('heading',{level:1})).toContainText('Tu prueba de sonido');
- await expect(page.getByTestId('sweep-start')).toBeEnabled();
- await expect(page.getByTestId('tone-next')).toBeDisabled();
- await expect(page.getByTestId('archive-commit')).toBeDisabled();
+ await expect(page.getByTestId('focus-begin')).toBeVisible();
+ await page.getByTestId('focus-begin').click();
+ await expect(page.getByTestId('focus-ready')).toBeVisible();
+ await expect(page.getByTestId('focus-confirm')).toBeVisible();
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('V2_UNALTERED');
- await page.locator('.app-nav-more > summary').click();
- await page.getByRole('link',{name:'Historial',exact:true}).click();
+ await page.locator('#ajustes > summary').click();
+ await page.getByRole('link',{name:'Resultados guardados'}).click();
  await expect(page).toHaveURL(/\/hear3-library\/$/);
  await expect(page.getByTestId('summary')).toContainText('0 dispositivos, 0 perfiles, 0 resultados');
  await expect(page.getByTestId('delete-commit')).toBeDisabled();
@@ -126,10 +124,16 @@ test('public exam can complete, save opt-in provisional EQ, reopen history and e
  await expect(page.getByTestId('chart').locator('.band')).toHaveCount(5);
  await expect(page.getByTestId('gain-0')).toHaveValue('1');
  await page.goto('/');
- await expect(page.getByTestId('recent-device')).toContainText('Auriculares para la prueba');
- await expect(page.getByTestId('recent-eq-link')).toContainText('Abrir mi último EQ');
- await page.getByTestId('recent-eq-link').click();
- await expect(page).toHaveURL(/\/hear3-eq-editor\/\?result=/);
+ await expect(page.getByTestId('focus-begin')).toBeVisible();
+ await page.locator('#ajustes > summary').click();
+ await page.getByRole('link',{name:'Resultados guardados'}).click();
+ await expect(page.getByTestId('summary')).toContainText('1 dispositivos, 1 perfiles, 1 resultados');
+ await page.goto('/hear3-eq-editor/?result='+encodeURIComponent(
+  await page.evaluate(async()=>{
+   const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
+   return createHear3CatalogStore().load().catalog.results[0].id;
+  })
+ ));
  await expect(page.getByTestId('chart').locator('.band')).toHaveCount(5);
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('PRESERVE_V2');
 });
