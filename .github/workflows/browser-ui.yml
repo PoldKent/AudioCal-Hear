@@ -31,6 +31,11 @@ on:
       - '.github/workflows/browser-ui.yml'
   workflow_dispatch:
 
+# Do not run obsolete heavy browser matrices after each PR iteration.
+concurrency:
+  group: hear-browser-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
