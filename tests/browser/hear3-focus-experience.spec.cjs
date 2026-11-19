@@ -87,6 +87,7 @@ test('direct path starts sound after consent, receives tones, completes and show
  const txt=require('node:fs').readFileSync(await download.path(),'utf8');
  expect(txt).toContain('125 Hz');
  expect(txt.toLowerCase()).toContain('no calibrado');
+ expect(txt).toContain('125 Hz = +0.5 dB'); // No sound at the digital test ceiling: a *bounded* hypothesis.
  // Saving is optional and requires a separate affirmative user choice.
  expect(await page.evaluate(async()=>{
   const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
@@ -96,6 +97,12 @@ test('direct path starts sound after consent, receives tones, completes and show
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('#save-eq').click();
  await expect(page.locator('#save-status')).toContainText('Guardado en este navegador');
+ const archived=await page.evaluate(async()=>{
+  const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
+  return createHear3CatalogStore().load().catalog.results.at(-1);
+ });
+ expect(archived.currentEq[0].gainDb).toBe(0.5);
+ expect(archived.originalEq[0].gainDb).toBe(0.5);
  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(21);
  page.once('dialog',d=>d.accept());
  await page.getByTestId('focus-new-test').click();
@@ -105,6 +112,47 @@ test('direct path starts sound after consent, receives tones, completes and show
  await page.goto('/hear3-library/');
  await expect(page.getByTestId('summary')).toContainText('1 dispositivos, 1 perfiles, 1 resultados');
  expect(await page.getByTestId('summary').textContent()).toContain('1 resultados');
+});
+
+test('sweep marks heard and missed regions, and an uncomfortable sound stops instantly',async({page})=>{
+ await fakeAudio(page,{holdSweep:true});
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-sweep')).toBeVisible();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(1);
+ await page.waitForTimeout(45);
+ await page.getByTestId('focus-sweep-yes').click();
+ await expect(page.locator('#sweep-feedback')).toContainText('Se oye bien');
+ await page.getByTestId('focus-sweep-no').click();
+ await expect(page.locator('#sweep-feedback')).toContainText('No se oye');
+ await page.getByTestId('focus-sweep-loud').click();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ await expect(page.getByTestId('focus-tone-play')).toBeVisible();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(1);
+ // Loudness marks affect EQ only after a verified *discrete* tone.
+ await page.getByTestId('focus-tone-play').click();
+ await expect(page.getByTestId('focus-tone-loud')).toBeVisible();
+ await page.getByTestId('focus-tone-loud').click();
+ const loud=await page.evaluate(()=>
+  JSON.parse(sessionStorage.getItem('hear3:focus-loudness:v1')).reports);
+ expect(loud).toHaveLength(1);
+ expect(loud[0].frequencyHz).toBe(125);
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(2);
+});
+
+test('sweep can be skipped without opening a complex settings screen',async({page})=>{
+ await fakeAudio(page,{holdSweep:true});
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-sweep')).toBeVisible();
+ await page.getByTestId('focus-sweep-skip').click();
+ await expect(page.getByTestId('focus-sweep')).toBeHidden();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(1);
 });
 
 test('an unfinished test continues from a silent verified checkpoint after reload',async({page})=>{
