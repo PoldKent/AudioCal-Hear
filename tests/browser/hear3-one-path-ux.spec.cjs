@@ -20,23 +20,19 @@ async function mockAudio(page){
  });
 }
 
-test('Home prioritizes one start action while secondary functions stay available on demand',async({page})=>{
+test('Home prioritizes one safe action while secondary functions remain on demand',async({page})=>{
  await page.goto('/');
- await expect(page.getByTestId('begin-exam')).toBeVisible();
- await expect(page.getByTestId('begin-exam')).toContainText('Comenzar mi prueba');
+ await expect(page.getByTestId('focus-begin')).toBeVisible();
  await expect(page.getByRole('heading',{name:'Encuentra tu sonido.'})).toBeVisible();
- await expect(page.locator('.hear-home-path span')).toHaveCount(3);
- await expect(page.locator('.hear-home-extra')).not.toHaveAttribute('open');
  await expect(page.locator('#ajustes')).not.toHaveAttribute('open');
- await expect(page.getByTestId('offline-enable')).toBeHidden();
- await page.locator('.app-nav-more > summary').click();
- await expect(page.locator('.app-nav-more').getByRole('link',{name:'Historial'})).toBeVisible();
- await page.locator('.app-nav-more').getByRole('link',{name:'Ajustes'}).click();
- await expect(page.locator('#ajustes')).toHaveAttribute('open');
- await expect(page.getByTestId('offline-enable')).toBeVisible();
- await page.getByTestId('begin-exam').click();
- await expect(page).toHaveURL(/\/hear3-exam\/$/);
- await expect(page.getByTestId('hear-console-setup')).toBeVisible();
+ await expect(page.getByTestId('focus-ready')).toBeHidden();
+ await expect(page.locator('nav,.app-grid,#profile-count,#eq-count')).toHaveCount(0);
+ await page.locator('#ajustes > summary').click();
+ await expect(page.getByRole('link',{name:'Resultados guardados'})).toBeVisible();
+ await expect(page.getByRole('link',{name:'Privacidad'})).toBeVisible();
+ await page.getByTestId('focus-begin').click();
+ await expect(page.getByTestId('focus-ready')).toBeVisible();
+ await expect(page.getByTestId('focus-tones')).toBeHidden();
 });
 
 test('first test action is never silent and leads into real audio only after volume confirmation',async({page})=>{
