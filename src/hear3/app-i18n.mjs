@@ -7,6 +7,7 @@ export const HEAR3_LANGUAGE_CHOICES=Object.freeze(['es','en','fr','pt','it','de'
 export const HEAR3_LANGUAGE_KEY='hear3:ui-language:v1';
 const STRINGS=Object.freeze({
   "es": {
+    "focus.ui.offlineTitle": "Uso sin conexión (opcional)",
     "focus.ui.footResults": "Resultados guardados",
     "focus.ui.footRestore": "Restaurar copia",
     "focus.ui.footPrivacy": "Privacidad",
@@ -165,6 +166,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "He comprobado la salida de audio y mantendré el volumen físico bajo y cómodo"
   },
   "en": {
+    "focus.ui.offlineTitle": "Offline use (optional)",
     "focus.ui.footResults": "Saved results",
     "focus.ui.footRestore": "Restore backup",
     "focus.ui.footPrivacy": "Privacy",
@@ -323,6 +325,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "I checked the audio output and will keep the physical volume low and comfortable"
   },
   "pt": {
+    "focus.ui.offlineTitle": "Uso offline (opcional)",
     "focus.ui.footResults": "Resultados salvos",
     "focus.ui.footRestore": "Restaurar backup",
     "focus.ui.footPrivacy": "Privacidade",
@@ -481,6 +484,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "Verifiquei a saída de áudio e manterei o volume físico baixo e confortável"
   },
   "fr": {
+    "focus.ui.offlineTitle": "Utilisation hors ligne (facultatif)",
     "focus.ui.footResults": "Résultats enregistrés",
     "focus.ui.footRestore": "Restaurer la sauvegarde",
     "focus.ui.footPrivacy": "Confidentialité",
@@ -639,6 +643,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "J’ai vérifié la sortie audio et je garderai le volume physique faible et confortable"
   },
   "it": {
+    "focus.ui.offlineTitle": "Uso offline (facoltativo)",
     "focus.ui.footResults": "Risultati salvati",
     "focus.ui.footRestore": "Ripristina backup",
     "focus.ui.footPrivacy": "Privacy",
@@ -797,6 +802,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ho verificato l’uscita audio e terrò il volume fisico basso e confortevole"
   },
   "de": {
+    "focus.ui.offlineTitle": "Offline-Nutzung (optional)",
     "focus.ui.footResults": "Gespeicherte Ergebnisse",
     "focus.ui.footRestore": "Sicherung wiederherstellen",
     "focus.ui.footPrivacy": "Datenschutz",
@@ -955,6 +961,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ich habe den Audioausgang überprüft und halte die physische Lautstärke niedrig und angenehm"
   },
   "zh": {
+    "focus.ui.offlineTitle": "离线使用（可选）",
     "focus.ui.footResults": "已保存的结果",
     "focus.ui.footRestore": "恢复备份",
     "focus.ui.footPrivacy": "隐私",
@@ -1113,6 +1120,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "我已检查音频输出，并将设备音量保持在较低且舒适的水平"
   },
   "ja": {
+    "focus.ui.offlineTitle": "オフライン利用（任意）",
     "focus.ui.footResults": "保存した結果",
     "focus.ui.footRestore": "バックアップを復元",
     "focus.ui.footPrivacy": "プライバシー",
