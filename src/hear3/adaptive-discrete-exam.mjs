@@ -22,6 +22,7 @@ export function createHear3AdaptiveDiscreteExam({
     && typeof sessionController.answer==='function'
     && typeof sessionController.interrupt==='function'
     && typeof sessionController.invalidateReviewedTones==='function'
+    && typeof sessionController.reviseVerifiedBand==='function'
     && typeof sessionController.resume==='function', 'Verified audio-session controller required');
   const base=sessionController.getSession();
   check((restoredProgress===null?base?.status==='ready':
@@ -91,6 +92,25 @@ export function createHear3AdaptiveDiscreteExam({
       'Invalid recovered band count');
     check((p.position===bands.length)===(p.phase==='completed'),
       'Recovered band coverage and completion phase disagree');
+    // A deliberate correction can revisit one earlier pending frequency while
+    // later completed frequencies retain their original verified evidence.
+    // There may not be an unexplained gap or a second active frequency.
+    const activeReview=p.position<bands.length &&
+      p.bands[p.position].reviewedOnce===true &&
+      p.bands.slice(p.position+1).some(b=>b.status!=='pending');
+    if(p.position===bands.length)check(p.bands.every(b=>b.status!=='pending'),
+      'Completed review contains a pending frequency');
+    else{
+      check(p.bands.slice(0,p.position).every(b=>b.status!=='pending')&&
+        p.bands[p.position].status==='pending',
+        'Recovered active frequency position is invalid');
+      let pendingRemainder=false;
+      for(const band of p.bands.slice(p.position+1)){
+        if(band.status==='pending')pendingRemainder=true;
+        else check(activeReview&&!pendingRemainder,
+          'A completed future band requires a single explicit correction');
+      }
+    }
     check(p.position===bands.length ? p.nextDbfs===null :
       finite(p.nextDbfs)&&p.nextDbfs>=limits.minDbfs&&p.nextDbfs<=limits.maxDbfs,
       'Invalid saved next digital level');
@@ -114,8 +134,8 @@ export function createHear3AdaptiveDiscreteExam({
         Array.isArray(b.observations)&&
         b.observations.length<=maxTrialsPerBand*(b.reviewedOnce===true?2:1),
         'Invalid saved band status or observations');
-      check((i<p.position)===(b.status!=='pending'),
-        'Recovered band coverage is inconsistent');
+      // Band coverage/order were verified together before this loop.
+      // Do not reinterpret old evidence based solely on array position.
       const hears=[],misses=[];
       const invalidated=new Set(sessionController.getSession().invalidatedToneIds);
       if(b.reviewedOnce===true)check(
@@ -152,13 +172,18 @@ export function createHear3AdaptiveDiscreteExam({
         check(b.intervalDbfs===null&&b.confidence==='inconclusive',
           'Inconclusive or pending band cannot claim an interval');
       }
-      if(i>p.position)check(b.observations.length===0&&!b.verificationAsked,
-        'Future bands cannot contain recorded observations');
+      if(i>p.position&&b.status==='pending')
+        check(b.observations.length===0&&!b.verificationAsked,
+          'Unvisited future bands cannot contain recorded observations');
       // An ordinary in-progress band may contain valid responses while still
       // pending. A reviewed one may also contain both retired and new answers;
       // the original evidence is preserved and checked against the session.
     }
     const session=sessionController.getSession();
+    // After non-adjacent correction, a band's historical list contains old
+    // and new responses, while the verified session log is chronological.
+    // Numerical tone IDs have strictly increasing generation order.
+    recorded.sort((a,b)=>Number(a.toneId.slice(6))-Number(b.toneId.slice(6)));
     check(JSON.stringify(session.observations)===JSON.stringify(recorded),
       'Adaptive progress and verified audio-session evidence disagree');
     if(p.contradiction!==null){
@@ -201,6 +226,7 @@ export function createHear3AdaptiveDiscreteExam({
       totalBands:bands.length,currentBandId:bands[position]?.id??null,
       canReviewPreviousBand:reviewIndex>=0,
       reviewableFrequencyHz:reviewIndex<0?null:bands[reviewIndex].frequencyHz,
+      reviewableBands:reviewableBands(),
       nextDigitalLevelDbfs:status==='ready'?nextDbfs:null,
       activeToneId:status==='playing'?activeTone?.toneId??null:null,
       needsContradictionConfirmation:status==='awaiting-confirmation',
@@ -244,6 +270,45 @@ export function createHear3AdaptiveDiscreteExam({
     contradiction=null;activeTone=null;requestEpoch++;
     return snapshot();
   }
+  function reviewableBands(){
+    const session=sessionController.getSession();
+    if(!['ready','completed'].includes(phase)||
+      !['ready','completed'].includes(session.status)||
+      session.routeCheckRequired||session.currentTone)return [];
+    const current=bands[position];
+    if(current&&(current.status!=='pending'||current.observations.length>0))
+      return [];
+    return bands.map((b,i)=>({
+      bandId:b.id,frequencyHz:b.frequencyHz,index:i,
+      eligible:i<position&&b.status!=='pending'&&!b.reviewedOnce&&
+       effectiveObservations(b).length>0,
+    })).filter(x=>x.eligible).map(({eligible,...b})=>b);
+  }
+  function retakeBand({bandId,userConfirmed=false}={}){
+    check(userConfirmed===true,'Explicit selected-frequency review confirmation required');
+    check(typeof bandId==='string'&&bandId.length>0,
+      'A verified band ID must be selected');
+    const choices=reviewableBands();
+    const selected=choices.find(b=>b.bandId===bandId);
+    check(selected,'Selected frequency is not safely reviewable in this state');
+    const band=bands[selected.index];
+    const ids=effectiveObservations(band).map(o=>o.toneId);
+    // This exact, complete set of verified responses is retired atomically.
+    // Other bands, their intervals and the immutable audio log survive.
+    sessionController.reviseVerifiedBand({toneIds:ids,userConfirmed:true});
+    band.reviewedOnce=true;
+    band.status='pending';
+    band.intervalDbfs=null;
+    band.confidence='inconclusive';
+    band.verificationAsked=false;
+    position=selected.index;
+    phase='ready';
+    nextDbfs=initialDbfs;
+    contradiction=null;
+    activeTone=null;
+    requestEpoch++;
+    return snapshot();
+  }
   function completeBand(status) {
     const band=bands[position];
     check(band,'No pending band');
@@ -259,7 +324,10 @@ export function createHear3AdaptiveDiscreteExam({
       ?{notHeardAtDbfs:loudestNotHeard,heardAtDbfs:quietestHeard}:null;
     band.confidence=band.status==='bounded-subjective-interval'
       ?(effective.length>=4?'medium':'low'):'inconclusive';
-    position++;
+    // Skip prior frequencies that were already completed and preserved during
+    // an arbitrary re-take; never replay them or invent fresh measurements.
+    const next=bands.findIndex((item,i)=>i>position&&item.status==='pending');
+    position=next<0?bands.length:next;
     contradiction=null;activeTone=null;
     if(position>=bands.length){phase='completed';nextDbfs=null;}
     else {phase='ready';nextDbfs=initialDbfs;}
@@ -399,6 +467,7 @@ export function createHear3AdaptiveDiscreteExam({
     check(phase==='completed','All bands must be reviewed before finishing');
     return sessionController.finish();
   }
-  return Object.freeze({snapshot,exportProgress,playNext,answer,retakePreviousBand,
-    confirmContradiction,interrupt,confirmRoute,resume,finish});
+  return Object.freeze({snapshot,exportProgress,playNext,answer,
+    retakePreviousBand,retakeBand,confirmContradiction,interrupt,
+    confirmRoute,resume,finish});
 }
