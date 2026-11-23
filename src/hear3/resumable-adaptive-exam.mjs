@@ -24,6 +24,31 @@ export function createHear3ResumableAdaptiveExam({
  let controller=createHear3AudioSession(options);
  let exam=createHear3AdaptiveDiscreteExam({...examOptions,sessionController:controller});
  let touched=false,disposed=false;
+ let loudToneReports=[];
+ function validatedLoudReports(reports,session){
+  check(reports===undefined||Array.isArray(reports),
+   'Invalid recovered sound discomfort records');
+  const input=reports??[];
+  check(input.length<=64,'Too many sound discomfort records');
+  const retired=new Set(session.invalidatedToneIds??[]);
+  const heard=new Map(session.observations
+   .filter(o=>o.response==='heard'&&!retired.has(o.toneId))
+   .map(o=>[o.toneId,o]));
+  const seen=new Set();
+  for(const report of input){
+   check(report&&typeof report.toneId==='string'&&
+    !seen.has(report.toneId)&&Number.isFinite(report.frequencyHz)&&
+    heard.get(report.toneId)?.frequencyHz===report.frequencyHz,
+    'Sound discomfort record must match a verified active tone');
+   seen.add(report.toneId);
+  }
+  return clone(input);
+ }
+ function retireLoudReports(){
+  const session=controller.getSession(),retired=new Set(session.invalidatedToneIds);
+  loudToneReports=validatedLoudReports(
+   loudToneReports.filter(r=>!retired.has(r.toneId)),session);
+ }
  const initial=store.load();
  let revision=initial.revision;
  let lastSavedState=null;
@@ -36,6 +61,7 @@ export function createHear3ResumableAdaptiveExam({
    format:ADAPTIVE_BUNDLE_FORMAT,profileId,plan:clone(plan),
    progress:exam.exportProgress(),
    audioSession:controller.getSession(),
+   loudToneReports:clone(loudToneReports),
   };
  }
  function attemptSave(){
@@ -100,8 +126,10 @@ export function createHear3ResumableAdaptiveExam({
    const nextExam=createHear3AdaptiveDiscreteExam({
     ...examOptions,sessionController:nextController,restoredProgress:content.progress,
    });
+   const recoveredLoud=validatedLoudReports(content.loudToneReports,nextController.getSession());
    await controller.dispose();
    controller=nextController;exam=nextExam;
+   loudToneReports=recoveredLoud;
   }catch(error){
    await nextController?.dispose();
    throw error;
@@ -139,7 +167,26 @@ export function createHear3ResumableAdaptiveExam({
   }
  }
  function answer(response){return update(()=>exam.answer(response));}
- function retakePreviousBand(args){return update(()=>exam.retakePreviousBand(args));}
+ function retakePreviousBand(args){return update(()=>{
+  const result=exam.retakePreviousBand(args);
+  retireLoudReports();return result;
+ });}
+ function retakeBand(args){return update(()=>{
+  const result=exam.retakeBand(args);
+  retireLoudReports();return result;
+ });}
+ function rememberLoudTone({toneId,frequencyHz}={}){
+  return update(()=>{
+   if(loudToneReports.some(x=>x.toneId===toneId))return clone(loudToneReports);
+   loudToneReports=validatedLoudReports(
+    [...loudToneReports,{toneId,frequencyHz}],controller.getSession());
+   return clone(loudToneReports);
+  });
+ }
+ function getLoudToneReports(){
+  ensureLive();
+  return validatedLoudReports(loudToneReports,controller.getSession());
+ }
  function confirmContradiction(args){return update(()=>exam.confirmContradiction(args));}
  function interrupt(args){return update(()=>exam.interrupt(args));}
  function confirmRoute(args){return update(()=>exam.confirmRoute(args));}
@@ -156,6 +203,7 @@ export function createHear3ResumableAdaptiveExam({
   touched=true;
   check(typeof store.clear==='function','Checkpoint deletion is unavailable');
   const cleared=store.clear({confirmed:true});
+  if(cleared.cleared)loudToneReports=[];
   // A read-only render immediately after deletion must never recreate the
   // just-deleted checkpoint. Only a subsequent deliberate state change saves.
   lastSavedState=JSON.stringify(bundle());
@@ -172,7 +220,7 @@ export function createHear3ResumableAdaptiveExam({
  }
  return Object.freeze({
   snapshot,getSession,getPersistence,getRecoveryProposal,recover,
-  playNext,answer,retakePreviousBand,confirmContradiction,interrupt,confirmRoute,resume,finish,
-  exportBackup,clearCheckpoint,dispose,
+  playNext,answer,retakePreviousBand,retakeBand,confirmContradiction,interrupt,confirmRoute,resume,finish,
+  rememberLoudTone,getLoudToneReports,exportBackup,clearCheckpoint,dispose,
  });
 }

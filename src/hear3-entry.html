@@ -74,6 +74,7 @@
   <section id="tones" class="stage" hidden data-testid="focus-tones">
    <span class="eyebrow" id="test-step">TU PRUEBA DE SONIDO</span>
    <h1 id="tone-title">Escucha el siguiente tono</h1>
+   <p class="sr-only" id="tone-announcement" role="status" aria-live="polite" aria-atomic="true"></p>
    <p class="lead" id="tone-note">Escucha cada tono y responde con un toque.</p>
    <div class="tone-orb" id="tone-orb" aria-hidden="true"><span id="tone-hz">125 Hz</span><span class="tone-unit">FRECUENCIA</span></div>
    <p class="counter" id="band-count">Frecuencia 1 de 5</p>
@@ -97,6 +98,13 @@
    </div>
    <button id="tone-stop" class="quiet-link" data-hear-i18n="focus.tones.stop" type="button">Detener sonido</button>
    <button id="tone-review" class="quiet-link" type="button" hidden>Repetir frecuencia anterior</button>
+   <details class="quiet-options" id="tone-correction-options" hidden>
+    <summary data-hear-i18n="focus.review.summary">Corregir otra frecuencia</summary>
+    <label for="tone-correction-band" data-hear-i18n="focus.review.pick">Selecciona la frecuencia que deseas volver a escuchar</label>
+    <select id="tone-correction-band" data-testid="focus-review-tone-select"></select>
+    <button id="tone-correction-action" class="small-action" type="button" data-testid="focus-review-tone" data-hear-i18n="focus.review.action">Repetir solo esa frecuencia</button>
+    <p class="tiny" data-hear-i18n="focus.review.hint">Las demás bandas conservarán sus respuestas. La corrección no reproducirá sonido hasta que pulses Escuchar tono.</p>
+   </details>
   </section>
 
   <section id="result" class="stage" hidden data-testid="focus-result">
@@ -121,6 +129,13 @@
    <p class="tiny" id="eq-experiment-note" data-hear-i18n="focus.result.info">Las subidas sin un tono audible son solo una hipótesis pequeña, no una medición de tu oído. Comprueba el sonido sin subir el volumen físico.</p>
    <button id="copy-eq" class="primary main-cta" type="button" data-hear-i18n="focus.result.copy" data-testid="focus-copy">Copiar mis ajustes <span aria-hidden="true">↗</span></button>
    <button id="new-test" class="quiet-link" type="button" data-hear-i18n="focus.result.new" data-testid="focus-new-test">Hacer otra prueba</button>
+   <details class="quiet-options" id="result-correction-options" hidden>
+    <summary data-hear-i18n="focus.review.summary">Corregir otra frecuencia</summary>
+    <label for="result-correction-band" data-hear-i18n="focus.review.pick">Selecciona la frecuencia que deseas volver a escuchar</label>
+    <select id="result-correction-band" data-testid="focus-review-result-select"></select>
+    <button id="result-correction-action" class="small-action" type="button" data-testid="focus-review-result" data-hear-i18n="focus.review.action">Repetir solo esa frecuencia</button>
+    <p class="tiny" data-hear-i18n="focus.review.hint">Las demás bandas conservarán sus respuestas. La corrección no reproducirá sonido hasta que pulses Escuchar tono.</p>
+   </details>
    <p id="copy-status" class="inline-hint" role="status"></p>
    <details class="quiet-options">
     <summary data-hear-i18n="focus.result.saveSection">Guardar o descargar mi resultado</summary>

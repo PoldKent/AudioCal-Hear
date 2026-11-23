@@ -1,36 +1,37 @@
-# AudioCal Hear — Privacy Notice
+# AudioCal Hear 3 — Privacy and local data
 
-**English** · [Español](PRIVACY.es.md) · Applies to the public-preview v1.6 as examined on 30 October 2026.
+**English** · [Español](PRIVACY.es.md) · Reviewed 23 November 2026.
 
-## Privacy at a glance
+## Overview
 
-AudioCal Hear is presently a **static, client-side application**. Its source code does not contain an AudioCal Hear account service, app-owned analytics, tracking pixel, network requests for user profiles or an app-operated remote database. This statement describes the **current code**, not potential future versions or GitHub's independent hosting operations.
+Hear 3 is an **experimental** static audio-personalization web app hosted on GitHub Pages. Its main test requires no account, login, microphone or music file. The app source does not include an app-operated analytics service or a profile/response upload API. Requests made to GitHub for hosting are governed by GitHub's independent policies.
 
-## Optional microphone check (v1.8)
+## What the browser stores, and when
 
-Only if you expressly tap **Check relative background noise**, the browser requests microphone permission and briefly analyzes the audio waveform **in memory** to derive a relative noise indicator. The application does not store microphone recordings, upload microphone samples, or claim a calibrated acoustic dB SPL measurement. The microphone stream is stopped after the check. You may skip it and continue the test. Browser/operating-system permissions and device behavior remain outside this app's control.
+- **Automatic in-progress recovery:** during the sweep and individual tones, Hear may maintain a checkpoint in your browser's local storage (falling back to tab-session storage when needed). This can include your declared device/EQ format, tone frequencies and digital levels, responses, recovery state, an immutable audit of retired answers and **“Too loud”** reports bound to verified tones. It allows a test to resume **without autoplay**. The checkpoint can exist before you choose to save a final EQ.
+- **Optional saved results:** the local catalog adds a result/profile only after you select Save result and confirm. It may contain test history, EQ values, notes and later edits.
+- **Preferences:** language, theme, device category and band layout can be remembered in the browser. Legacy loudness marks may remain in tab-session storage until cleared.
+- **Optional photos and technical tools:** these work locally under the selected workflow. Do not share private photographs or diagnostics in public issues.
+- **Offline access:** static resource caching is opt-in. It does **not** back up answers, photos or profiles.
 
-## What is stored on your device
+Browser storage and exported backup files are not automatically encrypted. The checksum can catch certain accidental corruption but provides **neither cryptographic authentication nor confidentiality**.
 
-- Your device/profile names, selected equalizer frequencies, hearing-test selections and outcomes, EQ settings and music preferences are kept in the browser's **localStorage**.
-- The app remembers your selected language in local browser storage.
-- An audio file you voluntarily select for A/B comparison is played/processed **in the browser**. It is not uploaded to a server operated by AudioCal Hear by the current code.
-- You may download a **JSON backup** containing your profile data. Treat it as private; it is not encrypted by the export function.
+## Exporting, retention and deletion
 
-Some information about your hearing sensitivity may be personal or sensitive. **Anyone who can access your device, browser profile or exported backup could potentially view it.** Browser clearing, private/incognito windows, different browsers or devices may erase or isolate your profiles. To delete stored app profiles, use the in-app deletion/reset options as applicable or remove this website's local browser data. Exported files must be deleted separately.
+You can copy or export EQ values as TXT, CSV or PNG, and separately download backups through optional tools. Downloaded files cannot be deleted by the website and must be removed separately.
 
-## What GitHub Pages may process
+You may discard an incomplete test using the start-over option or inspect and delete known local keys through [Privacy and data](hear3-privacy/). The deletion UI previews its scope and requires confirmation. It does not claim to erase other devices, browsers, downloaded backups or hosting records. **Close other Hear tabs** before deleting to prevent another tab from writing data again.
 
-The official website is served by **GitHub Pages**. GitHub may collect standard hosting/security information (such as requests, IP addresses and technical browser information) independently, in accordance with its own terms and privacy statement: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement.
+Hear 2 legacy keys are preserved unless you explicitly select a deletion scope that includes them. Browser-site data removal can erase results that have not been backed up. Anyone with access to your device, browser storage or exported backup may be able to view personal hearing-response information.
 
-AudioCal Hear does not control GitHub's processing, your browser's sync features or data that you independently share through GitHub issues, messages or third-party services.
+## What Hear does NOT measure or transmit
 
-## No hidden medical data collection
+Digital test tones measured in dBFS are **not acoustic dB SPL measurements**. Subjective answers and the resulting EQ are not clinical results or medical records. The app does not automatically configure third-party equalizers or control your device's physical volume. Legacy microphone features and music A/B workflows are not part of Hear 3's primary exam.
 
-The application does **not** perform a medical hearing examination, and it does not provide clinical interpretation. The locally stored results are approximate user-generated audio preference/testing data. The project is not an online medical record provider.
+GitHub Pages may process hosting requests, IP addresses and technical data independently under [GitHub's privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement). Hear's local deletion controls cannot remove those provider records.
 
-## Contact and changes
+## Contact
 
-For a privacy question about the app, request a private contact channel through https://github.com/PoldKent/AudioCal-Hear. Avoid posting hearing data, JSON exports, private contact details or other sensitive information in public issues.
+For privacy questions, request a private contact route via the [GitHub project](https://github.com/PoldKent/AudioCal-Hear). Never post personal hearing responses, photos, backup files or sensitive contact details in public issues.
 
-If future versions introduce analytics, accounts, remote storage or other third parties, this notice must be updated and users should be informed before those features are used.
+Any future cloud sync, accounts, outside services or acoustic measurement features would require further privacy and security review before activation.

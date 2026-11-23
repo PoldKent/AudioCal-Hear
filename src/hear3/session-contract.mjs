@@ -86,6 +86,42 @@ export function transitionSession(session, event) {
         invalidatedToneIds: [...session.invalidatedToneIds,...toneIds],
       };
     }
+    case 'REVISE_VERIFIED_BAND': {
+      // A deliberately selected prior band can be re-examined even after
+      // later frequencies were answered. Only the selected band's currently
+      // valid evidence is retired. The immutable historical observations
+      // remain in place and every other band keeps its measurements.
+      ensure(['ready','completed'].includes(session.status)
+        && !session.currentTone && !session.routeCheckRequired,
+        'Frequency correction requires a stopped, verified audio route');
+      ensure(event.confirmed === true,
+        'Explicit frequency correction confirmation required');
+      const ids=event.toneIds;
+      ensure(Array.isArray(ids)&&ids.length>=1&&ids.length<=20&&
+        new Set(ids).size===ids.length&&
+        ids.every(id=>typeof id==='string'&&id.length>0),
+        'Invalid chosen frequency observations');
+      const retired=new Set(session.invalidatedToneIds);
+      const effective=session.observations.filter(o=>!retired.has(o.toneId));
+      const chosen=effective.filter(o=>ids.includes(o.toneId));
+      ensure(chosen.length===ids.length,
+        'Correction can only retire existing, non-retired tone responses');
+      const [first]=chosen;
+      ensure(chosen.every(o=>o.frequencyHz===first.frequencyHz
+        &&o.channel===first.channel),
+        'Correction may target exactly one frequency and channel');
+      const fullBand=effective.filter(o=>o.frequencyHz===first.frequencyHz
+        &&o.channel===first.channel);
+      ensure(fullBand.length===chosen.length,
+        'Correction must retire all active observations of one band');
+      // Any subsequent sound needs a fresh, explicit output/volume check:
+      // the completed result may have remained open through a route change.
+      return {
+        ...session,status:'paused',currentTone:null,
+        routeCheckRequired:true,interruption:'frequency-review',
+        invalidatedToneIds:[...session.invalidatedToneIds,...ids],
+      };
+    }
     case 'INTERRUPT':
     case 'ROUTE_CHANGED': {
       ensure(['playing', 'ready', 'paused'].includes(session.status), 'Cannot interrupt a completed session');

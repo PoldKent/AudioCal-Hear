@@ -202,6 +202,91 @@ test('an unfinished test continues from a silent verified checkpoint after reloa
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('V2_MUST_REMAIN');
 });
 
+test('correcting a non-adjacent frequency preserves later bands and never autoplays',async({page})=>{
+ test.setTimeout(100000);
+ await fakeAudio(page,{holdSweep:true});
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await expect(page.locator('#ready h1')).toBeFocused();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-sweep')).toBeVisible();
+ await page.getByTestId('focus-sweep-skip').click();
+ await expect(page.locator('#tones h1')).toBeFocused();
+ for(let i=0;i<20;i++){
+  await page.getByTestId('focus-tone-play').click();
+  await page.getByTestId('focus-tone-no').click();
+ }
+ await expect(page.getByTestId('focus-result')).toBeVisible();
+ await expect(page.locator('#result h1')).toBeFocused();
+ const before=await page.evaluate(async()=>{
+  const {createHear3AdaptiveProgressStore}=await import('/src/hear3/adaptive-progress-store.mjs');
+  const d=createHear3AdaptiveProgressStore({profileId:'hear3-integrated-pilot'}).load();
+  return d.checkpoint.audioSession.observations;
+ });
+ expect(before).toHaveLength(20);
+ await expect(page.locator('#result-correction-options')).toBeVisible();
+ await expect(page.locator('#result-correction-options')).not.toHaveAttribute('open');
+ await page.locator('#result-correction-options > summary').click();
+ await page.getByTestId('focus-review-result-select').selectOption({index:0});
+ page.once('dialog',d=>d.accept());
+ await page.getByTestId('focus-review-result').click();
+ await expect(page.getByTestId('focus-ready')).toBeVisible();
+ await expect(page.locator('#ready h1')).toBeFocused();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(21);
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ await expect(page.locator('#tones h1')).toBeFocused();
+ await expect(page.locator('#tone-hz')).toHaveText('125 Hz');
+ await expect(page.locator('#band-count')).toContainText('1 de 5');
+ const starts=await page.evaluate(()=>window.__hearFocusStarts);
+ expect(starts).toBe(21);
+ const after=await page.evaluate(async()=>{
+  const {createHear3AdaptiveProgressStore}=await import('/src/hear3/adaptive-progress-store.mjs');
+  return createHear3AdaptiveProgressStore({profileId:'hear3-integrated-pilot'}).load().checkpoint;
+ });
+ expect(after.progress.bands.filter(x=>x.status!=='pending')).toHaveLength(4);
+ expect(after.audioSession.observations).toEqual(before);
+ expect(after.audioSession.invalidatedToneIds).toEqual(
+  before.filter(x=>x.frequencyHz===125).map(x=>x.toneId));
+ await page.reload();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ await expect(page.locator('#tone-hz')).toHaveText('125 Hz');
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+ for(let i=0;i<4;i++){
+  await page.getByTestId('focus-tone-play').click();
+  await page.getByTestId('focus-tone-no').click();
+ }
+ await expect(page.getByTestId('focus-result')).toBeVisible();
+ const final=await page.evaluate(async()=>{
+  const {createHear3AdaptiveProgressStore}=await import('/src/hear3/adaptive-progress-store.mjs');
+  return createHear3AdaptiveProgressStore({profileId:'hear3-integrated-pilot'}).load().checkpoint;
+ });
+ expect(final.audioSession.observations).toHaveLength(24);
+ expect(final.progress.bands.filter(x=>x.status!=='pending')).toHaveLength(5);
+ expect(final.audioSession.observations.filter(x=>x.frequencyHz===250)).toEqual(
+  before.filter(x=>x.frequencyHz===250));
+ await page.locator('#result [data-hear-i18n="focus.result.saveSection"]').click();
+ await page.locator('#save-consent').check();
+ page.once('dialog',d=>d.accept());
+ await page.locator('#save-eq').click();
+ await expect(page.locator('#save-status')).toContainText('Guardado en este navegador');
+ const archive=await page.evaluate(async()=>{
+  const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
+  return createHear3CatalogStore().load().catalog.results.at(-1);
+ });
+ expect(archive.observations.map(x=>x.toneId)).toEqual(
+  final.audioSession.observations.map(x=>x.toneId));
+ expect(archive.observations.filter(x=>x.retired===true)).toHaveLength(4);
+ expect(archive.observations.filter(x=>x.frequencyHz===250&&x.retired!==true))
+  .toEqual(before.filter(x=>x.frequencyHz===250));
+});
+
 test('a returning user may export and discard an unfinished test without erasing historic profiles',async({page})=>{
  await fakeAudio(page);
  await page.goto('/');

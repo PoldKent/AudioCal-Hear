@@ -100,7 +100,14 @@ function verifyInputs(exam,session){
   });
  }
  // The audio-session record is the source of truth for a played/answered tone.
- requireValue(JSON.stringify(flat)===JSON.stringify(session.observations),
+ // A selective review leaves each band's historical answers grouped by
+ // frequency, while the verified Web Audio session remains chronological.
+ // Compare the full evidence by unique tone ID rather than collection order.
+ // No audio response may be added, removed or altered by that comparison.
+ const ordered=rows=>[...rows].sort((x,y)=>
+  x.toneId<y.toneId?-1:x.toneId>y.toneId?1:0);
+ requireValue(flat.length===session.observations.length&&
+  JSON.stringify(ordered(flat))===JSON.stringify(ordered(session.observations)),
   'Adaptive bands and Web Audio evidence disagree');
  // Old reviewed answers remain in the audit trail but never influence the
  // second trial or final EQ. Invalidated IDs can also represent interrupted

@@ -12,6 +12,8 @@
 
 The public site now presents a simple flow: **Start → confirm low physical volume → frequency sweep → individual tones → experimental EQ**. Responses are «I hear it comfortably», «I cannot hear it» or «Too loud». The sweep can be skipped; every tone is user-initiated and stoppable. The result includes a vertical EQ graphic, exact dB numbers, manual application guidance, TXT/CSV/PNG downloads and optional saving/editing. History, privacy, diagnostics and optional offline mode remain behind secondary «Help and data» controls. Users can specify 2–31 actual graphic EQ bands.
 
+If an earlier answer was mistaken, open **Correct a previous frequency** from the test or result. Only that band is retested; later verified bands and the immutable audit log are preserved. Retesting never starts audio automatically and never overwrites a previously saved result.
+
 **Existing browser data are preserved** and never silently transformed. A separate legacy engine remains available as an internal recovery artifact, not a public competing app. Previous preview bookmarks redirect home.
 
 **Safety scope:** Digital test tones are not calibrated in acoustic SPL; EQ outputs are neither a medical diagnosis nor verified physical-device presets. Hardware measurements, DSP headroom and the D-063 release gate remain pending. `stableReleaseClaim:false` stays in force. No autoplay or automatic EQ deployment.

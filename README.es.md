@@ -12,6 +12,8 @@
 
 La página principal abre una experiencia mínima: **Comenzar → comprobar volumen físico bajo → barrido de frecuencias → tonos → EQ experimental**. Responde «Lo escucho bien», «No lo escucho» o «Demasiado fuerte». El barrido puede saltarse; los tonos son deliberados y se pueden detener. El resultado se presenta inmediatamente en una gráfica de EQ, con sus números en dB, explicación, descarga TXT/CSV/PNG y aplicación manual. Guardar y editar el resultado es opcional; historial, privacidad, diagnóstico e instalación offline permanecen en «Ayuda y datos», sin saturar el inicio. Se admiten de 2 a 31 bandas reales declaradas por el usuario.
 
+Si te equivocas en cualquier banda ya completada, puedes elegir **«Corregir otra frecuencia»** desde el examen o el resultado. Hear conserva intactas todas las demás respuestas y las mediciones originales siguen trazables; la banda elegida se vuelve a escuchar únicamente después de pulsar reproducir. No se sobrescribe un resultado previamente guardado.
+
 El historial guardado anteriormente **no se borra ni transforma automáticamente**. Una copia independiente del motor anterior permanece como recurso técnico de recuperación, sin anunciarse como otra versión de la aplicación. Las URLs antiguas de vista previa redirigen al inicio.
 
 **Alcance de seguridad:** Los tonos digitales no están calibrados en dB SPL, y las curvas EQ no son un diagnóstico ni un preset validado físicamente. Las pruebas de dispositivos reales, headroom y el criterio de aceptación D-063 siguen pendientes. El estado interno de publicación estable permanece en `stableReleaseClaim:false`. No se inicia audio ni se aplica EQ automáticamente.

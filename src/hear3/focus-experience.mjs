@@ -75,6 +75,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  const catalogStore=createHear3CatalogStore();
  let view='welcome',pendingRecovery=false,exam=null,eq=null,review=null;
  let bands=null,sweepPlan=null,starting=false,disposed=false;
+ let lastAnnouncedToneId=null;
  let activeToneStartedAt=null;
  let saveResultId=null;
  const preflight=inspectHear3AudioCapabilities(env);
@@ -96,11 +97,22 @@ export function mountHearFocus({doc=document,env=window}={}){
  }
  function verifiedLoudReports(session){
   const retired=new Set(session.invalidatedToneIds??[]);
-  // Revisited or interrupted observations remain auditable in the exam, but
-  // never carry an old loudness preference into a new measurement.
-  return loudReports.filter(r=>!retired.has(r.toneId));
+  // The verified checkpoint is authoritative across tabs or reloads.
+  // Legacy tab-session marks may still exist; merge only unique, non-retired
+  // IDs. The experimental EQ module verifies every matched audible tone.
+  const stored=exam?.getLoudToneReports?.()??[];
+  const all=[...stored,...loudReports];
+  const seen=new Set();
+  return all.filter(r=>{
+   if(retired.has(r.toneId)||seen.has(r.toneId))return false;
+   seen.add(r.toneId);return true;
+  });
  }
  function markLoud(report){
+  // The checkpoint commits this report only after the corresponding verified
+  // "heard" observation exists. An invalid record fails without contaminating
+  // the optional experimental EQ calculation.
+  exam?.rememberLoudTone?.(report);
   if(loudReports.some(x=>x.toneId===report.toneId))return;
   loudReports.push({toneId:report.toneId,frequencyHz:report.frequencyHz});
   if(loudReports.length>64)loudReports=loudReports.slice(-64);
@@ -178,11 +190,19 @@ export function mountHearFocus({doc=document,env=window}={}){
  function notice(message){output('ready-hint',message);}
  function go(next){
   if(!VIEWS.includes(next))throw Error('Pantalla desconocida');
+  const changed=view!==next;
   view=next;
   for(const id of VIEWS)element(id).hidden=id!==next;
   const step=next==='welcome'||next==='ready'?1:next==='result'?3:2;
   for(let i=1;i<=3;i++)element('p-'+i).classList.toggle('filled',i<=step);
   render();
+  // Stage transitions must not strand keyboard focus on a hidden button.
+  // Focusing headings never schedules audio playback.
+  if(changed&&view===next){
+   const heading=element(next).querySelector('h1');
+   heading?.setAttribute('tabindex','-1');
+   heading?.focus({preventScroll:true});
+  }
  }
  function readCheckpoint(){return store.load().checkpoint;}
  function chooseBands(){
@@ -363,6 +383,11 @@ export function mountHearFocus({doc=document,env=window}={}){
     if(!existing)throw Error('No encontramos una prueba anterior recuperable.');
     createExam(existing.plan);
     await exam.recover({userInitiated:true});
+    // One-time migration from older tab-only discomfort reports: the
+    // checkpoint strictly validates them against the restored audio log.
+    for(const report of loudReports){
+     try{exam.rememberLoudTone(report);}catch{/* invalid legacy hints are ignored */}
+    }
    }
    // Recover only for a newly opened page. A still-live paused exam must
    // resume from its own verified controller, never re-import over itself.
@@ -463,6 +488,55 @@ export function mountHearFocus({doc=document,env=window}={}){
   if(!env.confirm('¿Repetir '+band+' Hz? Las respuestas anteriores seguirán registradas como anuladas.'))return;
   exam.retakePreviousBand({userConfirmed:true});render();
  }
+ function updateCorrectionOptions(scope,choices=[]){
+  const details=element(scope+'-correction-options');
+  const select=element(scope+'-correction-band');
+  const key=choices.map(x=>x.bandId+':'+x.frequencyHz).join('|');
+  if(select.dataset.choices!==key){
+   const previous=select.value;
+   const nodes=choices.map(x=>{
+    const option=doc.createElement('option');
+    option.value=x.bandId;
+    option.textContent=x.frequencyHz+' Hz';
+    return option;
+   });
+   select.replaceChildren(...nodes);
+   if(choices.some(x=>x.bandId===previous))select.value=previous;
+   select.dataset.choices=key;
+  }
+  details.hidden=choices.length===0;
+  if(details.hidden)details.open=false;
+ }
+ function correctSelectedBand(scope){
+  if(!exam)throw Error('La prueba no está preparada.');
+  const bandId=element(scope+'-correction-band').value;
+  const selected=exam.snapshot().reviewableBands?.find(x=>x.bandId===bandId);
+  if(!selected)throw Error('Esta frecuencia no se puede corregir en este momento.');
+  const lang=doc.documentElement.lang?.split('-')[0]||'es';
+  const message=(translateHear3Ui('focus.review.confirm',lang)||
+   '¿Repetir solo {hz} Hz? Las demás bandas y resultados guardados se conservarán.')
+   .replace('{hz}',String(selected.frequencyHz));
+  if(!env.confirm(message))return;
+  exam.retakeBand({bandId,userConfirmed:true});
+  // A persisted result stays immutable. A corrected test produces a new
+  // optional result only after it finishes and the user saves it again.
+  review=null;eq=null;saveResultId=null;
+  element('saved-eq-link').hidden=true;
+  element('save-consent').checked=false;
+  output('save-status','');
+  output('copy-status','');
+  element('result-correction-options').open=false;
+  element('tone-correction-options').open=false;
+  // A corrected frequency is intentionally PAUSED: the listening route may
+  // have changed while the user inspected the result. Require a new low
+  // physical-volume check, then a separate click to play the first tone.
+  pendingRecovery=true;
+  element('volume-ok').checked=false;
+  output('confirm',tr('recover')+' →');
+  go('ready');
+  notice('Solo se repetirá '+selected.frequencyHz+
+   ' Hz. Verifica la salida de audio y el volumen físico bajo antes de continuar. No se iniciará sonido automáticamente.');
+ }
  async function copyEq(){
   if(!review)throw Error('No hay ajustes que copiar.');
   const content=formatHear3ImmediateEq(review,{format:'txt'});
@@ -550,19 +624,32 @@ export function mountHearFocus({doc=document,env=window}={}){
     output('sweep-hz',Math.round(frequencyAtSweepTime(current.plan,elapsed))+' Hz');
    }
   }
+  if(view==='result'&&exam){
+   updateCorrectionOptions('result',exam.snapshot().reviewableBands);
+  }
   if(view==='tones'&&exam){
    const state=exam.snapshot();
    if(state.status==='completed'){
     if(exam.getSession().status==='completed'){buildEq();return;}
     if(!starting){exam.finish();buildEq();return;}
    }
-   const index=Math.min(state.completedBands+1,state.totalBands);
+   updateCorrectionOptions('tone',state.reviewableBands);
+   // During selective correction, completedBands is not the same as the
+   // position of the selected frequency: later bands remain verified.
+   const currentIndex=state.bands.findIndex(b=>b.id===state.currentBandId);
+   const index=currentIndex>=0?currentIndex+1:state.totalBands;
    const current=state.bands.find(b=>b.id===state.currentBandId);
    output('tone-hz',current?current.frequencyHz+' Hz':'—');
    output('band-count',tr('bandCount',{i:index,n:state.totalBands}));
    element('band-progress').max=state.totalBands;
    element('band-progress').value=state.completedBands;
    const playing=state.status==='playing';
+   if(playing&&state.activeToneId!==lastAnnouncedToneId){
+    lastAnnouncedToneId=state.activeToneId;
+    const active=exam.getSession().currentTone;
+    if(active)output('tone-announcement',
+     tr('announce',{hz:active.frequencyHz,db:active.digitalLevelDbfs}));
+   }
    const now=env.performance?.now?.()??Date.now();
    const audio=exam.getSession().currentTone;
    const digital=playing?audio?.digitalLevelDbfs:state.nextDigitalLevelDbfs;
@@ -611,6 +698,8 @@ export function mountHearFocus({doc=document,env=window}={}){
  listen('tone-skip',()=>contradiction(false));
  listen('tone-stop',interrupt);
  listen('tone-review',reviewPrevious);
+ listen('tone-correction-action',()=>correctSelectedBand('tone'));
+ listen('result-correction-action',()=>correctSelectedBand('result'));
  listen('copy-eq',copyEq);
  listen('download-eq',()=>downloadEq('txt'));
  listen('download-eq-csv',()=>downloadEq('csv'));
