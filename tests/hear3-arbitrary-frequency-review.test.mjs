@@ -64,7 +64,8 @@ test('verified selective retirement is silent, atomic and cannot alter other fre
  const revised=transitionSession(s,{
   type:'REVISE_VERIFIED_BAND',confirmed:true,toneIds:['hear3-1','hear3-3'],
  });
- assert.equal(revised.status,'ready');
+ assert.equal(revised.status,'paused');
+ assert.equal(revised.routeCheckRequired,true);
  assert.deepEqual(revised.observations,before);
  assert.deepEqual(revised.invalidatedToneIds,['hear3-1','hear3-3']);
  assert.equal(revised.observations[1].frequencyHz,500);
@@ -74,7 +75,7 @@ test('verified selective retirement is silent, atomic and cannot alter other fre
  const completed={...s,status:'completed'};
  assert.equal(transitionSession(completed,{
   type:'REVISE_VERIFIED_BAND',confirmed:true,toneIds:['hear3-1','hear3-3'],
- }).status,'ready');
+ }).status,'paused');
  const playing={...s,status:'playing',currentTone:{
   toneId:'hear3-4',frequencyHz:125,digitalLevelDbfs:-60,channel:'joint',
  }};
@@ -101,13 +102,16 @@ test('a non-adjacent frequency may be retested after later bands and does not re
  assert.equal(exam.getSession().status,'completed');
  const correction=exam.retakeBand({bandId:'bass',userConfirmed:true});
  assert.equal(correction.currentBandId,'bass');
- assert.equal(correction.status,'ready');
+ assert.equal(correction.status,'paused');
  assert.equal(correction.completedBands,2);
  assert.equal(f.starts.length,originalCount,'correction must never auto-play');
  assert.deepEqual(exam.getSession().observations,original);
  assert.deepEqual(exam.getSession().invalidatedToneIds,
   original.filter(o=>o.frequencyHz===125).map(o=>o.toneId));
  assert.deepEqual(exam.snapshot().bands.find(b=>b.id==='middle').observations,middle);
+ assert.throws(()=>exam.resume({userInitiated:true}),/Route check required/);
+ exam.confirmRoute({userConfirmed:true});
+ exam.resume({userInitiated:true});
  await f.finishCurrent(exam);
  assert.equal(exam.snapshot().status,'completed');
  assert.equal(exam.snapshot().completedBands,3);
