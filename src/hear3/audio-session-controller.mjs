@@ -125,6 +125,21 @@ export function createHear3AudioSession({
     return getSession();
   }
 
+  function reviseVerifiedBand({toneIds,userConfirmed=false}={}) {
+    assertLive();
+    // Compute/validate the entire replacement before changing any state.
+    // This rejects late or malformed review requests without retiring other
+    // bands, and never causes playback from a completed session.
+    const revised=transitionSession(session,{
+      type:'REVISE_VERIFIED_BAND',toneIds,confirmed:userConfirmed===true,
+    });
+    epoch++;
+    audibleToneId=null;
+    adapter.stop();
+    session=revised;
+    return getSession();
+  }
+
   function routeChanged(routeId = null) {
     assertLive();
     return pause({ type: 'ROUTE_CHANGED', routeId });
@@ -165,5 +180,6 @@ export function createHear3AudioSession({
     await adapter.dispose();
   }
 
-  return Object.freeze({ getSession, startTone, answer, invalidateReviewedTones, interrupt, routeChanged, confirmRoute, resume, finish, dispose });
+  return Object.freeze({ getSession, startTone, answer, invalidateReviewedTones,
+    reviseVerifiedBand, interrupt, routeChanged, confirmRoute, resume, finish, dispose });
 }
