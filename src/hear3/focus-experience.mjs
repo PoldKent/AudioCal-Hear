@@ -75,6 +75,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  const catalogStore=createHear3CatalogStore();
  let view='welcome',pendingRecovery=false,exam=null,eq=null,review=null;
  let bands=null,sweepPlan=null,starting=false,disposed=false;
+ let lastAnnouncedToneId=null;
  let activeToneStartedAt=null;
  let saveResultId=null;
  const preflight=inspectHear3AudioCapabilities(env);
@@ -178,11 +179,19 @@ export function mountHearFocus({doc=document,env=window}={}){
  function notice(message){output('ready-hint',message);}
  function go(next){
   if(!VIEWS.includes(next))throw Error('Pantalla desconocida');
+  const changed=view!==next;
   view=next;
   for(const id of VIEWS)element(id).hidden=id!==next;
   const step=next==='welcome'||next==='ready'?1:next==='result'?3:2;
   for(let i=1;i<=3;i++)element('p-'+i).classList.toggle('filled',i<=step);
   render();
+  // Stage transitions must not strand keyboard focus on a hidden button.
+  // Focusing headings never schedules audio playback.
+  if(changed&&view===next){
+   const heading=element(next).querySelector('h1');
+   heading?.setAttribute('tabindex','-1');
+   heading?.focus({preventScroll:true});
+  }
  }
  function readCheckpoint(){return store.load().checkpoint;}
  function chooseBands(){
@@ -487,10 +496,10 @@ export function mountHearFocus({doc=document,env=window}={}){
   const bandId=element(scope+'-correction-band').value;
   const selected=exam.snapshot().reviewableBands?.find(x=>x.bandId===bandId);
   if(!selected)throw Error('Esta frecuencia no se puede corregir en este momento.');
-  const message='¿Volver a escuchar solo '+selected.frequencyHz+
-   ' Hz? Sus respuestas anteriores quedarán anuladas para el cálculo. '+
-   'Las demás frecuencias y los resultados ya guardados se conservarán. '+
-   'No se reproducirá ningún sonido sin pulsar Escuchar tono.';
+  const lang=doc.documentElement.lang?.split('-')[0]||'es';
+  const message=(translateHear3Ui('focus.review.confirm',lang)||
+   '¿Repetir solo {hz} Hz? Las demás bandas y resultados guardados se conservarán.')
+   .replace('{hz}',String(selected.frequencyHz));
   if(!env.confirm(message))return;
   exam.retakeBand({bandId,userConfirmed:true});
   // A persisted result stays immutable. A corrected test produces a new
@@ -611,6 +620,12 @@ export function mountHearFocus({doc=document,env=window}={}){
    element('band-progress').max=state.totalBands;
    element('band-progress').value=state.completedBands;
    const playing=state.status==='playing';
+   if(playing&&state.activeToneId!==lastAnnouncedToneId){
+    lastAnnouncedToneId=state.activeToneId;
+    const active=exam.getSession().currentTone;
+    if(active)output('tone-announcement','Tono '+active.frequencyHz+
+     ' Hz, nivel digital '+active.digitalLevelDbfs+' dBFS. Responde ahora.');
+   }
    const now=env.performance?.now?.()??Date.now();
    const audio=exam.getSession().currentTone;
    const digital=playing?audio?.digitalLevelDbfs:state.nextDigitalLevelDbfs;
