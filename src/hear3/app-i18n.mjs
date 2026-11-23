@@ -7,6 +7,12 @@ export const HEAR3_LANGUAGE_CHOICES=Object.freeze(['es','en','fr','pt','it','de'
 export const HEAR3_LANGUAGE_KEY='hear3:ui-language:v1';
 const STRINGS=Object.freeze({
   "es": {
+    "focus.review.summary": "Corregir otra frecuencia",
+    "focus.review.pick": "Selecciona la frecuencia que deseas volver a escuchar",
+    "focus.review.action": "Repetir solo esa frecuencia",
+    "focus.review.hint": "Las demás bandas conservarán sus respuestas. No se reproducirá sonido hasta pulsar Escuchar tono.",
+    "focus.review.confirm": "¿Repetir solo {hz} Hz? Se excluirán del nuevo cálculo sus respuestas anteriores; las demás frecuencias y los resultados guardados permanecerán intactos. No habrá reproducción automática.",
+
         "focus.d.confirm": "Empezar a escuchar",
     "focus.d.recover": "Recuperar mi prueba",
     "focus.d.play": "Escuchar tono",
@@ -122,6 +128,12 @@ const STRINGS=Object.freeze({
     "route.confirm": "He comprobado la salida de audio y mantendré el volumen físico bajo y cómodo"
   },
   "en": {
+    "focus.review.summary": "Correct a previous frequency",
+    "focus.review.pick": "Choose the frequency you want to listen to again",
+    "focus.review.action": "Replay only that frequency",
+    "focus.review.hint": "Other bands retain their responses. No sound plays until you press Play tone.",
+    "focus.review.confirm": "Retest only {hz} Hz? Its earlier responses will be excluded from the new calculation; all other bands and saved results remain unchanged. Sound will not autoplay.",
+
         "focus.d.confirm": "Start listening",
     "focus.d.recover": "Resume my test",
     "focus.d.play": "Play tone",
@@ -237,6 +249,12 @@ const STRINGS=Object.freeze({
     "route.confirm": "I checked the audio output and will keep the physical volume low and comfortable"
   },
   "pt": {
+    "focus.review.summary": "Corrigir uma frequência anterior",
+    "focus.review.pick": "Selecione a frequência que quer ouvir novamente",
+    "focus.review.action": "Repetir apenas essa frequência",
+    "focus.review.hint": "As outras bandas mantêm as respostas. Nenhum som começa antes de tocar em Ouvir tom.",
+    "focus.review.confirm": "Repetir apenas {hz} Hz? As respostas anteriores serão excluídas do novo cálculo; as outras bandas e os resultados salvos serão preservados. Sem reprodução automática.",
+
         "focus.d.confirm": "Começar a ouvir",
     "focus.d.recover": "Retomar meu teste",
     "focus.d.play": "Ouvir tom",
@@ -352,6 +370,12 @@ const STRINGS=Object.freeze({
     "route.confirm": "Verifiquei a saída de áudio e manterei o volume físico baixo e confortável"
   },
   "fr": {
+    "focus.review.summary": "Corriger une fréquence précédente",
+    "focus.review.pick": "Choisissez la fréquence à réécouter",
+    "focus.review.action": "Réécouter uniquement cette fréquence",
+    "focus.review.hint": "Les autres bandes conservent leurs réponses. Aucun son ne joue avant d’appuyer sur Écouter.",
+    "focus.review.confirm": "Réécouter seulement {hz} Hz ? Les anciennes réponses seront exclues du nouveau calcul. Les autres bandes et résultats enregistrés seront préservés. Aucune lecture automatique.",
+
         "focus.d.confirm": "Commencer l'écoute",
     "focus.d.recover": "Reprendre mon test",
     "focus.d.play": "Écouter le son",
@@ -467,6 +491,12 @@ const STRINGS=Object.freeze({
     "route.confirm": "J’ai vérifié la sortie audio et je garderai le volume physique faible et confortable"
   },
   "it": {
+    "focus.review.summary": "Correggi una frequenza precedente",
+    "focus.review.pick": "Seleziona la frequenza da riascoltare",
+    "focus.review.action": "Ripeti solo questa frequenza",
+    "focus.review.hint": "Le altre bande mantengono le risposte. Nessun audio parte prima di premere Ascolta il tono.",
+    "focus.review.confirm": "Riascoltare solo {hz} Hz? Le risposte precedenti saranno escluse dal nuovo calcolo; le altre bande e i risultati salvati resteranno invariati. Nessuna riproduzione automatica.",
+
         "focus.d.confirm": "Inizia l’ascolto",
     "focus.d.recover": "Riprendi il test",
     "focus.d.play": "Ascolta il tono",
@@ -582,6 +612,12 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ho verificato l’uscita audio e terrò il volume fisico basso e confortevole"
   },
   "de": {
+    "focus.review.summary": "Frühere Frequenz korrigieren",
+    "focus.review.pick": "Wähle die Frequenz, die du erneut hören möchtest",
+    "focus.review.action": "Nur diese Frequenz wiederholen",
+    "focus.review.hint": "Andere Bänder behalten ihre Antworten. Erst „Ton abspielen“ startet den Ton.",
+    "focus.review.confirm": "Nur {hz} Hz erneut testen? Frühere Antworten dieser Frequenz werden für die Neuberechnung ausgeschlossen. Andere Bänder und gespeicherte Ergebnisse bleiben unverändert. Keine automatische Wiedergabe.",
+
         "focus.d.confirm": "Wiedergabe starten",
     "focus.d.recover": "Test fortsetzen",
     "focus.d.play": "Ton abspielen",
@@ -697,6 +733,12 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ich habe den Audioausgang überprüft und halte die physische Lautstärke niedrig und angenehm"
   },
   "zh": {
+    "focus.review.summary": "更正以前的频率",
+    "focus.review.pick": "选择需要重新聆听的频率",
+    "focus.review.action": "仅重测此频率",
+    "focus.review.hint": "其他频段保留原回答。只有点击播放测试音才会发出声音。",
+    "focus.review.confirm": "仅重测 {hz} Hz？之前针对该频率的回答将不参与新计算，其余频段和已保存的结果不会改变。不会自动播放声音。",
+
         "focus.d.confirm": "开始聆听",
     "focus.d.recover": "继续测试",
     "focus.d.play": "播放测试音",
@@ -812,6 +854,12 @@ const STRINGS=Object.freeze({
     "route.confirm": "我已检查音频输出，并将设备音量保持在较低且舒适的水平"
   },
   "ja": {
+    "focus.review.summary": "以前の周波数を修正",
+    "focus.review.pick": "もう一度聴きたい周波数を選択",
+    "focus.review.action": "この周波数のみ再テスト",
+    "focus.review.hint": "他の帯域の回答は保存されます。「音を再生」を押すまで音は鳴りません。",
+    "focus.review.confirm": "{hz} Hz だけを再テストしますか？この周波数の以前の回答は新しい計算から除外し、他の帯域と保存済みの結果は維持します。自動再生はしません。",
+
         "focus.d.confirm": "再生を開始",
     "focus.d.recover": "テストを再開",
     "focus.d.play": "音を再生",
