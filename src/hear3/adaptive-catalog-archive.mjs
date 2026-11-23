@@ -84,13 +84,21 @@ function evidenceFromExam(exam){
   return {id:band.id,frequencyHz:band.frequencyHz,
    source:'provisional',verification:'unverified'};
  });
- check(JSON.stringify(session.observations)===JSON.stringify(rawObservations),
+ // Selective correction may append new answers for an earlier frequency
+ // after later bands. Match complete immutable observations by unique tone ID,
+ // and archive them in Web Audio's actual chronological order.
+ const ordered=rows=>[...rows].sort((a,b)=>
+  a.toneId<b.toneId?-1:a.toneId>b.toneId?1:0);
+ check(session.observations.length===rawObservations.length&&
+  JSON.stringify(ordered(session.observations))===JSON.stringify(ordered(rawObservations)),
   'Recorded Web Audio responses disagree with the adaptive evidence');
  for(const band of status.bands)
   if(band.reviewedOnce===true)check(
    band.observations.some(o=>invalidated.has(o.toneId)),
    'Reviewed frequency must preserve its retired responses');
- return {status,session,eqBands,observations};
+ const byToneId=new Map(observations.map(o=>[o.toneId,o]));
+ const chronological=session.observations.map(o=>byToneId.get(o.toneId));
+ return {status,session,eqBands,observations:chronological};
 }
 
 function catalogToken(loaded){
