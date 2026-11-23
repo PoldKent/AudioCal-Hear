@@ -22,7 +22,6 @@ export function createHear3AdaptiveDiscreteExam({
     && typeof sessionController.answer==='function'
     && typeof sessionController.interrupt==='function'
     && typeof sessionController.invalidateReviewedTones==='function'
-    && typeof sessionController.reviseVerifiedBand==='function'
     && typeof sessionController.resume==='function', 'Verified audio-session controller required');
   const base=sessionController.getSession();
   check((restoredProgress===null?base?.status==='ready':
@@ -293,6 +292,8 @@ export function createHear3AdaptiveDiscreteExam({
     check(selected,'Selected frequency is not safely reviewable in this state');
     const band=bands[selected.index];
     const ids=effectiveObservations(band).map(o=>o.toneId);
+    check(typeof sessionController.reviseVerifiedBand==='function',
+      'Selected-frequency review is not supported by this audio controller');
     // This exact, complete set of verified responses is retired atomically.
     // Other bands, their intervals and the immutable audio log survive.
     sessionController.reviseVerifiedBand({toneIds:ids,userConfirmed:true});
