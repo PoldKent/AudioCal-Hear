@@ -71,6 +71,11 @@ test('verified selective retirement is silent, atomic and cannot alter other fre
  assert.equal(revised.observations[1].frequencyHz,500);
  assert.throws(()=>transitionSession(revised,{
   type:'REVISE_VERIFIED_BAND',confirmed:true,toneIds:['hear3-1','hear3-3'],
+ }),/stopped, verified audio route/);
+ const routeVerified=transitionSession(revised,{type:'CONFIRM_ROUTE',confirmed:true});
+ const readyAgain=transitionSession(routeVerified,{type:'RESUME',userInitiated:true});
+ assert.throws(()=>transitionSession(readyAgain,{
+  type:'REVISE_VERIFIED_BAND',confirmed:true,toneIds:['hear3-1','hear3-3'],
  }),/non-retired/);
  const completed={...s,status:'completed'};
  assert.equal(transitionSession(completed,{
