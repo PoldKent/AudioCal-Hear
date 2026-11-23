@@ -140,6 +140,7 @@ export function createHear3ResumableAdaptiveExam({
  }
  function answer(response){return update(()=>exam.answer(response));}
  function retakePreviousBand(args){return update(()=>exam.retakePreviousBand(args));}
+ function retakeBand(args){return update(()=>exam.retakeBand(args));}
  function confirmContradiction(args){return update(()=>exam.confirmContradiction(args));}
  function interrupt(args){return update(()=>exam.interrupt(args));}
  function confirmRoute(args){return update(()=>exam.confirmRoute(args));}
@@ -172,7 +173,7 @@ export function createHear3ResumableAdaptiveExam({
  }
  return Object.freeze({
   snapshot,getSession,getPersistence,getRecoveryProposal,recover,
-  playNext,answer,retakePreviousBand,confirmContradiction,interrupt,confirmRoute,resume,finish,
+  playNext,answer,retakePreviousBand,retakeBand,confirmContradiction,interrupt,confirmRoute,resume,finish,
   exportBackup,clearCheckpoint,dispose,
  });
 }
