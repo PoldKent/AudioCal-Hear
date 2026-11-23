@@ -463,6 +463,47 @@ export function mountHearFocus({doc=document,env=window}={}){
   if(!env.confirm('¿Repetir '+band+' Hz? Las respuestas anteriores seguirán registradas como anuladas.'))return;
   exam.retakePreviousBand({userConfirmed:true});render();
  }
+ function updateCorrectionOptions(scope,choices=[]){
+  const details=element(scope+'-correction-options');
+  const select=element(scope+'-correction-band');
+  const key=choices.map(x=>x.bandId+':'+x.frequencyHz).join('|');
+  if(select.dataset.choices!==key){
+   const previous=select.value;
+   const nodes=choices.map(x=>{
+    const option=doc.createElement('option');
+    option.value=x.bandId;
+    option.textContent=x.frequencyHz+' Hz';
+    return option;
+   });
+   select.replaceChildren(...nodes);
+   if(choices.some(x=>x.bandId===previous))select.value=previous;
+   select.dataset.choices=key;
+  }
+  details.hidden=choices.length===0;
+  if(details.hidden)details.open=false;
+ }
+ function correctSelectedBand(scope){
+  if(!exam)throw Error('La prueba no está preparada.');
+  const bandId=element(scope+'-correction-band').value;
+  const selected=exam.snapshot().reviewableBands?.find(x=>x.bandId===bandId);
+  if(!selected)throw Error('Esta frecuencia no se puede corregir en este momento.');
+  const message='¿Volver a escuchar solo '+selected.frequencyHz+
+   ' Hz? Sus respuestas anteriores quedarán anuladas para el cálculo. '+
+   'Las demás frecuencias y los resultados ya guardados se conservarán. '+
+   'No se reproducirá ningún sonido sin pulsar Escuchar tono.';
+  if(!env.confirm(message))return;
+  exam.retakeBand({bandId,userConfirmed:true});
+  // A persisted result stays immutable. A corrected test produces a new
+  // optional result only after it finishes and the user saves it again.
+  review=null;eq=null;saveResultId=null;
+  element('saved-eq-link').hidden=true;
+  element('save-consent').checked=false;
+  output('save-status','');
+  output('copy-status','');
+  element('result-correction-options').open=false;
+  element('tone-correction-options').open=false;
+  go('tones');
+ }
  async function copyEq(){
   if(!review)throw Error('No hay ajustes que copiar.');
   const content=formatHear3ImmediateEq(review,{format:'txt'});
@@ -550,12 +591,16 @@ export function mountHearFocus({doc=document,env=window}={}){
     output('sweep-hz',Math.round(frequencyAtSweepTime(current.plan,elapsed))+' Hz');
    }
   }
+  if(view==='result'&&exam){
+   updateCorrectionOptions('result',exam.snapshot().reviewableBands);
+  }
   if(view==='tones'&&exam){
    const state=exam.snapshot();
    if(state.status==='completed'){
     if(exam.getSession().status==='completed'){buildEq();return;}
     if(!starting){exam.finish();buildEq();return;}
    }
+   updateCorrectionOptions('tone',state.reviewableBands);
    const index=Math.min(state.completedBands+1,state.totalBands);
    const current=state.bands.find(b=>b.id===state.currentBandId);
    output('tone-hz',current?current.frequencyHz+' Hz':'—');
@@ -611,6 +656,8 @@ export function mountHearFocus({doc=document,env=window}={}){
  listen('tone-skip',()=>contradiction(false));
  listen('tone-stop',interrupt);
  listen('tone-review',reviewPrevious);
+ listen('tone-correction-action',()=>correctSelectedBand('tone'));
+ listen('result-correction-action',()=>correctSelectedBand('result'));
  listen('copy-eq',copyEq);
  listen('download-eq',()=>downloadEq('txt'));
  listen('download-eq-csv',()=>downloadEq('csv'));
