@@ -11,6 +11,7 @@ const UI_KEYS=[
  'sweepTag','sweepWarning','tonesTag','toneUnit','uncertainWarning','uncertainRepeat',
  'guide1','guide2','guide3','guide4','guideNote','savedEq','footerSafety',
  'footerHelp','footerTech','offlineSave','offlineRemove',
+ 'footResults','footRestore','footPrivacy','footPhoto','footDiagnostics',
 ];
 test('focus UI translations exist natively in all eight locale dictionaries',()=>{
  for(const lang of HEAR3_LANGUAGE_CHOICES)
@@ -30,8 +31,7 @@ test('production and build-source entries share all translated focus labels',()=
  for(const key of UI_KEYS)assert.ok(
   home.includes('data-hear-i18n="focus.ui.'+key+'"'),key);
  for(const key of [
-  'home.data.results','home.data.restore','home.data.privacy',
-  'home.data.photo','home.data.diagnostics','common.language',
+  'common.language',
   'focus.d.confirm','choice.uncertain',
  ])assert.ok(home.includes('data-hear-i18n="'+key+'"'),key);
  assert.match(home,/<span data-hear-i18n="focus.ui.begin">Empezar prueba<\/span>/);
