@@ -231,6 +231,11 @@ test('correcting a non-adjacent frequency preserves later bands and never autopl
  await page.getByTestId('focus-review-result-select').selectOption({index:0});
  page.once('dialog',d=>d.accept());
  await page.getByTestId('focus-review-result').click();
+ await expect(page.getByTestId('focus-ready')).toBeVisible();
+ await expect(page.locator('#ready h1')).toBeFocused();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(21);
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
  await expect(page.getByTestId('focus-tones')).toBeVisible();
  await expect(page.locator('#tones h1')).toBeFocused();
  await expect(page.locator('#tone-hz')).toHaveText('125 Hz');
