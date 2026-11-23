@@ -10,7 +10,7 @@ const UI_KEYS=[
  'custom','categoryTip','restartTitle','restartTip','restartDownload','restartReset',
  'sweepTag','sweepWarning','tonesTag','toneUnit','uncertainWarning','uncertainRepeat',
  'guide1','guide2','guide3','guide4','guideNote','savedEq','footerSafety',
- 'footerHelp','footerTech','offlineSave','offlineRemove',
+ 'footerHelp','footerTech','offlineSave','offlineRemove','offlineTitle',
  'footResults','footRestore','footPrivacy','footPhoto','footDiagnostics',
 ];
 test('focus UI translations exist natively in all eight locale dictionaries',()=>{
