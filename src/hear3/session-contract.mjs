@@ -114,8 +114,11 @@ export function transitionSession(session, event) {
         &&o.channel===first.channel);
       ensure(fullBand.length===chosen.length,
         'Correction must retire all active observations of one band');
+      // Any subsequent sound needs a fresh, explicit output/volume check:
+      // the completed result may have remained open through a route change.
       return {
-        ...session,status:'ready',currentTone:null,interruption:null,
+        ...session,status:'paused',currentTone:null,
+        routeCheckRequired:true,interruption:'frequency-review',
         invalidatedToneIds:[...session.invalidatedToneIds,...ids],
       };
     }
