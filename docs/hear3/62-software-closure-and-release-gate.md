@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | Inicio | Una acción dominante; examen sin cuenta, menú secundario de ayuda | Los ajustes técnicos nunca bloquean el recorrido normal |
 | Audio | Confirmación de volumen físico bajo, barrido logarítmico de 20 s, salto/paro, tonos independientes, tres respuestas perceptivas, respuesta inmediata | dBFS digital NO es SPL físico ni medida clínica |
-| Examen | Bandas de 2–31 frecuencias declaradas, confirmación de contradicciones, checkpoints recuperables sin autoplay | Recuperar requiere acción y verificación de salida; no garantiza identidad del dispositivo |
+| Examen | Bandas de 2–31 frecuencias, corrección arbitraria de una banda anterior sin repetir las demás, contradicciones confirmadas y checkpoints recuperables sin autoplay | Recuperar requiere acción y verificación de salida; no garantiza identidad del dispositivo |
 | Resultado | Un EQ conjunto experimental acotado, gráfica vertical, valores exactos en texto, revisión de procedencia, guía manual | Ganancias no validadas para equipo específico, sin PEQ/filtro Q inventado |
 | Exportación | Copiar, descargar TXT, CSV y PNG, guardado opcional con confirmación | No aplica la curva automáticamente |
 | Historial | Editor real tras guardar, catálogo, copias/restauración, salvaguarda de los datos Hear 2 | No sincroniza datos en nube ni crea cuentas |
@@ -27,6 +27,8 @@
 ## Verificación de software (criterios, no certificado de hardware)
 
 **Pipeline exigida para publicar:** `npm run verify`, `Hear 3.0 contracts`, `AudioCal Hear 2.0 beta bundle`, `Static app integrity` y matriz Playwright `android-9x21-chromium`, `iphone-webkit`, `desktop-4x3`, `desktop-21x9`. Las pruebas cubren inicio seguro, barrido y paro, respuesta de tonos, EQ idéntico en pantalla/descarga/archivo, no duplicación, recuperación, idiomas, CSV/PNG, offline, privacidad y regresiones del motor heredado. Cada nueva versión debe superar la matriz sobre su **commit exacto** antes de fusionar.
+
+**Revisión selectiva D-021:** la corrección voluntaria aparece en una sección secundaria del examen y del resultado. El motor retira solo respuestas anteriores verificadas del mismo ID de frecuencia y conserva su historial completo. El contrato y el EQ comparan evidencia por tono, sin confundir orden cronológico con orden de bandas; las posteriores se preservan. La UI no inicia audio al corregir, no sobrescribe resultados previamente guardados y ofrece guardado independiente del nuevo EQ. La recuperación de una corrección en curso requiere confirmar nuevamente la salida antes de escuchar. El foco del teclado pasa al encabezado visible al cambiar de etapa y un estado accesible anuncia cada tono una única vez. Estos mecanismos tienen pruebas Node y de navegador, pero no sustituyen ensayos físicos o lector de pantalla real.
 
 **Fallos intermitentes investigados:** en una ejecución sobre `main` del 19/11, WebKit observó una expiración sintética del tono de comprobación estéreo antes de Escape. Se separó el temporizador falso de la prueba de Escape, sin retrasar o deshabilitar la interrupción real de audio. Si la prueba antigua de consola también falla en ejecución de `main`, debe conservarse el fallo con artefactos y corregirse antes de declarar el commit libre de regresiones.
 
