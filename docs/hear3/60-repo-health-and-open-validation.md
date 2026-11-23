@@ -22,7 +22,7 @@ Se preserva un solo acceso público a Hear 3 con recuperación del motor histór
 1. D-035 / D-047: atribución verificable por canal, síntesis L/R con hardware real y protocolo perceptivo.
 2. D-039 a D-041: validez del modelo de ganancia del EQ con corpus contrastado, SPL y headroom/clipping reales.
 3. D-044 / D-045 / D-048: reconocimiento específico por fabricante/modelo; fotografía opcional sin inventar equivalencias.
-4. D-021: la revisión selectiva actual solo aplica a la última banda completada sin respuestas posteriores, no una edición arbitraria de historiales.
+4. D-021: **implementada la revisión arbitraria en la ruta principal** con anulación selectiva, historial inmutable y restauración silenciosa. Quedan por realizar ensayos asistivos y con dispositivos físicos de ese recorrido; no es garantía de audición ni calibración.
 5. D-026 / D-058: localización total de mensajes técnicos a ocho idiomas y auditoría WCAG asistiva con usuarios/equipos.
 6. D-063: trece pruebas físicas y ensayos de seguridad pendientes según `release-evidence-gate.json`.
 
