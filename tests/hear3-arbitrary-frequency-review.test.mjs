@@ -157,3 +157,41 @@ test('a target frequency cannot be invalidated while an unfinished current tone 
   /not safely reviewable/);
  assert.deepEqual(exam.getSession(),before);
 });
+
+test('too-loud preference is bound to a verified tone and survives fresh-tab recovery',async()=>{
+ const f=harness(),exam=f.make();
+ const tone=await f.answer(exam,'heard');
+ const report={toneId:tone.toneId,frequencyHz:125};
+ assert.throws(()=>exam.rememberLoudTone({toneId:'invented',frequencyHz:125}),
+  /verified active tone/);
+ assert.deepEqual(exam.getLoudToneReports(),[]);
+ assert.deepEqual(exam.rememberLoudTone(report),[report]);
+ assert.deepEqual(f.store.load().checkpoint.loudToneReports,[report]);
+ const started=f.starts.length;
+ const freshTab=f.make();
+ await freshTab.recover({userInitiated:true});
+ assert.equal(f.starts.length,started);
+ assert.deepEqual(freshTab.getLoudToneReports(),[report]);
+ freshTab.confirmRoute({userConfirmed:true});
+ freshTab.resume({userInitiated:true});
+ // Completing the original band makes it eligible for selective correction.
+ while(freshTab.snapshot().currentBandId==='bass')
+  await f.answer(freshTab,'not-heard');
+ const selected=freshTab.retakeBand({bandId:'bass',userConfirmed:true});
+ assert.equal(selected.currentBandId,'bass');
+ assert.deepEqual(freshTab.getLoudToneReports(),[]);
+ assert.deepEqual(f.store.load().checkpoint.loudToneReports,[]);
+});
+
+test('a tampered discomfort preference cannot be recovered as verified evidence',async()=>{
+ const f=harness(),exam=f.make();
+ const tone=await f.answer(exam,'heard');
+ exam.rememberLoudTone({toneId:tone.toneId,frequencyHz:125});
+ const original=f.store.load(),changed=structuredClone(original.checkpoint);
+ changed.loudToneReports[0].frequencyHz=2000;
+ f.store.save(changed,{expectedRevision:original.revision});
+ const fresh=f.make();
+ await assert.rejects(fresh.recover({userInitiated:true}),/verified active tone/);
+ assert.equal(fresh.getSession().observations.length,0);
+ assert.equal(fresh.getLoudToneReports().length,0);
+});
