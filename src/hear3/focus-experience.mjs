@@ -527,7 +527,15 @@ export function mountHearFocus({doc=document,env=window}={}){
   output('copy-status','');
   element('result-correction-options').open=false;
   element('tone-correction-options').open=false;
-  go('tones');
+  // A corrected frequency is intentionally PAUSED: the listening route may
+  // have changed while the user inspected the result. Require a new low
+  // physical-volume check, then a separate click to play the first tone.
+  pendingRecovery=true;
+  element('volume-ok').checked=false;
+  output('confirm',tr('recover')+' →');
+  go('ready');
+  notice('Solo se repetirá '+selected.frequencyHz+
+   ' Hz. Verifica la salida de audio y el volumen físico bajo antes de continuar. No se iniciará sonido automáticamente.');
  }
  async function copyEq(){
   if(!review)throw Error('No hay ajustes que copiar.');
