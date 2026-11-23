@@ -623,8 +623,8 @@ export function mountHearFocus({doc=document,env=window}={}){
    if(playing&&state.activeToneId!==lastAnnouncedToneId){
     lastAnnouncedToneId=state.activeToneId;
     const active=exam.getSession().currentTone;
-    if(active)output('tone-announcement','Tono '+active.frequencyHz+
-     ' Hz, nivel digital '+active.digitalLevelDbfs+' dBFS. Responde ahora.');
+    if(active)output('tone-announcement',
+     tr('announce',{hz:active.frequencyHz,db:active.digitalLevelDbfs}));
    }
    const now=env.performance?.now?.()??Date.now();
    const audio=exam.getSession().currentTone;
