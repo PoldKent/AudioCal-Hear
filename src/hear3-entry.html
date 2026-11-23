@@ -11,50 +11,50 @@
 <script type="module" src="./src/hear3/focus-experience.mjs"></script>
 </head>
 <body>
-<a class="skip" href="#experience">Ir a la prueba</a>
+<a class="skip" href="#experience" data-hear-i18n="focus.ui.skip">Ir a la prueba</a>
 <header class="top">
  <a class="wordmark" href="./" aria-label="Hear, inicio"><span class="mark" aria-hidden="true">◉</span>hear<span class="dot">.</span></a>
- <div class="top-right"><span class="top-pill">SONIDO PERSONAL</span></div>
+ <div class="top-right"><span class="top-pill" data-hear-i18n="focus.ui.pill">SONIDO PERSONAL</span></div>
 </header>
 <main id="experience" class="experience">
  <div class="center">
   <div class="mini-progress" aria-hidden="true"><span class="filled" id="p-1"></span><span id="p-2"></span><span id="p-3"></span></div>
   <section id="welcome" class="stage" data-testid="focus-welcome">
-   <span class="eyebrow">TU SONIDO, A TU MANERA</span>
+   <span class="eyebrow" data-hear-i18n="focus.ui.welcomeTag">TU SONIDO, A TU MANERA</span>
    <h1 data-hear-i18n="home.headline">Encuentra tu sonido.</h1>
    <p class="lead" data-hear-i18n="home.lead">Una prueba guiada, respuestas sencillas y un ecualizador para ajustar manualmente tu equipo.</p>
    <div class="orb" aria-hidden="true"><div class="orb-core"><span class="wave-1"></span><span class="wave-2"></span><span class="wave-3"></span><span class="wave-4"></span><span class="wave-5"></span></div></div>
-   <button id="begin" class="primary main-cta" type="button" data-testid="focus-begin">Empezar prueba <span aria-hidden="true">→</span></button>
-   <p class="tiny">Un solo recorrido. No necesitas crear una cuenta.</p>
+   <button id="begin" class="primary main-cta" type="button" data-testid="focus-begin"><span data-hear-i18n="focus.ui.begin">Empezar prueba</span> <span aria-hidden="true">→</span></button>
+   <p class="tiny" data-hear-i18n="focus.ui.noAccount">Un solo recorrido. No necesitas crear una cuenta.</p>
   </section>
 
   <section id="ready" class="stage" hidden data-testid="focus-ready">
-   <span class="eyebrow">ANTES DE COMENZAR</span>
+   <span class="eyebrow" data-hear-i18n="focus.ui.readyTag">ANTES DE COMENZAR</span>
    <h1 data-hear-i18n="focus.ready.title">Ajusta el volumen y empieza</h1>
    <p class="lead" data-hear-i18n="focus.ready.lead">Conecta el equipo y baja su volumen físico a un nivel cómodo. Primero escucharás un barrido corto y después los tonos individuales. Nunca subas el volumen para intentar oír un sonido.</p>
    <label class="agree"><input id="volume-ok" type="checkbox" data-testid="focus-volume"><span data-hear-i18n="focus.ready.agree">Mi equipo está conectado y el volumen está bajo.</span></label>
-   <button id="confirm" class="primary main-cta" type="button" data-testid="focus-confirm">Empezar a escuchar <span aria-hidden="true">→</span></button>
+   <button id="confirm" class="primary main-cta" type="button" data-testid="focus-confirm"><span data-hear-i18n="focus.d.confirm">Empezar a escuchar</span> <span aria-hidden="true">→</span></button>
    <p id="ready-hint" class="inline-hint" role="status"></p>
    <details class="quiet-options" id="device-options">
     <summary data-hear-i18n="focus.device.summary">¿Quieres configurar otro equipo?</summary>
-    <label for="category">Tipo de equipo</label>
+    <label for="category" data-hear-i18n="focus.ui.category">Tipo de equipo</label>
     <select id="category" data-testid="focus-category"><option value="headphones">Auriculares</option><option value="speaker">Altavoces</option><option value="car">Automóvil (detenido)</option><option value="application">Aplicación</option><option value="interface">Interfaz de audio</option></select>
-    <label for="bands">Bandas de tu ecualizador</label>
+    <label for="bands" data-hear-i18n="focus.ui.bands">Bandas de tu ecualizador</label>
     <select id="bands" data-testid="focus-bands"><option value="5">5 bandas</option><option value="7">7 bandas</option><option value="10">10 bandas</option><option value="31">31 bandas</option><option value="custom">Mis frecuencias</option></select>
-    <label id="custom-label" for="custom-bands" hidden>Frecuencias en Hz, separadas por comas</label>
+    <label id="custom-label" for="custom-bands" data-hear-i18n="focus.ui.custom" hidden>Frecuencias en Hz, separadas por comas</label>
     <input id="custom-bands" type="text" maxlength="360" placeholder="125, 250, 500, 1000, 2000" hidden>
-    <p class="tiny">Usa solo las frecuencias reales que muestra tu ecualizador. No se detecta el hardware automáticamente.</p>
+    <p class="tiny" data-hear-i18n="focus.ui.categoryTip">Usa solo las frecuencias reales que muestra tu ecualizador. No se detecta el hardware automáticamente.</p>
    </details>
    <details class="quiet-options" id="recovery-options" hidden>
-    <summary>¿Quieres empezar desde cero?</summary>
-    <p class="tiny">Se eliminará solamente la prueba a medias. Los resultados y perfiles guardados seguirán intactos.</p>
-    <button type="button" class="small-action" id="download-progress">Descargar respaldo de esta prueba</button>
-    <button type="button" class="small-action" id="reset-progress" data-testid="focus-reset-progress">Eliminar esta prueba y comenzar otra</button>
+    <summary data-hear-i18n="focus.ui.restartTitle">¿Quieres empezar desde cero?</summary>
+    <p class="tiny" data-hear-i18n="focus.ui.restartTip">Se eliminará solamente la prueba a medias. Los resultados y perfiles guardados seguirán intactos.</p>
+    <button type="button" class="small-action" id="download-progress" data-hear-i18n="focus.ui.restartDownload">Descargar respaldo de esta prueba</button>
+    <button type="button" class="small-action" id="reset-progress" data-testid="focus-reset-progress" data-hear-i18n="focus.ui.restartReset">Eliminar esta prueba y comenzar otra</button>
    </details>
   </section>
 
   <section id="sweep" class="stage" hidden data-testid="focus-sweep">
-   <span class="eyebrow">EXPLORA TU SONIDO</span>
+   <span class="eyebrow" data-hear-i18n="focus.ui.sweepTag">EXPLORA TU SONIDO</span>
    <h1 data-hear-i18n="focus.sweep.title">Escucha el barrido</h1>
    <p class="lead" data-hear-i18n="focus.sweep.lead">Durante 20 segundos escucharás cómo cambia la frecuencia. Marca lo que percibas, sin tocar el volumen.</p>
    <div class="sound-sphere" aria-hidden="true"><div class="pulse"></div><div class="pulse p2"></div><span id="sweep-hz">125 Hz</span></div>
@@ -66,17 +66,17 @@
     <button class="answer negative" id="sweep-no" type="button" data-hear-i18n="focus.sweep.no" data-testid="focus-sweep-no">No lo escucho</button>
     <button class="answer loud" id="sweep-loud" type="button" data-hear-i18n="focus.sweep.loud" data-testid="focus-sweep-loud">Demasiado fuerte</button>
    </div>
-   <p id="sweep-feedback" class="inline-hint" role="status">Si incomoda, toca «Demasiado fuerte»: se detendrá.</p>
+   <p id="sweep-feedback" class="inline-hint" role="status" data-hear-i18n="focus.ui.sweepWarning">Si incomoda, toca «Demasiado fuerte»: se detendrá.</p>
    <button id="sweep-skip" class="quiet-link" type="button" data-hear-i18n="focus.sweep.skip" data-testid="focus-sweep-skip">Saltar barrido y continuar</button>
    <button id="sweep-stop" class="quiet-link" data-hear-i18n="focus.sweep.stop" type="button">Detener sonido</button>
   </section>
 
   <section id="tones" class="stage" hidden data-testid="focus-tones">
-   <span class="eyebrow" id="test-step">TU PRUEBA DE SONIDO</span>
+   <span class="eyebrow" id="test-step" data-hear-i18n="focus.ui.tonesTag">TU PRUEBA DE SONIDO</span>
    <h1 id="tone-title">Escucha el siguiente tono</h1>
    <p class="sr-only" id="tone-announcement" role="status" aria-live="polite" aria-atomic="true"></p>
    <p class="lead" id="tone-note">Escucha cada tono y responde con un toque.</p>
-   <div class="tone-orb" id="tone-orb" aria-hidden="true"><span id="tone-hz">125 Hz</span><span class="tone-unit">FRECUENCIA</span></div>
+   <div class="tone-orb" id="tone-orb" aria-hidden="true"><span id="tone-hz">125 Hz</span><span class="tone-unit" data-hear-i18n="focus.ui.toneUnit">FRECUENCIA</span></div>
    <p class="counter" id="band-count">Frecuencia 1 de 5</p>
    <progress id="band-progress" max="5" value="0" aria-label="Frecuencias completadas"></progress>
    <div class="playback-details" id="tone-playback-details">
@@ -92,9 +92,9 @@
     <button type="button" class="answer loud" id="tone-loud" data-hear-i18n="focus.tones.loud" data-testid="focus-tone-loud">Demasiado fuerte</button>
    </div>
    <div id="tone-uncertain" hidden>
-    <p class="inline-hint">Hay respuestas diferentes en esta frecuencia.</p>
-    <button id="tone-repeat" class="primary main-cta" type="button">Repetir y confirmar</button>
-    <button id="tone-skip" class="quiet-link" type="button">No estoy seguro</button>
+    <p class="inline-hint" data-hear-i18n="focus.ui.uncertainWarning">Hay respuestas diferentes en esta frecuencia.</p>
+    <button id="tone-repeat" class="primary main-cta" type="button" data-hear-i18n="focus.ui.uncertainRepeat">Repetir y confirmar</button>
+    <button id="tone-skip" class="quiet-link" type="button" data-hear-i18n="choice.uncertain">No estoy seguro</button>
    </div>
    <button id="tone-stop" class="quiet-link" data-hear-i18n="focus.tones.stop" type="button">Detener sonido</button>
    <button id="tone-review" class="quiet-link" type="button" hidden>Repetir frecuencia anterior</button>
@@ -119,12 +119,12 @@
    <details class="quiet-options" id="eq-howto">
     <summary data-hear-i18n="focus.result.guide">Cómo aplicar mi EQ manualmente</summary>
     <ol class="eq-guide">
-     <li>Abre el ecualizador del mismo dispositivo que utilizaste para la prueba.</li>
-     <li>Verifica las frecuencias reales de sus bandas y anota cada ganancia en dB.</li>
-     <li>Mantén el volumen físico bajo y aplica valores gradualmente; si notas distorsión o incomodidad, vuelve a 0 dB.</li>
-     <li>Si no tiene las mismas frecuencias o no indica dB, no conviertas posiciones o porcentajes sin verificar su escala.</li>
+     <li data-hear-i18n="focus.ui.guide1">Abre el ecualizador del mismo dispositivo que utilizaste para la prueba.</li>
+     <li data-hear-i18n="focus.ui.guide2">Verifica las frecuencias reales de sus bandas y anota cada ganancia en dB.</li>
+     <li data-hear-i18n="focus.ui.guide3">Mantén el volumen físico bajo y aplica valores gradualmente; si notas distorsión o incomodidad, vuelve a 0 dB.</li>
+     <li data-hear-i18n="focus.ui.guide4">Si no tiene las mismas frecuencias o no indica dB, no conviertas posiciones o porcentajes sin verificar su escala.</li>
     </ol>
-    <p class="tiny">Hear no modifica controles, preamplificadores ni filtros del equipo automáticamente.</p>
+    <p class="tiny" data-hear-i18n="focus.ui.guideNote">Hear no modifica controles, preamplificadores ni filtros del equipo automáticamente.</p>
    </details>
    <p class="tiny" id="eq-experiment-note" data-hear-i18n="focus.result.info">Las subidas sin un tono audible son solo una hipótesis pequeña, no una medición de tu oído. Comprueba el sonido sin subir el volumen físico.</p>
    <button id="copy-eq" class="primary main-cta" type="button" data-hear-i18n="focus.result.copy" data-testid="focus-copy">Copiar mis ajustes <span aria-hidden="true">↗</span></button>
@@ -145,7 +145,7 @@
     <label class="agree small-agree"><input id="save-consent" type="checkbox"><span data-hear-i18n="focus.result.saveConsent">Quiero guardar este resultado provisional en este navegador.</span></label>
     <button type="button" class="small-action" id="save-eq" data-hear-i18n="focus.result.save">Guardar resultado</button>
     <p id="save-status" class="inline-hint" role="status"></p>
-    <a id="saved-eq-link" class="quiet-link" hidden href="./hear3-eq-editor/" data-testid="focus-saved-eq">Ver y editar mi EQ guardado</a>
+    <a id="saved-eq-link" class="quiet-link" data-hear-i18n="focus.ui.savedEq" hidden href="./hear3-eq-editor/" data-testid="focus-saved-eq">Ver y editar mi EQ guardado</a>
    </details>
    <p class="tiny caution" data-hear-i18n="focus.result.warning">Resultado matemático no calibrado: no mide audición clínica ni dB SPL, no garantiza seguridad de volumen y no modifica ningún dispositivo automáticamente.</p>
   </section>
@@ -154,22 +154,22 @@
  </div>
 </main>
 <footer class="foot">
- <span>Hear · Mantén el volumen bajo. Puedes detener el sonido en cualquier momento.</span>
+ <span data-hear-i18n="focus.ui.footerSafety">Hear · Mantén el volumen bajo. Puedes detener el sonido en cualquier momento.</span>
  <details class="foot-more" id="ajustes">
-  <summary>Ayuda y datos</summary>
+  <summary data-hear-i18n="focus.ui.footerHelp">Ayuda y datos</summary>
   <div class="foot-links">
-   <a href="./hear3-library/">Resultados guardados</a>
-   <a href="./hear3-dual-restore/">Restaurar copia</a>
-   <a href="./hear3-privacy/">Privacidad</a>
-   <a href="./hear3-photo-privacy/">Imagen privada del ecualizador</a>
-   <a href="./hear3-diagnostics/">Diagnóstico</a>
-   <label>Idioma <select data-hear-language data-testid="hear-language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="pt">Português</option><option value="it">Italiano</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option></select></label>
+   <a href="./hear3-library/" data-hear-i18n="focus.ui.footResults">Resultados guardados</a>
+   <a href="./hear3-dual-restore/" data-hear-i18n="focus.ui.footRestore">Restaurar copia</a>
+   <a href="./hear3-privacy/" data-hear-i18n="focus.ui.footPrivacy">Privacidad</a>
+   <a href="./hear3-photo-privacy/" data-hear-i18n="focus.ui.footPhoto">Imagen privada del ecualizador</a>
+   <a href="./hear3-diagnostics/" data-hear-i18n="focus.ui.footDiagnostics">Diagnóstico</a>
+   <label><span data-hear-i18n="common.language">Idioma</span> <select data-hear-language data-testid="hear-language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="pt">Português</option><option value="it">Italiano</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option></select></label>
    <details class="foot-tech" id="foot-tech">
-    <summary>Opciones técnicas</summary>
+    <summary data-hear-i18n="focus.ui.footerTech">Opciones técnicas</summary>
     <label>Apariencia<select id="hear3-theme-choice" data-testid="hear3-theme-choice" aria-label="Apariencia"><option value="system">Según el sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></label>
-    <p class="foot-tech-title">Uso sin conexión (opcional)</p>
-    <button type="button" id="offline-enable" data-testid="offline-enable">Guardar app sin conexión</button>
-    <button type="button" id="offline-disable" data-testid="offline-disable">Retirar descarga</button>
+    <p class="foot-tech-title" data-hear-i18n="focus.ui.offlineTitle">Uso sin conexión (opcional)</p>
+    <button type="button" id="offline-enable" data-testid="offline-enable" data-hear-i18n="focus.ui.offlineSave">Guardar app sin conexión</button>
+    <button type="button" id="offline-disable" data-testid="offline-disable" data-hear-i18n="focus.ui.offlineRemove">Retirar descarga</button>
     <p id="offline-status" data-testid="offline-status" role="status">Sin descargar</p>
    </details>
   </div>
