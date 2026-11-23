@@ -176,7 +176,7 @@ test('too-loud preference is bound to a verified tone and survives fresh-tab rec
  freshTab.resume({userInitiated:true});
  // Completing the original band makes it eligible for selective correction.
  while(freshTab.snapshot().currentBandId==='bass')
-  await f.answer(freshTab,'not-heard');
+  await f.answer(freshTab,'heard');
  const selected=freshTab.retakeBand({bandId:'bass',userConfirmed:true});
  assert.equal(selected.currentBandId,'bass');
  assert.deepEqual(freshTab.getLoudToneReports(),[]);
