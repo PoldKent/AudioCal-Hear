@@ -601,7 +601,10 @@ export function mountHearFocus({doc=document,env=window}={}){
     if(!starting){exam.finish();buildEq();return;}
    }
    updateCorrectionOptions('tone',state.reviewableBands);
-   const index=Math.min(state.completedBands+1,state.totalBands);
+   // During selective correction, completedBands is not the same as the
+   // position of the selected frequency: later bands remain verified.
+   const currentIndex=state.bands.findIndex(b=>b.id===state.currentBandId);
+   const index=currentIndex>=0?currentIndex+1:state.totalBands;
    const current=state.bands.find(b=>b.id===state.currentBandId);
    output('tone-hz',current?current.frequencyHz+' Hz':'—');
    output('band-count',tr('bandCount',{i:index,n:state.totalBands}));
