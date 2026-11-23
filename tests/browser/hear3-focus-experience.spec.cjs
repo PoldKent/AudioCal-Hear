@@ -266,6 +266,20 @@ test('correcting a non-adjacent frequency preserves later bands and never autopl
  expect(final.progress.bands.filter(x=>x.status!=='pending')).toHaveLength(5);
  expect(final.audioSession.observations.filter(x=>x.frequencyHz===250)).toEqual(
   before.filter(x=>x.frequencyHz===250));
+ await page.locator('#result [data-hear-i18n="focus.result.saveSection"]').click();
+ await page.locator('#save-consent').check();
+ page.once('dialog',d=>d.accept());
+ await page.locator('#save-eq').click();
+ await expect(page.locator('#save-status')).toContainText('Guardado en este navegador');
+ const archive=await page.evaluate(async()=>{
+  const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
+  return createHear3CatalogStore().load().catalog.results.at(-1);
+ });
+ expect(archive.observations.map(x=>x.toneId)).toEqual(
+  final.audioSession.observations.map(x=>x.toneId));
+ expect(archive.observations.filter(x=>x.retired===true)).toHaveLength(4);
+ expect(archive.observations.filter(x=>x.frequencyHz===250&&x.retired!==true))
+  .toEqual(before.filter(x=>x.frequencyHz===250));
 });
 
 test('a returning user may export and discard an unfinished test without erasing historic profiles',async({page})=>{
