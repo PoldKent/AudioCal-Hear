@@ -7,6 +7,7 @@ export const HEAR3_LANGUAGE_CHOICES=Object.freeze(['es','en','fr','pt','it','de'
 export const HEAR3_LANGUAGE_KEY='hear3:ui-language:v1';
 const STRINGS=Object.freeze({
   "es": {
+    "focus.d.announce": "Tono {hz} Hz, nivel digital {db} dBFS. Responde ahora.",
     "focus.review.summary": "Corregir otra frecuencia",
     "focus.review.pick": "Selecciona la frecuencia que deseas volver a escuchar",
     "focus.review.action": "Repetir solo esa frecuencia",
@@ -128,6 +129,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "He comprobado la salida de audio y mantendré el volumen físico bajo y cómodo"
   },
   "en": {
+    "focus.d.announce": "Tone {hz} Hz, digital level {db} dBFS. Respond now.",
     "focus.review.summary": "Correct a previous frequency",
     "focus.review.pick": "Choose the frequency you want to listen to again",
     "focus.review.action": "Replay only that frequency",
@@ -249,6 +251,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "I checked the audio output and will keep the physical volume low and comfortable"
   },
   "pt": {
+    "focus.d.announce": "Tom {hz} Hz, nível digital {db} dBFS. Responda agora.",
     "focus.review.summary": "Corrigir uma frequência anterior",
     "focus.review.pick": "Selecione a frequência que quer ouvir novamente",
     "focus.review.action": "Repetir apenas essa frequência",
@@ -370,6 +373,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "Verifiquei a saída de áudio e manterei o volume físico baixo e confortável"
   },
   "fr": {
+    "focus.d.announce": "Son {hz} Hz, niveau numérique {db} dBFS. Répondez maintenant.",
     "focus.review.summary": "Corriger une fréquence précédente",
     "focus.review.pick": "Choisissez la fréquence à réécouter",
     "focus.review.action": "Réécouter uniquement cette fréquence",
@@ -491,6 +495,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "J’ai vérifié la sortie audio et je garderai le volume physique faible et confortable"
   },
   "it": {
+    "focus.d.announce": "Tono {hz} Hz, livello digitale {db} dBFS. Rispondi ora.",
     "focus.review.summary": "Correggi una frequenza precedente",
     "focus.review.pick": "Seleziona la frequenza da riascoltare",
     "focus.review.action": "Ripeti solo questa frequenza",
@@ -612,6 +617,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ho verificato l’uscita audio e terrò il volume fisico basso e confortevole"
   },
   "de": {
+    "focus.d.announce": "Ton {hz} Hz, Digitalpegel {db} dBFS. Antworte jetzt.",
     "focus.review.summary": "Frühere Frequenz korrigieren",
     "focus.review.pick": "Wähle die Frequenz, die du erneut hören möchtest",
     "focus.review.action": "Nur diese Frequenz wiederholen",
@@ -733,6 +739,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ich habe den Audioausgang überprüft und halte die physische Lautstärke niedrig und angenehm"
   },
   "zh": {
+    "focus.d.announce": "测试音 {hz} Hz，数字电平 {db} dBFS。请回答。",
     "focus.review.summary": "更正以前的频率",
     "focus.review.pick": "选择需要重新聆听的频率",
     "focus.review.action": "仅重测此频率",
@@ -854,6 +861,7 @@ const STRINGS=Object.freeze({
     "route.confirm": "我已检查音频输出，并将设备音量保持在较低且舒适的水平"
   },
   "ja": {
+    "focus.d.announce": "テスト音 {hz} Hz、デジタルレベル {db} dBFS。回答してください。",
     "focus.review.summary": "以前の周波数を修正",
     "focus.review.pick": "もう一度聴きたい周波数を選択",
     "focus.review.action": "この周波数のみ再テスト",
