@@ -97,11 +97,22 @@ export function mountHearFocus({doc=document,env=window}={}){
  }
  function verifiedLoudReports(session){
   const retired=new Set(session.invalidatedToneIds??[]);
-  // Revisited or interrupted observations remain auditable in the exam, but
-  // never carry an old loudness preference into a new measurement.
-  return loudReports.filter(r=>!retired.has(r.toneId));
+  // The verified checkpoint is authoritative across tabs or reloads.
+  // Legacy tab-session marks may still exist; merge only unique, non-retired
+  // IDs. The experimental EQ module verifies every matched audible tone.
+  const stored=exam?.getLoudToneReports?.()??[];
+  const all=[...stored,...loudReports];
+  const seen=new Set();
+  return all.filter(r=>{
+   if(retired.has(r.toneId)||seen.has(r.toneId))return false;
+   seen.add(r.toneId);return true;
+  });
  }
  function markLoud(report){
+  // The checkpoint commits this report only after the corresponding verified
+  // "heard" observation exists. An invalid record fails without contaminating
+  // the optional experimental EQ calculation.
+  exam?.rememberLoudTone?.(report);
   if(loudReports.some(x=>x.toneId===report.toneId))return;
   loudReports.push({toneId:report.toneId,frequencyHz:report.frequencyHz});
   if(loudReports.length>64)loudReports=loudReports.slice(-64);
@@ -372,6 +383,11 @@ export function mountHearFocus({doc=document,env=window}={}){
     if(!existing)throw Error('No encontramos una prueba anterior recuperable.');
     createExam(existing.plan);
     await exam.recover({userInitiated:true});
+    // One-time migration from older tab-only discomfort reports: the
+    // checkpoint strictly validates them against the restored audio log.
+    for(const report of loudReports){
+     try{exam.rememberLoudTone(report);}catch{/* invalid legacy hints are ignored */}
+    }
    }
    // Recover only for a newly opened page. A still-live paused exam must
    // resume from its own verified controller, never re-import over itself.
