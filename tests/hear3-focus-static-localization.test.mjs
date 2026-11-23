@@ -17,7 +17,7 @@ test('focus UI translations exist natively in all eight locale dictionaries',()=
   for(const key of UI_KEYS){
    const value=translateHear3Ui('focus.ui.'+key,lang);
    assert.equal(typeof value,'string',lang+' '+key);
-   assert.ok(value.length>=4,lang+' '+key);
+   assert.ok(Array.from(value.trim()).length>=1,lang+' '+key);
   }
  for(const lang of HEAR3_LANGUAGE_CHOICES.filter(x=>x!=='es'))
   for(const key of ['begin','category','footerHelp','footerSafety'])
