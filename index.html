@@ -13,7 +13,7 @@
 <body>
 <a class="skip" href="#experience" data-hear-i18n="focus.ui.skip">Ir a la prueba</a>
 <header class="top">
- <a class="wordmark" href="./" aria-label="Hear, inicio"><span class="mark" aria-hidden="true">◉</span>hear<span class="dot">.</span></a>
+ <a class="wordmark" href="./" aria-label="Hear, inicio" data-hear-i18n-aria-label="focus.ui.ariaHome"><span class="mark" aria-hidden="true">◉</span>hear<span class="dot">.</span></a>
  <div class="top-right"><span class="top-pill" data-hear-i18n="focus.ui.pill">SONIDO PERSONAL</span></div>
 </header>
 <main id="experience" class="experience">
@@ -38,9 +38,9 @@
    <details class="quiet-options" id="device-options">
     <summary data-hear-i18n="focus.device.summary">¿Quieres configurar otro equipo?</summary>
     <label for="category" data-hear-i18n="focus.ui.category">Tipo de equipo</label>
-    <select id="category" data-testid="focus-category"><option value="headphones">Auriculares</option><option value="speaker">Altavoces</option><option value="car">Automóvil (detenido)</option><option value="application">Aplicación</option><option value="interface">Interfaz de audio</option></select>
+    <select id="category" data-testid="focus-category"><option value="headphones" data-hear-i18n="focus.ui.deviceHeadphones">Auriculares</option><option value="speaker" data-hear-i18n="focus.ui.deviceSpeaker">Altavoces</option><option value="car" data-hear-i18n="focus.ui.deviceCar">Automóvil (detenido)</option><option value="application" data-hear-i18n="focus.ui.deviceApplication">Aplicación</option><option value="interface" data-hear-i18n="focus.ui.deviceInterface">Interfaz de audio</option></select>
     <label for="bands" data-hear-i18n="focus.ui.bands">Bandas de tu ecualizador</label>
-    <select id="bands" data-testid="focus-bands"><option value="5">5 bandas</option><option value="7">7 bandas</option><option value="10">10 bandas</option><option value="31">31 bandas</option><option value="custom">Mis frecuencias</option></select>
+    <select id="bands" data-testid="focus-bands"><option value="5" data-hear-i18n="focus.ui.bands5">5 bandas</option><option value="7" data-hear-i18n="focus.ui.bands7">7 bandas</option><option value="10" data-hear-i18n="focus.ui.bands10">10 bandas</option><option value="31" data-hear-i18n="focus.ui.bands31">31 bandas</option><option value="custom" data-hear-i18n="focus.ui.bandsCustom">Mis frecuencias</option></select>
     <label id="custom-label" for="custom-bands" data-hear-i18n="focus.ui.custom" hidden>Frecuencias en Hz, separadas por comas</label>
     <input id="custom-bands" type="text" maxlength="360" placeholder="125, 250, 500, 1000, 2000" hidden>
     <p class="tiny" data-hear-i18n="focus.ui.categoryTip">Usa solo las frecuencias reales que muestra tu ecualizador. No se detecta el hardware automáticamente.</p>
@@ -58,9 +58,9 @@
    <h1 data-hear-i18n="focus.sweep.title">Escucha el barrido</h1>
    <p class="lead" data-hear-i18n="focus.sweep.lead">Durante 20 segundos escucharás cómo cambia la frecuencia. Marca lo que percibas, sin tocar el volumen.</p>
    <div class="sound-sphere" aria-hidden="true"><div class="pulse"></div><div class="pulse p2"></div><span id="sweep-hz">125 Hz</span></div>
-   <progress id="sweep-progress" max="20" value="0" aria-label="Progreso del barrido"></progress>
+   <progress id="sweep-progress" max="20" value="0" aria-label="Progreso del barrido" data-hear-i18n-aria-label="focus.ui.ariaSweep"></progress>
    <p class="counter" id="sweep-time">20 s</p>
-   <p class="digital-level" id="sweep-level">Nivel digital de prueba: −60 dBFS</p>
+   <p class="digital-level" id="sweep-level" data-hear-i18n="focus.ui.sweepDigital">Nivel digital de prueba: −60 dBFS</p>
    <div class="answers perceptual-answers">
     <button class="answer positive" id="sweep-yes" type="button" data-hear-i18n="focus.sweep.yes" data-testid="focus-sweep-yes">Lo escucho bien</button>
     <button class="answer negative" id="sweep-no" type="button" data-hear-i18n="focus.sweep.no" data-testid="focus-sweep-no">No lo escucho</button>
@@ -78,13 +78,13 @@
    <p class="lead" id="tone-note">Escucha cada tono y responde con un toque.</p>
    <div class="tone-orb" id="tone-orb" aria-hidden="true"><span id="tone-hz">125 Hz</span><span class="tone-unit" data-hear-i18n="focus.ui.toneUnit">FRECUENCIA</span></div>
    <p class="counter" id="band-count">Frecuencia 1 de 5</p>
-   <progress id="band-progress" max="5" value="0" aria-label="Frecuencias completadas"></progress>
+   <progress id="band-progress" max="5" value="0" aria-label="Frecuencias completadas" data-hear-i18n-aria-label="focus.ui.ariaBands"></progress>
    <div class="playback-details" id="tone-playback-details">
     <span id="tone-level" data-testid="focus-tone-level">Nivel digital: — dBFS</span>
     <span id="tone-time" data-testid="focus-tone-time">Duración: hasta 3 s</span>
    </div>
-   <progress id="tone-time-progress" class="time-progress" max="3000" value="0" data-testid="focus-tone-timer" aria-label="Tiempo visual estimado del tono"></progress>
-   <p class="tiny level-explainer">dBFS es el nivel de la señal digital, no mide el volumen físico ni la presión acústica.</p>
+   <progress id="tone-time-progress" class="time-progress" max="3000" value="0" data-testid="focus-tone-timer" aria-label="Tiempo visual estimado del tono" data-hear-i18n-aria-label="focus.ui.ariaTone"></progress>
+   <p class="tiny level-explainer" data-hear-i18n="focus.ui.levelExplainer">dBFS es el nivel de la señal digital, no mide el volumen físico ni la presión acústica.</p>
    <button id="tone-play" class="primary main-cta" type="button" data-testid="focus-tone-play">Escuchar tono <span aria-hidden="true">▶</span></button>
    <div class="answers perceptual-answers" id="tone-answers" hidden>
     <button type="button" class="answer positive" id="tone-yes" data-hear-i18n="focus.tones.yes" data-testid="focus-tone-yes">Lo escucho bien</button>
@@ -97,7 +97,7 @@
     <button id="tone-skip" class="quiet-link" type="button" data-hear-i18n="choice.uncertain">No estoy seguro</button>
    </div>
    <button id="tone-stop" class="quiet-link" data-hear-i18n="focus.tones.stop" type="button">Detener sonido</button>
-   <button id="tone-review" class="quiet-link" type="button" hidden>Repetir frecuencia anterior</button>
+   <button id="tone-review" class="quiet-link" type="button" data-hear-i18n="focus.ui.toneReview" hidden>Repetir frecuencia anterior</button>
    <details class="quiet-options" id="tone-correction-options" hidden>
     <summary data-hear-i18n="focus.review.summary">Corregir otra frecuencia</summary>
     <label for="tone-correction-band" data-hear-i18n="focus.review.pick">Selecciona la frecuencia que deseas volver a escuchar</label>
@@ -111,10 +111,10 @@
    <span class="eyebrow" data-hear-i18n="focus.result.guidedTitle">TU RESULTADO</span>
    <h1 data-hear-i18n="focus.result.title">Tu ecualizador</h1>
    <p class="lead" data-hear-i18n="focus.result.lead">Una propuesta experimental: mantenemos lo que percibes bien, bajamos frecuencias incómodas y exploramos con prudencia las que no escuchas.</p>
-   <div class="eq-graph-scroll" role="group" aria-label="Gráfico de ecualización por frecuencia; las cifras exactas aparecen debajo">
+   <div class="eq-graph-scroll" role="group" aria-label="Gráfico de ecualización por frecuencia; las cifras exactas aparecen debajo" data-hear-i18n-aria-label="focus.ui.ariaEqGraph">
     <div id="eq-graph" class="eq-graph" data-testid="focus-eq-graph" aria-hidden="true"></div>
    </div>
-   <div id="eq-rows" class="eq-rows" data-testid="focus-eq-rows" aria-label="Ganancias por frecuencia"></div>
+   <div id="eq-rows" class="eq-rows" data-testid="focus-eq-rows" aria-label="Ganancias por frecuencia" data-hear-i18n-aria-label="focus.ui.ariaEqRows"></div>
    <p id="eq-quality" class="inline-hint"></p>
    <details class="quiet-options" id="eq-howto">
     <summary data-hear-i18n="focus.result.guide">Cómo aplicar mi EQ manualmente</summary>
@@ -140,8 +140,8 @@
    <details class="quiet-options">
     <summary data-hear-i18n="focus.result.saveSection">Guardar o descargar mi resultado</summary>
     <button type="button" class="small-action" id="download-eq" data-hear-i18n="focus.result.download">Descargar TXT</button>
-    <button type="button" class="small-action" id="download-eq-csv">Descargar CSV</button>
-    <button type="button" class="small-action" id="download-eq-png">Guardar imagen PNG</button>
+    <button type="button" class="small-action" id="download-eq-csv" data-hear-i18n="focus.ui.downloadCsv">Descargar CSV</button>
+    <button type="button" class="small-action" id="download-eq-png" data-hear-i18n="focus.ui.downloadPng">Guardar imagen PNG</button>
     <label class="agree small-agree"><input id="save-consent" type="checkbox"><span data-hear-i18n="focus.result.saveConsent">Quiero guardar este resultado provisional en este navegador.</span></label>
     <button type="button" class="small-action" id="save-eq" data-hear-i18n="focus.result.save">Guardar resultado</button>
     <p id="save-status" class="inline-hint" role="status"></p>
@@ -166,7 +166,7 @@
    <label><span data-hear-i18n="common.language">Idioma</span> <select data-hear-language data-testid="hear-language"><option value="es">Español</option><option value="en">English</option><option value="fr">Français</option><option value="pt">Português</option><option value="it">Italiano</option><option value="de">Deutsch</option><option value="zh">中文</option><option value="ja">日本語</option></select></label>
    <details class="foot-tech" id="foot-tech">
     <summary data-hear-i18n="focus.ui.footerTech">Opciones técnicas</summary>
-    <label>Apariencia<select id="hear3-theme-choice" data-testid="hear3-theme-choice" aria-label="Apariencia"><option value="system">Según el sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></label>
+    <label><span data-hear-i18n="focus.ui.themeLabel">Apariencia</span><select id="hear3-theme-choice" data-testid="hear3-theme-choice" aria-label="Apariencia"><option value="system" data-hear-i18n="focus.ui.themeSystem">Según el sistema</option><option value="light" data-hear-i18n="focus.ui.themeLight">Claro</option><option value="dark" data-hear-i18n="focus.ui.themeDark">Oscuro</option></select></label>
     <p class="foot-tech-title" data-hear-i18n="focus.ui.offlineTitle">Uso sin conexión (opcional)</p>
     <button type="button" id="offline-enable" data-testid="offline-enable" data-hear-i18n="focus.ui.offlineSave">Guardar app sin conexión</button>
     <button type="button" id="offline-disable" data-testid="offline-disable" data-hear-i18n="focus.ui.offlineRemove">Retirar descarga</button>
