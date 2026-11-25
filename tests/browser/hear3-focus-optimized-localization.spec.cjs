@@ -19,6 +19,7 @@ test('localized equipment and safe volume warning do not start audio',async({pag
  await page.getByTestId('hear-language').selectOption('fr');
  await expect(page.locator('#category option[value="headphones"]')).toHaveText('Casque');
  await expect(page.locator('#band-progress')).toHaveAttribute('aria-label','Fréquences terminées');
+ await page.locator('#ajustes > summary').click();
  await page.getByTestId('focus-confirm').click();
  await expect(page.locator('#ready-hint')).toContainText('Confirmez');
  await expect(page.getByTestId('focus-sweep')).toBeHidden();
