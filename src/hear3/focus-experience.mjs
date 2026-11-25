@@ -752,6 +752,10 @@ export function mountHearFocus({doc=document,env=window}={}){
  const onLeave=(event)=>{
   if(disposed)return;
   if(event?.persisted===true){
+   // The audio runner registered its pagehide listener before this one.
+   // It may already have silenced the sweep and switched to 'ready', so
+   // always invalidate prior low-volume consent regardless of view.
+   element('volume-ok').checked=false;
    // Returning from the browser back-forward cache does not execute boot
    // again. Keep the existing controller, but silence and revalidate any
    // active test: never resume sound from a frozen tab without consent.
