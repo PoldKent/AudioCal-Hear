@@ -749,8 +749,31 @@ export function mountHearFocus({doc=document,env=window}={}){
    idleTicks=0;render();
   }
  },250);
- const onLeave=()=>{
+ const onLeave=(event)=>{
   if(disposed)return;
+  if(event?.persisted===true){
+   // The audio runner registered its pagehide listener before this one.
+   // It may already have silenced the sweep and switched to 'ready', so
+   // always invalidate prior low-volume consent regardless of view.
+   element('volume-ok').checked=false;
+   // Returning from the browser back-forward cache does not execute boot
+   // again. Keep the existing controller, but silence and revalidate any
+   // active test: never resume sound from a frozen tab without consent.
+   if(view==='sweep'){
+    sweep.stop('pagehide-bfcache');
+    element('volume-ok').checked=false;
+    go('ready');
+    notice(msg('sweepInterrupted'));
+   }else if(exam&&exam.getSession().status!=='completed'){
+    try{exam.interrupt({routeMayHaveChanged:true});}catch{}
+    pendingRecovery=true;
+    element('volume-ok').checked=false;
+    output('confirm',tr('recover')+' →');
+    go('ready');
+    notice(msg('routeChanged'));
+   }
+   return;
+  }
   disposed=true;
   env.clearInterval(timer);
   sweep.stop('pagehide');
@@ -765,8 +788,10 @@ export function mountHearFocus({doc=document,env=window}={}){
   env.removeEventListener('hashchange',openHelp);
   env.removeEventListener('hear3:language-change',onLanguageChange);
   media?.removeEventListener?.('change',onThemeChange);
+  env.removeEventListener('pagehide',onLeave);
  };
- env.addEventListener('pagehide',onLeave,{once:true});
+ // Do not use once:true: pagehide may fire repeatedly for BFCache cycles.
+ env.addEventListener('pagehide',onLeave);
  render();
  return Object.freeze({getView:()=>view,getExam:()=>exam,stop:interrupt,dispose:onLeave,
   getEq:()=>eq});
