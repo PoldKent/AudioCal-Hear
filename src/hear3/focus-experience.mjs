@@ -46,6 +46,13 @@ export function mountHearFocus({doc=document,env=window}={}){
    result=result.replaceAll('{'+name+'}',String(value));
   return result;
  };
+ const msg=(key,values={})=>{
+  const lang=doc.documentElement.lang?.split('-')[0]||'es';
+  let result=translateHear3Ui('focus.m.'+key,lang)??key;
+  for(const [name,value] of Object.entries(values))
+   result=result.replaceAll('{'+name+'}',String(value));
+  return result;
+ };
  const store=createHear3AdaptiveProgressStore({profileId:HEAR_FOCUS_PROFILE_ID});
  // Only equipment category and declared EQ frequencies are remembered.
  // The verified tone checkpoint remains the source of truth for progression.
@@ -124,7 +131,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  const sweep=createSweepAudioRunner({
   onEnded:()=>{if(!disposed&&view==='sweep')void run(prepareTonesFromSweep);},
   onInterrupted:()=>{if(!disposed&&view==='sweep'){
-   go('ready');notice('El barrido se detuvo. Comprueba el volumen físico antes de continuar.');
+   go('ready');notice(msg('sweepInterrupted'));
   }},
  });
  const themeKey='hear3:ui-theme:v1',themeChoice=element('hear3-theme-choice');
@@ -157,17 +164,16 @@ export function mountHearFocus({doc=document,env=window}={}){
  const offlineSupported=detectHear3OfflineSupport(env).supported;
  if(!offlineSupported){
   offlineOn.disabled=true;offlineOff.disabled=true;
-  offlineStatus.textContent='La instalación sin conexión no está disponible.';
- }else offlineStatus.textContent='Disponible, sin descargar nada automáticamente.';
+  offlineStatus.textContent=msg('offlineUnsupported');
+ }else offlineStatus.textContent=msg('offlineAvailable');
  async function optOffline(enable){
   const action=enable?offlineOn:offlineOff;action.disabled=true;
-  offlineStatus.textContent=enable?'Guardando recursos…':'Retirando recursos…';
+  offlineStatus.textContent=msg(enable?'offlineSaving':'offlineRemoving');
   try{
    const result=enable?await enableHear3Offline({env}):await disableHear3Offline({env});
    offlineStatus.textContent=enable
-    ?'Recursos estáticos verificados: '+result.staticResources+'. '+result.warning
-    :result.complete?'Se solicitó retirar los recursos sin conexión. '+result.warning
-      :'No pudimos confirmar la retirada total de la descarga.';
+    ?msg('offlineReady',{n:result.staticResources})
+    :msg(result.complete?'offlineRemoved':'offlineRemovalPartial');
   }catch(e){offlineStatus.textContent=safeError(e);}
   finally{action.disabled=!offlineSupported;}
  }
@@ -221,6 +227,26 @@ export function mountHearFocus({doc=document,env=window}={}){
   exam=createHear3ResumableAdaptiveExam(currentExamOptions(plan));
   return exam;
  }
+ function eqReason(row){
+  return row.source==='explicit-too-loud-attenuate'?msg('eqCut'):
+   row.source==='inaudible-at-digital-ceiling-hypothesis'?msg('eqBoost'):
+   row.source==='heard-without-contrast-maintain'?msg('eqMaintain'):
+   row.gainDb>0?msg('eqBoost'):row.gainDb<0?msg('eqCutExplore'):msg('eqMaintain');
+ }
+ function renderEqText(){
+  if(!review)return;
+  const labels=element('eq-rows').querySelectorAll('.eq-reason');
+  review.rows.forEach((row,i)=>{
+   const value=eqReason(row);
+   if(labels[i]&&labels[i].textContent!==value)labels[i].textContent=value;
+  });
+  output('eq-quality',msg('eqSummary',{
+   cap:eq.capDb,
+   up:review.rows.filter(r=>r.gainDb>0).length,
+   down:review.rows.filter(r=>r.gainDb<0).length,
+   flat:review.rows.filter(r=>r.gainDb===0).length,
+  }));
+ }
  function buildEq(){
   if(!exam)return false;
   const state=exam.snapshot(),session=exam.getSession();
@@ -262,10 +288,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    hz.textContent=row.frequencyHz+' Hz';
    const reason=doc.createElement('small');
    reason.className='eq-reason';
-   reason.textContent=row.source==='explicit-too-loud-attenuate'?'Bajar':
-    row.source==='inaudible-at-digital-ceiling-hypothesis'?'Explorar subida':
-    row.source==='heard-without-contrast-maintain'?'Mantener':
-    row.gainDb>0?'Explorar subida':row.gainDb<0?'Explorar bajada':'Mantener';
+   reason.textContent=eqReason(row);
    hz.append(reason);
    const track=doc.createElement('div');track.className='eq-track';
    track.setAttribute('aria-hidden','true');
@@ -280,11 +303,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    section.append(hz,track,gain);
    return section;
   }));
-  output('eq-quality',
-   'Curva experimental con límite de '+draft.capDb+' dB: '+
-   review.rows.filter(r=>r.gainDb>0).length+' subidas pequeñas, '+
-   review.rows.filter(r=>r.gainDb<0).length+' bajadas, '+
-   review.rows.filter(r=>r.gainDb===0).length+' bandas sin cambio.');
+  renderEqText();
   go('result');return true;
  }
  async function prepareTonesFromSweep(){
@@ -299,8 +318,8 @@ export function mountHearFocus({doc=document,env=window}={}){
  function markSweep(heard){
   if(view!=='sweep'||sweep.snapshot().status!=='playing')return;
   const report=sweep.recordResponse(heard);
-  output('sweep-feedback',(heard?'Se oye bien':'No se oye')+
-   ' cerca de '+Math.round(report.frequencyHz)+' Hz. Continúa escuchando.');
+  output('sweep-feedback',msg(heard?'sweepHeard':'sweepNotHeard',
+   {hz:Math.round(report.frequencyHz)}));
  }
  function skipSweep(){
   if(view!=='sweep')return;
@@ -314,7 +333,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   try{sweep.recordResponse(true);}
   catch{/* The stop remains mandatory even if the audio clock rejects the mark. */}
   finally{sweep.stop('reported-uncomfortable');}
-  output('sweep-feedback','Barrido detenido por incomodidad. No subas el volumen físico.');
+  output('sweep-feedback',msg('sweepLoud'));
   return prepareTonesFromSweep();
  }
  async function begin(){
@@ -329,7 +348,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   notice('');
   output('confirm',(pendingRecovery?tr('recover'):tr('confirm'))+' →');
   if(pendingRecovery){
-   output('ready-hint','Tu prueba anterior está guardada. Se recuperará sin reproducir sonido.');
+   output('ready-hint',msg('resumeHint'));
   }
   go('ready');
  }
@@ -340,7 +359,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   const url=URL.createObjectURL(blob),a=doc.createElement('a');
   a.href=url;a.download='hear-prueba-en-curso.json';
   doc.body.append(a);a.click();a.remove();
-  env.setTimeout(()=>URL.revokeObjectURL(url),1200);
+  env.setTimeout(()=>URL.revokeObjectURL(url),30000);
  }
  async function resetProgress(){
   if(!readCheckpoint())throw Error('No encontramos una prueba anterior para eliminar.');
@@ -370,7 +389,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  }
  async function confirmReady(){
   if(!element('volume-ok').checked){
-   notice('Marca la confirmación de volumen bajo para continuar.');
+   notice(msg('lowVolumeRequired'));
    element('volume-ok').focus();
    return;
   }
@@ -439,7 +458,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    }
    pendingRecovery=true;
    element('volume-ok').checked=false;
-   notice('La salida de audio cambió. Confirma otra vez el equipo y el volumen antes de continuar.');
+   notice(msg('routeChanged'));
    output('confirm',tr('recover')+' →');
    go('ready');return;
   }
@@ -477,7 +496,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   if(view==='sweep'){
    sweep.stop('user-stop');
    go('ready');
-   notice('Barrido detenido. Revisa el volumen y vuelve a comenzar cuando quieras.');
+   notice(msg('sweepStopped'));
   }else if(exam&&['playing','ready','starting'].includes(exam.snapshot().status)){
    exam.interrupt({routeMayHaveChanged:false});render();
   }
@@ -534,8 +553,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   element('volume-ok').checked=false;
   output('confirm',tr('recover')+' →');
   go('ready');
-  notice('Solo se repetirá '+selected.frequencyHz+
-   ' Hz. Verifica la salida de audio y el volumen físico bajo antes de continuar. No se iniciará sonido automáticamente.');
+  notice(msg('correctionNotice',{hz:selected.frequencyHz}));
  }
  async function copyEq(){
   if(!review)throw Error('No hay ajustes que copiar.');
@@ -546,13 +564,13 @@ export function mountHearFocus({doc=document,env=window}={}){
    throw Error('El portapapeles no está disponible aquí. Usa Descargar TXT.');
   }
   await env.navigator.clipboard.writeText(content);
-  output('copy-status','Ajustes copiados. Ahora puedes introducirlos manualmente en tu equipo.');
+  output('copy-status',msg('copied'));
  }
  function downloadBlob(blob,name){
   const url=URL.createObjectURL(blob),a=doc.createElement('a');
   a.href=url;a.download=name;
   doc.body.append(a);a.click();a.remove();
-  env.setTimeout(()=>URL.revokeObjectURL(url),1200);
+  env.setTimeout(()=>URL.revokeObjectURL(url),30000);
  }
  function downloadEq(format='txt'){
   if(!review)throw Error('Primero termina la prueba.');
@@ -573,11 +591,11 @@ export function mountHearFocus({doc=document,env=window}={}){
  function saveEq(){
   if(!eq||!exam)throw Error('Primero obtén tu ecualizador.');
   if(saveResultId){
-   output('save-status','Este resultado ya está guardado. Puedes abrir el EQ para editarlo.');
+   output('save-status',msg('alreadySaved'));
    return;
   }
   if(!element('save-consent').checked){
-   output('save-status','Confirma primero que deseas conservar los datos en este navegador.');
+   output('save-status',msg('saveConsent'));
    return;
   }
   if(!env.confirm('¿Guardar tus respuestas y el EQ matemático provisional en este navegador? No se aplicará al equipo.'))return;
@@ -602,9 +620,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    savedLink.href='./hear3-eq-editor/?result='+encodeURIComponent(saveResultId);
    savedLink.hidden=false;
   }
-  output('save-status',saved.persistedOnDevice
-   ?'Guardado en este navegador. Puedes consultarlo en Ayuda y datos.'
-   :'No pudimos verificar el guardado permanente. Descarga una copia TXT.');
+  output('save-status',msg(saved.persistedOnDevice?'saved':'saveNotVerified'));
  }
  function render(){
   if(disposed)return;
@@ -678,7 +694,11 @@ export function mountHearFocus({doc=document,env=window}={}){
    output('tone-play',tr(changedRoute?'route':paused?'replay':'play')+(changedRoute?' →':' ▶'));
   }
  }
- env.addEventListener('hear3:language-change',render);
+ const onLanguageChange=()=>{
+  render();
+  if(view==='result')renderEqText();
+ };
+ env.addEventListener('hear3:language-change',onLanguageChange);
  const listen=(id,fn)=>element(id).addEventListener('click',()=>void run(fn));
  listen('begin',begin);
  listen('confirm',confirmReady);
@@ -719,7 +739,16 @@ export function mountHearFocus({doc=document,env=window}={}){
   }
  };
  doc.addEventListener('keydown',stopKey);
- const timer=env.setInterval(render,250);
+ // Avoid repeatedly loading the checkpoint while idle without
+ // slowing down the 250 ms progress updates during audio playback.
+ let idleTicks=0;
+ const timer=env.setInterval(()=>{
+  if(view==='sweep'||view==='tones'){
+   idleTicks=0;render();
+  }else if(++idleTicks>=5){
+   idleTicks=0;render();
+  }
+ },250);
  const onLeave=()=>{
   if(disposed)return;
   disposed=true;
@@ -734,7 +763,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   }
   doc.removeEventListener('keydown',stopKey);
   env.removeEventListener('hashchange',openHelp);
-  env.removeEventListener('hear3:language-change',render);
+  env.removeEventListener('hear3:language-change',onLanguageChange);
   media?.removeEventListener?.('change',onThemeChange);
  };
  env.addEventListener('pagehide',onLeave,{once:true});
