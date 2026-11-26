@@ -237,7 +237,8 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 <p><a href="../../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
 </main>
 <script type="module">
-import {translateHear3Ui as translateTechExam} from '../../src/hear3/app-i18n.mjs';
+import {translateHear3Ui as translateTechExam,translateHear3TechnicalMessage} from '../../src/hear3/app-i18n.mjs';
+const technicalMessage=value=>translateHear3TechnicalMessage(value,document.documentElement.lang.split('-')[0]);
 const examTr=(key,params={})=>Object.entries(params).reduce((s,[k,v])=>s.replaceAll('{'+k+'}',String(v)),translateTechExam('tech.exam.'+key,document.documentElement.lang.split('-')[0]));
 import {createSweepPlan,planSweepConfirmations,frequencyAtSweepTime}
  from '../../src/hear3/sweep-planner.mjs';
@@ -465,9 +466,9 @@ function render(){
  const durability=exam?.getPersistence();
  $('recovery-status').textContent=local.checkpoint
   ?'Copia local disponible ('+local.durability+'). '+
-    (durability?.warning??local.warnings.join(' '))
+    (technicalMessage(durability?.warning??local.warnings.join(' ')))
   :'Todavía no existe un checkpoint verificable. '+
-    (durability?.warning??local.warnings.join(' '));
+    (technicalMessage(durability?.warning??local.warnings.join(' ')));
  if(!exam)return;
  const data=currentExam;
  const current=data.bands.find(b=>b.id===data.currentBandId);
@@ -536,7 +537,7 @@ async function run(action){
  setExamErrorHelp(null);
  try{await action();}
  catch(e){
-  $('error').textContent=e?.message??String(e);
+  $('error').textContent=technicalMessage(e?.message??String(e));
   setExamErrorHelp(e);
  }
  finally{

@@ -134,7 +134,8 @@ Todavía no se ha guardado ningún historial histórico completo en AudioCal Hea
 <p id="error" data-testid="error" role="alert"></p>
 </main>
 <script type="module">
-import {translateHear3Ui} from '../src/hear3/app-i18n.mjs';
+import {translateHear3Ui,translateHear3TechnicalMessage} from '../src/hear3/app-i18n.mjs';
+const technicalMessage=value=>translateHear3TechnicalMessage(value,document.documentElement.lang.split('-')[0]);
 import {createHear3CatalogStore,createHear3CatalogBackupTransfer,MAX_CATALOG_JSON_CHARS}
  from '../src/hear3/catalog-backup-store.mjs';
 import { createHear3CatalogHistoryReader } from '../src/hear3/catalog-history-reader.mjs';
@@ -216,7 +217,7 @@ function render() {
  $('summary').textContent=tr('summary',{d:counts.devices.length,p:counts.profiles.length,r:counts.results.length});
  $('durability').textContent=tr('storage',{v:loaded.durability})+
  ' ('+tr(loaded.persistedOnDevice?'persisted':'temporary')+')'+
- (loaded.warnings?.length?' · '+loaded.warnings.join(' '):'')+
+ (loaded.warnings?.length?' · '+loaded.warnings.map(technicalMessage).join(' '):'')+
  ' · '+tr('coordination')+(writer.supported()?'':' '+tr('noLocks'));
  $('commit').disabled=!preview;
  $('legacy-export').disabled=!legacyPreview;
@@ -227,12 +228,12 @@ function render() {
  $('legacy-vault-stored-export').disabled=!savedV2History.available;
  $('legacy-vault-status').textContent=(savedV2History.available
  ?tr('vaultAvailable',{p:savedV2History.summary.profileCount,state:tr(savedV2History.persistedOnDevice?'vaultYes':'vaultNo')})
- :tr('vaultAbsent'))+' '+savedV2History.warnings.join(' ');
+ :tr('vaultAbsent'))+' '+savedV2History.warnings.map(technicalMessage).join(' ');
  $('legacy-description').textContent=legacyPreview?
- tr('legacyStatus',{format:legacyPreview.sourceFormat,p:legacyPreview.sourceProfiles,m:legacyPreview.mappedProfiles,n:legacyPreview.unmigratedMeasurementRecords})+' '+legacyPreview.warning:
+ tr('legacyStatus',{format:legacyPreview.sourceFormat,p:legacyPreview.sourceProfiles,m:legacyPreview.mappedProfiles,n:legacyPreview.unmigratedMeasurementRecords})+' '+technicalMessage(legacyPreview.warning):
  tr('legacyNone');
  $('description').textContent=preview?
- tr('backupStatus',{d:preview.devices,p:preview.profiles,r:preview.results,n:preview.outputResults})+' '+tr(preview.replacesExisting?'replaceNeeded':'noReplace')+' '+preview.warning:
+ tr('backupStatus',{d:preview.devices,p:preview.profiles,r:preview.results,n:preview.outputResults})+' '+tr(preview.replacesExisting?'replaceNeeded':'noReplace')+' '+technicalMessage(preview.warning):
  tr('none');
 }
 let reviewGeneration=0;
@@ -249,7 +250,7 @@ async function inspect() {
 }
 $('preview').addEventListener('click',async()=>{
  $('error').textContent='';
- try{await inspect();}catch(e){$('error').textContent=e.message;}finally{render();}
+ try{await inspect();}catch(e){$('error').textContent=technicalMessage(e.message);}finally{render();}
 });
 $('commit').addEventListener('click',async()=>{
  $('error').textContent='';
@@ -258,8 +259,8 @@ $('commit').addEventListener('click',async()=>{
   if(preview.replacesExisting&&!confirm(tr('confirmReplace')))return;
   const {response:r}=await serializeMutation(()=>transfer.commit({userInitiated:true,confirmReplace:preview.replacesExisting}));
   preview=null;
-  if(!r.persistedOnDevice)$('error').textContent=r.warning||'Datos temporales: exporta una copia.';
- }catch(e){$('error').textContent=e.message;}finally{render();}
+  if(!r.persistedOnDevice)$('error').textContent=technicalMessage(r.warning||'Datos temporales: exporta una copia.');
+ }catch(e){$('error').textContent=technicalMessage(e.message);}finally{render();}
 });
 $('file').addEventListener('change',()=>{reviewGeneration++;transfer.discard();preview=null;render();});
 $('mode').addEventListener('change',()=>{reviewGeneration++;transfer.discard();preview=null;render();});
@@ -269,7 +270,7 @@ $('download').addEventListener('click',()=>{
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear3-catalog-backup.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
- }catch(e){$('error').textContent=e.message;}
+ }catch(e){$('error').textContent=technicalMessage(e.message);}
 });
 function discardDeletion() {
  deletion.discard();deletionProposal=null;render();
@@ -284,7 +285,7 @@ $('delete-preview').addEventListener('click',()=>{
    kind:$('delete-kind').value,id:$('delete-target').value,
    cascade:$('delete-cascade').checked,
   });
- }catch(e){$('error').textContent=e.message;}
+ }catch(e){$('error').textContent=technicalMessage(e.message);}
  finally{render();}
 });
 $('delete-commit').addEventListener('click',async()=>{
@@ -299,8 +300,8 @@ $('delete-commit').addEventListener('click',async()=>{
    confirmCascade:scope.requiresSeparateCascadeConfirmation}));
   deletionProposal=null;
   if(!saved.persistedOnDevice)$('error').textContent=
-   'La eliminación NO quedó confirmada en almacenamiento permanente. Exporta un respaldo y revisa los datos locales.';
- }catch(e){$('error').textContent=e.message;}
+   technicalMessage('La eliminación NO quedó confirmada en almacenamiento permanente. Exporta un respaldo y revisa los datos locales.');
+ }catch(e){$('error').textContent=technicalMessage(e.message);}
  finally{render();}
 });
 $('history-show').addEventListener('click',()=>{
@@ -315,7 +316,7 @@ $('history-show').addEventListener('click',()=>{
    const r=history.latestResult;
    historyStatus('historyDetail',{name:history.profile.name,device:history.device.name,id:r.id,state:r.status,date:new Date(r.capturedAt).toISOString(),orig:r.originalEq.length,edit:r.currentEq.length});
   }
- }catch(e){$('error').textContent=e.message;}
+ }catch(e){$('error').textContent=technicalMessage(e.message);}
 });
 function discardLegacyPreview(){
  legacyTransfer.discard();legacyHistoryVault.discard();
@@ -359,7 +360,7 @@ $('legacy-preview').addEventListener('click',async()=>{
   legacyTransfer.discard();legacyHistoryVault.discard();
   legacyPreview=null;legacyFileRaw=null;legacyFileActiveId='';
   legacyVaultPreview=null;legacyVaultExportAttempted=false;
-  $('error').textContent=e.message;
+  $('error').textContent=technicalMessage(e.message);
  }finally{render();}
 });
 $('legacy-export').addEventListener('click',()=>{
@@ -371,7 +372,7 @@ $('legacy-export').addEventListener('click',()=>{
   setTimeout(()=>URL.revokeObjectURL(url),30000);
   // This only means the download was requested, not confirmed on disk.
   legacyArchiveExportAttempted=true;
- }catch(e){$('error').textContent=e.message;}
+ }catch(e){$('error').textContent=technicalMessage(e.message);}
  finally{render();}
 });
 $('legacy-import').addEventListener('click',async()=>{
@@ -381,8 +382,8 @@ $('legacy-import').addEventListener('click',async()=>{
   if(!confirm(tr('confirmLegacy')))return;
   const {response:result}=await serializeMutation(()=>legacyTransfer.commit({userInitiated:true,confirmBackupExported:true}));
   legacyPreview=null;legacyArchiveExportAttempted=false;
-  if(!result.persistedOnDevice)$('error').textContent=result.warning||'Datos en memoria temporal.';
- }catch(e){$('error').textContent=e.message;}
+  if(!result.persistedOnDevice)$('error').textContent=technicalMessage(result.warning||'Datos en memoria temporal.');
+ }catch(e){$('error').textContent=technicalMessage(e.message);}
  finally{render();}
 });
 $('legacy-vault-export').addEventListener('click',()=>{
@@ -393,7 +394,7 @@ $('legacy-vault-export').addEventListener('click',()=>{
   a.href=url;a.download='hear3-historial-v2-completo-portatil.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
   legacyVaultExportAttempted=true;
- }catch(e){$('error').textContent=e.message;}
+ }catch(e){$('error').textContent=technicalMessage(e.message);}
  finally{render();}
 });
 $('legacy-vault-save').addEventListener('click',async()=>{
@@ -409,8 +410,8 @@ $('legacy-vault-save').addEventListener('click',async()=>{
    confirmOverwrite:legacyVaultPreview.replacesExisting,
   }));
   legacyVaultPreview=null;legacyVaultExportAttempted=false;
-  if(!saved.persistedOnDevice)$('error').textContent=saved.warning;
- }catch(e){$('error').textContent=e.message;}
+  if(!saved.persistedOnDevice)$('error').textContent=technicalMessage(saved.warning);
+ }catch(e){$('error').textContent=technicalMessage(e.message);}
  finally{render();}
 });
 $('legacy-vault-stored-export').addEventListener('click',()=>{
@@ -420,7 +421,7 @@ $('legacy-vault-stored-export').addEventListener('click',()=>{
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear3-historial-v2-verificado-respaldo.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
- }catch(e){$('error').textContent=e.message;}
+ }catch(e){$('error').textContent=technicalMessage(e.message);}
 });
 // Test-only local inspection. No mutation methods or network functions.
 window.hear3CatalogPilot=Object.freeze({

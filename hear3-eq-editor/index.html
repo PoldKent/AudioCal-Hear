@@ -116,7 +116,8 @@ No se ha exportado ningún EQ.</p>
  · <a href="../hear3-library/" data-hear-i18n="tech.editor.catalog">Ver catálogo y respaldos</a></p>
 </main>
 <script type="module">
-import {translateHear3Ui} from '../src/hear3/app-i18n.mjs';
+import {translateHear3Ui,translateHear3TechnicalMessage} from '../src/hear3/app-i18n.mjs';
+const technicalMessage=value=>translateHear3TechnicalMessage(value,document.documentElement.lang.split('-')[0]);
 import {createHear3CatalogStore} from '../src/hear3/catalog-backup-store.mjs';
 import {createHear3CatalogWriteCoordinator} from '../src/hear3/coordinated-catalog-writer.mjs';
 import {createHear3ProvisionalEqEditor,exportHear3ProvisionalEq}
@@ -232,7 +233,7 @@ function renderSelection(){
    snapshot=editor.snapshot();
    values=snapshot.rows.map(x=>x.currentGainDb);
    history=createHear3EqEditHistory({initial:values,capDb:snapshot.capDb});
-  }catch(e){$('error').textContent=e.message;}
+  }catch(e){$('error').textContent=technicalMessage(e.message);}
  }
  $('metadata').replaceChildren();
  if(snapshot){
@@ -291,7 +292,7 @@ function busyState(state){
 }
 function withError(cb){
  $('error').textContent='';
- try{cb();}catch(error){$('error').textContent=error?.message??String(error);}
+ try{cb();}catch(error){$('error').textContent=technicalMessage(error?.message??String(error));}
 }
 $('result-select').addEventListener('change',renderSelection);
 $('undo').addEventListener('click',()=>withError(()=>{
@@ -339,7 +340,7 @@ $('commit').addEventListener('click',async()=>{
   const message=error?.message??String(error);
   refresh(selected);
   // Keep the concurrency error visible after refreshing the selected EQ.
-  $('error').textContent=message;
+  $('error').textContent=technicalMessage(message);
  }finally{busyState(false);}
 });
 function download(content,filename,type){
@@ -363,7 +364,7 @@ $('copy').addEventListener('click',async()=>{
   if(!navigator.clipboard?.writeText)throw Error('Portapapeles no compatible en este navegador.');
   await navigator.clipboard.writeText(getReview());
   status('export-status','copied');
- }catch(e){$('error').textContent=e.message;}
+ }catch(e){$('error').textContent=technicalMessage(e.message);}
 });
 $('png').addEventListener('click',()=>withError(()=>{
  if(!snapshot)throw Error('Selecciona un resultado antes de exportar.');
@@ -393,7 +394,7 @@ $('png').addEventListener('click',()=>withError(()=>{
  g.fillText('Valores originales y actuales editables en el catálogo V3. Sin garantía de headroom.',36,430);
  g.fillText('Bandas, filtros y equipo físico no verificados acústicamente.',36,457);
  canvas.toBlob(blob=>{
-  if(!blob){$('error').textContent='No se pudo codificar PNG.';return;}
+  if(!blob){$('error').textContent=technicalMessage('No se pudo codificar PNG.');return;}
   download(blob,'hear3-eq-provisional-no-calibrado.png','image/png');
   status('export-status','pngDone');
  },'image/png');
