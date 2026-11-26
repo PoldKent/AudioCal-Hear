@@ -328,7 +328,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    const input=doc.createElement('input');input.type='range';input.id=id;
    input.min=String(-originalReview.capDb);input.max=String(originalReview.capDb);input.step='0.5';
    input.dataset.testid=id;input.value=String(r.gainDb);
-   const value=doc.createElement('output');value.htmlFor=id;
+   const value=doc.createElement('span');value.className='eq-edit-value';
    const reset=doc.createElement('button');reset.type='button';reset.className='small-action';
    reset.dataset.testid='focus-edit-reset-'+i;
    input.addEventListener('input',()=>{
@@ -352,6 +352,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    const hz=originalReview.rows[i].frequencyHz;
    input.value=String(values[i]);input.disabled=disabled;
    input.setAttribute('aria-label',editMsg('gainLabel',{hz}));
+   input.setAttribute('aria-valuetext',formatHearFocusGain(values[i]));
    value.textContent=formatHearFocusGain(values[i]);
    reset.textContent=editMsg('bandReset');reset.setAttribute('aria-label',editMsg('bandLabel',{hz}));
    reset.disabled=disabled||values[i]===original[i];

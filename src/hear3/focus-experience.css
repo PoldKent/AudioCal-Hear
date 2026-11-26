@@ -142,8 +142,8 @@ progress::-moz-progress-bar{background:var(--mint2);border-radius:10px}
 .eq-edit-band{display:grid;grid-template-columns:minmax(65px,1fr) minmax(85px,2fr) minmax(52px,auto) auto;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--outline)}
 .eq-edit-band label{margin:0!important;font-weight:700;font-variant-numeric:tabular-nums}
 .eq-edit-band input[type=range]{width:100%;min-width:0;min-height:44px;accent-color:var(--mint2)}
-.eq-edit-band output{font-size:.82rem;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.eq-edit-band .eq-edit-value{font-size:.82rem;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .eq-edit-band .small-action{margin:0;padding:7px 10px;font-size:.8rem}
 .eq-edit-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 .eq-edit-actions .small-action{margin:0}
-@media(max-width:420px){.eq-edit-band{grid-template-columns:minmax(65px,1fr) minmax(55px,auto) auto;gap:4px 9px}.eq-edit-band input[type=range]{grid-column:1/-1;grid-row:2}.eq-edit-band label{grid-column:1}.eq-edit-band output{grid-column:2}.eq-edit-band button{grid-column:3}}
+@media(max-width:420px){.eq-edit-band{grid-template-columns:minmax(65px,1fr) minmax(55px,auto) auto;gap:4px 9px}.eq-edit-band input[type=range]{grid-column:1/-1;grid-row:2}.eq-edit-band label{grid-column:1}.eq-edit-band .eq-edit-value{grid-column:2}.eq-edit-band button{grid-column:3}}
