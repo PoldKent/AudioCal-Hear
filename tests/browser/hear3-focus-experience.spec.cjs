@@ -491,3 +491,38 @@ test('EQ result uses spare viewport width and scrolls only when all bands cannot
   if(count===31&&layout.viewport>=2400)expect(layout.overflow).toBe(false);
  }
 });
+
+test('bounded starting level requires fresh consent, matches actual tone and is preserved on recovery',async({page})=>{
+ await fakeAudio(page,{holdSweep:true});
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ const level=page.getByTestId('focus-start-level');
+ await expect(level).toHaveValue('-60');
+ await expect(level.locator('option')).toHaveCount(3);
+ await page.getByTestId('focus-volume').check();
+ await level.selectOption('-48');
+ await expect(page.getByTestId('focus-volume')).not.toBeChecked();
+ await page.getByTestId('focus-confirm').click();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.locator('#sweep-level')).toContainText('-48');
+ await page.getByTestId('focus-sweep-skip').click();
+ await expect(page.getByTestId('focus-tone-level')).toContainText('-48');
+ await page.getByTestId('focus-tone-play').click();
+ await expect(page.getByTestId('focus-tone-level')).toContainText('-48');
+ await page.getByTestId('focus-tone-yes').click();
+ const saved=await page.evaluate(async()=>{
+  const {createHear3AdaptiveProgressStore}=await import('/src/hear3/adaptive-progress-store.mjs');
+  return createHear3AdaptiveProgressStore({profileId:'hear3-integrated-pilot'}).load().checkpoint;
+ });
+ expect(saved.progress.options.initialDbfs).toBe(-48);
+ expect(saved.audioSession.observations[0].digitalLevelDbfs).toBe(-48);
+ await page.reload();
+ await page.getByTestId('focus-begin').click();
+ await expect(level).toBeHidden();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+});
