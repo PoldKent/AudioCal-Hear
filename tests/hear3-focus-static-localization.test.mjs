@@ -43,6 +43,15 @@ test('production and build-source entries share all translated focus labels',()=
 test('static offline cache keys stay in sync after releasing updated dictionaries',()=>{
  const optIn=read('src/hear3/offline-optin.mjs');
  const worker=read('hear3-offline-sw.js');
- assert.match(optIn,/audiocal-hear3-prototype-static-v18/);
- assert.match(worker,/CACHE_NAME=CACHE_PREFIX\+'v18'/);
+ assert.match(optIn,/audiocal-hear3-prototype-static-v19/);
+ assert.match(worker,/CACHE_NAME=CACHE_PREFIX\+'v19'/);
+});
+
+test('support link is informational and translated in every locale',()=>{
+ const home=read('index.html');
+ assert.ok(home.includes('href="https://github.com/PoldKent/AudioCal-Hear/blob/main/SUPPORT.md" data-testid="hear-support-link"'));
+ assert.ok(home.includes('data-hear-i18n="focus.ui.footSupport"'));
+ assert.ok(read('SUPPORT.md').includes('Ethereum mainnet (ERC-20)'));
+ assert.ok(read('.github/FUNDING.yml').includes('https://github.com/PoldKent/AudioCal-Hear/blob/main/SUPPORT.md'));
+ for(const lang of ['es','en','fr','pt','it','de','zh','ja'])assert.ok(translateHear3Ui('focus.ui.footSupport',lang));
 });
