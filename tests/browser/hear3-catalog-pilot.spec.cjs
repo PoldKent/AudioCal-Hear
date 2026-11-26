@@ -209,3 +209,16 @@ test('changing import mode during async reading invalidates the stale preview',a
  await expect(page.getByTestId('commit')).toBeDisabled();
  await expect(page.getByTestId('summary')).toContainText('0 dispositivos, 0 perfiles, 0 resultados');
 });
+
+test('localized real library backup review retains the original import scope',async({page})=>{
+ await page.goto('/hear3-library/');
+ await upload(page,await backupFor(page,'locale'));
+ await page.getByTestId('preview').click();
+ await page.getByTestId('hear-language').selectOption('en');
+ await expect(page.getByTestId('description')).toContainText('Backup: 1 devices, 1 profiles, 1 results. After import: 1 results.');
+ await expect(page.getByTestId('summary')).toContainText('0 devices, 0 profiles, 0 results');
+ await expect(page.getByTestId('commit')).toBeEnabled();
+ await page.getByTestId('hear-language').selectOption('de');
+ await expect(page.getByTestId('description')).toContainText('Sicherung: 1 Geräte, 1 Profile, 1 Ergebnisse.');
+ await expect(page.getByTestId('commit')).toBeEnabled();
+});

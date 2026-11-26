@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {HEAR3_LANGUAGE_CHOICES,translateHear3Ui} from '../src/hear3/app-i18n.mjs';
+import {HEAR3_LANGUAGE_CHOICES,translateHear3Ui,translateHear3TechnicalMessage} from '../src/hear3/app-i18n.mjs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('technical pages bind every declared key and preserve native data identifiers',()=>{
  const source=read('src/hear3/app-i18n.mjs');
@@ -60,4 +60,25 @@ test('editor, library and advanced exam consent translations preserve all placeh
  }
  assert.match(read('hear3-library/index.html'),/generation!==reviewGeneration/);
  assert.match(read('hear3-eq-editor/index.html'),/window.addEventListener\('hear3:language-change'/);
+});
+
+test('technical errors are translated without discarding raw unknown or engine diagnostics',()=>{
+ const raw='Catalog changed in another tab during a save';
+ const unknown='UnrecognizedBrowserError: test {id} $&';
+ for(const lang of HEAR3_LANGUAGE_CHOICES){
+  assert.equal(translateHear3TechnicalMessage('',lang),'');
+  assert.ok(translateHear3TechnicalMessage(raw,lang).includes(raw));
+  assert.ok(translateHear3TechnicalMessage(unknown,lang).includes(unknown));
+  assert.equal(translateHear3TechnicalMessage('Portapapeles no compatible en este navegador.',lang),
+    translateHear3Ui('tech.error.clipboard',lang));
+ }
+ assert.match(translateHear3TechnicalMessage(raw,'es'),/El catálogo cambió en otra pestaña/);
+ assert.match(translateHear3TechnicalMessage('Invalid catalog backup JSON','fr'),/JSON de sauvegarde/);
+ assert.match(translateHear3TechnicalMessage(unknown,'en'),/^Technical detail/);
+ for(const lang of HEAR3_LANGUAGE_CHOICES){
+  for(const key of ['tech.library.historyDetail','tech.library.backupStatus','tech.exam.dsp','tech.exam.model']){
+   const es=translateHear3Ui(key,'es'),value=translateHear3Ui(key,lang);
+   for(const token of es.match(/\{[a-z]+\}/g)??[])assert.ok(value.includes(token),key+' '+lang+' '+token);
+  }
+ }
 });

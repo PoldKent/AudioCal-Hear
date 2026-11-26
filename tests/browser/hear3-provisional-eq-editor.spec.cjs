@@ -194,3 +194,15 @@ test('changing language preserves a reviewed unsaved EQ and explicit save consen
  await expect(page.getByTestId('commit')).toBeEnabled();
  await expect(page.getByTestId('commit')).toHaveText('変更を確認して保存');
 });
+
+test('technical EQ errors have localized guidance and retain the diagnostic detail',async({page})=>{
+ await seed(page);
+ await page.goto(EDITOR);
+ await page.getByTestId('result-select').selectOption('qa-result');
+ await page.getByTestId('hear-language').selectOption('fr');
+ await page.getByTestId('gain-0').fill('3.5');
+ await page.getByTestId('review').click();
+ await expect(page.getByTestId('error')).toContainText('Gain hors des limites');
+ await expect(page.getByTestId('error')).toContainText('Gain outside provisional EQ bounds');
+ expect((await stored(page)).current).toEqual([1,0,-1]);
+});
