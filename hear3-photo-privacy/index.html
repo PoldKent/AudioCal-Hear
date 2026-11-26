@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Imagen privada · AudioCal Hear</title>
+<title data-hear-i18n="tech.photo.title">Imagen privada · AudioCal Hear</title>
 <style>
 :root{font-family:system-ui,sans-serif;color-scheme:light dark}
 body{max-width:46rem;margin:1.5rem auto;padding:0 1rem 3rem;line-height:1.55}
@@ -22,8 +22,8 @@ label{display:block;margin:1rem 0 .3rem}
 <body>
 <a class="app-sr-only" href="#main">Saltar al contenido principal</a>
 <header class="app-topbar">
- <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
- <nav class="app-nav" aria-label="Navegación principal">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio" data-hear-i18n-aria-label="focus.ui.ariaHome"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal" data-hear-i18n-aria-label="tech.navigation">
   <a href="../" data-hear-i18n="nav.home">Inicio</a>
   <a href="../hear3-exam/" data-hear-i18n="nav.exam">Examen</a>
   <a href="../hear3-eq-editor/" data-hear-i18n="nav.eq">Mi ecualizador</a>
@@ -36,8 +36,8 @@ label{display:block;margin:1rem 0 .3rem}
   </details>
  </nav>
  <label class="app-language-control">
-  <span class="app-sr-only">Idioma de la interfaz principal</span>
-  <select data-hear-language aria-label="Idioma de la interfaz principal">
+  <span class="app-sr-only" data-hear-i18n="tech.language">Idioma de la interfaz principal</span>
+  <select data-hear-language aria-label="Idioma de la interfaz principal" data-hear-i18n-aria-label="tech.language">
    <option value="es">Español</option><option value="en">English</option>
    <option value="fr">Français</option><option value="pt">Português</option>
    <option value="it">Italiano</option><option value="de">Deutsch</option>
@@ -47,34 +47,32 @@ label{display:block;margin:1rem 0 .3rem}
 </header>
 <main id="main" class="app-page">
 <p data-hear-language-note hidden class="app-language-note" role="note"></p>
-<h1>Herramienta avanzada · Imagen privada del ecualizador</h1>
-<p class="notice"><strong>Proceso local, voluntario y experimental.</strong>
- La fotografía nunca se sube ni se guarda en los perfiles. Solo se abre cuando
- eliges inspeccionarla, se descodifican sus píxeles y se crea una imagen PNG
- nueva. No se copian intencionalmente los metadatos EXIF/GPS originales.
- No se identifica automáticamente el equipo ni se deducen posiciones,
- bandas, frecuencias o límites de ganancia de la fotografía.</p>
-<label for="photo">Selecciona JPEG, PNG o WebP (hasta 8 MiB)</label>
+<h1 data-hear-i18n="tech.photo.title">Herramienta avanzada · Imagen privada del ecualizador</h1>
+<p class="notice"><strong data-hear-i18n="tech.photo.notice">Proceso local, voluntario y experimental.</strong> <span data-hear-i18n="tech.photo.detail">La fotografía nunca se sube ni se guarda en los perfiles. Solo se abre cuando eliges inspeccionarla, se descodifican sus píxeles y se crea una imagen PNG nueva. No se copian intencionalmente los metadatos EXIF/GPS originales. No se identifica automáticamente el equipo ni se deducen posiciones, bandas, frecuencias o límites de ganancia de la fotografía.</span></p>
+<label for="photo" data-hear-i18n="tech.photo.select">Selecciona JPEG, PNG o WebP (hasta 8 MiB)</label>
 <input id="photo" data-testid="photo" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
 <div class="controls">
-<button id="inspect" type="button" data-testid="inspect">Procesar localmente sin subir</button>
-<button id="download" type="button" data-testid="download" disabled>Guardar PNG nuevo sin EXIF original</button>
-<button id="clear" type="button" data-testid="clear">Descartar imagen y vista previa</button>
+<button id="inspect" type="button" data-testid="inspect" data-hear-i18n="tech.photo.process">Procesar localmente sin subir</button>
+<button id="download" type="button" data-testid="download" disabled data-hear-i18n="tech.photo.download">Guardar PNG nuevo sin EXIF original</button>
+<button id="clear" type="button" data-testid="clear" data-hear-i18n="tech.photo.clear">Descartar imagen y vista previa</button>
 </div>
-<p id="status" data-testid="status" role="status" aria-live="polite">
+<p id="status" data-testid="status" role="status" aria-live="polite" data-hear-i18n="tech.photo.empty">
 Ninguna imagen procesada ni almacenada.</p>
 <p id="error" data-testid="error" role="alert"></p>
-<img id="preview" data-testid="preview" alt="Vista previa del PNG recodificado localmente, sin identificación del equipo" hidden>
-<p>Revisa manualmente las frecuencias y controles reales del EQ con una fuente fiable.
- Una imagen por sí sola no puede demostrar respuesta acústica ni seguridad del
- volumen. Cierra esta pantalla para liberar la vista previa temporal.</p>
-<p><a href="../#ajustes">Volver a ajustes</a> · <a href="../hear3-exam/">Preparar las frecuencias del equipo</a></p>
+<img id="preview" data-testid="preview" alt="Vista previa del PNG recodificado localmente, sin identificación del equipo" data-hear-i18n-alt="tech.photo.alt" hidden>
+<p data-hear-i18n="tech.photo.advice">Revisa manualmente las frecuencias y controles reales del EQ con una fuente fiable. Una imagen por sí sola no puede demostrar respuesta acústica ni seguridad del volumen. Cierra esta pantalla para liberar la vista previa temporal.</p>
+<p><a href="../#ajustes" data-hear-i18n="tech.photo.settings">Volver a ajustes</a> · <a href="../hear3-exam/" data-hear-i18n="tech.photo.prepare">Preparar las frecuencias del equipo</a></p>
 </main>
 <script type="module">
+import {translateHear3Ui} from '../src/hear3/app-i18n.mjs';
 import {createHear3PrivatePhotoSession} from '../src/hear3/private-photo-sanitizer.mjs';
 const $=id=>document.getElementById(id);
 const session=createHear3PrivatePhotoSession();
 let generation=0;
+let statusKey='empty',statusValues={};
+const tr=(key,values={})=>Object.entries(values).reduce((s,[k,v])=>s.replaceAll('{'+k+'}',String(v)),translateHear3Ui('tech.photo.'+key,document.documentElement.lang.split('-')[0]));
+function status(key,values={}){statusKey=key;statusValues=values;$('status').textContent=tr(key,values);}
+window.addEventListener('hear3:language-change',()=>status(statusKey,statusValues));
 function clear({forgetSelection=true}={}){
  generation++;
  if(forgetSelection)$('photo').value='';
@@ -82,7 +80,7 @@ function clear({forgetSelection=true}={}){
  $('preview').hidden=true;
  session.clear();
  $('download').disabled=true;
- $('status').textContent='Imagen descartada: no hay fotografía almacenada en Hear 3.0.';
+ status('discarded');
 }
 $('photo').addEventListener('change',()=>{
  clear({forgetSelection:false});
@@ -93,8 +91,8 @@ $('inspect').addEventListener('click',async()=>{
  clear({forgetSelection:false});$('error').textContent='';
  const request=generation;
  try{
-  if(!file)throw Error('Selecciona un archivo antes de inspeccionarlo.');
-  $('status').textContent='Descodificando y recodificando píxeles solo en este navegador…';
+  if(!file)throw Error(tr('chooseError'));
+  status('processing');
   const result=await session.inspect(file,{userInitiated:true});
   if(request!==generation)return;
   if($('photo').files?.[0]!==file){
@@ -102,9 +100,7 @@ $('inspect').addEventListener('click',async()=>{
   }
   $('preview').src=result.previewUrl;$('preview').hidden=false;
   $('download').disabled=false;
-  $('status').textContent='PNG local de '+result.summary.outputWidth+' × '+
-   result.summary.outputHeight+' píxeles, '+result.summary.outputBytes+
-   ' bytes. No se subió, no se guardó automáticamente y no se interpretó el EQ.';
+  status('ready',{w:result.summary.outputWidth,h:result.summary.outputHeight,n:result.summary.outputBytes});
  }catch(error){
   // A stale decode must never discard a newer image or reappear on return.
   if(request!==generation)return;
