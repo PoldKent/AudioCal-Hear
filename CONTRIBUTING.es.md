@@ -8,6 +8,8 @@ Gracias por ayudar a mejorar AudioCal Hear. Es un proyecto **público para consu
 
 Puedes abrir un **Issue** para comunicar problemas, sugerir funciones o plantear mejoras de accesibilidad, idiomas, compatibilidad y seguridad auditiva. No publiques perfiles personales, respaldos JSON, credenciales ni datos sensibles en las incidencias.
 
+Para apoyo económico voluntario (no una compra ni una licencia), consulta [Apoyar el proyecto](SUPPORT.md#español).
+
 ## Propuestas de código
 
 Las condiciones de GitHub permiten consultar y hacer *fork* de repositorios públicos dentro de la plataforma. Puedes preparar cambios en una copia, pero **abrir una Pull Request no garantiza su aceptación ni concede permisos de escritura**.
