@@ -144,7 +144,7 @@ async function serializeMutation(fn){
   render();
  }
 }
-const coordinationWarning='Escrituras compartidas coordinadas mediante Web Locks cuando está disponible; otras pestañas o código sin ese protocolo no garantizan atomicidad.';
+
 function renderDeleteOptions(catalog){
  const kind=$('delete-kind').value;
  const collection={result:catalog.results,profile:catalog.profiles,device:catalog.devices}[kind];
@@ -168,11 +168,10 @@ function render() {
  const loaded=store.load(),counts=loaded.catalog;
  renderDeleteOptions(counts);
  $('summary').textContent=tr('summary',{d:counts.devices.length,p:counts.profiles.length,r:counts.results.length});
- $('durability').textContent='Almacenamiento: '+loaded.durability+
- (loaded.persistedOnDevice?' (escritura local verificada)':' (sin persistencia de dispositivo confirmada)')+
+ $('durability').textContent=tr('storage',{v:loaded.durability})+
+ ' ('+tr(loaded.persistedOnDevice?'persisted':'temporary')+')'+
  (loaded.warnings?.length?' · '+loaded.warnings.join(' '):'')+
- ' · '+coordinationWarning+
- (writer.supported()?'':' Escritura protegida DESACTIVADA por falta de Web Locks.');
+ ' · '+tr('coordination')+(writer.supported()?'':' '+tr('noLocks'));
  $('commit').disabled=!preview;
  $('legacy-export').disabled=!legacyPreview;
  $('legacy-import').disabled=!legacyPreview||!legacyArchiveExportAttempted;
@@ -180,24 +179,15 @@ function render() {
  $('legacy-vault-save').disabled=!legacyVaultPreview||!legacyVaultExportAttempted;
  const savedV2History=legacyHistoryVault.load();
  $('legacy-vault-stored-export').disabled=!savedV2History.available;
- $('legacy-vault-status').textContent=savedV2History.available
-  ?'Historial V2 completo disponible: '+savedV2History.summary.profileCount+
-   ' perfiles. Persistencia de dispositivo: '+
-   (savedV2History.persistedOnDevice?'sí, lectura local verificada':'NO, datos temporales')+
-   '. Resultados clínicos V3 convertidos: 0. '+savedV2History.warnings.join(' ')
-  :'No existe historial V2 completo conservado en este navegador. '+
-    savedV2History.warnings.join(' ');
+ $('legacy-vault-status').textContent=(savedV2History.available
+ ?tr('vaultAvailable',{p:savedV2History.summary.profileCount,state:tr(savedV2History.persistedOnDevice?'vaultYes':'vaultNo')})
+ :tr('vaultAbsent'))+' '+savedV2History.warnings.join(' ');
  $('legacy-description').textContent=legacyPreview?
-  'Origen V2: '+legacyPreview.sourceFormat+'. Perfiles antiguos: '+legacyPreview.sourceProfiles+'; perfiles V3 compatibles: '+legacyPreview.mappedProfiles+
-  '; resultados históricos convertidos: 0; observaciones originales que permanecen en archivo V2: '+
-  legacyPreview.unmigratedMeasurementRecords+'. '+legacyPreview.warning:
-  'Aún no se han revisado los datos de Hear 2.0.';
+ tr('legacyStatus',{format:legacyPreview.sourceFormat,p:legacyPreview.sourceProfiles,m:legacyPreview.mappedProfiles,n:legacyPreview.unmigratedMeasurementRecords})+' '+legacyPreview.warning:
+ tr('legacyNone');
  $('description').textContent=preview?
-  'Respaldo: '+preview.devices+' dispositivos, '+preview.profiles+
-  ' perfiles, '+preview.results+' resultados. Al finalizar: '+preview.outputResults+
-  ' resultados. '+(preview.replacesExisting?'Requiere confirmar el reemplazo completo.':'Sin reemplazo de identificadores existentes.')+
-  ' '+preview.warning:
-  tr('none');
+ tr('backupStatus',{d:preview.devices,p:preview.profiles,r:preview.results,n:preview.outputResults})+' '+tr(preview.replacesExisting?'replaceNeeded':'noReplace')+' '+preview.warning:
+ tr('none');
 }
 let reviewGeneration=0;
 async function inspect() {
@@ -276,13 +266,8 @@ $('history-show').addEventListener('click',()=>{
   } else if(history.status==='no-results'){
    historyStatus('noResults',{name:history.profile.name});
   } else {
-   historyState=null;
    const r=history.latestResult;
-   $('history-result').textContent='Perfil '+history.profile.name+
-    ' · Equipo '+history.device.name+' · Resultado '+r.id+' · Estado '+r.status+
-    ' · Fecha '+new Date(r.capturedAt).toISOString()+
-    ' · EQ original: '+r.originalEq.length+' bandas · EQ editado: '+r.currentEq.length+
-    ' bandas. Datos experimentales no calibrados; reproducción automática: no.';
+   historyStatus('historyDetail',{name:history.profile.name,device:history.device.name,id:r.id,state:r.status,date:new Date(r.capturedAt).toISOString(),orig:r.originalEq.length,edit:r.currentEq.length});
   }
  }catch(e){$('error').textContent=e.message;}
 });
