@@ -40,7 +40,7 @@
     <label for="category" data-hear-i18n="focus.ui.category">Tipo de equipo</label>
     <select id="category" data-testid="focus-category"><option value="headphones" data-hear-i18n="focus.ui.deviceHeadphones">Auriculares</option><option value="speaker" data-hear-i18n="focus.ui.deviceSpeaker">Altavoces</option><option value="car" data-hear-i18n="focus.ui.deviceCar">Automóvil (detenido)</option><option value="application" data-hear-i18n="focus.ui.deviceApplication">Aplicación</option><option value="interface" data-hear-i18n="focus.ui.deviceInterface">Interfaz de audio</option></select>
     <label for="bands" data-hear-i18n="focus.ui.bands">Bandas de tu ecualizador</label>
-    <select id="bands" data-testid="focus-bands"><option value="5" data-hear-i18n="focus.ui.bands5">5 bandas</option><option value="7" data-hear-i18n="focus.ui.bands7">7 bandas</option><option value="10" data-hear-i18n="focus.ui.bands10">10 bandas</option><option value="31" data-hear-i18n="focus.ui.bands31">31 bandas</option><option value="custom" data-hear-i18n="focus.ui.bandsCustom">Mis frecuencias</option></select>
+    <select id="bands" data-testid="focus-bands"><option value="4" data-hear-i18n="focus.ui.bands4">4 bandas</option><option value="5" data-hear-i18n="focus.ui.bands5">5 bandas</option><option value="7" data-hear-i18n="focus.ui.bands7">7 bandas</option><option value="10" data-hear-i18n="focus.ui.bands10">10 bandas</option><option value="15" data-hear-i18n="focus.ui.bands15">15 bandas</option><option value="31" data-hear-i18n="focus.ui.bands31">31 bandas</option><option value="custom" data-hear-i18n="focus.ui.bandsCustom">Mis frecuencias</option></select>
     <label id="custom-label" for="custom-bands" data-hear-i18n="focus.ui.custom" hidden>Frecuencias en Hz, separadas por comas</label>
     <input id="custom-bands" type="text" maxlength="360" placeholder="125, 250, 500, 1000, 2000" hidden>
     <p class="tiny" data-hear-i18n="focus.ui.categoryTip">Usa solo las frecuencias reales que muestra tu ecualizador. No se detecta el hardware automáticamente.</p>
@@ -116,6 +116,17 @@
    </div>
    <div id="eq-rows" class="eq-rows" data-testid="focus-eq-rows" aria-label="Ganancias por frecuencia" data-hear-i18n-aria-label="focus.ui.ariaEqRows"></div>
    <p id="eq-quality" class="inline-hint"></p>
+   <details class="quiet-options eq-edit-panel" id="eq-edit-options">
+    <summary data-hear-i18n="focus.edit.title">Ajustar mi EQ antes de guardar</summary>
+    <p class="tiny" data-hear-i18n="focus.edit.hint">Edición manual opcional en pasos de 0,5 dB. No cambia tus respuestas ni aplica sonido al equipo.</p>
+    <div id="focus-edit-bands" class="eq-edit-bands"></div>
+    <div class="eq-edit-actions">
+     <button id="focus-edit-undo" type="button" class="small-action" data-hear-i18n="focus.edit.undo" disabled>Deshacer</button>
+     <button id="focus-edit-redo" type="button" class="small-action" data-hear-i18n="focus.edit.redo" disabled>Rehacer</button>
+     <button id="focus-edit-restore" type="button" class="small-action" data-hear-i18n="focus.edit.restore" disabled>Restaurar curva original</button>
+    </div>
+    <p id="focus-edit-status" class="tiny" role="status"></p>
+   </details>
    <details class="quiet-options" id="eq-howto">
     <summary data-hear-i18n="focus.result.guide">Cómo aplicar mi EQ manualmente</summary>
     <ol class="eq-guide">

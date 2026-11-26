@@ -304,3 +304,30 @@ test('archiving after a frequency correction marks retired answers and preserves
  assert.deepEqual(reloaded.observations,result.observations,
   'round-trip keeps retired markers and exact historical responses');
 });
+
+test('manual first-save edits preserve the independently computed original and observations',async()=>{
+ const f=fixture();await finish(f.exam);
+ const options={...f.args,includeProvisionalEq:true};
+ const baseline=f.archive.preview(options);
+ assert.equal(baseline.manualEditCount,0);
+ const changes=[-0.5,0.5];
+ assert.throws(()=>f.archive.preview({...options,includeProvisionalEq:false,manualEqGains:changes}),/Manual EQ gains/);
+ for(const manualEqGains of [[0],[0.3,0],[4,0],[NaN,0],['0',0]])
+  assert.throws(()=>f.archive.preview({...options,manualEqGains}),/Manual EQ gains/);
+ assert.equal(f.cat.load().catalog.results.length,0);
+ // Independently archive the unmodified reference under a separate result.
+ f.archive.preview(options);
+ f.archive.commit({userInitiated:true,confirmed:true,confirmProvisionalEq:true});
+ const original=f.cat.load().catalog.results[0];
+ const manual=f.archive.preview({...options,deviceId:'manual-device',profileId:'manual-profile',
+  resultId:'manual-result',manualEqGains:changes});
+ assert.equal(manual.manualEditCount,changes.filter((v,i)=>v!==original.originalEq[i].gainDb).length);
+ assert.throws(()=>f.archive.commit({userInitiated:true,confirmed:true}),/separate explicit confirmation/);
+ f.archive.commit({userInitiated:true,confirmed:true,confirmProvisionalEq:true});
+ const saved=f.cat.load().catalog.results[1];
+ assert.deepEqual(saved.originalEq,original.originalEq);
+ assert.deepEqual(saved.observations,original.observations);
+ assert.deepEqual(saved.currentEq.map(b=>b.gainDb),changes);
+ assert.equal(saved.editHistory.length,manual.manualEditCount);
+ assert.equal(f.cat.load().catalog.results[0].id,original.id);
+});

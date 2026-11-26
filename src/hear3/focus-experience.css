@@ -135,3 +135,15 @@ progress::-moz-progress-bar{background:var(--mint2);border-radius:10px}
 .foot-links{position:static;width:100%;max-height:none;overflow:visible;box-shadow:none;margin-top:7px}
 .top{padding:17px 23px}.top-pill{font-size:.55rem}.experience{padding:15px 20px 23px}.orb{width:165px;margin:22px auto 30px}.lead{margin-bottom:16px}.answers{flex-direction:column}.answer{min-height:59px}.eq-row{gap:10px;grid-template-columns:90px 1fr 61px}.foot{align-items:flex-start;line-height:1.5}.foot>span{max-width:245px}h1{font-size:clamp(2.2rem,9vw,3.1rem)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Optional in-memory EQ controls: keep the single test path and visible graph. */
+.eq-edit-panel{max-width:650px}
+.eq-edit-bands{display:grid;gap:4px;margin:16px 0;text-align:left}
+.eq-edit-band{display:grid;grid-template-columns:minmax(65px,1fr) minmax(85px,2fr) minmax(52px,auto) auto;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--outline)}
+.eq-edit-band label{margin:0!important;font-weight:700;font-variant-numeric:tabular-nums}
+.eq-edit-band input[type=range]{width:100%;min-width:0;min-height:44px;accent-color:var(--mint2)}
+.eq-edit-band output{font-size:.82rem;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.eq-edit-band .small-action{margin:0;padding:7px 10px;font-size:.8rem}
+.eq-edit-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.eq-edit-actions .small-action{margin:0}
+@media(max-width:420px){.eq-edit-band{grid-template-columns:minmax(65px,1fr) minmax(55px,auto) auto;gap:4px 9px}.eq-edit-band input[type=range]{grid-column:1/-1;grid-row:2}.eq-edit-band label{grid-column:1}.eq-edit-band output{grid-column:2}.eq-edit-band button{grid-column:3}}

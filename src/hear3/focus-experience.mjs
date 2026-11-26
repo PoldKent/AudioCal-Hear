@@ -18,6 +18,7 @@ import {createHear3AdaptiveCatalogArchive} from './adaptive-catalog-archive.mjs'
 import {enableHear3Offline,disableHear3Offline,detectHear3OfflineSupport}
  from './offline-optin.mjs';
 import {translateHear3Ui} from './app-i18n.mjs';
+import {createHear3EqEditHistory} from './eq-edit-history.mjs';
 
 export const HEAR_FOCUS_PROFILE_ID='hear3-integrated-pilot';
 export const HEAR_FOCUS_LIMITS=Object.freeze({minDbfs:-80,maxDbfs:-42});
@@ -84,7 +85,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  let bands=null,sweepPlan=null,starting=false,disposed=false;
  let lastAnnouncedToneId=null;
  let activeToneStartedAt=null;
- let saveResultId=null;
+ let saveResultId=null,eqHistory=null,originalReview=null;
  const preflight=inspectHear3AudioCapabilities(env);
  // A perception of 'too loud' is never a hearing threshold or acoustic
  // measurement. Keep it scoped to the current local exam and verify every
@@ -227,7 +228,12 @@ export function mountHearFocus({doc=document,env=window}={}){
   exam=createHear3ResumableAdaptiveExam(currentExamOptions(plan));
   return exam;
  }
+ function editMsg(key,values={}){
+  const lang=doc.documentElement.lang?.split('-')[0]||'es';
+  return Object.entries(values).reduce((s,[k,v])=>s.replaceAll('{'+k+'}',String(v)),translateHear3Ui('focus.edit.'+key,lang));
+ }
  function eqReason(row){
+  if(row.source==='manual-user-adjustment')return editMsg('manual');
   return row.source==='explicit-too-loud-attenuate'?msg('eqCut'):
    row.source==='inaudible-at-digital-ceiling-hypothesis'?msg('eqBoost'):
    row.source==='heard-without-contrast-maintain'?msg('eqMaintain'):
@@ -260,7 +266,14 @@ export function mountHearFocus({doc=document,env=window}={}){
    baseEq:base,examSnapshot:state,sessionSnapshot:session,
    loudToneReports:verifiedLoudReports(session),
   });
-  review=inspectHear3ImmediateEq(draft);eq=draft;
+  originalReview=inspectHear3ImmediateEq(draft);eq=draft;
+  eqHistory=createHear3EqEditHistory({initial:originalReview.rows.map(r=>r.gainDb),capDb:originalReview.capDb});
+  element('eq-edit-options').open=false;
+  createEqEditControls();
+  syncEqEdits();
+  go('result');return true;
+ }
+ function renderEqGraph(){
   const graph=element('eq-graph');
   graph.replaceChildren(...review.rows.map(row=>{
    const cell=doc.createElement('div');cell.className='eq-graph-band';
@@ -304,7 +317,63 @@ export function mountHearFocus({doc=document,env=window}={}){
    return section;
   }));
   renderEqText();
-  go('result');return true;
+ }
+ const changedBands=()=>eqHistory?eqHistory.current().filter((v,i)=>v!==eqHistory.original()[i]).length:0;
+ function createEqEditControls(){
+  const container=element('focus-edit-bands');
+  container.replaceChildren(...originalReview.rows.map((r,i)=>{
+   const row=doc.createElement('div');row.className='eq-edit-band';
+   const id='focus-edit-band-'+i;
+   const label=doc.createElement('label');label.htmlFor=id;label.textContent=r.frequencyHz+' Hz';
+   const input=doc.createElement('input');input.type='range';input.id=id;
+   input.min=String(-originalReview.capDb);input.max=String(originalReview.capDb);input.step='0.5';
+   input.dataset.testid=id;input.value=String(r.gainDb);
+   const value=doc.createElement('output');value.htmlFor=id;
+   const reset=doc.createElement('button');reset.type='button';reset.className='small-action';
+   reset.dataset.testid='focus-edit-reset-'+i;
+   input.addEventListener('input',()=>{
+    if(saveResultId||!eqHistory)return;
+    const next=[...eqHistory.current()];next[i]=Number(input.value);
+    eqHistory.record(next);syncEqEdits();
+   });
+   reset.addEventListener('click',()=>{
+    if(!saveResultId&&eqHistory){eqHistory.resetBand(i);syncEqEdits();}
+   });
+   row.append(label,input,value,reset);
+   return row;
+  }));
+ }
+ function syncEqEditor(){
+  if(!eqHistory||!originalReview)return;
+  const values=eqHistory.current(),original=eqHistory.original();
+  const disabled=Boolean(saveResultId);
+  [...element('focus-edit-bands').children].forEach((row,i)=>{
+   const [label,input,value,reset]=row.children;
+   const hz=originalReview.rows[i].frequencyHz;
+   input.value=String(values[i]);input.disabled=disabled;
+   input.setAttribute('aria-label',editMsg('gainLabel',{hz}));
+   value.textContent=formatHearFocusGain(values[i]);
+   reset.textContent=editMsg('bandReset');reset.setAttribute('aria-label',editMsg('bandLabel',{hz}));
+   reset.disabled=disabled||values[i]===original[i];
+  });
+  const count=changedBands();
+  element('focus-edit-undo').disabled=disabled||!eqHistory.canUndo();
+  element('focus-edit-redo').disabled=disabled||!eqHistory.canRedo();
+  element('focus-edit-restore').disabled=disabled||count===0;
+  output('focus-edit-status',disabled?editMsg('saved'):count?editMsg('changed',{n:count}):editMsg('original'));
+ }
+ function syncEqEdits(){
+  if(!eqHistory||!originalReview)return;
+  const values=eqHistory.current();
+  const edited=changedBands()>0;
+  review=Object.freeze({...originalReview,
+   warning:originalReview.warning+(edited?' Ajustes manuales: no son una nueva medición auditiva.':''),
+   rows:Object.freeze(originalReview.rows.map((r,i)=>Object.freeze({
+    ...r,gainDb:values[i],source:values[i]===r.gainDb?r.source:'manual-user-adjustment',
+   }))),
+  });
+  renderEqGraph();
+  syncEqEditor();
  }
  async function prepareTonesFromSweep(){
   if(view!=='sweep'||exam||!bands||!sweepPlan)return;
@@ -374,7 +443,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    exam=null;
   }else outcome=store.clear({confirmed:true});
   if(!outcome.cleared)throw Error('No pudimos verificar que el progreso anterior se haya eliminado.');
-  pendingRecovery=false;eq=null;review=null;
+  pendingRecovery=false;eq=null;review=null;eqHistory=null;originalReview=null;
   saveResultId=null;
   element('saved-eq-link').hidden=true;
   sweepPlan=null;
@@ -535,11 +604,11 @@ export function mountHearFocus({doc=document,env=window}={}){
   const message=(translateHear3Ui('focus.review.confirm',lang)||
    '¿Repetir solo {hz} Hz? Las demás bandas y resultados guardados se conservarán.')
    .replace('{hz}',String(selected.frequencyHz));
-  if(!env.confirm(message))return;
+  if(!env.confirm(message+(changedBands()&&!saveResultId?' '+editMsg('discard'):'')))return;
   exam.retakeBand({bandId,userConfirmed:true});
   // A persisted result stays immutable. A corrected test produces a new
   // optional result only after it finishes and the user saves it again.
-  review=null;eq=null;saveResultId=null;
+  review=null;eq=null;saveResultId=null;eqHistory=null;originalReview=null;
   element('saved-eq-link').hidden=true;
   element('save-consent').checked=false;
   output('save-status','');
@@ -598,7 +667,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    output('save-status',msg('saveConsent'));
    return;
   }
-  if(!env.confirm('¿Guardar tus respuestas y el EQ matemático provisional en este navegador? No se aplicará al equipo.'))return;
+  if(!env.confirm(editMsg('saveConfirm')))return;
   if(!env.crypto?.randomUUID)throw Error('Para guardar se necesita una conexión segura del navegador.');
   const uuid=()=>env.crypto.randomUUID();
   const category=element('category').value;
@@ -610,6 +679,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    resultId:'v3-result-'+uuid(),deviceName:name,profileName:'Mi prueba Hear',
    category,includeProvisionalEq:true,
    loudToneReports:verifiedLoudReports(exam.getSession()),
+   manualEqGains:changedBands()?[...eqHistory.current()]:null,
   });
   const saved=archive.commit({
    userInitiated:true,confirmed:true,confirmProvisionalEq:true,
@@ -619,6 +689,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    const savedLink=element('saved-eq-link');
    savedLink.href='./hear3-eq-editor/?result='+encodeURIComponent(saveResultId);
    savedLink.hidden=false;
+   syncEqEditor();
   }
   output('save-status',msg(saved.persistedOnDevice?'saved':'saveNotVerified'));
  }
@@ -696,7 +767,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  }
  const onLanguageChange=()=>{
   render();
-  if(view==='result')renderEqText();
+  if(view==='result'){renderEqText();syncEqEditor();}
  };
  env.addEventListener('hear3:language-change',onLanguageChange);
  const listen=(id,fn)=>element(id).addEventListener('click',()=>void run(fn));
@@ -725,6 +796,9 @@ export function mountHearFocus({doc=document,env=window}={}){
  listen('download-eq-csv',()=>downloadEq('csv'));
  listen('download-eq-png',()=>downloadEq('png'));
  listen('save-eq',saveEq);
+ listen('focus-edit-undo',()=>{if(!saveResultId&&eqHistory){eqHistory.undo();syncEqEdits();}});
+ listen('focus-edit-redo',()=>{if(!saveResultId&&eqHistory){eqHistory.redo();syncEqEdits();}});
+ listen('focus-edit-restore',()=>{if(!saveResultId&&eqHistory){eqHistory.restoreAll();syncEqEdits();}});
  element('bands').addEventListener('change',()=>{
   const custom=element('bands').value==='custom';
   element('custom-bands').hidden=!custom;
