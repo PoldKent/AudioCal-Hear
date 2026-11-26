@@ -56,7 +56,7 @@ label{display:block;margin:1rem 0 .3rem}
 <button id="download" type="button" data-testid="download" disabled data-hear-i18n="tech.photo.download">Guardar PNG nuevo sin EXIF original</button>
 <button id="clear" type="button" data-testid="clear" data-hear-i18n="tech.photo.clear">Descartar imagen y vista previa</button>
 </div>
-<p id="status" data-testid="status" role="status" aria-live="polite" data-hear-i18n="tech.photo.empty">
+<p id="status" data-testid="status" role="status" aria-live="polite" >
 Ninguna imagen procesada ni almacenada.</p>
 <p id="error" data-testid="error" role="alert"></p>
 <img id="preview" data-testid="preview" alt="Vista previa del PNG recodificado localmente, sin identificación del equipo" data-hear-i18n-alt="tech.photo.alt" hidden>
@@ -125,6 +125,7 @@ window.addEventListener('pagehide',event=>{
  $('error').textContent='';
  if(!event.persisted)session.dispose();
 });
+status(statusKey);
 window.hear3PhotoPilot=Object.freeze({summary:()=>session.snapshot()});
 </script>
 </body>
