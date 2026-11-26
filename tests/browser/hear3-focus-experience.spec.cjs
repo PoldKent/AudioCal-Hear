@@ -389,6 +389,7 @@ test('immediate EQ manual edits are reversible, exported from the visible draft 
  await page.locator('#device-options > summary').click();
  await expect(page.locator('#bands option[value="4"]')).toHaveText('4 bandas');
  await expect(page.locator('#bands option[value="15"]')).toHaveText('15 bandas');
+ await expect(page.getByTestId('focus-bands')).toHaveValue('5');
  await page.getByTestId('focus-bands').selectOption('4');
  await page.locator('#device-options > summary').click();
  await page.getByTestId('focus-volume').check();
