@@ -89,7 +89,8 @@ fieldset{border:1px solid #888;padding:.75rem}
 <p><a href="../" data-hear-i18n="tech.home">Volver al inicio</a></p>
 </main>
 <script type="module">
-import {translateHear3Ui} from '../src/hear3/app-i18n.mjs';
+import {translateHear3Ui,translateHear3TechnicalMessage} from '../src/hear3/app-i18n.mjs';
+const technicalMessage=value=>translateHear3TechnicalMessage(value,document.documentElement.lang.split('-')[0]);
 import {createHear3LocalDiagnostic} from '../src/hear3/local-diagnostics.mjs';
 const $=id=>document.getElementById(id);
 const report=createHear3LocalDiagnostic();
@@ -127,7 +128,7 @@ $('preview').addEventListener('click',()=>{
   previewAvailable=true;$('confirm').disabled=false;
   status('ready');
  }catch(error){
-  status('previewError',error?.message??String(error));
+  status('previewError',technicalMessage(error?.message??String(error)));
  }
 });
 $('clear').addEventListener('click',()=>{
@@ -140,7 +141,7 @@ $('copy').addEventListener('click',async()=>{
   await navigator.clipboard.writeText(report.exportReviewed({confirmed:true}));
   status('copied');
  }catch(error){
-  status('copyError',error?.message??String(error));
+  status('copyError',technicalMessage(error?.message??String(error)));
  }
 });
 $('download').addEventListener('click',()=>{
@@ -153,7 +154,7 @@ $('download').addEventListener('click',()=>{
   setTimeout(()=>URL.revokeObjectURL(url),30000);
   status('downloaded');
  }catch(error){
-  status('downloadError',error?.message??String(error));
+  status('downloadError',technicalMessage(error?.message??String(error)));
  }
 });
 status(statusKey);

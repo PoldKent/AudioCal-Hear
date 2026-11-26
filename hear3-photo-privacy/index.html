@@ -64,7 +64,8 @@ Ninguna imagen procesada ni almacenada.</p>
 <p><a href="../#ajustes" data-hear-i18n="tech.photo.settings">Volver a ajustes</a> · <a href="../hear3-exam/" data-hear-i18n="tech.photo.prepare">Preparar las frecuencias del equipo</a></p>
 </main>
 <script type="module">
-import {translateHear3Ui} from '../src/hear3/app-i18n.mjs';
+import {translateHear3Ui,translateHear3TechnicalMessage} from '../src/hear3/app-i18n.mjs';
+const technicalMessage=value=>translateHear3TechnicalMessage(value,document.documentElement.lang.split('-')[0]);
 import {createHear3PrivatePhotoSession} from '../src/hear3/private-photo-sanitizer.mjs';
 const $=id=>document.getElementById(id);
 const session=createHear3PrivatePhotoSession();
@@ -104,7 +105,7 @@ $('inspect').addEventListener('click',async()=>{
  }catch(error){
   // A stale decode must never discard a newer image or reappear on return.
   if(request!==generation)return;
-  clear();$('error').textContent=error?.message??'No se pudo tratar la imagen localmente.';
+  clear();$('error').textContent=technicalMessage(error?.message??'No se pudo tratar la imagen localmente.');
  }
 });
 $('download').addEventListener('click',()=>{
@@ -115,7 +116,7 @@ $('download').addEventListener('click',()=>{
   link.href=url;link.download='hear3-foto-rasterizada-sin-exif-origen.png';
   link.click();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
- }catch(error){$('error').textContent=error?.message??'No existe una imagen procesada.';}
+ }catch(error){$('error').textContent=technicalMessage(error?.message??'No existe una imagen procesada.');}
 });
 $('clear').addEventListener('click',clear);
 window.addEventListener('pagehide',event=>{
