@@ -39,10 +39,20 @@
      <option value="-60" selected>−60 dBFS</option>
      <option value="-54">−54 dBFS</option>
      <option value="-48">−48 dBFS</option>
+     <option value="-12">−12 dBFS</option>
     </select>
     <p class="tiny" data-hear-i18n="focus.level.help">Empieza con el nivel más bajo. Si necesitas otro nivel, elígelo antes de confirmar el volumen físico bajo. No aumentes el volumen para perseguir un tono inaudible. Detén la prueba si resulta incómoda.</p>
    </fieldset>
    <label class="agree"><input id="volume-ok" type="checkbox" data-testid="focus-volume"><span data-hear-i18n="focus.ready.agree">Mi equipo está conectado y el volumen está bajo.</span></label>
+   <section id="reference-gate" class="quiet-options" hidden aria-labelledby="reference-title">
+    <h2 id="reference-title" data-hear-i18n="focus.reference.title">Referencia elevada: −12 dBFS</h2>
+    <p class="tiny" data-hear-i18n="focus.reference.warning">No es una calibración acústica. La misma señal puede sonar muy distinta en cada frecuencia y equipo. Mantén el volumen físico bajo y fijo; no continúes si algún sonido resulta incómodo. No subas el volumen para alcanzar la referencia.</p>
+    <p id="reference-status" role="status" aria-live="polite" class="inline-hint"></p>
+    <button id="reference-play" type="button" class="small-action" data-testid="focus-reference-play" data-hear-i18n="focus.reference.play">Probar nivel indicado</button>
+    <button id="reference-accept" type="button" class="small-action" data-testid="focus-reference-accept" data-hear-i18n="focus.reference.accept" disabled>Lo escuché cómodamente</button>
+    <button id="reference-stop" type="button" class="small-action" data-testid="focus-reference-stop" data-hear-i18n="focus.reference.stop">Detener y cancelar nivel elevado</button>
+    <p class="tiny" data-hear-i18n="focus.reference.sweep">El barrido permanece limitado a un nivel digital más bajo. Cada tono del examen requiere un clic; nunca se supera la referencia autorizada.</p>
+   </section>
    <button id="confirm" class="primary main-cta" type="button" data-testid="focus-confirm"><span data-hear-i18n="focus.d.confirm">Empezar a escuchar</span> <span aria-hidden="true">→</span></button>
    <p id="ready-hint" class="inline-hint" role="status"></p>
    <details class="quiet-options" id="device-options">
