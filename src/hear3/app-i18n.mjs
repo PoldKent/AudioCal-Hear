@@ -7,6 +7,9 @@ export const HEAR3_LANGUAGE_CHOICES=Object.freeze(['es','en','fr','pt','it','de'
 export const HEAR3_LANGUAGE_KEY='hear3:ui-language:v1';
 const STRINGS=Object.freeze({
   "es": {
+    "focus.level.title": "Nivel digital inicial",
+    "focus.level.choose": "Selecciona el nivel antes de comenzar",
+    "focus.level.help": "Empieza con el nivel más bajo. Si necesitas otro nivel, elígelo antes de confirmar el volumen físico bajo. No aumentes el volumen para perseguir un tono inaudible. Detén la prueba si resulta incómoda.",
     "tech.engine.bounds": "Ganancia fuera de los límites del EQ provisional.",
     "tech.engine.step": "Utiliza pasos de 0,5 dB.",
     "tech.engine.stale": "El catálogo cambió en otra pestaña. Revisa los datos antes de volver a guardar.",
@@ -596,6 +599,9 @@ const STRINGS=Object.freeze({
     "route.confirm": "He comprobado la salida de audio y mantendré el volumen físico bajo y cómodo"
   },
   "en": {
+    "focus.level.title": "Initial digital level",
+    "focus.level.choose": "Select the level before starting",
+    "focus.level.help": "Start at the lowest level. If you need a different level, choose it before confirming low physical volume. Do not turn up volume to chase an inaudible tone. Stop if uncomfortable.",
     "tech.engine.bounds": "Gain outside provisional EQ bounds.",
     "tech.engine.step": "Use 0.5 dB steps.",
     "tech.engine.stale": "Catalog changed in another tab. Review data before saving again.",
@@ -1185,6 +1191,9 @@ const STRINGS=Object.freeze({
     "route.confirm": "I checked the audio output and will keep the physical volume low and comfortable"
   },
   "pt": {
+    "focus.level.title": "Nível digital inicial",
+    "focus.level.choose": "Selecione o nível antes de começar",
+    "focus.level.help": "Comece no menor nível. Se precisar de outro, escolha antes de confirmar o volume físico baixo. Não aumente o volume para ouvir um tom inaudível. Pare se houver desconforto.",
     "tech.engine.bounds": "Ganho fora dos limites do EQ provisório.",
     "tech.engine.step": "Use passos de 0,5 dB.",
     "tech.engine.stale": "O catálogo mudou em outra aba. Revise antes de salvar novamente.",
@@ -1774,6 +1783,9 @@ const STRINGS=Object.freeze({
     "route.confirm": "Verifiquei a saída de áudio e manterei o volume físico baixo e confortável"
   },
   "fr": {
+    "focus.level.title": "Niveau numérique initial",
+    "focus.level.choose": "Sélectionnez le niveau avant de commencer",
+    "focus.level.help": "Commencez au niveau le plus bas. Si nécessaire, choisissez un autre niveau avant de confirmer le faible volume physique. N’augmentez pas le volume pour entendre un son inaudible. Arrêtez en cas de gêne.",
     "tech.engine.bounds": "Gain hors des limites de l’EQ provisoire.",
     "tech.engine.step": "Utilisez des pas de 0,5 dB.",
     "tech.engine.stale": "Le catalogue a changé dans un autre onglet. Vérifiez avant de réenregistrer.",
@@ -2363,6 +2375,9 @@ const STRINGS=Object.freeze({
     "route.confirm": "J’ai vérifié la sortie audio et je garderai le volume physique faible et confortable"
   },
   "it": {
+    "focus.level.title": "Livello digitale iniziale",
+    "focus.level.choose": "Scegli il livello prima di iniziare",
+    "focus.level.help": "Inizia dal livello più basso. Se serve un altro livello, sceglilo prima di confermare il basso volume fisico. Non aumentare il volume per inseguire un tono impercettibile. Fermati in caso di disagio.",
     "tech.engine.bounds": "Guadagno fuori dai limiti dell’EQ provvisorio.",
     "tech.engine.step": "Usa passi di 0,5 dB.",
     "tech.engine.stale": "Il catalogo è cambiato in un’altra scheda. Verifica prima di salvare di nuovo.",
@@ -2952,6 +2967,9 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ho verificato l’uscita audio e terrò il volume fisico basso e confortevole"
   },
   "de": {
+    "focus.level.title": "Digitaler Startpegel",
+    "focus.level.choose": "Pegel vor dem Start wählen",
+    "focus.level.help": "Mit niedrigstem Pegel beginnen. Einen anderen Pegel vor Bestätigung der niedrigen Gerätelautstärke wählen. Lautstärke nicht erhöhen, um einen unhörbaren Ton zu hören. Bei Unbehagen stoppen.",
     "tech.engine.bounds": "Verstärkung außerhalb der vorläufigen EQ-Grenzen.",
     "tech.engine.step": "0,5-dB-Schritte verwenden.",
     "tech.engine.stale": "Katalog wurde in einem anderen Tab geändert. Vor erneutem Speichern prüfen.",
@@ -3541,6 +3559,9 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ich habe den Audioausgang überprüft und halte die physische Lautstärke niedrig und angenehm"
   },
   "zh": {
+    "focus.level.title": "初始数字电平",
+    "focus.level.choose": "开始前选择电平",
+    "focus.level.help": "从最低电平开始。如需其他电平，请在确认低实际音量前选择。不要为听到不可闻音调而提高音量。不适时停止。",
     "tech.engine.bounds": "增益超出临时 EQ 限制。",
     "tech.engine.step": "请使用 0.5 dB 步长。",
     "tech.engine.stale": "目录在另一标签页中已更改。重新保存前请检查。",
@@ -4130,6 +4151,9 @@ const STRINGS=Object.freeze({
     "route.confirm": "我已检查音频输出，并将设备音量保持在较低且舒适的水平"
   },
   "ja": {
+    "focus.level.title": "初期デジタルレベル",
+    "focus.level.choose": "開始前にレベルを選択",
+    "focus.level.help": "最も低いレベルから開始してください。別のレベルが必要なら、機器の音量が低いことを確認する前に選択してください。聞こえない音を聞くために音量を上げないでください。不快なら停止してください。",
     "tech.engine.bounds": "ゲインが暫定 EQ 上限を超えています。",
     "tech.engine.step": "0.5 dB 刻みを使用してください。",
     "tech.engine.stale": "別のタブでカタログが変更されました。再保存前に確認してください。",

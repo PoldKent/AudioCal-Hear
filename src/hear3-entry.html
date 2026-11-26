@@ -32,6 +32,16 @@
    <span class="eyebrow" data-hear-i18n="focus.ui.readyTag">ANTES DE COMENZAR</span>
    <h1 data-hear-i18n="focus.ready.title">Ajusta el volumen y empieza</h1>
    <p class="lead" data-hear-i18n="focus.ready.lead">Conecta el equipo y baja su volumen físico a un nivel cómodo. Primero escucharás un barrido corto y después los tonos individuales. Nunca subas el volumen para intentar oír un sonido.</p>
+   <fieldset id="start-level-options" class="quiet-options" style="margin:16px auto;border:1px solid var(--outline);border-radius:14px;padding:12px 16px">
+    <legend data-hear-i18n="focus.level.title">Nivel digital inicial</legend>
+    <label for="start-level" data-hear-i18n="focus.level.choose">Selecciona el nivel antes de comenzar</label>
+    <select id="start-level" data-testid="focus-start-level">
+     <option value="-60" selected>−60 dBFS</option>
+     <option value="-54">−54 dBFS</option>
+     <option value="-48">−48 dBFS</option>
+    </select>
+    <p class="tiny" data-hear-i18n="focus.level.help">Empieza con el nivel más bajo. Si necesitas otro nivel, elígelo antes de confirmar el volumen físico bajo. No aumentes el volumen para perseguir un tono inaudible. Detén la prueba si resulta incómoda.</p>
+   </fieldset>
    <label class="agree"><input id="volume-ok" type="checkbox" data-testid="focus-volume"><span data-hear-i18n="focus.ready.agree">Mi equipo está conectado y el volumen está bajo.</span></label>
    <button id="confirm" class="primary main-cta" type="button" data-testid="focus-confirm"><span data-hear-i18n="focus.d.confirm">Empezar a escuchar</span> <span aria-hidden="true">→</span></button>
    <p id="ready-hint" class="inline-hint" role="status"></p>
@@ -60,7 +70,7 @@
    <div class="sound-sphere" aria-hidden="true"><div class="pulse"></div><div class="pulse p2"></div><span id="sweep-hz">125 Hz</span></div>
    <progress id="sweep-progress" max="20" value="0" aria-label="Progreso del barrido" data-hear-i18n-aria-label="focus.ui.ariaSweep"></progress>
    <p class="counter" id="sweep-time">20 s</p>
-   <p class="digital-level" id="sweep-level" data-hear-i18n="focus.ui.sweepDigital">Nivel digital de prueba: −60 dBFS</p>
+   <p class="digital-level" id="sweep-level">Nivel digital de prueba: −60 dBFS</p>
    <div class="answers perceptual-answers">
     <button class="answer positive" id="sweep-yes" type="button" data-hear-i18n="focus.sweep.yes" data-testid="focus-sweep-yes">Lo escucho bien</button>
     <button class="answer negative" id="sweep-no" type="button" data-hear-i18n="focus.sweep.no" data-testid="focus-sweep-no">No lo escucho</button>

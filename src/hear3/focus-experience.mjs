@@ -23,6 +23,7 @@ import {createHear3EqEditHistory} from './eq-edit-history.mjs';
 export const HEAR_FOCUS_PROFILE_ID='hear3-integrated-pilot';
 export const HEAR_FOCUS_LIMITS=Object.freeze({minDbfs:-80,maxDbfs:-42});
 export const HEAR_FOCUS_TONE_DURATION_SECONDS=3;
+export const HEAR_FOCUS_START_LEVELS=Object.freeze([-60,-54,-48]);
 const $=id=>document.getElementById(id);
 const VIEWS=['welcome','ready','sweep','tones','result'];
 const text=(id,value)=>{const node=$(id),next=String(value);if(node.textContent!==next)node.textContent=next;};
@@ -83,6 +84,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  const catalogStore=createHear3CatalogStore();
  let view='welcome',pendingRecovery=false,exam=null,eq=null,review=null;
  let bands=null,sweepPlan=null,starting=false,disposed=false;
+ let initialLevel=-60;
  let lastAnnouncedToneId=null;
  let activeToneStartedAt=null;
  let saveResultId=null,eqHistory=null,originalReview=null;
@@ -220,7 +222,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  function currentExamOptions(plan){
   return {plan,profileId:HEAR_FOCUS_PROFILE_ID,
    minDbfs:HEAR_FOCUS_LIMITS.minDbfs,maxDbfs:HEAR_FOCUS_LIMITS.maxDbfs,
-   initialDbfs:-60,maxTrialsPerBand:7,coarseStepDb:6,
+   initialDbfs:initialLevel,maxTrialsPerBand:7,coarseStepDb:6,
    durationSeconds:HEAR_FOCUS_TONE_DURATION_SECONDS,progressStore:store};
  }
  function createExam(plan){
@@ -403,6 +405,8 @@ export function mountHearFocus({doc=document,env=window}={}){
   try{sweep.recordResponse(true);}
   catch{/* The stop remains mandatory even if the audio clock rejects the mark. */}
   finally{sweep.stop('reported-uncomfortable');}
+  initialLevel=-60;
+  element('start-level').value='-60';
   output('sweep-feedback',msg('sweepLoud'));
   return prepareTonesFromSweep();
  }
@@ -412,6 +416,8 @@ export function mountHearFocus({doc=document,env=window}={}){
   element('foot-tech').open=false;
   const checkpoint=readCheckpoint();
   pendingRecovery=Boolean(checkpoint);
+  element('start-level-options').hidden=pendingRecovery;
+  element('start-level').value='-60';
   element('recovery-options').hidden=!pendingRecovery;
   element('recovery-options').open=false;
   element('volume-ok').checked=false;
@@ -445,6 +451,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   }else outcome=store.clear({confirmed:true});
   if(!outcome.cleared)throw Error('No pudimos verificar que el progreso anterior se haya eliminado.');
   pendingRecovery=false;eq=null;review=null;eqHistory=null;originalReview=null;
+  initialLevel=-60;element('start-level').value='-60';element('start-level-options').hidden=false;
   saveResultId=null;
   element('saved-eq-link').hidden=true;
   sweepPlan=null;
@@ -470,6 +477,9 @@ export function mountHearFocus({doc=document,env=window}={}){
    if(!exam){
     const existing=readCheckpoint();
     if(!existing)throw Error('No encontramos una prueba anterior recuperable.');
+    const savedLevel=existing.progress?.options?.initialDbfs;
+    if(!HEAR_FOCUS_START_LEVELS.includes(savedLevel))throw Error('Invalid saved initial digital level');
+    initialLevel=savedLevel;
     createExam(existing.plan);
     await exam.recover({userInitiated:true});
     // One-time migration from older tab-only discomfort reports: the
@@ -493,6 +503,9 @@ export function mountHearFocus({doc=document,env=window}={}){
    go('tones');return;
   }
   if(readCheckpoint())throw Error('Hay una prueba anterior. Continúala para no borrar tus respuestas.');
+  const selectedLevel=Number(element('start-level').value);
+  if(!HEAR_FOCUS_START_LEVELS.includes(selectedLevel))throw Error('Invalid initial digital level');
+  initialLevel=selectedLevel;
   bands=chooseBands();
   rememberEquipment();
   clearLoud();
@@ -503,7 +516,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   go('sweep');
   try{
    const started=await sweep.start({
-    plan:sweepPlan,digitalLevelDbfs:-60,
+    plan:sweepPlan,digitalLevelDbfs:initialLevel,
     authorizedDigitalRangeDbfs:HEAR_FOCUS_LIMITS,
     channel:'joint',userInitiated:true,
    });
@@ -704,6 +717,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    output('begin',(checkpoint?resumeText:beginText)+' →');
   }
   if(view==='sweep'){
+   output('sweep-level',tr('digitalLevel',{db:initialLevel}));
    const current=sweep.snapshot();
    if(current.status==='playing'){
     const elapsed=current.elapsedSeconds;
@@ -805,6 +819,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   element('custom-bands').hidden=!custom;
   element('custom-label').hidden=!custom;
  });
+ element('start-level').addEventListener('change',()=>{element('volume-ok').checked=false;});
  element('volume-ok').addEventListener('change',()=>{if(element('volume-ok').checked)notice('');});
  const stopKey=e=>{
   if(e.key==='Escape'&&!e.repeat&&!e.altKey&&!e.metaKey&&!e.ctrlKey){
