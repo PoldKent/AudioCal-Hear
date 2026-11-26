@@ -449,3 +449,45 @@ test('immediate EQ manual edits are reversible, exported from the visible draft 
  await expect(slider).toBeDisabled();
  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(starts);
 });
+
+test('EQ result uses spare viewport width and scrolls only when all bands cannot fit',async({page})=>{
+ await page.goto('/');
+ const result=page.getByTestId('focus-result');
+ // Isolate real production layout from the duration of an audio test.
+ // Synthetic bands are layout fixtures only; no listening evidence is created.
+ await page.evaluate(()=>{
+  document.querySelectorAll('.stage').forEach(node=>node.hidden=node.id!=='result');
+ });
+ await expect(result).toBeVisible();
+ for(const count of [4,5,7,10,15,31]){
+  const layout=await page.evaluate(count=>{
+   const graph=document.querySelector('#eq-graph'),scroll=graph.parentElement;
+   graph.replaceChildren(...Array.from({length:count},(_,i)=>{
+    const band=document.createElement('div');band.className='eq-graph-band';
+    const area=document.createElement('div');area.className='eq-graph-area';
+    const gain=document.createElement('small');gain.className='eq-graph-gain';gain.textContent='+0.5 dB';
+    const hz=document.createElement('small');hz.className='eq-graph-frequency';hz.textContent=(i===0?31.5:16000)+' Hz';
+    band.append(area,gain,hz);return band;
+   }));
+   scroll.scrollLeft=0;
+   const bounds=scroll.getBoundingClientRect(),first=graph.firstElementChild.getBoundingClientRect(),last=graph.lastElementChild.getBoundingClientRect();
+   const required=graph.getBoundingClientRect().width;
+   const available=scroll.clientWidth-4;
+   const overflow=scroll.scrollWidth>scroll.clientWidth+2;
+   const firstReachable=first.left>=bounds.left-1;
+   scroll.scrollLeft=scroll.scrollWidth;
+   const lastReachable=graph.lastElementChild.getBoundingClientRect().right<=bounds.right+1;
+   return {required,available,overflow,firstReachable,lastReachable,
+    allVisible:last.right<=bounds.right+1,viewport:document.documentElement.clientWidth,
+    pageOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2};
+  },count);
+  expect(layout.pageOverflow).toBe(false);
+  expect(layout.firstReachable).toBe(true);
+  expect(layout.lastReachable).toBe(true);
+  if(layout.required<=layout.available+1){
+   expect(layout.overflow).toBe(false);expect(layout.allVisible).toBe(true);
+  }else expect(layout.overflow).toBe(true);
+  if(count===10&&layout.viewport>=1024)expect(layout.overflow).toBe(false);
+  if(count===31&&layout.viewport>=2400)expect(layout.overflow).toBe(false);
+ }
+});
