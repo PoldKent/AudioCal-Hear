@@ -380,3 +380,72 @@ test('advanced data links remain accessible while opening new Hear never alters 
  await expect(page).toHaveURL(/\/hear3-library\/$/);
  expect(await page.evaluate(()=>localStorage.getItem('audiocal-hear-profiles-v1'))).toBe('OLD_DATA_UNMODIFIED');
 });
+
+test('immediate EQ manual edits are reversible, exported from the visible draft and archived separately',async({page})=>{
+ test.setTimeout(100000);
+ await fakeAudio(page);
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await page.locator('#device-options > summary').click();
+ await expect(page.locator('#bands option[value="4"]')).toHaveText('4 bandas');
+ await expect(page.locator('#bands option[value="15"]')).toHaveText('15 bandas');
+ await expect(page.getByTestId('focus-bands')).toHaveValue('5');
+ await page.getByTestId('focus-bands').selectOption('4');
+ await page.locator('#device-options > summary').click();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-tones')).toBeVisible();
+ for(let i=0;i<16;i++){
+  await page.getByTestId('focus-tone-play').click();
+  await expect(page.getByTestId('focus-tone-no')).toBeVisible();
+  await page.getByTestId('focus-tone-no').click();
+ }
+ await expect(page.getByTestId('focus-result')).toBeVisible();
+ await expect(page.getByTestId('focus-eq-rows').locator('.eq-row')).toHaveCount(4);
+ const starts=await page.evaluate(()=>window.__hearFocusStarts);
+ const band=page.getByTestId('focus-eq-rows').locator('.eq-row').first();
+ await expect(band.locator('.gain')).toHaveText('+0.5 dB');
+ await page.locator('#eq-edit-options > summary').click();
+ const slider=page.getByTestId('focus-edit-band-0');
+ await expect(slider).toHaveValue('0.5');
+ const edit=()=>slider.evaluate(node=>{node.value='-0.5';node.dispatchEvent(new Event('input',{bubbles:true}));});
+ await edit();
+ await expect(band.locator('.gain')).toHaveText('-0.5 dB');
+ await expect(band.locator('.eq-reason')).toHaveText('Ajuste manual');
+ await page.locator('#focus-edit-undo').click();
+ await expect(band.locator('.gain')).toHaveText('+0.5 dB');
+ await page.locator('#focus-edit-redo').click();
+ await expect(band.locator('.gain')).toHaveText('-0.5 dB');
+ await page.getByTestId('focus-edit-reset-0').click();
+ await expect(band.locator('.gain')).toHaveText('+0.5 dB');
+ await edit();
+ await page.locator('#focus-edit-restore').click();
+ await expect(band.locator('.gain')).toHaveText('+0.5 dB');
+ await edit();
+ await page.locator('#eq-edit-options > summary').click();
+ await page.locator('#result [data-hear-i18n="focus.result.saveSection"]').click();
+ const pending=page.waitForEvent('download');
+ await page.locator('#download-eq').click();
+ const file=await pending;
+ expect(require('node:fs').readFileSync(await file.path(),'utf8')).toContain('125 Hz = -0.5 dB');
+ expect(await page.evaluate(async()=>{
+  const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
+  return createHear3CatalogStore().load().catalog.results.length;
+ })).toBe(0);
+ await page.locator('#save-consent').check();
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#save-eq').click();
+ await expect(page.locator('#save-status')).toContainText('Guardado en este navegador');
+ const result=await page.evaluate(async()=>{
+  const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
+  return createHear3CatalogStore().load().catalog.results.at(-1);
+ });
+ expect(result.originalEq[0].gainDb).toBe(0.5);
+ expect(result.currentEq[0].gainDb).toBe(-0.5);
+ expect(result.editHistory).toHaveLength(1);
+ expect(result.editHistory[0].fromGainDb).toBe(0.5);
+ expect(result.editHistory[0].toGainDb).toBe(-0.5);
+ await page.locator('#eq-edit-options > summary').click();
+ await expect(slider).toBeDisabled();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(starts);
+});

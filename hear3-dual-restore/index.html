@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Restaurar respaldos · AudioCal Hear</title>
+<title data-hear-i18n="tech.restore.title">Restaurar respaldos · AudioCal Hear</title>
 <style>
 :root{color-scheme:light dark;font-family:system-ui,sans-serif}
 body{max-width:49rem;margin:1.5rem auto;padding:0 1rem;line-height:1.55}
@@ -24,10 +24,10 @@ label{display:block;font-weight:600}
 <script type="module" src="../src/hear3/app-i18n.mjs"></script>
 </head>
 <body>
-<a href="#main" class="skip">Saltar al contenido principal</a>
+<a href="#main" class="skip" data-hear-i18n="focus.ui.skip">Saltar al contenido principal</a>
 <header class="app-topbar">
- <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
- <nav class="app-nav" aria-label="Navegación principal">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio" data-hear-i18n-aria-label="focus.ui.ariaHome"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal" data-hear-i18n-aria-label="tech.navigation">
   <a href="../" data-hear-i18n="nav.home">Inicio</a>
   <a href="../hear3-exam/" data-hear-i18n="nav.exam">Examen</a>
   <a href="../hear3-eq-editor/" data-hear-i18n="nav.eq">Mi ecualizador</a>
@@ -39,9 +39,9 @@ label{display:block;font-weight:600}
    </div>
   </details>
  </nav> <label class="app-language-control">
-  <span class="app-sr-only">Idioma de la interfaz principal</span>
+  <span class="app-sr-only" data-hear-i18n="tech.language">Idioma de la interfaz principal</span>
   <select data-hear-language data-testid="hear-language"
-    aria-label="Idioma de la interfaz principal">
+    aria-label="Idioma de la interfaz principal" data-hear-i18n-aria-label="tech.language">
    <option value="es">Español</option>
    <option value="en">English</option>
    <option value="fr">Français</option>
@@ -55,57 +55,49 @@ label{display:block;font-weight:600}
 </header>
 <main id="main" class="app-page" tabindex="-1">
 <p data-hear-language-note hidden class="app-language-note" role="note"></p>
-<h1>Restaurar respaldos completos</h1>
-<p class="notice"><strong>Restauración avanzada, con confirmación.</strong> Esta función requiere un catálogo actual y un archivo de historial antiguo previamente conservado. No reproduce audio ni aplica
-ecualización. Las restauraciones en dos claves <strong>NO son atómicas</strong>; un corte puede
-exigir volver a restaurar manualmente ambos archivos.</p>
-<p>Antes de reemplazar, conservarás <strong>dos respaldos del estado anterior</strong> fuera del
-navegador. Este sitio solo puede solicitar la descarga, no confirmar que tu disco la guardó.</p>
+<h1 data-hear-i18n="tech.restore.title">Restaurar respaldos completos</h1>
+<p class="notice" data-hear-i18n="tech.restore.notice">Restauración avanzada, con confirmación. Esta función requiere un catálogo actual y un archivo de historial antiguo previamente conservado. No reproduce audio ni aplica ecualización. Las restauraciones en dos claves NO son atómicas; un corte puede exigir volver a restaurar manualmente ambos archivos.</p>
+<p data-hear-i18n="tech.restore.backupNote">Antes de reemplazar, conservarás dos respaldos del estado anterior fuera del navegador. Este sitio solo puede solicitar la descarga, no confirmar que tu disco la guardó.</p>
 <section aria-labelledby="recover-h">
-<h2 id="recover-h">Estado de recuperación anterior</h2>
+<h2 id="recover-h" data-hear-i18n="tech.restore.recover">Estado de recuperación anterior</h2>
 <p data-testid="recovery-status" id="recovery-status" role="status" aria-live="polite"></p>
-<button type="button" id="recovery-review" data-testid="recovery-review">
+<button type="button" id="recovery-review" data-testid="recovery-review" data-hear-i18n="tech.restore.reviewRecovery">
 Revisar estado de los dos almacenes</button>
-<button type="button" id="recovery-ack" data-testid="recovery-ack" disabled>
+<button type="button" id="recovery-ack" data-testid="recovery-ack" disabled data-hear-i18n="tech.restore.ack">
 Reconocer pareja coherente y retirar marcador de recuperación</button>
 </section>
 <section aria-labelledby="source-h">
-<h2 id="source-h">1 · Revisar dos archivos fuente</h2>
-<label for="v3-file">Catálogo original de AudioCal Hear · JSON actual</label>
+<h2 id="source-h" data-hear-i18n="tech.restore.source">1 · Revisar dos archivos fuente</h2>
+<label for="v3-file" data-hear-i18n="tech.restore.v3">Catálogo original de AudioCal Hear · JSON actual</label>
 <input type="file" id="v3-file" data-testid="v3-file" accept=".json,application/json">
-<label for="v2-file">Historial íntegro conservado de el historial anterior · archivo portátil histórico</label>
+<label for="v2-file" data-hear-i18n="tech.restore.v2">Historial íntegro conservado · archivo portátil histórico</label>
 <input type="file" id="v2-file" data-testid="v2-file" accept=".json,application/json">
-<button type="button" id="review" data-testid="review">Comprobar ambos archivos sin escribir datos</button>
+<button type="button" id="review" data-testid="review" data-hear-i18n="tech.restore.review">Comprobar ambos archivos sin escribir datos</button>
 <p id="review-status" data-testid="review-status" role="status" aria-live="polite">
 No se han revisado archivos.</p>
 </section>
 <section aria-labelledby="rollback-h">
-<h2 id="rollback-h">2 · Descargar respaldo del estado anterior</h2>
-<p>Los siguientes archivos contienen datos anteriores a la restauración. Descárgalos por separado
-y guárdalos en una ubicación externa recuperable. No son una copia nueva automática en la nube.</p>
-<button type="button" id="previous-v3" data-testid="previous-v3" disabled>
+<h2 id="rollback-h" data-hear-i18n="tech.restore.backup">2 · Descargar respaldo del estado anterior</h2>
+<p data-hear-i18n="tech.restore.backupHelp">Los siguientes archivos contienen datos anteriores a la restauración. Descárgalos por separado y guárdalos en una ubicación externa recuperable. No son una copia nueva automática en la nube.</p>
+<button type="button" id="previous-v3" data-testid="previous-v3" disabled data-hear-i18n="tech.restore.previous3">
 Descargar catálogo actual anterior</button>
-<button type="button" id="previous-v2" data-testid="previous-v2" disabled>
+<button type="button" id="previous-v2" data-testid="previous-v2" disabled data-hear-i18n="tech.restore.previous2">
 Descargar historial histórico anterior</button>
 <p id="backup-status" data-testid="backup-status" role="status">Descargas previas no solicitadas.</p>
 </section>
 <section aria-labelledby="commit-h">
-<h2 id="commit-h">3 · Restaurar con confirmación</h2>
-<button type="button" id="restore" data-testid="restore" disabled>
+<h2 id="commit-h" data-hear-i18n="tech.restore.commit">3 · Restaurar con confirmación</h2>
+<button type="button" id="restore" data-testid="restore" disabled data-hear-i18n="tech.restore.replace">
 Reemplazar ambos archivos tras confirmar copias externas</button>
 <p data-testid="operation-status" id="operation-status" role="status" aria-live="polite">
 No se ha iniciado ninguna restauración.</p>
-<p class="notice">Si se interrumpe la segunda escritura, podría quedar una pareja incompleta.
-El diario bloquea restauraciones repetidas y permite detectar el estado tras recargar,
-pero <strong>no repara automáticamente datos parciales</strong>. Usa entonces los dos respaldos
-anteriores desde los importadores independientes del
-<a href="../hear3-library/#datos-anteriores">historial</a>,
-comprueba ambos y vuelve a esta pantalla para reconocer la recuperación.</p>
+<p class="notice"><span data-hear-i18n="tech.restore.partial">Si se interrumpe la segunda escritura, podría quedar una pareja incompleta. El diario bloquea restauraciones repetidas y permite detectar el estado tras recargar, pero no repara automáticamente datos parciales. Usa los dos respaldos anteriores desde los importadores independientes del historial, comprueba ambos y vuelve aquí para reconocer la recuperación.</span> <a href="../hear3-library/#datos-anteriores" data-hear-i18n="tech.restore.historyLink">Abrir importadores del historial</a></p>
 </section>
 <p id="error" data-testid="error" role="alert"></p>
-<p><a href="../">Volver al inicio</a></p>
+<p><a href="../" data-hear-i18n="tech.home">Volver al inicio</a></p>
 </main>
 <script type="module">
+import {translateHear3Ui} from '../src/hear3/app-i18n.mjs';
 import {createHear3CatalogStore} from '../src/hear3/catalog-backup-store.mjs';
 import {createHear3LosslessV2HistoryVault} from '../src/hear3/legacy-v2-history-vault.mjs';
 import {createHear3CatalogWriteCoordinator} from '../src/hear3/coordinated-catalog-writer.mjs';
@@ -116,32 +108,33 @@ const historyVault=createHear3LosslessV2HistoryVault();
 const coordinator=createHear3CatalogWriteCoordinator({store:catalogStore});
 const engine=createHear3GuardedDualRestore({catalogStore,historyVault,coordinator});
 let inspected=null,requestedV3=false,requestedV2=false,busy=false;
+const tr=(key,values={})=>Object.entries(values).reduce((s,[k,v])=>s.replaceAll('{'+k+'}',String(v)),translateHear3Ui('tech.restore.'+key,document.documentElement.lang.split('-')[0]));
+const yn=value=>tr(value?'yes':'no');
+let reviewKey='noReview',reviewValues={},operationKey='noOperation',operationValues={};
+function reviewStatus(key,values={}){reviewKey=key;reviewValues=values;$('review-status').textContent=tr(key,values);}
+function operationStatus(key,values={}){operationKey=key;operationValues=values;$('operation-status').textContent=tr(key,values);}
+window.addEventListener('hear3:language-change',()=>{reviewStatus(reviewKey,reviewValues);operationStatus(operationKey,operationValues);render();});
 function render(){
  const enabled=Boolean(inspected)&&!busy;
  $('previous-v3').disabled=!enabled;
  $('previous-v2').disabled=!enabled;
  $('restore').disabled=!enabled||!requestedV3||!requestedV2;
  for(const id of ['review','v3-file','v2-file','recovery-review'])$(id).disabled=busy;
- $('backup-status').textContent='Solicitud de descarga: V3 '+(requestedV3?'sí':'no')+
-  ', V2 '+(requestedV2?'sí':'no')+
-  '. Comprueba que ambos archivos se guardaron realmente antes de confirmar.';
+ $('backup-status').textContent=tr('downloads',{a:yn(requestedV3),b:yn(requestedV2)});
  try{
   const s=engine.status();
   $('recovery-status').textContent=s.state==='clear'
-   ?'No hay marcador de restauración interrumpida.'
-   :'Marcador: '+s.state+'. Pareja '+s.matches+
-    '. Coherencia local verificada: '+(s.coherentSnapshotVerified?'sí':'no')+
-    '. Compara ambos archivos, sin atribuirles autenticidad criptográfica.';
+   ?tr('clear'):tr('marker',{state:s.state,pair:s.matches,ok:yn(s.coherentSnapshotVerified)});
   $('recovery-ack').disabled=busy||!s.requiresRecovery||!s.coherentSnapshotVerified;
   if(s.requiresRecovery)$('restore').disabled=true;
  }catch(e){
-  $('recovery-status').textContent='No se puede leer el marcador: '+e.message;
+  $('recovery-status').textContent=tr('markerError')+' '+e.message;
   $('restore').disabled=true;$('recovery-ack').disabled=true;
  }
 }
 function reset(){
  engine.discard();inspected=null;requestedV3=false;requestedV2=false;
- $('review-status').textContent='Archivos cambiados. Vuelve a revisar ambos orígenes.';
+ reviewStatus('changed');
  render();
 }
 $('v3-file').addEventListener('change',reset);
@@ -150,7 +143,7 @@ function download(text,name){
  const blob=new Blob([text],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
- setTimeout(()=>URL.revokeObjectURL(url),3000);
+ setTimeout(()=>URL.revokeObjectURL(url),30000);
 }
 async function work(callback){
  if(busy)return;
@@ -160,20 +153,17 @@ async function work(callback){
  finally{busy=false;render();}
 }
 $('review').addEventListener('click',()=>work(async()=>{
- inspected=null;requestedV3=false;requestedV2=false;
+ engine.discard();inspected=null;requestedV3=false;requestedV2=false;
+ reviewStatus('noReview');
  const f3=$('v3-file').files?.[0],f2=$('v2-file').files?.[0];
  if(!f3||!f2||f3.size===0||f2.size===0||
   f3.size>2097152*4||f2.size>4194304*4)
-  throw Error('Selecciona DOS archivos JSON válidos dentro del límite permitido.');
+  throw Error(tr('invalidFiles'));
  const [catalogBackupText,historyBackupText]=await Promise.all([f3.text(),f2.text()]);
  if($('v3-file').files?.[0]!==f3||$('v2-file').files?.[0]!==f2)
-  throw Error('Los archivos cambiaron durante la lectura; revísalos nuevamente.');
+  throw Error(tr('fileChanged'));
  inspected=engine.preview({catalogBackupText,historyBackupText});
- $('review-status').textContent='Revisión solo lectura: V3: '+inspected.sourceV3Devices+
-  ' equipos, '+inspected.sourceV3Profiles+' perfiles, '+inspected.sourceV3Results+
-  ' resultados. V2: '+inspected.sourceV2Profiles+' perfiles, '+
-  inspected.sourceV2HistoricalRecords+' registros históricos. '+
-  'Se requieren DOS respaldos previos y consentimiento de ambos reemplazos. Ningún dato clínico V3 nuevo se deduce de V2.';
+ reviewStatus('reviewed',{devices:inspected.sourceV3Devices,profiles:inspected.sourceV3Profiles,results:inspected.sourceV3Results,oldProfiles:inspected.sourceV2Profiles,records:inspected.sourceV2HistoricalRecords});
 }));
 $('previous-v3').addEventListener('click',()=>{
  try{download(engine.exportPreviousV3(),'hear3-antes-de-restaurar-catalogo-v3.json');requestedV3=true;}
@@ -187,16 +177,14 @@ $('previous-v2').addEventListener('click',()=>{
 });
 $('restore').addEventListener('click',()=>work(async()=>{
  if(!inspected||!requestedV3||!requestedV2)
-  throw Error('Primero revisa los dos archivos y solicita ambos respaldos previos.');
- if(!confirm('¿Confirmas que ambos respaldos del estado ANTERIOR quedaron guardados fuera del navegador?'))return;
- if(!confirm('¿REEMPLAZAR el catálogo V3 y el historial V2 conservado? Son DOS escrituras distintas; una interrupción puede requerir rollback manual.'))return;
+  throw Error(tr('needReview'));
+ if(!confirm(tr('confirmBackup')))return;
+ if(!confirm(tr('confirmReplace')))return;
  const result=await engine.commit({userInitiated:true,
   confirmBothReplacements:true,confirmRollbackDownloads:true});
  inspected=null;requestedV3=false;requestedV2=false;
- $('review-status').textContent='Revisión consumida. Se requiere nueva revisión para otra operación.';
- $('operation-status').textContent=result.journalCleared
-  ?'Ambos archivos se restauraron y verificaron en este navegador. Recarga para comprobar persistencia.'
-  :'Ambos archivos coinciden, pero el diario necesita reconocimiento manual; no continúes sin revisarlo.';
+ reviewStatus('consumed');
+ operationStatus(result.journalCleared?'restored':'needsAck');
 }));
 $('recovery-review').addEventListener('click',()=>{
  $('error').textContent='';render();
@@ -204,13 +192,12 @@ $('recovery-review').addEventListener('click',()=>{
 $('recovery-ack').addEventListener('click',()=>work(async()=>{
  const s=engine.status();
  if(!s.coherentSnapshotVerified)
-  throw Error('Los dos almacenes no son una pareja coherente; importa los respaldos anteriores manualmente.');
- if(!confirm('¿Revisaste el contenido de V2 y V3 y confirmas retirar el marcador? No se restaurará nada automáticamente.'))return;
+  throw Error(tr('notCoherent'));
+ if(!confirm(tr('confirmAck')))return;
  const done=await engine.acknowledgeCoherentRecovery({userInitiated:true,confirmed:true});
- $('operation-status').textContent='Marcador retirado tras comprobar pareja: '+
-  done.matches+'. No se realizó recuperación automática.';
+ operationStatus('acked',{pair:done.matches});
 }));
-render();
+reviewStatus(reviewKey);operationStatus(operationKey);render();
 </script>
 </body>
 </html>

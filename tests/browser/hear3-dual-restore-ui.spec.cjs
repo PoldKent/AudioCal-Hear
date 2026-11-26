@@ -174,3 +174,30 @@ test('interrupted V2 restore is flagged after reload, blocks second restore and 
  expect(restored.history).toBe(a.history);
  expect(restored.oldHear2).toBe(a.legacySource);
 });
+
+test('restore localization preserves both external backups and explicit confirmation gates',async({page})=>{
+ const source=await seed(page,'locale-source');
+ await page.goto(PAGE);
+ await page.getByTestId('hear-language').selectOption('en');
+ await expect(page.getByRole('heading',{level:1})).toHaveText('Restore complete backups');
+ await expect(page.getByTestId('recovery-status')).toContainText('No interrupted-restore marker');
+ await page.getByTestId('v3-file').setInputFiles({name:'v3.json',mimeType:'application/json',buffer:Buffer.from(source.catalogBackup)});
+ await page.getByTestId('v2-file').setInputFiles({name:'v2.json',mimeType:'application/json',buffer:Buffer.from(source.historyBackup)});
+ await page.getByTestId('review').click();
+ await expect(page.getByTestId('review-status')).toContainText('Read-only review');
+ await expect(page.getByTestId('restore')).toBeDisabled();
+ await page.getByTestId('hear-language').selectOption('fr');
+ await expect(page.getByTestId('review-status')).toContainText('Vérification en lecture seule');
+ await expect(page.getByTestId('restore')).toBeDisabled();
+ const d3=page.waitForEvent('download');
+ await page.getByTestId('previous-v3').click();await d3;
+ await expect(page.getByTestId('restore')).toBeDisabled();
+ const d2=page.waitForEvent('download');
+ await page.getByTestId('previous-v2').click();await d2;
+ await expect(page.getByTestId('restore')).toBeEnabled();
+ await page.getByTestId('hear-language').selectOption('en');
+ const dismissed=page.waitForEvent('dialog').then(async d=>{expect(d.message()).toContain('PREVIOUS-state backups');await d.dismiss();});
+ await page.getByTestId('restore').click();await dismissed;
+ await expect(page.getByTestId('operation-status')).toHaveText('No restore has started.');
+ expect((await readData(page)).catalog).toEqual(source.catalog);
+});

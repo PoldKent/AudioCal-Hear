@@ -43,6 +43,6 @@ test('production and build-source entries share all translated focus labels',()=
 test('static offline cache keys stay in sync after releasing updated dictionaries',()=>{
  const optIn=read('src/hear3/offline-optin.mjs');
  const worker=read('hear3-offline-sw.js');
- assert.match(optIn,/audiocal-hear3-prototype-static-v17/);
- assert.match(worker,/CACHE_NAME=CACHE_PREFIX\+'v17'/);
+ assert.match(optIn,/audiocal-hear3-prototype-static-v18/);
+ assert.match(worker,/CACHE_NAME=CACHE_PREFIX\+'v18'/);
 });

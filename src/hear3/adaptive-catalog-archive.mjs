@@ -121,7 +121,7 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
  function preview({
   deviceId,profileId,resultId,deviceName,profileName,category='headphones',
   includeProvisionalEq=false,reuseDeviceId=null,reuseProfileId=null,
-  loudToneReports=null,
+  loudToneReports=null,manualEqGains=null,
  }={}){
   check(typeof includeProvisionalEq==='boolean','Provisional EQ opt-in must be explicit');
   proposed=null;
@@ -172,8 +172,20 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
    eq.channel==='joint'&&eq.bandCount===evidence.eqBands.length&&
    eq.originalEq.every((band,i)=>band.bandId===evidence.eqBands[i].id)),
    'EQ must remain a bounded review-only joint mathematical hypothesis');
-  const currentEq=eq?clone(eq.currentEq):[];
   const originalEq=eq?clone(eq.originalEq):[];
+  let currentEq=eq?clone(eq.currentEq):[];
+  // Explicit user-edited gains are kept separate from immutable tone evidence
+  // and the independently recomputed original curve. No hardware application.
+  check(manualEqGains===null||(
+   eq&&Array.isArray(manualEqGains)&&manualEqGains.length===originalEq.length&&
+   manualEqGains.every(v=>finite(v)&&Number.isInteger(v*2)&&Math.abs(v)<=eq.capDb)),
+   'Manual EQ gains require a consented provisional curve, exact band count and bounded 0.5 dB steps');
+  if(manualEqGains!==null)currentEq=originalEq.map((band,i)=>({
+   bandId:band.bandId,gainDb:manualEqGains[i],
+  }));
+  const editHistory=currentEq.flatMap((band,i)=>band.gainDb===originalEq[i].gainDb?[]:[{
+   bandId:band.bandId,fromGainDb:originalEq[i].gainDb,toGainDb:band.gainDb,at:time,
+  }]);
   const next=validateHear3Catalog({
    ...current.catalog,
    devices:reusedDevice?current.catalog.devices:
@@ -185,7 +197,7 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
    results:[...current.catalog.results,{
     id:resultId,profileId:targetProfileId,capturedAt:time,
     status:eq?'provisional':'inconclusive',provenance:'experimental-tone-test',
-    originalEq,currentEq,observations:evidence.observations,editHistory:[],
+    originalEq,currentEq,observations:evidence.observations,editHistory,
    }],
    activeProfileId:current.catalog.activeProfileId??targetProfileId,
   });
@@ -202,7 +214,7 @@ export function createHear3AdaptiveCatalogArchive({catalogStore,exam,now=()=>Dat
    bands:evidence.eqBands.length,
    status:eq?'provisional':'inconclusive',
    originalEqBands:originalEq.length,currentEqBands:currentEq.length,
-   provisionalEqOptIn:includeProvisionalEq,
+   provisionalEqOptIn:includeProvisionalEq,manualEditCount:editHistory.length,
    eqModelStatus:eq?.modelStatus??null,
    eqAcousticallyValidated:false,eqAutoApplyAllowed:false,
    existingResultsUnchanged:current.catalog.results.length,
