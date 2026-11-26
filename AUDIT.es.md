@@ -1,4 +1,23 @@
-# AudioCal Hear — Auditoría del código v1.8.1
+# AudioCal Hear — Auditoría vigente del repositorio
+
+[English](AUDIT.md) · **Español** · 26/11/2026
+
+Base: [commit publicado e5bdc69](https://github.com/PoldKent/AudioCal-Hear/commit/e5bdc69d8ee537e891dcc79de839c511931c0963). Revisión de fuentes, documentación y navegador simulado, no prueba de penetración independiente, certificación WCAG ni calibración acústica.
+
+| Área | Hallazgo / acción |
+|---|---|
+| Publicación | [Despliegue Pages](https://github.com/PoldKent/AudioCal-Hear/actions/runs/45869971878) exitoso; #105 y #106 fusionadas, sin PR abiertas en la comprobación inicial |
+| Navegadores | Escritorio 21:9 (240 aprobadas), escritorio 4:3 y Android aprobados; iPhone aprobado al revisar. [Matriz](https://github.com/PoldKent/AudioCal-Hear/actions/runs/45869972411) |
+| Documentación | README y guía de desarrollo distinguen la web modular Hear 3 del respaldo histórico Hear 2. Las descripciones históricas siguen accesibles. |
+| Apoyo | Guía bilingüe, metadatos de financiación de GitHub y enlaces traducidos en Ayuda; datos de depósito exactos de [Stickers Sonoros](https://github.com/PoldKent/stickers-sonoros/blob/main/SUPPORT.md). Sin pago ni transferencia automática. |
+| Privacidad | Borrado delimitado, limpieza de imagen en BFCache, diario de restauración y registros separados del EQ original/manual; sin borrado indiscriminado. |
+| Sin conexión | Manifiesto estático y versión de caché sincronizada; sin guardar datos personales ni enlaces externos de apoyo. |
+| Pendientes | Examen técnico, historial y editor guardado parcialmente traducidos; equivalencias por modelo y síntesis por canales sin evidencia suficiente. Sin certificación acústica ni de accesibilidad independiente. |
+
+La revisión nueva de colaboración/documentación requiere sus propios resultados de CI: [Actions](https://github.com/PoldKent/AudioCal-Hear/actions) e [incidencia #90](https://github.com/PoldKent/AudioCal-Hear/issues/90). La aceptación del hardware está registrada en #96; se mantiene `stableReleaseClaim:false`. No se deduce exactitud clínica, SPL real ni compatibilidad universal.
+
+## Auditoría histórica (30/10/2026)
+
 
 [English](AUDIT.md) · **Español** · Revisión realizada el 30 de octubre de 2026
 

@@ -127,6 +127,10 @@ export function auditHear3Repository({root=DEFAULT_ROOT}={}){
  const workerVersion=worker.match(/CACHE_NAME\s*=\s*CACHE_PREFIX\s*\+\s*'v(\d+)'/)?.[1];
  if(!clientVersion||clientVersion!==workerVersion)
   fail('Offline cache version mismatch: client '+clientVersion+', worker '+workerVersion);
+ const supportUrl='https://github.com/PoldKent/AudioCal-Hear/blob/main/SUPPORT.md';
+ for(const path of ['README.md','README.es.md','SUPPORT.md','.github/FUNDING.yml','DEV_GUIDE.md','AUDIT.md','AUDIT.es.md'])if(!found(path))fail('Missing repository document: '+path);
+ if(found('.github/FUNDING.yml')&&!text(root,'.github/FUNDING.yml').includes(supportUrl))fail('Funding link does not match the repository support guide');
+ if(!text(root,home).includes('href="'+supportUrl+'"'))fail('Public support link missing or mismatched');
  const gate=JSON.parse(text(root,'docs/hear3/release-evidence-gate.json'));
  if(gate.stableReleaseClaim!==false)
   fail('Stable acoustic release gate must remain false without physical evidence');
