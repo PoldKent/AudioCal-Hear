@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Diagnóstico técnico · AudioCal Hear</title>
+<title data-hear-i18n="tech.diagnostic.title">Diagnóstico técnico · AudioCal Hear</title>
 <style>
 :root{font-family:system-ui,sans-serif;color-scheme:light dark}
 body{margin:0 auto;padding:1rem 1rem 3rem;max-width:46rem;line-height:1.55}
@@ -22,8 +22,8 @@ fieldset{border:1px solid #888;padding:.75rem}
 </head>
 <body>
 <header class="app-topbar">
- <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
- <nav class="app-nav" aria-label="Navegación principal">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio" data-hear-i18n-aria-label="focus.ui.ariaHome"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal" data-hear-i18n-aria-label="tech.navigation">
   <a href="../" data-hear-i18n="nav.home">Inicio</a>
   <a href="../hear3-exam/" data-hear-i18n="nav.exam">Examen</a>
   <a href="../hear3-eq-editor/" data-hear-i18n="nav.eq">Mi ecualizador</a>
@@ -35,9 +35,9 @@ fieldset{border:1px solid #888;padding:.75rem}
    </div>
   </details>
  </nav> <label class="app-language-control">
-  <span class="app-sr-only">Idioma de la interfaz principal</span>
+  <span class="app-sr-only" data-hear-i18n="tech.language">Idioma de la interfaz principal</span>
   <select data-hear-language data-testid="hear-language"
-    aria-label="Idioma de la interfaz principal">
+    aria-label="Idioma de la interfaz principal" data-hear-i18n-aria-label="tech.language">
    <option value="es">Español</option>
    <option value="en">English</option>
    <option value="fr">Français</option>
@@ -51,53 +51,53 @@ fieldset{border:1px solid #888;padding:.75rem}
 </header>
 <main class="app-page">
 <p data-hear-language-note hidden class="app-language-note" role="note"></p>
-<h1>Diagnóstico técnico</h1>
-<p class="warning"><strong>Información técnica no clínica.</strong>
- Esta página solo examina disponibilidad de funciones del navegador, sin iniciar audio,
- acceder a tus respuestas auditivas ni leer perfiles, fotografías o archivos.
- No envía datos por Internet. Revisa el texto antes de copiarlo o descargarlo y comparte
- únicamente con quien decidas. Las capacidades declaradas no certifican sonido físico, SPL,
- compatibilidad completa ni accesibilidad WCAG.</p>
+<h1 data-hear-i18n="tech.diagnostic.title">Diagnóstico técnico</h1>
+<p class="warning" data-hear-i18n="tech.diagnostic.warning">Información técnica no clínica. Esta página solo examina disponibilidad de funciones del navegador, sin iniciar audio, acceder a tus respuestas auditivas ni leer perfiles, fotografías o archivos. No envía datos por Internet. Revisa el texto antes de copiarlo o descargarlo y comparte únicamente con quien decidas. Las capacidades declaradas no certifican sonido físico, SPL, compatibilidad completa ni accesibilidad WCAG.</p>
 <fieldset>
-<legend>Contenido que deseas incluir</legend>
+<legend data-hear-i18n="tech.diagnostic.include">Contenido que deseas incluir</legend>
 <label><input type="checkbox" id="capabilities" data-testid="capabilities" checked>
-Incluir capacidades técnicas disponibles</label>
+<span data-hear-i18n="tech.diagnostic.cap">Incluir capacidades técnicas disponibles</span></label>
 <label><input type="checkbox" id="issues" data-testid="issues" checked>
-Incluir códigos de error técnicos seleccionados manualmente</label>
+<span data-hear-i18n="tech.diagnostic.codes">Incluir códigos de error técnicos seleccionados manualmente</span></label>
 </fieldset>
-<label for="issue-code">Si experimentaste un problema, selecciona solo su categoría</label>
+<label for="issue-code" data-hear-i18n="tech.diagnostic.issueLabel">Si experimentaste un problema, selecciona solo su categoría</label>
 <select id="issue-code" data-testid="issue-code">
-<option value="">Sin problema declarado</option>
-<option value="audio-unavailable">Audio no disponible</option>
-<option value="audio-context-suspended">Contexto de audio suspendido</option>
-<option value="audio-interrupted">Audio interrumpido</option>
-<option value="route-unverified">Salida de audio no verificada</option>
-<option value="offline-unavailable">Offline no disponible</option>
-<option value="offline-cache-unverified">Caché offline no verificada</option>
-<option value="storage-blocked">Almacenamiento bloqueado</option>
-<option value="storage-volatile">Datos en memoria temporal</option>
-<option value="checkpoint-damaged">Checkpoint dañado</option>
-<option value="unsupported-browser-capability">Capacidad del navegador no compatible</option>
-<option value="unknown-technical-error">Error técnico no identificado</option>
+<option value="" data-hear-i18n="tech.diagnostic.none">Sin problema declarado</option>
+<option value="audio-unavailable" data-hear-i18n="tech.diagnostic.audio">Audio no disponible</option>
+<option value="audio-context-suspended" data-hear-i18n="tech.diagnostic.suspended">Contexto de audio suspendido</option>
+<option value="audio-interrupted" data-hear-i18n="tech.diagnostic.interrupted">Audio interrumpido</option>
+<option value="route-unverified" data-hear-i18n="tech.diagnostic.route">Salida de audio no verificada</option>
+<option value="offline-unavailable" data-hear-i18n="tech.diagnostic.offline">Offline no disponible</option>
+<option value="offline-cache-unverified" data-hear-i18n="tech.diagnostic.cache">Caché offline no verificada</option>
+<option value="storage-blocked" data-hear-i18n="tech.diagnostic.blocked">Almacenamiento bloqueado</option>
+<option value="storage-volatile" data-hear-i18n="tech.diagnostic.volatile">Datos en memoria temporal</option>
+<option value="checkpoint-damaged" data-hear-i18n="tech.diagnostic.checkpoint">Checkpoint dañado</option>
+<option value="unsupported-browser-capability" data-hear-i18n="tech.diagnostic.unsupported">Capacidad del navegador no compatible</option>
+<option value="unknown-technical-error" data-hear-i18n="tech.diagnostic.unknown">Error técnico no identificado</option>
 </select>
-<button id="preview" data-testid="preview" type="button">Generar vista previa local</button>
-<button id="clear" data-testid="clear" type="button">Quitar selección e informe</button>
-<h2>Vista previa antes de cualquier copia</h2>
-<label for="report">Revisa el JSON, sin datos de pruebas o perfiles</label>
+<button id="preview" data-testid="preview" type="button" data-hear-i18n="tech.diagnostic.preview">Generar vista previa local</button>
+<button id="clear" data-testid="clear" type="button" data-hear-i18n="tech.diagnostic.clear">Quitar selección e informe</button>
+<h2 data-hear-i18n="tech.diagnostic.review">Vista previa antes de cualquier copia</h2>
+<label for="report" data-hear-i18n="tech.diagnostic.reportLabel">Revisa el JSON, sin datos de pruebas o perfiles</label>
 <textarea id="report" data-testid="report" readonly spellcheck="false"
- placeholder="Aquí aparecerá únicamente el diagnóstico técnico revisable."></textarea>
+ placeholder="Aquí aparecerá únicamente el diagnóstico técnico revisable." data-hear-i18n-placeholder="tech.diagnostic.placeholder"></textarea>
 <label><input id="confirm" data-testid="confirm" type="checkbox" disabled>
-He revisado el contenido y autorizo crear una copia local de este informe.</label>
-<button id="copy" data-testid="copy" type="button" disabled>Copiar informe revisado</button>
-<button id="download" data-testid="download" type="button" disabled>Descargar informe JSON</button>
+<span data-hear-i18n="tech.diagnostic.consent">He revisado el contenido y autorizo crear una copia local de este informe.</span></label>
+<button id="copy" data-testid="copy" type="button" disabled data-hear-i18n="tech.diagnostic.copy">Copiar informe revisado</button>
+<button id="download" data-testid="download" type="button" disabled data-hear-i18n="tech.diagnostic.download">Descargar informe JSON</button>
 <p id="status" data-testid="status" role="status">Ningún informe generado. No hay envío automático.</p>
-<p><a href="../">Volver al inicio</a></p>
+<p><a href="../" data-hear-i18n="tech.home">Volver al inicio</a></p>
 </main>
 <script type="module">
+import {translateHear3Ui} from '../src/hear3/app-i18n.mjs';
 import {createHear3LocalDiagnostic} from '../src/hear3/local-diagnostics.mjs';
 const $=id=>document.getElementById(id);
 const report=createHear3LocalDiagnostic();
 let previewAvailable=false;
+let statusKey='empty',statusDetail='';
+const tr=k=>translateHear3Ui('tech.diagnostic.'+k,document.documentElement.lang.split('-')[0]);
+function status(k,detail=''){statusKey=k;statusDetail=detail;$('status').textContent=tr(k)+(detail?' '+detail:'');}
+window.addEventListener('hear3:language-change',()=>status(statusKey,statusDetail));
 function resetPreview(){
  previewAvailable=false;
  $('confirm').checked=false;
@@ -105,6 +105,7 @@ function resetPreview(){
  $('copy').disabled=true;
  $('download').disabled=true;
  $('report').value='';
+ status('empty');
 }
 function updateButtons(){
  const allowed=previewAvailable&&$('confirm').checked;
@@ -124,22 +125,22 @@ $('preview').addEventListener('click',()=>{
    includeIssueCodes:$('issues').checked});
   $('report').value=report.exportReviewed({confirmed:true});
   previewAvailable=true;$('confirm').disabled=false;
-  $('status').textContent='Vista previa local preparada. No se ha copiado ni enviado nada.';
+  status('ready');
  }catch(error){
-  $('status').textContent='No se pudo preparar el informe: '+(error?.message??String(error));
+  status('previewError',error?.message??String(error));
  }
 });
 $('clear').addEventListener('click',()=>{
  resetPreview();report.clearIssues();$('issue-code').value='';
- $('status').textContent='Selección e informe descartados. Nada enviado.';
+ status('discarded');
 });
 $('copy').addEventListener('click',async()=>{
  if(!previewAvailable||!$('confirm').checked)return;
  try{
   await navigator.clipboard.writeText(report.exportReviewed({confirmed:true}));
-  $('status').textContent='Informe copiado al portapapeles. No se envió automáticamente.';
+  status('copied');
  }catch(error){
-  $('status').textContent='No se pudo copiar al portapapeles: '+(error?.message??String(error));
+  status('copyError',error?.message??String(error));
  }
 });
 $('download').addEventListener('click',()=>{
@@ -149,12 +150,13 @@ $('download').addEventListener('click',()=>{
   const url=URL.createObjectURL(blob);
   const anchor=document.createElement('a');anchor.href=url;
   anchor.download='hear3-diagnostico-tecnico-local.json';anchor.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-  $('status').textContent='Se solicitó descargar una copia local; ningún dato fue enviado por esta página.';
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+  status('downloaded');
  }catch(error){
-  $('status').textContent='No se pudo preparar la copia: '+(error?.message??String(error));
+  status('downloadError',error?.message??String(error));
  }
 });
+status(statusKey);
 </script>
 </body>
 </html>

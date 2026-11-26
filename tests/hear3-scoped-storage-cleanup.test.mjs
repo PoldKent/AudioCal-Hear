@@ -180,3 +180,38 @@ test('new historical copy after privacy preview invalidates deletion before any 
  assert.equal(f.local.getItem('hear3:catalog:v1:0'),'CATALOG-A');
  assert.equal(f.local.getItem('hear3:v2-history:v1:1'),'NEW-COPY-AFTER-PREVIEW');
 });
+
+test('focused hearing reports, equipment and journal are covered without deleting preferences in V3-only scope',()=>{
+ const f=fixture();
+ const localKeys=['hear3:focus-equipment:v1','hear3:dual-restore:v1:journal'];
+ for(const key of localKeys)f.local.setItem(key,'PRIVATE');
+ f.tab.setItem('hear3:focus-loudness:v1','PRIVATE_REPORT');
+ f.local.setItem('hear3:ui-language:v1','en');
+ f.local.setItem('hear3:ui-theme:v1','light');
+ f.local.setItem('hear3:focus-equipment:v2','KEEP_UNKNOWN');
+ const p=f.cleanup.inspect();
+ assert.equal(p.deviceLocal.v3Private,2);
+ assert.equal(p.tabSession.v3Private,1);
+ assert.equal(p.deviceLocal.v3Preferences,0);
+ assert.equal(p.allKnownEntries,8);
+ assert.equal(f.cleanup.commit({userInitiated:true,confirmed:true,phrase:HEAR_STORAGE_V3_PHRASE}).cleared,true);
+ for(const key of localKeys)assert.equal(f.local.getItem(key),null);
+ assert.equal(f.tab.getItem('hear3:focus-loudness:v1'),null);
+ assert.equal(f.local.getItem('hear3:ui-language:v1'),'en');
+ assert.equal(f.local.getItem('hear3:ui-theme:v1'),'light');
+ assert.equal(f.local.getItem('hear3:focus-equipment:v2'),'KEEP_UNKNOWN');
+ const all=f.cleanup.inspect({scope:'all-hear'});
+ assert.equal(all.deviceLocal.v3Preferences,2);
+ assert.equal(f.cleanup.commit({userInitiated:true,confirmed:true,phrase:HEAR_STORAGE_ERASE_PHRASE}).cleared,true);
+ assert.equal(f.local.getItem('hear3:ui-language:v1'),null);
+ assert.equal(f.local.getItem('hear3:ui-theme:v1'),null);
+});
+test('a partial deletion preserves the dual-restore journal for recovery',()=>{
+ const f=fixture();
+ f.local.setItem('hear3:dual-restore:v1:journal','RECOVERY');
+ f.local.failKey='hear3:catalog:v1:0';
+ f.cleanup.inspect();
+ const result=f.cleanup.commit({userInitiated:true,confirmed:true,phrase:HEAR_STORAGE_V3_PHRASE});
+ assert.equal(result.cleared,false);
+ assert.equal(f.local.getItem('hear3:dual-restore:v1:journal'),'RECOVERY');
+});

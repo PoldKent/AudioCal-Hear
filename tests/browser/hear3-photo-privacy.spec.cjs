@@ -83,3 +83,49 @@ test('private photo tool is discoverable in the single app and returns to settin
  await expect(page.locator('#ajustes')).toHaveAttribute('open');
  await expect(page.locator('#ajustes > summary')).toContainText('Ayuda y datos');
 });
+
+test('cached navigation clears the private preview and permits a new voluntary inspection',async({page})=>{
+ await page.goto(PILOT);
+ await select(page);
+ await page.getByTestId('inspect').click();
+ await expect(page.getByTestId('preview')).toBeVisible();
+ await page.evaluate(()=>{
+  const event=new Event('pagehide');
+  Object.defineProperty(event,'persisted',{value:true});
+  window.dispatchEvent(event);
+ });
+ await expect(page.getByTestId('preview')).toBeHidden();
+ await expect(page.getByTestId('download')).toBeDisabled();
+ expect(await page.evaluate(()=>window.hear3PhotoPilot.summary())).toBeNull();
+ await select(page);
+ await page.getByTestId('inspect').click();
+ await expect(page.getByTestId('preview')).toBeVisible();
+ await expect(page.getByTestId('download')).toBeEnabled();
+});
+test('an abandoned decode cannot clear a newer selected image',async({page})=>{
+ await page.addInitScript(()=>{
+  const original=window.createImageBitmap.bind(window);
+  let first=true;
+  window.createImageBitmap=async(...args)=>{
+   if(first){
+    first=false;
+    window.__photoFirstStarted=true;
+    await new Promise(resolve=>{window.__releaseFirstPhoto=resolve;});
+   }
+   const decoded=await original(...args);
+   if(args[0].name==='first-private.png')window.__photoFirstFinished=true;
+   return decoded;
+  };
+ });
+ await page.goto(PILOT);
+ await page.getByTestId('photo').setInputFiles({name:'first-private.png',mimeType:'image/png',buffer:png});
+ await page.getByTestId('inspect').click();
+ await expect.poll(()=>page.evaluate(()=>Boolean(window.__photoFirstStarted))).toBe(true);
+ await select(page);
+ await page.getByTestId('inspect').click();
+ await expect(page.getByTestId('preview')).toBeVisible();
+ await page.evaluate(()=>window.__releaseFirstPhoto());
+ await expect.poll(()=>page.evaluate(()=>Boolean(window.__photoFirstFinished))).toBe(true);
+ await expect.poll(()=>page.evaluate(()=>window.hear3PhotoPilot.summary()?.outputWidth)).toBe(3);
+ await expect(page.getByTestId('download')).toBeEnabled();
+});

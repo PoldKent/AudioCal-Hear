@@ -15,12 +15,20 @@ const V2_KEYS=new Set([
  'audiocal-hear-profiles-v1','audiocal-hear-active-v1','audiocal-language-v1',
 ]);
 const V3_KEYS=new Set(['hear3:catalog:v1:0','hear3:catalog:v1:1']);
+// Exact keys from the focused public journey and recovery tools. The
+// temporary loudness reports contain hearing-related observations.
+const V3_PRIVATE_KEYS=new Set([
+ 'hear3:focus-equipment:v1','hear3:focus-loudness:v1',
+ 'hear3:dual-restore:v1:journal',
+]);
+const V3_PREFERENCE_KEYS=new Set(['hear3:ui-language:v1','hear3:ui-theme:v1']);
 const V2_VAULT_KEYS=new Set(['hear3:v2-history:v1:0','hear3:v2-history:v1:1']);
 const EXAM_KEY=/^hear3:(?:exam-checkpoint|adaptive-progress):[A-Za-z0-9._-]{1,96}:[01]$/;
 const check=(x,message)=>{if(!x)throw Error(message);};
 function nameBelongs(key,scope){
- const isV3=V3_KEYS.has(key)||V2_VAULT_KEYS.has(key)||EXAM_KEY.test(key);
- return isV3||(scope==='all-hear'&&V2_KEYS.has(key));
+ const isV3=V3_KEYS.has(key)||V2_VAULT_KEYS.has(key)||
+  V3_PRIVATE_KEYS.has(key)||EXAM_KEY.test(key);
+ return isV3||(scope==='all-hear'&&(V2_KEYS.has(key)||V3_PREFERENCE_KEYS.has(key)));
 }
 function storageDefault(name){
  try{return typeof window!=='undefined'?window[name]??null:null;}
@@ -60,6 +68,8 @@ const summarize=records=>({
  v3Catalog:records.filter(x=>V3_KEYS.has(x.key)).length,
  v3LegacyHistoryVault:records.filter(x=>V2_VAULT_KEYS.has(x.key)).length,
  v3Exams:records.filter(x=>EXAM_KEY.test(x.key)).length,
+ v3Private:records.filter(x=>V3_PRIVATE_KEYS.has(x.key)).length,
+ v3Preferences:records.filter(x=>V3_PREFERENCE_KEYS.has(x.key)).length,
  count:records.length,
 });
 export function createHear3ScopedStorageCleanup({
@@ -118,12 +128,34 @@ export function createHear3ScopedStorageCleanup({
    [tabStorage,'tab-session',selected.state.tab],
   ]){
    for(const record of records){
+    // Remove the journal last, only when every other targeted key was
+    // removed. An interrupted/partial erase must retain recovery evidence.
+    if(record.key==='hear3:dual-restore:v1:journal')continue;
     try{
      storage.removeItem(record.key);
      check(storage.getItem(record.key)===null,'Delete could not be verified');
     }catch{failures.push(kind);}
    }
    reports.push({kind,attempted:records.length});
+  }
+  const beforeJournalLocal=snapshot(deviceStorage,selected.scope);
+  const beforeJournalTab=snapshot(tabStorage,selected.scope);
+  const onlyJournalsRemain=[beforeJournalLocal,beforeJournalTab].every(s=>
+   s.available&&s.records.every(r=>r.key==='hear3:dual-restore:v1:journal'));
+  if(failures.length===0&&onlyJournalsRemain){
+   for(const [storage,kind,records] of [
+    [deviceStorage,'device-local',selected.state.local],
+    [tabStorage,'tab-session',selected.state.tab],
+   ]){
+    const journal=records.find(r=>r.key==='hear3:dual-restore:v1:journal');
+    if(!journal)continue;
+    try{
+     check(checkpointFingerprint(storage.getItem(journal.key)??'')===journal.checksum,
+      'Recovery journal changed during cleanup');
+     storage.removeItem(journal.key);
+     check(storage.getItem(journal.key)===null,'Journal deletion could not be verified');
+    }catch{failures.push(kind);}
+   }
   }
   const afterLocal=snapshot(deviceStorage,selected.scope);
   const afterTab=snapshot(tabStorage,selected.scope);
