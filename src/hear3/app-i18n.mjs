@@ -7,6 +7,8 @@ export const HEAR3_LANGUAGE_CHOICES=Object.freeze(['es','en','fr','pt','it','de'
 export const HEAR3_LANGUAGE_KEY='hear3:ui-language:v1';
 const STRINGS=Object.freeze({
   "es": {
+    "focus.ui.footRepository": "Repositorio GitHub",
+    "focus.ui.footSupport": "Apoyar el proyecto",
     "tech.restore.title": "Restaurar respaldos completos",
     "tech.restore.notice": "Restauración avanzada, con confirmación. Esta función requiere un catálogo actual y un archivo de historial antiguo previamente conservado. No reproduce audio ni aplica ecualización. Las restauraciones en dos claves NO son atómicas; un corte puede exigir volver a restaurar manualmente ambos archivos.",
     "tech.restore.backupNote": "Antes de reemplazar, conservarás dos respaldos del estado anterior fuera del navegador. Este sitio solo puede solicitar la descarga, no confirmar que tu disco la guardó.",
@@ -358,6 +360,8 @@ const STRINGS=Object.freeze({
     "route.confirm": "He comprobado la salida de audio y mantendré el volumen físico bajo y cómodo"
   },
   "en": {
+    "focus.ui.footRepository": "GitHub repository",
+    "focus.ui.footSupport": "Support the project",
     "tech.restore.title": "Restore complete backups",
     "tech.restore.notice": "Advanced restore with confirmation. A current catalog and a preserved historical archive are required. No audio plays and no EQ is applied. Restoring two storage keys is NOT atomic; an interruption may require restoring both files manually.",
     "tech.restore.backupNote": "Before replacing anything, keep two backups of the previous state outside the browser. This site can request a download but cannot verify it was saved to disk.",
@@ -709,6 +713,8 @@ const STRINGS=Object.freeze({
     "route.confirm": "I checked the audio output and will keep the physical volume low and comfortable"
   },
   "pt": {
+    "focus.ui.footRepository": "Repositório GitHub",
+    "focus.ui.footSupport": "Apoiar o projeto",
     "tech.restore.title": "Restaurar backups completos",
     "tech.restore.notice": "Restauração avançada com confirmação. Requer catálogo atual e arquivo histórico preservado. Não reproduz áudio nem aplica EQ. Restaurar duas chaves NÃO é atômico; uma interrupção pode exigir restaurar ambos os arquivos manualmente.",
     "tech.restore.backupNote": "Antes de substituir, mantenha dois backups do estado anterior fora do navegador. O site pode solicitar o download, mas não confirmar que foi salvo em disco.",
@@ -1060,6 +1066,8 @@ const STRINGS=Object.freeze({
     "route.confirm": "Verifiquei a saída de áudio e manterei o volume físico baixo e confortável"
   },
   "fr": {
+    "focus.ui.footRepository": "Dépôt GitHub",
+    "focus.ui.footSupport": "Soutenir le projet",
     "tech.restore.title": "Restaurer les sauvegardes complètes",
     "tech.restore.notice": "Restauration avancée avec confirmation. Un catalogue actuel et une archive historique conservée sont nécessaires. Aucun son ni EQ appliqué. La restauration de deux clés n’est PAS atomique ; une interruption peut exiger une restauration manuelle des deux fichiers.",
     "tech.restore.backupNote": "Avant le remplacement, conservez deux sauvegardes de l’état précédent hors du navigateur. Le site peut demander un téléchargement mais ne peut pas vérifier son enregistrement.",
@@ -1411,6 +1419,8 @@ const STRINGS=Object.freeze({
     "route.confirm": "J’ai vérifié la sortie audio et je garderai le volume physique faible et confortable"
   },
   "it": {
+    "focus.ui.footRepository": "Repository GitHub",
+    "focus.ui.footSupport": "Sostieni il progetto",
     "tech.restore.title": "Ripristina backup completi",
     "tech.restore.notice": "Ripristino avanzato con conferma. Richiede catalogo attuale e archivio storico conservato. Nessun audio o EQ applicato. Il ripristino di due chiavi NON è atomico; un’interruzione può richiedere di ripristinare entrambi i file a mano.",
     "tech.restore.backupNote": "Prima di sostituire, conserva due backup dello stato precedente fuori dal browser. Il sito può richiedere il download, ma non verificare il salvataggio su disco.",
@@ -1762,6 +1772,8 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ho verificato l’uscita audio e terrò il volume fisico basso e confortevole"
   },
   "de": {
+    "focus.ui.footRepository": "GitHub-Repository",
+    "focus.ui.footSupport": "Projekt unterstützen",
     "tech.restore.title": "Vollständige Sicherungen wiederherstellen",
     "tech.restore.notice": "Erweiterte Wiederherstellung mit Bestätigung. Aktueller Katalog und aufbewahrtes Verlaufsarchiv erforderlich. Kein Ton und keine EQ-Anwendung. Die Wiederherstellung zweier Schlüssel ist NICHT atomar; bei Unterbrechung müssen beide Dateien ggf. manuell wiederhergestellt werden.",
     "tech.restore.backupNote": "Vor dem Ersetzen zwei Sicherungen des vorherigen Zustands außerhalb des Browsers speichern. Die Website kann Downloads anfordern, aber nicht bestätigen, dass sie auf dem Datenträger gespeichert wurden.",
@@ -2113,6 +2125,8 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ich habe den Audioausgang überprüft und halte die physische Lautstärke niedrig und angenehm"
   },
   "zh": {
+    "focus.ui.footRepository": "GitHub 仓库",
+    "focus.ui.footSupport": "支持项目",
     "tech.restore.title": "恢复完整备份",
     "tech.restore.notice": "高级恢复，需要确认。必须提供当前目录和已保存的历史存档。不播放音频或应用 EQ。两个存储键的恢复并非原子操作；中断可能要求手动恢复两个文件。",
     "tech.restore.backupNote": "替换之前，请在浏览器之外保留两个原状态备份。本站只能请求下载，无法验证文件是否已保存到磁盘。",
@@ -2464,6 +2478,8 @@ const STRINGS=Object.freeze({
     "route.confirm": "我已检查音频输出，并将设备音量保持在较低且舒适的水平"
   },
   "ja": {
+    "focus.ui.footRepository": "GitHub リポジトリ",
+    "focus.ui.footSupport": "プロジェクトを支援",
     "tech.restore.title": "完全なバックアップを復元",
     "tech.restore.notice": "確認付きの高度な復元です。現在のカタログと保存済み履歴が必要です。音の再生や EQ の適用はしません。2 つのキーの復元は不可分な処理ではなく、中断時は両ファイルの手動復元が必要になる場合があります。",
     "tech.restore.backupNote": "置換前に以前の状態のバックアップ 2 件をブラウザー外に保存してください。サイトはダウンロードを要求できますが、ディスクへの保存は確認できません。",

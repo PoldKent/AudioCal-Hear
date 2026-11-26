@@ -1,4 +1,23 @@
-# AudioCal Hear — Code audit v1.8.1
+# AudioCal Hear — Current repository audit
+
+**English** · [Español](AUDIT.es.md) · 2026-11-26
+
+Baseline: [published commit e5bdc69](https://github.com/PoldKent/AudioCal-Hear/commit/e5bdc69d8ee537e891dcc79de839c511931c0963). This source, documentation and simulated-browser review is not an independent security penetration test, WCAG certification or acoustic assessment.
+
+| Area | Finding / action |
+|---|---|
+| Release | [Pages deployment](https://github.com/PoldKent/AudioCal-Hear/actions/runs/45869971878) succeeded; #105 and #106 merged; no open PRs at baseline check |
+| Browsers | Desktop 21:9 (240 passed), desktop 4:3 and Android passed; iPhone passed at audit snapshot. [Matrix](https://github.com/PoldKent/AudioCal-Hear/actions/runs/45869972411) |
+| Documentation | README and developer guide distinguish the modular Hear 3 site from the historical Hear 2 recovery bundle. Historical descriptions remain accessible. |
+| Support | Bilingual voluntary support guide, GitHub funding metadata and localized Help links; deposit details copied exactly from [Stickers Sonoros](https://github.com/PoldKent/stickers-sonoros/blob/main/SUPPORT.md). No automatic payment or transfer. |
+| Privacy | Scoped deletion, BFCache private-image cleanup, restore recovery marker and separate original/manual EQ records; no blanket storage clearing. |
+| Offline | Static manifest and synchronized cache version; no caching of personal data or external support links. |
+| Open work | Technical exam, library and saved EQ editor still partly localized; per-model control equivalences and channel synthesis lack sufficient evidence. No independent acoustic or accessibility certification. |
+
+The support/documentation revision requires its own CI results. Follow [Actions](https://github.com/PoldKent/AudioCal-Hear/actions) and [issue #90](https://github.com/PoldKent/AudioCal-Hear/issues/90). Owner hardware acceptance is recorded in #96; `stableReleaseClaim:false` remains unchanged. No clinical accuracy, real SPL or universal hardware compatibility is inferred.
+
+## Historical audit (30 October 2026)
+
 
 **English** · [Español](AUDIT.es.md) · Audited 30 October 2026
 

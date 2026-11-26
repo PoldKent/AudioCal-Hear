@@ -4,128 +4,47 @@
 
 ### Hear. Adjust. Enjoy.
 
-**AudioCal Hear** is a free-to-use, mobile-friendly, browser-based audio personalization assistant. Test your ability to hear tones at different digital levels and generate **suggested EQ settings** for headphones, speakers and car audio — with no account or software installation required to open the website.
+A free, experimental browser-based listening and EQ personalization tool for headphones, speakers and parked car audio. No account, installation or payment is required.
 
-**[Open Hear 3 — start the test](https://poldkent.github.io/AudioCal-Hear/)** · [Edit a saved EQ](https://poldkent.github.io/AudioCal-Hear/hear3-eq-editor/) · [Saved records](https://poldkent.github.io/AudioCal-Hear/hear3-library/)
+[**Open Hear 3**](https://poldkent.github.io/AudioCal-Hear/) · [Saved results](https://poldkent.github.io/AudioCal-Hear/hear3-library/) · [Edit a saved EQ](https://poldkent.github.io/AudioCal-Hear/hear3-eq-editor/) · [Support the project](SUPPORT.md#english)
 
-## One application
+[![Source and regression tests](https://github.com/PoldKent/AudioCal-Hear/actions/workflows/source-tests.yml/badge.svg)](https://github.com/PoldKent/AudioCal-Hear/actions/workflows/source-tests.yml) [![Browser UI regression](https://github.com/PoldKent/AudioCal-Hear/actions/workflows/browser-ui.yml/badge.svg)](https://github.com/PoldKent/AudioCal-Hear/actions/workflows/browser-ui.yml)
 
-The public site now presents a simple flow: **Start → confirm low physical volume → frequency sweep → individual tones → experimental EQ**. Responses are «I hear it comfortably», «I cannot hear it» or «Too loud». The sweep can be skipped; every tone is user-initiated and stoppable. The result includes a vertical EQ graphic, exact dB numbers, manual application guidance, TXT/CSV/PNG downloads and optional saving/editing. History, privacy, diagnostics and optional offline mode remain behind secondary «Help and data» controls. Users can specify 2–31 actual graphic EQ bands.
+## How to use Hear 3
 
-If an earlier answer was mistaken, open **Correct a previous frequency** from the test or result. Only that band is retested; later verified bands and the immutable audit log are preserved. Retesting never starts audio automatically and never overwrites a previously saved result.
+1. Select your equipment and real EQ frequencies: 4, 5, 7, 10, 15 or 31 bands, or 2–31 custom frequencies. Five bands are the default.
+2. Set and explicitly confirm a low, comfortable, fixed physical volume. Never turn up the volume to chase an inaudible tone.
+3. Listen to the optional sweep, then start each tone and respond: heard comfortably, not heard, or too loud. Stop playback at any time.
+4. Review the experimental EQ. Correct a previous frequency without losing other responses, or edit the draft manually in 0.5 dB steps within category limits. Undo, redo or restore the original curve.
+5. Copy values, export TXT/CSV/PNG or explicitly save the result. Enter supported values in your own equipment manually. Original observations, original EQ and manual changes remain separate.
 
-**Existing browser data are preserved** and never silently transformed. A separate legacy engine remains available as an internal recovery artifact, not a public competing app. Previous preview bookmarks redirect home.
+## Current capabilities
 
-**Safety scope:** Digital test tones are not calibrated in acoustic SPL; EQ outputs are neither a medical diagnosis nor verified physical-device presets. Hardware measurements, DSP headroom and the D-063 release gate remain pending. `stableReleaseClaim:false` stays in force. No autoplay or automatic EQ deployment.
+| Area | Hear 3 |
+|---|---|
+| Listening | Optional 20-second sweep, user-initiated tones, selective retest and interruption |
+| EQ | Bounded experimental suggestions, editable draft, original retained, exports |
+| Data | Browser-local records, historical archive, explicit paired backup restore, scoped deletion |
+| Privacy | Local image processing, no automatic uploads, no application backend or analytics |
+| Interface | Responsive layout, system/light/dark themes, eight languages; some technical routes and internal errors remain partially localized |
+| Offline | Optional browser cache; Hear 3 is not a standalone single HTML file |
 
-Engineering details: [single-app integration](docs/hear3/49-single-app-experience.md) · [product decisions](https://github.com/PoldKent/AudioCal-Hear/issues/30) · [release evidence](docs/hear3/release-evidence-gate.json).
+[Current audit](AUDIT.md) · [Release evidence](docs/hear3/release-evidence-gate.json) · [Software status](docs/hear3/62-software-closure-and-release-gate.md)
 
-## Hear 3 status (functional beta, not acoustically validated)
+## Safety and privacy
 
-This public experience is **experimental**, not a clinically certified hearing product. Test signal levels are shown in **dBFS**, and visual timing is approximate. The three responses generate a bounded EQ hypothesis, not a calibrated SPL threshold. EQ is never applied automatically. Older saved data are preserved. The main flow is translated into eight languages; some technical pages remain partly in Spanish. See the [software completion and release evidence status](docs/hear3/62-software-closure-and-release-gate.md).
+This experimental listening aid is not an audiometer, medical device, calibrated hearing test or substitute for an audiologist. Digital dBFS is not acoustic SPL. Stop immediately if sounds cause discomfort, pain or ringing. Never test at maximum volume. EQ is never applied automatically. Physical device equivalences and clinical validity are not established; `stableReleaseClaim:false` remains in force. Owner hardware acceptance is recorded in [issue #96](https://github.com/PoldKent/AudioCal-Hear/issues/96), not an independent measurement report.
 
-## Historical release notes (v1.9 and earlier)
+Profiles and files remain local unless exported. Backups are not encrypted by the app. GitHub may process technical access information under its own policies. [Privacy](PRIVACY.md) · [Terms](TERMS.md).
 
-### New in v1.9 — transfer EQ settings step by step
+## Development
 
-Keep using **your own music file** for true A/B equalization in AudioCal. The new **Apply my EQ settings** assistant helps you manually set up Spotify, YouTube Music, or the EQ built into your headphones, speakers or car. Select the destination, confirm actual center frequencies and gain limits, then follow each band's instructions. Approximate mappings are labeled, unreliable matches are left unchanged. No third-party app is modified automatically. [Read the bilingual guide](RELEASE_NOTES_v1.9.0.md).
+Use Node.js 22, the CI baseline. Run `npm run build` and `npm run verify` from the root. The public entry is copied from `src/hear3-entry.html`; browser ES modules and shared CSS live in `src/hear3/`. The historical Hear 2 single-file bundle is built separately for rollback; old preview bookmarks redirect home. [Developer guide](DEV_GUIDE.md) · [Browser QA](BROWSER_QA.md) · [CI](https://github.com/PoldKent/AudioCal-Hear/actions).
 
-## Reliability improvements — v1.8.1
+## Support and contributions
 
-Validated backup import (2 MB limit), corrected estimated vs. measured EQ bands, added combined-filter output headroom, restored music playback processing after page navigation and removed unused code. Eight languages, presets and profiles remain supported. See the [full audit](AUDIT.md) and [v1.8.1 release notes](RELEASE_NOTES_v1.8.1.md). Hardware verification remains pending.
+The official app remains free. Voluntary contributions do not unlock features or priority. [USDC or BBTC on Ethereum (ERC-20): instructions and verification](SUPPORT.md#english). Report bugs or propose improvements in [GitHub Issues](https://github.com/PoldKent/AudioCal-Hear/issues) without sharing private records. [Contribution policy](CONTRIBUTING.md).
 
-## What's new in v1.8
+## Rights and history
 
-- Expanded digital test range from **−24 to −84 dBFS**, with a safer default start of **−36 dBFS**, adjustable endpoints and explicit warnings near the louder end. **dBFS does not measure the sound pressure at your ear**.
-- Explicit **heard / not heard** responses, adaptive 12 dB discovery, 1 dB refinement and confirmation tones; **“I could still hear it”** at the floor records data without an automatic EQ cut.
-- Guided setup with optional **relative-noise microphone** check (not calibrated dB SPL); fast representative-frequency testing or complete testing of every selected EQ band.
-- Separate-ear headphone testing by default, with an explanatory left/right chart; existing saved profiles, EQ presets, A/B music balance and eight locales are retained.
-- The first search is limited to **60 seconds of playback per frequency**, excluding user response time. The full test may be longer.
-
-[Detailed v1.8 release notes](RELEASE_NOTES_v1.8.md). Real Bluetooth/acoustic validation is still pending.
-
-## Responsive display update — v1.6.1
-
-- **Narrow smartphones (9:21):** the “No install” indicator now sits in its own left-aligned row beneath the brand and language selector instead of overflowing or disappearing.
-- **Desktop from 4:3 to 21:9:** responsive content width, a two-column setup at wider sizes, and separate EQ/music comparison columns on large desktops. Compact 4:3 screens retain a comfortable one-column layout.
-- Preserves all eight UI languages, existing local profiles and the current calibration/EQ logic.
-- Verified in simulated Chromium across 360 × 840, 393 × 917, 430 × 960, 1024 × 768, 1280 × 960, 1920 × 1080 and 2560 × 1080 screens, including eight localized badge variants.
-
-## New in v1.7.0 — smarter tonal balance
-
-**Hearing a fading test tone all the way to the final level is not a reason to cut that frequency.** The threshold test now records whether you still heard the tone or could not decide; these are **incomplete/censored measurements**, not evidence of excessive loudness.
-
-In **EQ Settings → Smart Tonal Balance**, load and play your own music. For each suggested frequency, compare **A and B twice** without adjusting your device volume. The second comparison reverses the A/B order and uses a smaller difference. You can select any available band, including one without a measured threshold. Only confirmed listening preferences affect the extra EQ adjustment:
-
-- Two consistent preferences: **±2 dB**; one directional preference with a neutral response: **±1 dB**.
-- Contradictory or equal responses: **no change**.
-- Additional cuts require repeating the listening comparison; cumulative cuts are capped at **−6 dB** per band (boosts at +3 dB).
-- Threshold, music taste and per-band balance adjustments are stored separately for each local profile; existing profiles remain readable.
-
-The A/B player keeps the same overall output gain and headroom between versions, but **does not guarantee precisely matched perceived loudness**. This is a subjective comfort/timbre aid—not clinical audiometry or objective loudspeaker measurement. Never turn up the volume to hear a faint tone.
-
-**Hearing threshold improvement in v1.8.2:** a contradictory response now triggers additional adjacent-level checks instead of immediately discarding the frequency. If a repeatable limit cannot be confirmed, only that frequency can be retried, without inventing an EQ adjustment. [Bilingual release notes](RELEASE_NOTES_v1.8.2.md).
-
-## Historical Hear 1.x capabilities (not all part of the current Hear 3)
-
-- **Guided listening:** an adaptive descending-tone test with 3 seconds at each digital level; a coarse search is followed by 1 dB steps near the perceived threshold.
-- **Personalize with music:** compare A/B sound choices for bass, vocals and treble, then fine-tune each band manually.
-- **Choose your equalizer:** your 7-band car EQ (64, 160, 400, 1,000, 2,500, 6,250, 15,625 Hz); your 10-band headphone EQ (30, 60, 120, 250, 500, 1k, 2k, 4k, 8k, 16k Hz); additional 5/7/10/15/31-band and custom presets.
-- **Save multiple profiles:** keep device-specific settings locally and export/import backup files.
-- **Use 8 languages:** English, Spanish, French, Portuguese, Italian, German, Simplified Chinese and Japanese.
-- **Run on mobile:** phone audio is sent to the output selected in the phone's own settings, including compatible Bluetooth devices.
-
-The adaptive test schedules at most **42 seconds of playback** for the first attempt on one ear/frequency and up to **15 additional seconds** for optional verification. These limits exclude pauses and manual repetitions. A threshold may remain *undetermined*; missing readings are not replaced with fabricated measurements.
-
-## Quick start
-
-1. Visit **https://poldkent.github.io/AudioCal-Hear/** on your phone in a modern browser.
-2. Connect your headphones, speaker or car audio using the phone's Bluetooth/audio settings. If testing a car, remain **parked**.
-3. Select your device and its real EQ bands. Hear 3 uses one adaptive listening workflow. Set a **low, comfortable, fixed volume** in a quiet environment.
-4. Respond when each test tone becomes inaudible. Never increase the volume to chase a tone.
-5. Review the suggested EQ, its uncertainty and **manually** enter supported values in your hardware or headphone app; the current workflow does not require music A/B.
-
-The app does not detect every Bluetooth model, control the phone's system-wide EQ or update external devices automatically. Suggested settings may not yield a noticeable or preferable improvement on every device.
-
-## Hearing-safety and accuracy notice
-
-**Never test at maximum volume.** Stop immediately if a sound is uncomfortable, painful or causes ringing. Keep sessions short and use an appropriate listening level; high sound exposure can harm hearing. The displayed **dBFS** values are digital amplitude levels, **not** acoustic decibels measured at your ear.
-
-**AudioCal Hear is not a hearing test for diagnosis, a hearing aid, a medical device, or a substitute for an audiologist.** Its listening thresholds and EQ curves are approximate and depend on the ear, playback device, fit, background noise and volume. Consult a qualified professional if you have hearing concerns.
-
-## Privacy
-
-The current app runs as a static page with **no AudioCal Hear accounts, app analytics or application-controlled backend**. Profiles and EQ preferences are stored in this browser's local storage. The historical Hear 1.x music tool handled selected audio locally; Hear 3 does not require music uploads or A/B playback. You can export backups yourself; anyone with access to your browser/device or exported files may be able to see them. GitHub, as the hosting provider, may process technical access information under its own policies.
-
-Read [Privacy notice](PRIVACY.md) · [Privacy notice in Spanish](PRIVACY.es.md).
-
-## Intellectual property and legal status
-
-**© 2026 PoldKent — All rights reserved, to the extent of rights lawfully held.**
-
-**Free access to the official app does not mean open-source licensing.** This repository is public for transparency, learning about the product and review, but **no general license to copy, modify, redistribute, rehost or commercially exploit the project code, visual design or branding is granted**. Access to the official hosted app for personal, noncommercial use is permitted subject to applicable law and the published terms.
-
-GitHub's Terms of Service independently permit viewing and forking public repositories within GitHub's service. No repository notice can cancel those rights or guarantee that public HTML cannot be copied. Third-party rights and mandatory legal exceptions remain unaffected.
-
-AudioCal Hear is an independent project, **not affiliated with, sponsored by or endorsed by Soundcore, Anker or any audio-device manufacturer**. Brand and product names used to identify compatibility belong to their respective owners. No claim is made that the **AudioCal Hear** name is a registered trademark.
-
-[Proprietary rights notice](LICENSE.md) · [Terms of use](TERMS.md) · [Terms in Spanish](TERMS.es.md) · [Contribution policy](CONTRIBUTING.md).
-
-**Latest technical audit:** [Code audit and optimization notes (2026-10-30)](AUDIT_2026-10-30.md). The report distinguishes applied changes from pending real-device tests.
-
-## Maintainable source and automated checks
-
-The editable sources now live in [`src/`](src/) (HTML template, CSS, localization and six ordered JavaScript source modules). A dependency-free Node.js build recreates the standalone `index.html` **byte for byte**, so GitHub Pages and offline single-file distribution are unchanged.
-
-To work on the app: `npm run build` followed by `npm run verify` (Node.js 20+, no `npm install`). [Browser QA matrix](BROWSER_QA.md) · [Mobile/desktop browser tests](https://github.com/PoldKent/AudioCal-Hear/actions/workflows/browser-ui.yml) · [Development guide](DEV_GUIDE.md) · [Refactor audit and test results](AUDIT_2026-10-31.md) · [Automated regression tests](https://github.com/PoldKent/AudioCal-Hear/actions/workflows/source-tests.yml).
-
-## Technical details
-
-The project is a self-contained **HTML + CSS + JavaScript** app using the Web Audio API, with no runtime dependencies. It works as a static site on GitHub Pages; the standalone HTML can also be saved and opened offline, subject to browser support. The app is not an audiometer and does not measure sound-pressure levels.
-
-- [Spanish documentation](README.es.md)
-- [Release notes · English / Español](RELEASE_NOTES.md)
-- [Code audit · English](AUDIT.md) / [Español](AUDIT.es.md)
-- [Version history · English](CHANGELOG.md) / [Español](CHANGELOG.es.md)
-
-**Project home:** https://github.com/PoldKent/AudioCal-Hear
+© 2026 PoldKent — All rights reserved to the extent lawfully held. Public source visibility does not imply an open-source license. GitHub's public repository terms and mandatory legal exceptions remain unaffected. Independent project, not affiliated with or endorsed by manufacturers. [Rights notice](LICENSE.md) · [Terms](TERMS.md) · [Changelog](CHANGELOG.md) · [Historical release notes](RELEASE_NOTES.md) · [Previous README and historical features](https://github.com/PoldKent/AudioCal-Hear/blob/e5bdc69d8ee537e891dcc79de839c511931c0963/README.md).

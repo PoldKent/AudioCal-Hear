@@ -8,6 +8,8 @@ Thank you for helping improve AudioCal Hear. This is a **publicly viewable, prop
 
 You can open an **Issue** to describe bugs, suggest improvements or discuss accessibility, localization, compatibility and audio safety. Please do not publish private hearing profiles, JSON backups, credentials or personal data in issues.
 
+For voluntary financial support (not a purchase or license), see [Support the project](SUPPORT.md#english).
+
 ## Code submissions
 
 GitHub's public-repository terms permit viewing and forking within the platform. You may prepare proposed changes in your fork, but **opening a pull request does not guarantee acceptance or grant you write access to this repository**.
