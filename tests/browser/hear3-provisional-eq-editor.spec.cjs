@@ -174,3 +174,23 @@ test('saved EQ undo/redo and exports always reflect visible unsaved values',asyn
  expect((await stored(page)).current).toEqual([1,0,-1]);
  expect((await stored(page)).edits).toBe(0);
 });
+
+test('changing language preserves a reviewed unsaved EQ and explicit save consent',async({page})=>{
+ await seed(page);
+ await page.goto(EDITOR);
+ await page.getByTestId('result-select').selectOption('qa-result');
+ await page.getByTestId('gain-0').fill('2');
+ await page.getByTestId('review').click();
+ await page.getByTestId('hear-language').selectOption('en');
+ await expect(page.getByTestId('gain-0')).toHaveValue('2');
+ await expect(page.getByTestId('preview-status')).toContainText('Changes: 1');
+ await expect(page.getByTestId('commit')).toBeEnabled();
+ await expect(page.getByTestId('commit')).toHaveText('Confirm and save changes');
+ const dialog=page.waitForEvent('dialog').then(async d=>{expect(d.message()).toContain('local experimental result');await d.dismiss();});
+ await page.getByTestId('commit').click();await dialog;
+ expect((await stored(page)).current).toEqual([1,0,-1]);
+ await page.getByTestId('hear-language').selectOption('ja');
+ await expect(page.getByTestId('gain-0')).toHaveValue('2');
+ await expect(page.getByTestId('commit')).toBeEnabled();
+ await expect(page.getByTestId('commit')).toHaveText('変更を確認して保存');
+});

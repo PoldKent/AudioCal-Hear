@@ -190,3 +190,22 @@ test('P0 V2 migration blocks stale preview when legacy data changes in another t
  await expect(page.getByTestId('error')).toContainText('changed since preview');
  await expect(page.getByTestId('summary')).toContainText('0 dispositivos, 0 perfiles, 0 resultados');
 });
+
+test('changing import mode during async reading invalidates the stale preview',async({page})=>{
+ await page.goto(PILOT);
+ await upload(page,await backupFor(page));
+ await page.evaluate(()=>{
+  const original=File.prototype.text;
+  File.prototype.text=async function(){const value=await original.call(this);
+   await new Promise(resolve=>{window.__releaseReview=resolve;});
+   return value;
+  };
+ });
+ await page.getByTestId('preview').click();
+ await expect.poll(()=>page.evaluate(()=>typeof window.__releaseReview)).toBe('function');
+ await page.getByTestId('mode').selectOption('replace');
+ await page.evaluate(()=>window.__releaseReview());
+ await expect(page.getByTestId('error')).toContainText('cambió durante la lectura');
+ await expect(page.getByTestId('commit')).toBeDisabled();
+ await expect(page.getByTestId('summary')).toContainText('0 dispositivos, 0 perfiles, 0 resultados');
+});
