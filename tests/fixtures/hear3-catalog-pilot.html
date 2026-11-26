@@ -88,6 +88,7 @@ Todavía no se ha guardado ningún historial V2 completo en Hear3.</p>
 <p id="error" data-testid="error" role="alert"></p>
 </main>
 <script type="module">
+import {translateHear3Ui} from '../../src/hear3/app-i18n.mjs';
 import {createHear3CatalogStore,createHear3CatalogBackupTransfer,MAX_CATALOG_JSON_CHARS}
  from '../../src/hear3/catalog-backup-store.mjs';
 import { createHear3CatalogHistoryReader } from '../../src/hear3/catalog-history-reader.mjs';
@@ -119,6 +120,10 @@ const legacyTransfer=createHear2MigrationTransfer({store,readLegacy:()=>{
  };
 }});
 const $=id=>document.getElementById(id);
+const tr=(key,values={})=>Object.entries(values).reduce((s,[k,v])=>s.replaceAll('{'+k+'}',String(v)),translateHear3Ui('tech.library.'+key,document.documentElement.lang.split('-')[0]));
+let historyState={key:'historyNone',params:{}};
+function historyStatus(key,params={}){historyState={key,params};$('history-result').textContent=tr(key,params);}
+window.addEventListener('hear3:language-change',()=>{if(!mutationInProgress)render();if(historyState)historyStatus(historyState.key,historyState.params);});
 let preview=null,legacyPreview=null,legacyArchiveExportAttempted=false;
 let mutationInProgress=false;
 const blockedDuringWrite=['file','mode','preview','commit','delete-kind',
@@ -154,17 +159,15 @@ function renderDeleteOptions(catalog){
  $('delete-preview').disabled=collection.length===0;
  $('delete-commit').disabled=!deletionProposal;
  $('delete-summary').textContent=deletionProposal?
-  'Se eliminarán '+deletionProposal.removedDevices+' equipos, '+deletionProposal.removedProfiles+
-  ' perfiles y '+deletionProposal.removedResults+' resultados. '+
-  (deletionProposal.activeProfileCleared?'El perfil activo quedará sin seleccionar. ':'')+
-  (deletionProposal.requiresSeparateCascadeConfirmation?'Hay registros dependientes: confirmación adicional obligatoria.':''):
-  'Ninguna eliminación revisada.';
+  tr('deleteScope',{d:deletionProposal.removedDevices,p:deletionProposal.removedProfiles,r:deletionProposal.removedResults})+
+  (deletionProposal.activeProfileCleared?' '+tr('activeCleared'):'')+
+  (deletionProposal.requiresSeparateCascadeConfirmation?' '+tr('cascadeRequired'):''):
+  tr('deleteNone');
 }
 function render() {
  const loaded=store.load(),counts=loaded.catalog;
  renderDeleteOptions(counts);
- $('summary').textContent='Catálogo V3: '+counts.devices.length+' dispositivos, '+
- counts.profiles.length+' perfiles, '+counts.results.length+' resultados.';
+ $('summary').textContent=tr('summary',{d:counts.devices.length,p:counts.profiles.length,r:counts.results.length});
  $('durability').textContent='Almacenamiento: '+loaded.durability+
  (loaded.persistedOnDevice?' (escritura local verificada)':' (sin persistencia de dispositivo confirmada)')+
  (loaded.warnings?.length?' · '+loaded.warnings.join(' '):'')+
@@ -194,15 +197,19 @@ function render() {
   ' perfiles, '+preview.results+' resultados. Al finalizar: '+preview.outputResults+
   ' resultados. '+(preview.replacesExisting?'Requiere confirmar el reemplazo completo.':'Sin reemplazo de identificadores existentes.')+
   ' '+preview.warning:
-  'Todavía no se ha revisado ningún archivo.';
+  tr('none');
 }
+let reviewGeneration=0;
 async function inspect() {
+ const generation=++reviewGeneration;
  preview=null;
  transfer.discard();
  const file=$('file').files?.[0];
  if(!file||file.size>MAX_CATALOG_JSON_CHARS*4)throw Error('Elige un archivo JSON dentro del límite permitido.');
+ const mode=$('mode').value;
  const text=await file.text();
- preview=transfer.preview(text,{mode:$('mode').value});
+ if(generation!==reviewGeneration||$('file').files?.[0]!==file||$('mode').value!==mode)throw Error(tr('fileChanged'));
+ preview=transfer.preview(text,{mode});
 }
 $('preview').addEventListener('click',async()=>{
  $('error').textContent='';
@@ -212,20 +219,20 @@ $('commit').addEventListener('click',async()=>{
  $('error').textContent='';
  try{
   if(!preview)throw Error('Revisa primero el respaldo.');
-  if(preview.replacesExisting&&!confirm('¿Reemplazar TODOS los registros del catálogo Hear 3.0?'))return;
+  if(preview.replacesExisting&&!confirm(tr('confirmReplace')))return;
   const {response:r}=await serializeMutation(()=>transfer.commit({userInitiated:true,confirmReplace:preview.replacesExisting}));
   preview=null;
   if(!r.persistedOnDevice)$('error').textContent=r.warning||'Datos temporales: exporta una copia.';
  }catch(e){$('error').textContent=e.message;}finally{render();}
 });
-$('file').addEventListener('change',()=>{transfer.discard();preview=null;render();});
-$('mode').addEventListener('change',()=>{transfer.discard();preview=null;render();});
+$('file').addEventListener('change',()=>{reviewGeneration++;transfer.discard();preview=null;render();});
+$('mode').addEventListener('change',()=>{reviewGeneration++;transfer.discard();preview=null;render();});
 $('download').addEventListener('click',()=>{
  try {
   const blob=new Blob([store.exportBackup()],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear3-catalog-backup.json';a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
  }catch(e){$('error').textContent=e.message;}
 });
 function discardDeletion() {
@@ -249,10 +256,9 @@ $('delete-commit').addEventListener('click',async()=>{
  try{
   if(!deletionProposal)throw Error('Revisa primero el alcance del borrado.');
   const scope=deletionProposal;
-  if(!confirm('¿Eliminar exactamente '+scope.removedDevices+' equipos, '+
-   scope.removedProfiles+' perfiles y '+scope.removedResults+' resultados V3 de este navegador?'))return;
+  if(!confirm(tr('confirmDelete',{d:scope.removedDevices,p:scope.removedProfiles,r:scope.removedResults})))return;
   if(scope.requiresSeparateCascadeConfirmation &&
-    !confirm('Confirmación adicional: se eliminarán también registros relacionados. ¿Continuar?'))return;
+    !confirm(tr('confirmCascade')))return;
   const {response:saved}=await serializeMutation(()=>deletion.commit({userInitiated:true,confirmed:true,
    confirmCascade:scope.requiresSeparateCascadeConfirmation}));
   deletionProposal=null;
@@ -266,10 +272,11 @@ $('history-show').addEventListener('click',()=>{
  try {
   const history=historyReader.read();
   if(history.status==='no-active-profile'){
-   $('history-result').textContent='No hay perfil activo. Selecciona primero un perfil guardado.';
+   historyStatus('noActive');
   } else if(history.status==='no-results'){
-   $('history-result').textContent='El perfil '+history.profile.name+' no tiene resultados anteriores.';
+   historyStatus('noResults',{name:history.profile.name});
   } else {
+   historyState=null;
    const r=history.latestResult;
    $('history-result').textContent='Perfil '+history.profile.name+
     ' · Equipo '+history.device.name+' · Resultado '+r.id+' · Estado '+r.status+
@@ -330,7 +337,7 @@ $('legacy-export').addEventListener('click',()=>{
   const blob=new Blob([legacyTransfer.exportLegacyArchive()],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear2-unaltered-backup.json';a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
   // This only means the download was requested, not confirmed on disk.
   legacyArchiveExportAttempted=true;
  }catch(e){$('error').textContent=e.message;}
@@ -340,7 +347,7 @@ $('legacy-import').addEventListener('click',async()=>{
  $('error').textContent='';
  try{
   if(!legacyArchiveExportAttempted)throw Error('Exporta primero el respaldo V2.');
-  if(!confirm('¿Confirmas que guardaste aparte el archivo V2 y deseas importar SOLO equipos y bandas, SIN resultados históricos?'))return;
+  if(!confirm(tr('confirmLegacy')))return;
   const {response:result}=await serializeMutation(()=>legacyTransfer.commit({userInitiated:true,confirmBackupExported:true}));
   legacyPreview=null;legacyArchiveExportAttempted=false;
   if(!result.persistedOnDevice)$('error').textContent=result.warning||'Datos en memoria temporal.';
@@ -353,7 +360,7 @@ $('legacy-vault-export').addEventListener('click',()=>{
   const blob=new Blob([legacyHistoryVault.exportPending()],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear3-historial-v2-completo-portatil.json';a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
   legacyVaultExportAttempted=true;
  }catch(e){$('error').textContent=e.message;}
  finally{render();}
@@ -363,9 +370,9 @@ $('legacy-vault-save').addEventListener('click',async()=>{
  try{
   if(!legacyVaultPreview||!legacyVaultExportAttempted)
    throw Error('Revisa y descarga primero una copia portable del historial V2 completo.');
-  if(!confirm('¿Guardar todos los datos originales V2 como archivo local separado, SIN convertirlos en pruebas clínicas V3?'))return;
+  if(!confirm(tr('confirmVault')))return;
   if(legacyVaultPreview.replacesExisting &&
-    !confirm('Hay un historial V2 completo anterior: ¿REEMPLAZAR ESA COPIA LOCAL? Conserva antes el respaldo descargado.'))return;
+    !confirm(tr('confirmVaultReplace')))return;
   const {response:saved}=await writer.run(()=>legacyHistoryVault.commit({
    userInitiated:true,confirmed:true,confirmSourceBackupExported:true,
    confirmOverwrite:legacyVaultPreview.replacesExisting,
@@ -381,7 +388,7 @@ $('legacy-vault-stored-export').addEventListener('click',()=>{
   const blob=new Blob([legacyHistoryVault.exportStored()],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear3-historial-v2-verificado-respaldo.json';a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
  }catch(e){$('error').textContent=e.message;}
 });
 // Test-only local inspection. No mutation methods or network functions.
@@ -389,7 +396,7 @@ window.hear3CatalogPilot=Object.freeze({
  snapshot:()=>store.load(),
  isMutationPending:()=>mutationInProgress,
 });
-render();
+historyStatus('historyNone');render();
 </script>
 </body>
 </html>

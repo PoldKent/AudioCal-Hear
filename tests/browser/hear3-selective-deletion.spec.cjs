@@ -119,6 +119,7 @@ test('P0 injected names render safely as option text, not HTML',async({page})=>{
 
 test('localized deletion preview preserves exact scope and requires confirmation',async({page})=>{
  await seed(page);
+ await page.goto('/hear3-library/');
  await page.getByTestId('delete-target').selectOption('result-one');
  await page.getByTestId('delete-preview').click();
  await page.getByTestId('hear-language').selectOption('en');
