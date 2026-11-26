@@ -19,11 +19,17 @@ import {enableHear3Offline,disableHear3Offline,detectHear3OfflineSupport}
  from './offline-optin.mjs';
 import {translateHear3Ui} from './app-i18n.mjs';
 import {createHear3EqEditHistory} from './eq-edit-history.mjs';
+import {createWebAudioToneAdapter} from './web-audio-adapter.mjs';
 
 export const HEAR_FOCUS_PROFILE_ID='hear3-integrated-pilot';
 export const HEAR_FOCUS_LIMITS=Object.freeze({minDbfs:-80,maxDbfs:-42});
 export const HEAR_FOCUS_TONE_DURATION_SECONDS=3;
-export const HEAR_FOCUS_START_LEVELS=Object.freeze([-60,-54,-48]);
+export const HEAR_FOCUS_START_LEVELS=Object.freeze([-60,-54,-48,-12]);
+export const HEAR_FOCUS_REFERENCE_STEPS=Object.freeze([-60,-54,-48,-42,-36,-30,-24,-18,-12]);
+export function hearFocusLimitsForLevel(level){
+ if(!HEAR_FOCUS_START_LEVELS.includes(level))throw Error('Invalid initial digital level');
+ return level===-12?Object.freeze({minDbfs:-80,maxDbfs:-12}):HEAR_FOCUS_LIMITS;
+}
 const $=id=>document.getElementById(id);
 const VIEWS=['welcome','ready','sweep','tones','result'];
 const text=(id,value)=>{const node=$(id),next=String(value);if(node.textContent!==next)node.textContent=next;};
@@ -84,7 +90,81 @@ export function mountHearFocus({doc=document,env=window}={}){
  const catalogStore=createHear3CatalogStore();
  let view='welcome',pendingRecovery=false,exam=null,eq=null,review=null;
  let bands=null,sweepPlan=null,starting=false,disposed=false;
- let initialLevel=-60;
+ let initialLevel=-60,sweepLevel=-60;
+ let referenceIndex=0,referencePhase='idle',referenceAdapter=null,referenceId=0,referenceActive=null;
+ let referenceBlocked=false;
+ const referenceMsg=(key,values={})=>{
+  const lang=doc.documentElement.lang?.split('-')[0]||'es';
+  return Object.entries(values).reduce((t,[k,v])=>t.replaceAll('{'+k+'}',String(v)),translateHear3Ui('focus.reference.'+key,lang));
+ };
+ function wantsElevated(){
+  return pendingRecovery?initialLevel===-12:Number(element('start-level').value)===-12;
+ }
+ function resetReference(){
+  referenceActive=null;referenceIndex=0;referencePhase='idle';
+  referenceAdapter?.stop();
+ }
+ function renderReference(){
+  const elevated=wantsElevated();
+  element('reference-gate').hidden=!elevated;
+  if(!elevated)return;
+  const done=referencePhase==='done',playing=referencePhase==='playing';
+  element('reference-play').disabled=referenceBlocked||done||playing||referencePhase==='ended'||!element('volume-ok').checked;
+  element('reference-accept').disabled=referenceBlocked||referencePhase!=='ended'||!element('volume-ok').checked;
+  output('reference-status',referenceBlocked?referenceMsg('discomfort'):
+   done?referenceMsg('done'):playing?referenceMsg('playing'):
+   referencePhase==='ended'?referenceMsg('ended'):
+   referenceMsg('step',{i:referenceIndex+1,n:HEAR_FOCUS_REFERENCE_STEPS.length,db:HEAR_FOCUS_REFERENCE_STEPS[referenceIndex]}));
+ }
+ function cancelReference(){
+  resetReference();
+  element('volume-ok').checked=false;
+  if(!pendingRecovery){initialLevel=-60;element('start-level').value='-60';}
+  notice(referenceMsg('cancelled'));renderReference();
+ }
+ async function playReference(){
+  if(view!=='ready'||!wantsElevated()||referenceBlocked||referencePhase!=='idle'||!element('volume-ok').checked)return;
+  if(!referenceAdapter)referenceAdapter=createWebAudioToneAdapter({
+   onToneEnded:({toneId})=>{
+    if(toneId!==referenceActive||referencePhase!=='playing')return;
+    referenceActive=null;referencePhase='ended';renderReference();
+   },
+   onInterrupted:()=>{
+    if(disposed)return;
+    resetReference();
+    if(wantsElevated()||initialLevel===-12){
+     element('volume-ok').checked=false;
+     if(exam&&exam.getSession().status!=='completed'){
+      exam.interrupt({routeMayHaveChanged:true});pendingRecovery=true;
+      element('recovery-options').hidden=false;
+      element('start-level-options').hidden=true;
+      output('confirm',tr('recover')+' →');go('ready');
+     }
+     renderReference();
+    }
+   },
+  });
+  const id='hear-reference-'+(++referenceId);
+  referenceActive=id;referencePhase='playing';renderReference();
+  try{
+   const level=HEAR_FOCUS_REFERENCE_STEPS[referenceIndex];
+   const started=await referenceAdapter.playTone({toneId:id,frequencyHz:1000,digitalLevelDbfs:level,
+    channel:'joint',durationSeconds:1,authorizedDigitalRangeDbfs:{minDbfs:-80,maxDbfs:level}});
+   if(referenceActive===id&&!started.started){resetReference();renderReference();}
+  }catch(e){resetReference();renderReference();throw e;}
+ }
+ function acceptReference(){
+  if(view!=='ready'||!wantsElevated()||referenceBlocked||referencePhase!=='ended'||!element('volume-ok').checked)return;
+  referenceIndex++;
+  referencePhase=referenceIndex===HEAR_FOCUS_REFERENCE_STEPS.length?'done':'idle';
+  renderReference();
+ }
+ function checkElevatedReference(){
+  if(initialLevel!==-12)return true;
+  if(referenceBlocked){notice(referenceMsg('discomfort'));return false;}
+  if(referencePhase!=='done'){notice(referenceMsg('required'));renderReference();return false;}
+  return true;
+ }
  let lastAnnouncedToneId=null;
  let activeToneStartedAt=null;
  let saveResultId=null,eqHistory=null,originalReview=null;
@@ -221,7 +301,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  }
  function currentExamOptions(plan){
   return {plan,profileId:HEAR_FOCUS_PROFILE_ID,
-   minDbfs:HEAR_FOCUS_LIMITS.minDbfs,maxDbfs:HEAR_FOCUS_LIMITS.maxDbfs,
+   ...hearFocusLimitsForLevel(initialLevel),
    initialDbfs:initialLevel,maxTrialsPerBand:7,coarseStepDb:6,
    durationSeconds:HEAR_FOCUS_TONE_DURATION_SECONDS,progressStore:store};
  }
@@ -405,7 +485,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   try{sweep.recordResponse(true);}
   catch{/* The stop remains mandatory even if the audio clock rejects the mark. */}
   finally{sweep.stop('reported-uncomfortable');}
-  initialLevel=-60;
+  resetReference();initialLevel=-60;
   element('start-level').value='-60';
   output('sweep-feedback',msg('sweepLoud'));
   return prepareTonesFromSweep();
@@ -416,6 +496,9 @@ export function mountHearFocus({doc=document,env=window}={}){
   element('foot-tech').open=false;
   const checkpoint=readCheckpoint();
   pendingRecovery=Boolean(checkpoint);
+  resetReference();
+  initialLevel=checkpoint?.progress?.options?.initialDbfs??-60;
+  referenceBlocked=initialLevel===-12&&Boolean(checkpoint?.loudToneReports?.length);
   element('start-level-options').hidden=pendingRecovery;
   element('start-level').value='-60';
   element('recovery-options').hidden=!pendingRecovery;
@@ -451,7 +534,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   }else outcome=store.clear({confirmed:true});
   if(!outcome.cleared)throw Error('No pudimos verificar que el progreso anterior se haya eliminado.');
   pendingRecovery=false;eq=null;review=null;eqHistory=null;originalReview=null;
-  initialLevel=-60;element('start-level').value='-60';element('start-level-options').hidden=false;
+  resetReference();referenceBlocked=false;initialLevel=-60;element('start-level').value='-60';element('start-level-options').hidden=false;
   saveResultId=null;
   element('saved-eq-link').hidden=true;
   sweepPlan=null;
@@ -480,6 +563,8 @@ export function mountHearFocus({doc=document,env=window}={}){
     const savedLevel=existing.progress?.options?.initialDbfs;
     if(!HEAR_FOCUS_START_LEVELS.includes(savedLevel))throw Error('Invalid saved initial digital level');
     initialLevel=savedLevel;
+    // Completed data remains viewable without any elevated audio permission.
+    if(existing.audioSession?.status!=='completed'&&!checkElevatedReference())return;
     createExam(existing.plan);
     await exam.recover({userInitiated:true});
     // One-time migration from older tab-only discomfort reports: the
@@ -492,6 +577,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    // resume from its own verified controller, never re-import over itself.
    // This user click confirms output/volume, not automatic audio playback.
    const session=exam.getSession();
+   if(session.status!=='completed'&&!checkElevatedReference())return;
    if(session.status==='paused'){
     if(session.routeCheckRequired)exam.confirmRoute({userConfirmed:true});
     exam.resume({userInitiated:true});
@@ -506,6 +592,8 @@ export function mountHearFocus({doc=document,env=window}={}){
   const selectedLevel=Number(element('start-level').value);
   if(!HEAR_FOCUS_START_LEVELS.includes(selectedLevel))throw Error('Invalid initial digital level');
   initialLevel=selectedLevel;
+  if(!checkElevatedReference())return;
+  sweepLevel=Math.min(initialLevel,HEAR_FOCUS_LIMITS.maxDbfs);
   bands=chooseBands();
   rememberEquipment();
   clearLoud();
@@ -516,7 +604,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   go('sweep');
   try{
    const started=await sweep.start({
-    plan:sweepPlan,digitalLevelDbfs:initialLevel,
+    plan:sweepPlan,digitalLevelDbfs:sweepLevel,
     authorizedDigitalRangeDbfs:HEAR_FOCUS_LIMITS,
     channel:'joint',userInitiated:true,
    });
@@ -527,6 +615,12 @@ export function mountHearFocus({doc=document,env=window}={}){
  }
  async function toneAction(){
   if(!exam)throw Error('Todavía no hay tonos preparados.');
+  if(initialLevel===-12&&(referenceBlocked||referencePhase!=='done')){
+   exam.interrupt({routeMayHaveChanged:true});pendingRecovery=true;
+   element('volume-ok').checked=false;element('start-level-options').hidden=true;
+   element('recovery-options').hidden=false;output('confirm',tr('recover')+' →');go('ready');
+   notice(referenceMsg(referenceBlocked?'discomfort':'required'));return;
+  }
   const status=exam.snapshot().status;
   if(status==='paused'){
    // Normal completion without an answer leaves no new hearing evidence.
@@ -540,6 +634,8 @@ export function mountHearFocus({doc=document,env=window}={}){
     render();return;
    }
    pendingRecovery=true;
+   resetReference();element('start-level-options').hidden=true;
+   element('recovery-options').hidden=false;
    element('volume-ok').checked=false;
    notice(msg('routeChanged'));
    output('confirm',tr('recover')+' →');
@@ -566,6 +662,13 @@ export function mountHearFocus({doc=document,env=window}={}){
   const state=exam.snapshot();
   if(state.status==='completed'){
    exam.finish();buildEq();return;
+  }
+  if(response==='too-loud'&&initialLevel===-12){
+   referenceBlocked=true;resetReference();
+   exam.interrupt({routeMayHaveChanged:true});pendingRecovery=true;
+   element('volume-ok').checked=false;element('start-level-options').hidden=true;
+   element('recovery-options').hidden=false;output('confirm',tr('recover')+' →');
+   go('ready');notice(referenceMsg('discomfort'));return;
   }
   render();
  }
@@ -716,8 +819,9 @@ export function mountHearFocus({doc=document,env=window}={}){
    const resumeText=translateHear3Ui('console.recover',lang)||'Continuar mi prueba';
    output('begin',(checkpoint?resumeText:beginText)+' →');
   }
+  if(view==='ready')renderReference();
   if(view==='sweep'){
-   output('sweep-level',tr('digitalLevel',{db:initialLevel}));
+   output('sweep-level',tr('digitalLevel',{db:sweepLevel}));
    const current=sweep.snapshot();
    if(current.status==='playing'){
     const elapsed=current.elapsedSeconds;
@@ -814,15 +918,20 @@ export function mountHearFocus({doc=document,env=window}={}){
  listen('focus-edit-undo',()=>{if(!saveResultId&&eqHistory){eqHistory.undo();syncEqEdits();}});
  listen('focus-edit-redo',()=>{if(!saveResultId&&eqHistory){eqHistory.redo();syncEqEdits();}});
  listen('focus-edit-restore',()=>{if(!saveResultId&&eqHistory){eqHistory.restoreAll();syncEqEdits();}});
+ element('category').addEventListener('change',()=>{if(wantsElevated()){resetReference();element('volume-ok').checked=false;renderReference();}});
  element('bands').addEventListener('change',()=>{
   const custom=element('bands').value==='custom';
   element('custom-bands').hidden=!custom;
   element('custom-label').hidden=!custom;
  });
- element('start-level').addEventListener('change',()=>{element('volume-ok').checked=false;});
- element('volume-ok').addEventListener('change',()=>{if(element('volume-ok').checked)notice('');});
+ element('start-level').addEventListener('change',()=>{resetReference();referenceBlocked=false;element('volume-ok').checked=false;renderReference();});
+ element('volume-ok').addEventListener('change',()=>{if(element('volume-ok').checked)notice('');else resetReference();renderReference();});
+ listen('reference-play',playReference);
+ listen('reference-accept',acceptReference);
+ element('reference-stop').addEventListener('click',cancelReference);
  const stopKey=e=>{
   if(e.key==='Escape'&&!e.repeat&&!e.altKey&&!e.metaKey&&!e.ctrlKey){
+   if(view==='ready'&&referencePhase==='playing'){e.preventDefault();cancelReference();return;}
    if(view==='sweep'||(view==='tones'&&['playing','starting'].includes(exam?.snapshot().status))){
     e.preventDefault();interrupt();
    }
@@ -841,6 +950,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  },250);
  const onLeave=(event)=>{
   if(disposed)return;
+  resetReference();
   if(event?.persisted===true){
    // The audio runner registered its pagehide listener before this one.
    // It may already have silenced the sweep and switched to 'ready', so
@@ -868,6 +978,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   env.clearInterval(timer);
   sweep.stop('pagehide');
   void sweep.dispose();
+  void referenceAdapter?.dispose();
   if(exam){
    if(exam.getSession().status!=='completed'){
     try{exam.interrupt({routeMayHaveChanged:true});}catch{}
