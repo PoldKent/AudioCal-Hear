@@ -903,6 +903,10 @@ $('recover-exam').addEventListener('click',()=>run(async()=>{
  const saved=progressStore.load();
  if(!saved.checkpoint)throw Error('No hay copia local verificada para recuperar.');
  if(!confirm(examTr('confirmRecover')))return;
+ // Elevated checkpoints require fresh reference checks in the main guided route.
+ if(saved.checkpoint.progress?.options?.initialDbfs===-12){
+  throw Error('La referencia elevada requiere continuar desde la pantalla principal de Hear; no se modificaron los datos.');
+ }
  const candidate=createExam(saved.checkpoint.plan,saved.checkpoint.progress?.options?.initialDbfs);
  try{
   await candidate.recover({userInitiated:true});

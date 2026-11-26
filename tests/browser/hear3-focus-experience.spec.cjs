@@ -21,6 +21,7 @@ async function fakeAudio(page,{holdSweep=false}={}){
      connect(){},disconnect(){},
      start(){window.__hearFocusStarts++},
      stop(at){
+      if(at-ctx.currentTime>.7&&at-ctx.currentTime<1.1)window.__hearReferenceFinish=()=>osc.onended?.();
       if(at-ctx.currentTime>15){
        if(holdSweep)window.__hearSweepFinish=()=>osc.onended?.();
        else setTimeout(()=>osc.onended?.(),120);
@@ -498,7 +499,7 @@ test('bounded starting level requires fresh consent, matches actual tone and is 
  await page.getByTestId('focus-begin').click();
  const level=page.getByTestId('focus-start-level');
  await expect(level).toHaveValue('-60');
- await expect(level.locator('option')).toHaveCount(3);
+ await expect(level.locator('option')).toHaveCount(4);
  await page.getByTestId('focus-volume').check();
  await level.selectOption('-48');
  await expect(page.getByTestId('focus-volume')).not.toBeChecked();
@@ -525,4 +526,53 @@ test('bounded starting level requires fresh consent, matches actual tone and is 
  await page.getByTestId('focus-confirm').click();
  await expect(page.getByTestId('focus-tones')).toBeVisible();
  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+});
+
+test('elevated reference cannot play without consent, requires each manual check, and stops at discomfort',async({page})=>{
+ test.setTimeout(90000);
+ await fakeAudio(page,{holdSweep:true});
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-start-level').selectOption('-12');
+ await expect(page.getByTestId('focus-reference-play')).toBeDisabled();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
+ for(const [i,db] of [-60,-54,-48,-42,-36,-30,-24,-18,-12].entries()){
+  await expect(page.locator('#reference-status')).toContainText(String(db));
+  await page.getByTestId('focus-reference-play').click();
+  await expect(page.getByTestId('focus-reference-accept')).toBeDisabled();
+  await expect.poll(()=>page.evaluate(()=>window.__hearFocusStarts)).toBe(i+1);
+  await page.evaluate(()=>window.__hearReferenceFinish());
+  await expect(page.getByTestId('focus-reference-accept')).toBeEnabled();
+  await page.getByTestId('focus-reference-accept').click();
+  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(i+1);
+ }
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.locator('#sweep-level')).toContainText('-42');
+ await page.getByTestId('focus-sweep-skip').click();
+ await expect(page.getByTestId('focus-tone-level')).toContainText('-12');
+ await page.getByTestId('focus-tone-play').click();
+ await expect(page.getByTestId('focus-tone-level')).toContainText('-12');
+ await page.getByTestId('focus-tone-loud').click();
+ await expect(page.getByTestId('focus-ready')).toBeVisible();
+ await expect(page.getByTestId('focus-reference-play')).toBeDisabled();
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-confirm').click();
+ await expect(page.getByTestId('focus-ready')).toBeVisible();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(11);
+});
+test('cancelling an elevated reference silences it and requires new consent',async({page})=>{
+ await fakeAudio(page);
+ await page.goto('/');
+ await page.getByTestId('focus-begin').click();
+ await page.getByTestId('focus-start-level').selectOption('-12');
+ await page.getByTestId('focus-volume').check();
+ await page.getByTestId('focus-reference-play').click();
+ await page.getByTestId('focus-reference-stop').click();
+ await expect(page.getByTestId('focus-start-level')).toHaveValue('-60');
+ await expect(page.getByTestId('focus-volume')).not.toBeChecked();
+ await expect(page.locator('#reference-gate')).toBeHidden();
+ await page.getByTestId('focus-confirm').click();
+ expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(1);
 });
