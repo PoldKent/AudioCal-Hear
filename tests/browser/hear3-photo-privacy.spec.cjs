@@ -112,17 +112,20 @@ test('an abandoned decode cannot clear a newer selected image',async({page})=>{
     window.__photoFirstStarted=true;
     await new Promise(resolve=>{window.__releaseFirstPhoto=resolve;});
    }
-   return original(...args);
+   const decoded=await original(...args);
+   if(args[0].name==='first-private.png')window.__photoFirstFinished=true;
+   return decoded;
   };
  });
  await page.goto(PILOT);
- await select(page);
+ await page.getByTestId('photo').setInputFiles({name:'first-private.png',mimeType:'image/png',buffer:png});
  await page.getByTestId('inspect').click();
  await expect.poll(()=>page.evaluate(()=>Boolean(window.__photoFirstStarted))).toBe(true);
  await select(page);
  await page.getByTestId('inspect').click();
  await expect(page.getByTestId('preview')).toBeVisible();
  await page.evaluate(()=>window.__releaseFirstPhoto());
+ await expect.poll(()=>page.evaluate(()=>Boolean(window.__photoFirstFinished))).toBe(true);
  await expect.poll(()=>page.evaluate(()=>window.hear3PhotoPilot.summary()?.outputWidth)).toBe(3);
  await expect(page.getByTestId('download')).toBeEnabled();
 });

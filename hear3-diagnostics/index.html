@@ -105,6 +105,7 @@ function resetPreview(){
  $('copy').disabled=true;
  $('download').disabled=true;
  $('report').value='';
+ status('empty');
 }
 function updateButtons(){
  const allowed=previewAvailable&&$('confirm').checked;

@@ -138,7 +138,11 @@ export function createHear3ScopedStorageCleanup({
    }
    reports.push({kind,attempted:records.length});
   }
-  if(failures.length===0){
+  const beforeJournalLocal=snapshot(deviceStorage,selected.scope);
+  const beforeJournalTab=snapshot(tabStorage,selected.scope);
+  const onlyJournalsRemain=[beforeJournalLocal,beforeJournalTab].every(s=>
+   s.available&&s.records.every(r=>r.key==='hear3:dual-restore:v1:journal'));
+  if(failures.length===0&&onlyJournalsRemain){
    for(const [storage,kind,records] of [
     [deviceStorage,'device-local',selected.state.local],
     [tabStorage,'tab-session',selected.state.tab],
