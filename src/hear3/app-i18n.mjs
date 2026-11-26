@@ -7,6 +7,16 @@ export const HEAR3_LANGUAGE_CHOICES=Object.freeze(['es','en','fr','pt','it','de'
 export const HEAR3_LANGUAGE_KEY='hear3:ui-language:v1';
 const STRINGS=Object.freeze({
   "es": {
+    "tech.engine.bounds": "Ganancia fuera de los límites del EQ provisional.",
+    "tech.engine.step": "Utiliza pasos de 0,5 dB.",
+    "tech.engine.stale": "El catálogo cambió en otra pestaña. Revisa los datos antes de volver a guardar.",
+    "tech.engine.webkit": "Hay otra pestaña de Hear abierta en WebKit. Cierra las otras pestañas antes de guardar.",
+    "tech.engine.cascade": "Los perfiles o resultados relacionados requieren una revisión de borrado en cascada por separado.",
+    "tech.engine.changedDeletion": "El catálogo cambió desde la revisión de borrado. Revisa otra vez antes de eliminar.",
+    "tech.engine.invalidJson": "El JSON del respaldo no es válido.",
+    "tech.engine.fingerprint": "FNV-1a solo detecta corrupción accidental; el archivo no está autenticado.",
+    "tech.engine.memory": "El catálogo está solo en memoria temporal. Exporta un respaldo antes de cerrar.",
+    "tech.engine.damaged": "Se conservaron las copias dañadas. Exporta el catálogo temporal antes de cerrar.",
     "tech.exam.sweepPlaying": "Barrido en reproducción",
     "tech.exam.sweepStarting": "Preparando barrido",
     "tech.exam.sweepComplete": "Barrido finalizado",
@@ -586,6 +596,16 @@ const STRINGS=Object.freeze({
     "route.confirm": "He comprobado la salida de audio y mantendré el volumen físico bajo y cómodo"
   },
   "en": {
+    "tech.engine.bounds": "Gain outside provisional EQ bounds.",
+    "tech.engine.step": "Use 0.5 dB steps.",
+    "tech.engine.stale": "Catalog changed in another tab. Review data before saving again.",
+    "tech.engine.webkit": "Another Hear tab is open in WebKit. Close other tabs before saving.",
+    "tech.engine.cascade": "Related profiles or results require a separate cascade deletion review.",
+    "tech.engine.changedDeletion": "Catalog changed since deletion review. Review again before deleting.",
+    "tech.engine.invalidJson": "The backup JSON is invalid.",
+    "tech.engine.fingerprint": "FNV-1a only detects accidental corruption; this file is not authenticated.",
+    "tech.engine.memory": "Catalog is only in temporary memory. Export a backup before closing.",
+    "tech.engine.damaged": "Damaged copies were preserved. Export the temporary catalog before closing.",
     "tech.exam.sweepPlaying": "Sweep playing",
     "tech.exam.sweepStarting": "Preparing sweep",
     "tech.exam.sweepComplete": "Sweep completed",
@@ -1165,6 +1185,16 @@ const STRINGS=Object.freeze({
     "route.confirm": "I checked the audio output and will keep the physical volume low and comfortable"
   },
   "pt": {
+    "tech.engine.bounds": "Ganho fora dos limites do EQ provisório.",
+    "tech.engine.step": "Use passos de 0,5 dB.",
+    "tech.engine.stale": "O catálogo mudou em outra aba. Revise antes de salvar novamente.",
+    "tech.engine.webkit": "Outra aba Hear está aberta no WebKit. Feche as outras abas antes de salvar.",
+    "tech.engine.cascade": "Perfis ou resultados relacionados exigem revisão separada de exclusão em cascata.",
+    "tech.engine.changedDeletion": "O catálogo mudou desde a revisão de exclusão. Revise novamente antes de excluir.",
+    "tech.engine.invalidJson": "O JSON do backup é inválido.",
+    "tech.engine.fingerprint": "FNV-1a detecta apenas corrupção acidental; o arquivo não é autenticado.",
+    "tech.engine.memory": "O catálogo está apenas em memória temporária. Exporte backup antes de fechar.",
+    "tech.engine.damaged": "Cópias danificadas preservadas. Exporte o catálogo temporário antes de fechar.",
     "tech.exam.sweepPlaying": "Varredura em reprodução",
     "tech.exam.sweepStarting": "Preparando varredura",
     "tech.exam.sweepComplete": "Varredura concluída",
@@ -1744,6 +1774,16 @@ const STRINGS=Object.freeze({
     "route.confirm": "Verifiquei a saída de áudio e manterei o volume físico baixo e confortável"
   },
   "fr": {
+    "tech.engine.bounds": "Gain hors des limites de l’EQ provisoire.",
+    "tech.engine.step": "Utilisez des pas de 0,5 dB.",
+    "tech.engine.stale": "Le catalogue a changé dans un autre onglet. Vérifiez avant de réenregistrer.",
+    "tech.engine.webkit": "Un autre onglet Hear est ouvert dans WebKit. Fermez-le avant d’enregistrer.",
+    "tech.engine.cascade": "Les profils ou résultats liés exigent une vérification distincte de suppression en cascade.",
+    "tech.engine.changedDeletion": "Le catalogue a changé depuis la vérification de suppression. Vérifiez à nouveau avant de supprimer.",
+    "tech.engine.invalidJson": "Le JSON de sauvegarde est invalide.",
+    "tech.engine.fingerprint": "FNV-1a ne détecte que la corruption accidentelle ; le fichier n’est pas authentifié.",
+    "tech.engine.memory": "Le catalogue est uniquement en mémoire temporaire. Exportez une sauvegarde avant de fermer.",
+    "tech.engine.damaged": "Les copies endommagées sont conservées. Exportez le catalogue temporaire avant de fermer.",
     "tech.exam.sweepPlaying": "Balayage en cours",
     "tech.exam.sweepStarting": "Préparation du balayage",
     "tech.exam.sweepComplete": "Balayage terminé",
@@ -2323,6 +2363,16 @@ const STRINGS=Object.freeze({
     "route.confirm": "J’ai vérifié la sortie audio et je garderai le volume physique faible et confortable"
   },
   "it": {
+    "tech.engine.bounds": "Guadagno fuori dai limiti dell’EQ provvisorio.",
+    "tech.engine.step": "Usa passi di 0,5 dB.",
+    "tech.engine.stale": "Il catalogo è cambiato in un’altra scheda. Verifica prima di salvare di nuovo.",
+    "tech.engine.webkit": "Un’altra scheda Hear è aperta in WebKit. Chiudi le altre schede prima di salvare.",
+    "tech.engine.cascade": "Profili o risultati collegati richiedono verifica separata di eliminazione a cascata.",
+    "tech.engine.changedDeletion": "Il catalogo è cambiato dalla verifica di eliminazione. Verifica di nuovo prima di eliminare.",
+    "tech.engine.invalidJson": "Il JSON del backup non è valido.",
+    "tech.engine.fingerprint": "FNV-1a rileva solo corruzione accidentale; il file non è autenticato.",
+    "tech.engine.memory": "Il catalogo è solo in memoria temporanea. Esporta un backup prima di chiudere.",
+    "tech.engine.damaged": "Copie danneggiate conservate. Esporta il catalogo temporaneo prima di chiudere.",
     "tech.exam.sweepPlaying": "Sweep in riproduzione",
     "tech.exam.sweepStarting": "Preparazione dello sweep",
     "tech.exam.sweepComplete": "Sweep completato",
@@ -2902,6 +2952,16 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ho verificato l’uscita audio e terrò il volume fisico basso e confortevole"
   },
   "de": {
+    "tech.engine.bounds": "Verstärkung außerhalb der vorläufigen EQ-Grenzen.",
+    "tech.engine.step": "0,5-dB-Schritte verwenden.",
+    "tech.engine.stale": "Katalog wurde in einem anderen Tab geändert. Vor erneutem Speichern prüfen.",
+    "tech.engine.webkit": "Ein weiterer Hear-Tab ist in WebKit offen. Andere Tabs vor dem Speichern schließen.",
+    "tech.engine.cascade": "Verknüpfte Profile oder Ergebnisse erfordern eine separate Kaskadenlöschprüfung.",
+    "tech.engine.changedDeletion": "Katalog seit Löschprüfung geändert. Vor Löschen erneut prüfen.",
+    "tech.engine.invalidJson": "Sicherungs-JSON ist ungültig.",
+    "tech.engine.fingerprint": "FNV-1a erkennt nur versehentliche Beschädigung; Datei nicht authentifiziert.",
+    "tech.engine.memory": "Katalog nur im temporären Speicher. Vor dem Schließen Sicherung exportieren.",
+    "tech.engine.damaged": "Beschädigte Kopien erhalten. Temporären Katalog vor Schließen exportieren.",
     "tech.exam.sweepPlaying": "Sweep läuft",
     "tech.exam.sweepStarting": "Sweep wird vorbereitet",
     "tech.exam.sweepComplete": "Sweep abgeschlossen",
@@ -3481,6 +3541,16 @@ const STRINGS=Object.freeze({
     "route.confirm": "Ich habe den Audioausgang überprüft und halte die physische Lautstärke niedrig und angenehm"
   },
   "zh": {
+    "tech.engine.bounds": "增益超出临时 EQ 限制。",
+    "tech.engine.step": "请使用 0.5 dB 步长。",
+    "tech.engine.stale": "目录在另一标签页中已更改。重新保存前请检查。",
+    "tech.engine.webkit": "WebKit 中有其他 Hear 标签页。保存前请关闭其他标签页。",
+    "tech.engine.cascade": "关联配置或结果需要单独检查级联删除。",
+    "tech.engine.changedDeletion": "目录在删除检查后已更改。请重新检查后再删除。",
+    "tech.engine.invalidJson": "备份 JSON 无效。",
+    "tech.engine.fingerprint": "FNV-1a 仅检测意外损坏；文件未认证。",
+    "tech.engine.memory": "目录仅在临时内存中。关闭前请导出备份。",
+    "tech.engine.damaged": "已保留损坏副本。关闭前请导出临时目录。",
     "tech.exam.sweepPlaying": "正在播放扫频",
     "tech.exam.sweepStarting": "正在准备扫频",
     "tech.exam.sweepComplete": "扫频已完成",
@@ -4060,6 +4130,16 @@ const STRINGS=Object.freeze({
     "route.confirm": "我已检查音频输出，并将设备音量保持在较低且舒适的水平"
   },
   "ja": {
+    "tech.engine.bounds": "ゲインが暫定 EQ 上限を超えています。",
+    "tech.engine.step": "0.5 dB 刻みを使用してください。",
+    "tech.engine.stale": "別のタブでカタログが変更されました。再保存前に確認してください。",
+    "tech.engine.webkit": "WebKit で別の Hear タブが開いています。保存前に他のタブを閉じてください。",
+    "tech.engine.cascade": "関連プロファイルや結果には別途連鎖削除の確認が必要です。",
+    "tech.engine.changedDeletion": "削除確認後にカタログが変わりました。削除前に再確認してください。",
+    "tech.engine.invalidJson": "バックアップ JSON が無効です。",
+    "tech.engine.fingerprint": "FNV-1a は偶発的な破損のみ検出し、ファイルの真正性は確認しません。",
+    "tech.engine.memory": "カタログは一時メモリのみです。閉じる前にバックアップを保存してください。",
+    "tech.engine.damaged": "破損コピーを保持しました。閉じる前に一時カタログを保存してください。",
     "tech.exam.sweepPlaying": "スイープ再生中",
     "tech.exam.sweepStarting": "スイープ準備中",
     "tech.exam.sweepComplete": "スイープ完了",
@@ -4698,16 +4778,32 @@ const TECHNICAL_ERROR_KEYS=Object.freeze({
  "Revisa antes las respuestas y el alcance del guardado.": "tech.error.reviewArchive",
  "Primero completa el barrido": "tech.error.finishSweep"
 });
+// Keep engine error identifiers and raw diagnostic details intact for support.
+const ENGINE_MESSAGE_PATTERNS=Object.freeze([
+ [/Gain outside provisional EQ bounds/i,'bounds'],
+ [/0\.5 dB steps/i,'step'],
+ [/Catalog changed in another tab/i,'stale'],
+ [/Another Hear 3 tab is open in WebKit/i,'webkit'],
+ [/separate cascade preview/i,'cascade'],
+ [/changed since deletion preview/i,'changedDeletion'],
+ [/^Invalid catalog backup JSON$/i,'invalidJson'],
+ [/^FNV-1a only detects accidental corruption; this file is not authenticated\.$/i,'fingerprint'],
+ [/^Catalog is in temporary memory only\./i,'memory'],
+ [/^Damaged catalog copies were preserved\./i,'damaged'],
+]);
+const TRANSLATED_MESSAGES=Object.freeze(Object.fromEntries(HEAR3_LANGUAGE_CHOICES.map(lang=>[lang,new Set(Object.values(STRINGS[lang]))])));
 export function translateHear3TechnicalMessage(message,language='es'){
  const detail=typeof message==='string'?message:String(message??'');
  if(!detail)return '';
  const locale=has(language)?language:'es';
+ const engine=ENGINE_MESSAGE_PATTERNS.find(([pattern])=>pattern.test(detail));
+ if(engine)return translateHear3Ui('tech.engine.'+engine[1],locale)+' · '+detail;
  if(locale==='es')return detail;
  const key=Object.hasOwn(TECHNICAL_ERROR_KEYS,detail)?TECHNICAL_ERROR_KEYS[detail]:null;
  if(key)return translateHear3Ui(key,locale);
  // Already localized messages (for example a stale import preview) must not
  // get a second prefix. Preserve raw unknown browser/engine details verbatim.
- if(Object.values(STRINGS[locale]).includes(detail))return detail;
+ if(TRANSLATED_MESSAGES[locale].has(detail))return detail;
  return translateHear3Ui('tech.error.technical',locale).replace('{detail}',()=>detail);
 }
 export function createHear3I18nController({doc,env=globalThis}={}){
