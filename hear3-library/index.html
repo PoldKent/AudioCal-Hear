@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mis resultados y respaldos · AudioCal Hear</title>
+<title data-hear-i18n="library.title">Mis resultados y respaldos · AudioCal Hear</title>
 <style>
 :root{color-scheme:light dark;font-family:system-ui,sans-serif}
 body{max-width:42rem;margin:2rem auto;padding:0 1rem;line-height:1.55}
@@ -39,8 +39,8 @@ a:focus-visible{outline:3px solid #ffd178;outline-offset:3px}
 </head>
 <body>
 <header class="app-topbar">
- <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
- <nav class="app-nav" aria-label="Navegación principal">
+ <a class="app-brand" href="../" aria-label="AudioCal Hear, inicio" data-hear-i18n-aria-label="focus.ui.ariaHome"><span class="app-mark" aria-hidden="true">◉</span><span>AudioCal Hear</span></a>
+ <nav class="app-nav" aria-label="Navegación principal" data-hear-i18n-aria-label="tech.navigation">
   <a href="../" data-hear-i18n="nav.home">Inicio</a>
   <a href="../hear3-exam/" data-hear-i18n="nav.exam">Examen</a>
   <a href="../hear3-eq-editor/" data-hear-i18n="nav.eq">Mi ecualizador</a>
@@ -52,9 +52,9 @@ a:focus-visible{outline:3px solid #ffd178;outline-offset:3px}
    </div>
   </details>
  </nav> <label class="app-language-control">
-  <span class="app-sr-only">Idioma de la interfaz principal</span>
+  <span class="app-sr-only" data-hear-i18n="tech.language">Idioma de la interfaz principal</span>
   <select data-hear-language data-testid="hear-language"
-    aria-label="Idioma de la interfaz principal">
+    aria-label="Idioma de la interfaz principal" data-hear-i18n-aria-label="tech.language">
    <option value="es">Español</option>
    <option value="en">English</option>
    <option value="fr">Français</option>
@@ -69,74 +69,63 @@ a:focus-visible{outline:3px solid #ffd178;outline-offset:3px}
 <main class="app-page">
 <p data-hear-language-note hidden class="app-language-note" role="note"></p>
 <h1 data-hear-i18n="library.title">Mis resultados e historial</h1>
-<p class="warning"><strong>Tus datos se guardan en este navegador.</strong> No se envían a la nube ni se reproduce sonido en esta sección. Puedes exportar copias, revisar resultados o recuperar datos anteriores sin modificarlos automáticamente.</p>
-<p><a href="../hear3-exam/">Comenzar otro examen</a> ·
-<a href="../hear3-eq-editor/">Abrir EQ guardado</a> ·
-<a href="../hear3-dual-restore/">Restaurar respaldos completos</a></p>
+<p class="warning" data-hear-i18n="tech.library.privacy">Tus datos se guardan en este navegador. No se envían a la nube ni se reproduce sonido en esta sección. Puedes exportar copias, revisar resultados o recuperar datos anteriores sin modificarlos automáticamente.</p>
+<p><a href="../hear3-exam/" data-hear-i18n="tech.library.exam">Comenzar otro examen</a> ·
+<a href="../hear3-eq-editor/" data-hear-i18n="tech.library.edit">Abrir EQ guardado</a> ·
+<a href="../hear3-dual-restore/" data-hear-i18n="tech.restore.title">Restaurar respaldos completos</a></p>
 <p id="summary" data-testid="summary" role="status">Cargando…</p>
 <p id="durability" data-testid="durability" role="status"></p>
-<button type="button" id="download" data-testid="download">Descargar respaldo de mis resultados (JSON)</button>
-<h2>Último resultado del perfil activo (solo lectura)</h2>
-<p>Esta vista no modifica resultados, no inicia sonido y no valida acústicamente el equipo.</p>
-<button type="button" id="history-show" data-testid="history-show">Consultar último resultado</button>
+<button type="button" id="download" data-testid="download" data-hear-i18n="tech.library.download">Descargar respaldo de mis resultados (JSON)</button>
+<h2 data-hear-i18n="tech.library.last">Último resultado del perfil activo (solo lectura)</h2>
+<p data-hear-i18n="tech.library.lastHelp">Esta vista no modifica resultados, no inicia sonido y no valida acústicamente el equipo.</p>
+<button type="button" id="history-show" data-testid="history-show" data-hear-i18n="tech.library.history">Consultar último resultado</button>
 <p id="history-result" data-testid="history-result" role="status">Todavía no se ha consultado el historial.</p>
-<h2>Eliminar resultados seleccionados</h2>
-<p>Esta acción afecta únicamente al historial de esta aplicación. No elimina copias JSON descargadas,
-historial antiguo, exámenes en curso ni otros datos del sitio. Si eliges borrar un perfil o equipo relacionado
-con resultados, tendrás que autorizar también la eliminación de esos registros.</p>
-<label for="delete-kind">Tipo de dato</label>
+<h2 data-hear-i18n="tech.library.delete">Eliminar resultados seleccionados</h2>
+<p data-hear-i18n="tech.library.deleteHelp">Esta acción afecta únicamente al historial de esta aplicación. No elimina copias JSON descargadas, historial antiguo, exámenes en curso ni otros datos del sitio. Si eliges borrar un perfil o equipo relacionado con resultados, tendrás que autorizar también la eliminación de esos registros.</p>
+<label for="delete-kind" data-hear-i18n="tech.library.kind">Tipo de dato</label>
 <select id="delete-kind" data-testid="delete-kind">
-<option value="result">Resultado</option><option value="profile">Perfil</option><option value="device">Equipo</option>
+<option value="result" data-hear-i18n="tech.library.result">Resultado</option><option value="profile" data-hear-i18n="tech.library.profile">Perfil</option><option value="device" data-hear-i18n="tech.library.device">Equipo</option>
 </select>
-<label for="delete-target">Registro específico</label>
+<label for="delete-target" data-hear-i18n="tech.library.target">Registro específico</label>
 <select id="delete-target" data-testid="delete-target"></select>
 <label><input id="delete-cascade" data-testid="delete-cascade" type="checkbox">
-Permitir borrar los registros dependientes, solo después de verlos y confirmar</label>
-<button type="button" id="delete-preview" data-testid="delete-preview">Revisar eliminación</button>
-<button type="button" id="delete-commit" data-testid="delete-commit" disabled>Confirmar eliminación seleccionada</button>
+<span data-hear-i18n="tech.library.cascade">Permitir borrar los registros dependientes, solo después de verlos y confirmar</span></label>
+<button type="button" id="delete-preview" data-testid="delete-preview" data-hear-i18n="tech.library.deletePreview">Revisar eliminación</button>
+<button type="button" id="delete-commit" data-testid="delete-commit" disabled data-hear-i18n="tech.library.deleteCommit">Confirmar eliminación seleccionada</button>
 <p id="delete-summary" data-testid="delete-summary" role="status">Ninguna eliminación revisada.</p>
-<h2>Importar resultados guardados</h2>
-<label for="file">Archivo JSON local</label>
+<h2 data-hear-i18n="tech.library.import">Importar resultados guardados</h2>
+<label for="file" data-hear-i18n="tech.library.file">Archivo JSON local</label>
 <input id="file" data-testid="file" type="file" accept=".json,application/json">
-<label for="mode">Modo de importación</label>
+<label for="mode" data-hear-i18n="tech.library.mode">Modo de importación</label>
 <select id="mode" data-testid="mode">
-<option value="merge-new">Agregar registros nuevos, sin sobrescribir</option>
-<option value="replace">Reemplazar catálogo completo (requiere confirmación)</option>
+<option value="merge-new" data-hear-i18n="tech.library.merge">Agregar registros nuevos, sin sobrescribir</option>
+<option value="replace" data-hear-i18n="tech.library.replace">Reemplazar catálogo completo (requiere confirmación)</option>
 </select>
 <div>
-<button type="button" id="preview" data-testid="preview">Revisar respaldo</button>
-<button type="button" id="commit" data-testid="commit" disabled>Confirmar importación</button>
+<button type="button" id="preview" data-testid="preview" data-hear-i18n="tech.library.preview">Revisar respaldo</button>
+<button type="button" id="commit" data-testid="commit" disabled data-hear-i18n="tech.library.commit">Confirmar importación</button>
 </div>
 <p id="description" data-testid="description" role="status">Todavía no se ha revisado ningún archivo.</p>
 <details class="app-card" id="datos-anteriores">
-<summary>Importar datos de una instalación anterior (opcional)</summary>
-<h2>Transferir datos de una instalación anterior</h2>
-<p class="warning">Primero revisa los perfiles antiguos y exporta el archivo completo de respaldo histórico. La migración solo trasladará equipos y frecuencias; las mediciones y configuraciones anteriores se conservan en el archivo, sin transformarse en resultados actual.</p>
-<label for="legacy-source">Origen de los perfiles la instalación anterior</label>
+<summary data-hear-i18n="tech.library.legacy">Importar datos de una instalación anterior (opcional)</summary>
+<h2 data-hear-i18n="tech.library.transfer">Transferir datos de una instalación anterior</h2>
+<p class="warning" data-hear-i18n="tech.library.legacyHelp">Primero revisa los perfiles antiguos y exporta el archivo completo de respaldo histórico. La migración solo trasladará equipos y frecuencias; las mediciones y configuraciones anteriores se conservan en el archivo, sin transformarse en resultados actuales.</p>
+<label for="legacy-source" data-hear-i18n="tech.library.legacySource">Origen de los perfiles de la instalación anterior</label>
 <select id="legacy-source" data-testid="legacy-source">
-<option value="browser">Datos histórico existentes en este navegador</option>
-<option value="file">Archivo JSON histórico exportado previamente</option>
+<option value="browser" data-hear-i18n="tech.library.legacyBrowser">Datos históricos existentes en este navegador</option>
+<option value="file" data-hear-i18n="tech.library.legacyFile">Archivo JSON histórico exportado previamente</option>
 </select>
-<label for="legacy-file">Archivo oficial la instalación anterior o matriz JSON de perfiles histórico</label>
+<label for="legacy-file" data-hear-i18n="tech.library.legacyFileLabel">Archivo oficial de la instalación anterior o matriz JSON de perfiles históricos</label>
 <input id="legacy-file" data-testid="legacy-file" type="file" accept=".json,application/json">
-<p>El archivo se revisa únicamente aquí: nunca reemplaza los datos histórico locales.
- Si confirmas la migración, se importarán solo dispositivos y frecuencias verificadas;
- el archivo original completo debe conservarse aparte.</p>
-<button type="button" id="legacy-preview" data-testid="legacy-preview">Revisar perfiles la instalación anterior</button>
-<button type="button" id="legacy-export" data-testid="legacy-export" disabled>Exportar archivo original histórico</button>
-<button type="button" id="legacy-import" data-testid="legacy-import" disabled>Importar solo metadatos compatibles</button>
-<h3>Conservar íntegro el historial histórico, separado de resultados actual</h3>
-<p>Esta operación es adicional y opcional. Se preserva <strong>todo el texto histórico original
- como archivo histórico opaco</strong>, incluidos medidas, controles y campos
- desconocidos; no equivale a migrar umbrales clínicos ni ganancias EQ. Exporta
- primero una copia independiente. El respaldo de catálogo actual por sí solo no
- incluye este historial: descarga también el respaldo histórico conservado.</p>
-<button type="button" id="legacy-vault-export" data-testid="legacy-vault-export" disabled>
-Descargar respaldo portátil íntegro histórico para otra instalación</button>
-<button type="button" id="legacy-vault-save" data-testid="legacy-vault-save" disabled>
-Guardar historial íntegro histórico en archivo local separado de actual</button>
-<button type="button" id="legacy-vault-stored-export" data-testid="legacy-vault-stored-export" disabled>
-Volver a descargar historial histórico previamente conservado</button>
+<p data-hear-i18n="tech.library.legacyFileHelp">El archivo se revisa únicamente aquí: nunca reemplaza los datos históricos locales. Si confirmas la migración, se importarán solo dispositivos y frecuencias verificadas; el archivo original completo debe conservarse aparte.</p>
+<button type="button" id="legacy-preview" data-testid="legacy-preview" data-hear-i18n="tech.library.legacyReview">Revisar perfiles de la instalación anterior</button>
+<button type="button" id="legacy-export" data-testid="legacy-export" disabled data-hear-i18n="tech.library.legacyExport">Exportar archivo original histórico</button>
+<button type="button" id="legacy-import" data-testid="legacy-import" disabled data-hear-i18n="tech.library.legacyImport">Importar solo metadatos compatibles</button>
+<h3 data-hear-i18n="tech.library.vault">Conservar íntegro el historial, separado de los resultados actuales</h3>
+<p data-hear-i18n="tech.library.vaultHelp">Esta operación es adicional y opcional. Se preserva todo el texto histórico original como archivo opaco, incluidos medidas, controles y campos desconocidos; no equivale a migrar umbrales clínicos ni ganancias EQ. Exporta primero una copia independiente. El respaldo del catálogo actual no incluye este historial: descarga también el respaldo histórico conservado.</p>
+<button type="button" id="legacy-vault-export" data-testid="legacy-vault-export" disabled data-hear-i18n="tech.library.vaultExport">Descargar respaldo portátil íntegro del historial para otra instalación</button>
+<button type="button" id="legacy-vault-save" data-testid="legacy-vault-save" disabled data-hear-i18n="tech.library.vaultSave">Guardar historial íntegro en archivo local separado</button>
+<button type="button" id="legacy-vault-stored-export" data-testid="legacy-vault-stored-export" disabled data-hear-i18n="tech.library.vaultDownload">Volver a descargar historial previamente conservado</button>
 <p id="legacy-vault-status" data-testid="legacy-vault-status" role="status">
 Todavía no se ha guardado ningún historial histórico completo en AudioCal Hear.</p>
 <p id="legacy-description" data-testid="legacy-description" role="status">Aún no se han revisado los datos de la instalación anterior.</p>
@@ -145,6 +134,7 @@ Todavía no se ha guardado ningún historial histórico completo en AudioCal Hea
 <p id="error" data-testid="error" role="alert"></p>
 </main>
 <script type="module">
+import {translateHear3Ui} from '../src/hear3/app-i18n.mjs';
 import {createHear3CatalogStore,createHear3CatalogBackupTransfer,MAX_CATALOG_JSON_CHARS}
  from '../src/hear3/catalog-backup-store.mjs';
 import { createHear3CatalogHistoryReader } from '../src/hear3/catalog-history-reader.mjs';
@@ -176,6 +166,10 @@ const legacyTransfer=createHear2MigrationTransfer({store,readLegacy:()=>{
  };
 }});
 const $=id=>document.getElementById(id);
+const tr=(key,values={})=>Object.entries(values).reduce((s,[k,v])=>s.replaceAll('{'+k+'}',String(v)),translateHear3Ui('tech.library.'+key,document.documentElement.lang.split('-')[0]));
+let historyState={key:'historyNone',params:{}};
+function historyStatus(key,params={}){historyState={key,params};$('history-result').textContent=tr(key,params);}
+window.addEventListener('hear3:language-change',()=>{if(!mutationInProgress)render();if(historyState)historyStatus(historyState.key,historyState.params);});
 let preview=null,legacyPreview=null,legacyArchiveExportAttempted=false;
 let mutationInProgress=false;
 const blockedDuringWrite=['file','mode','preview','commit','delete-kind',
@@ -211,17 +205,15 @@ function renderDeleteOptions(catalog){
  $('delete-preview').disabled=collection.length===0;
  $('delete-commit').disabled=!deletionProposal;
  $('delete-summary').textContent=deletionProposal?
-  'Se eliminarán '+deletionProposal.removedDevices+' equipos, '+deletionProposal.removedProfiles+
-  ' perfiles y '+deletionProposal.removedResults+' resultados. '+
-  (deletionProposal.activeProfileCleared?'El perfil activo quedará sin seleccionar. ':'')+
-  (deletionProposal.requiresSeparateCascadeConfirmation?'Hay registros dependientes: confirmación adicional obligatoria.':''):
-  'Ninguna eliminación revisada.';
+  tr('deleteScope',{d:deletionProposal.removedDevices,p:deletionProposal.removedProfiles,r:deletionProposal.removedResults})+
+  (deletionProposal.activeProfileCleared?' '+tr('activeCleared'):'')+
+  (deletionProposal.requiresSeparateCascadeConfirmation?' '+tr('cascadeRequired'):''):
+  tr('deleteNone');
 }
 function render() {
  const loaded=store.load(),counts=loaded.catalog;
  renderDeleteOptions(counts);
- $('summary').textContent='Catálogo V3: '+counts.devices.length+' dispositivos, '+
- counts.profiles.length+' perfiles, '+counts.results.length+' resultados.';
+ $('summary').textContent=tr('summary',{d:counts.devices.length,p:counts.profiles.length,r:counts.results.length});
  $('durability').textContent='Almacenamiento: '+loaded.durability+
  (loaded.persistedOnDevice?' (escritura local verificada)':' (sin persistencia de dispositivo confirmada)')+
  (loaded.warnings?.length?' · '+loaded.warnings.join(' '):'')+
@@ -251,15 +243,19 @@ function render() {
   ' perfiles, '+preview.results+' resultados. Al finalizar: '+preview.outputResults+
   ' resultados. '+(preview.replacesExisting?'Requiere confirmar el reemplazo completo.':'Sin reemplazo de identificadores existentes.')+
   ' '+preview.warning:
-  'Todavía no se ha revisado ningún archivo.';
+  tr('none');
 }
+let reviewGeneration=0;
 async function inspect() {
+ const generation=++reviewGeneration;
  preview=null;
  transfer.discard();
  const file=$('file').files?.[0];
  if(!file||file.size>MAX_CATALOG_JSON_CHARS*4)throw Error('Elige un archivo JSON dentro del límite permitido.');
+ const mode=$('mode').value;
  const text=await file.text();
- preview=transfer.preview(text,{mode:$('mode').value});
+ if(generation!==reviewGeneration||$('file').files?.[0]!==file||$('mode').value!==mode)throw Error(tr('fileChanged'));
+ preview=transfer.preview(text,{mode});
 }
 $('preview').addEventListener('click',async()=>{
  $('error').textContent='';
@@ -269,20 +265,20 @@ $('commit').addEventListener('click',async()=>{
  $('error').textContent='';
  try{
   if(!preview)throw Error('Revisa primero el respaldo.');
-  if(preview.replacesExisting&&!confirm('¿Reemplazar TODOS los registros del catálogo Hear 3.0?'))return;
+  if(preview.replacesExisting&&!confirm(tr('confirmReplace')))return;
   const {response:r}=await serializeMutation(()=>transfer.commit({userInitiated:true,confirmReplace:preview.replacesExisting}));
   preview=null;
   if(!r.persistedOnDevice)$('error').textContent=r.warning||'Datos temporales: exporta una copia.';
  }catch(e){$('error').textContent=e.message;}finally{render();}
 });
-$('file').addEventListener('change',()=>{transfer.discard();preview=null;render();});
-$('mode').addEventListener('change',()=>{transfer.discard();preview=null;render();});
+$('file').addEventListener('change',()=>{reviewGeneration++;transfer.discard();preview=null;render();});
+$('mode').addEventListener('change',()=>{reviewGeneration++;transfer.discard();preview=null;render();});
 $('download').addEventListener('click',()=>{
  try {
   const blob=new Blob([store.exportBackup()],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear3-catalog-backup.json';a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
  }catch(e){$('error').textContent=e.message;}
 });
 function discardDeletion() {
@@ -306,10 +302,9 @@ $('delete-commit').addEventListener('click',async()=>{
  try{
   if(!deletionProposal)throw Error('Revisa primero el alcance del borrado.');
   const scope=deletionProposal;
-  if(!confirm('¿Eliminar exactamente '+scope.removedDevices+' equipos, '+
-   scope.removedProfiles+' perfiles y '+scope.removedResults+' resultados V3 de este navegador?'))return;
+  if(!confirm(tr('confirmDelete',{d:scope.removedDevices,p:scope.removedProfiles,r:scope.removedResults})))return;
   if(scope.requiresSeparateCascadeConfirmation &&
-    !confirm('Confirmación adicional: se eliminarán también registros relacionados. ¿Continuar?'))return;
+    !confirm(tr('confirmCascade')))return;
   const {response:saved}=await serializeMutation(()=>deletion.commit({userInitiated:true,confirmed:true,
    confirmCascade:scope.requiresSeparateCascadeConfirmation}));
   deletionProposal=null;
@@ -323,10 +318,11 @@ $('history-show').addEventListener('click',()=>{
  try {
   const history=historyReader.read();
   if(history.status==='no-active-profile'){
-   $('history-result').textContent='No hay perfil activo. Selecciona primero un perfil guardado.';
+   historyStatus('noActive');
   } else if(history.status==='no-results'){
-   $('history-result').textContent='El perfil '+history.profile.name+' no tiene resultados anteriores.';
+   historyStatus('noResults',{name:history.profile.name});
   } else {
+   historyState=null;
    const r=history.latestResult;
    $('history-result').textContent='Perfil '+history.profile.name+
     ' · Equipo '+history.device.name+' · Resultado '+r.id+' · Estado '+r.status+
@@ -387,7 +383,7 @@ $('legacy-export').addEventListener('click',()=>{
   const blob=new Blob([legacyTransfer.exportLegacyArchive()],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear2-unaltered-backup.json';a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
   // This only means the download was requested, not confirmed on disk.
   legacyArchiveExportAttempted=true;
  }catch(e){$('error').textContent=e.message;}
@@ -397,7 +393,7 @@ $('legacy-import').addEventListener('click',async()=>{
  $('error').textContent='';
  try{
   if(!legacyArchiveExportAttempted)throw Error('Exporta primero el respaldo V2.');
-  if(!confirm('¿Confirmas que guardaste aparte el archivo V2 y deseas importar SOLO equipos y bandas, SIN resultados históricos?'))return;
+  if(!confirm(tr('confirmLegacy')))return;
   const {response:result}=await serializeMutation(()=>legacyTransfer.commit({userInitiated:true,confirmBackupExported:true}));
   legacyPreview=null;legacyArchiveExportAttempted=false;
   if(!result.persistedOnDevice)$('error').textContent=result.warning||'Datos en memoria temporal.';
@@ -410,7 +406,7 @@ $('legacy-vault-export').addEventListener('click',()=>{
   const blob=new Blob([legacyHistoryVault.exportPending()],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear3-historial-v2-completo-portatil.json';a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
   legacyVaultExportAttempted=true;
  }catch(e){$('error').textContent=e.message;}
  finally{render();}
@@ -420,9 +416,9 @@ $('legacy-vault-save').addEventListener('click',async()=>{
  try{
   if(!legacyVaultPreview||!legacyVaultExportAttempted)
    throw Error('Revisa y descarga primero una copia portable del historial V2 completo.');
-  if(!confirm('¿Guardar todos los datos originales V2 como archivo local separado, SIN convertirlos en pruebas clínicas V3?'))return;
+  if(!confirm(tr('confirmVault')))return;
   if(legacyVaultPreview.replacesExisting &&
-    !confirm('Hay un historial V2 completo anterior: ¿REEMPLAZAR ESA COPIA LOCAL? Conserva antes el respaldo descargado.'))return;
+    !confirm(tr('confirmVaultReplace')))return;
   const {response:saved}=await writer.run(()=>legacyHistoryVault.commit({
    userInitiated:true,confirmed:true,confirmSourceBackupExported:true,
    confirmOverwrite:legacyVaultPreview.replacesExisting,
@@ -438,7 +434,7 @@ $('legacy-vault-stored-export').addEventListener('click',()=>{
   const blob=new Blob([legacyHistoryVault.exportStored()],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='hear3-historial-v2-verificado-respaldo.json';a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
  }catch(e){$('error').textContent=e.message;}
 });
 // Test-only local inspection. No mutation methods or network functions.
@@ -446,7 +442,7 @@ window.hear3CatalogPilot=Object.freeze({
  snapshot:()=>store.load(),
  isMutationPending:()=>mutationInProgress,
 });
-render();
+historyStatus('historyNone');render();
 </script>
 </body>
 </html>
