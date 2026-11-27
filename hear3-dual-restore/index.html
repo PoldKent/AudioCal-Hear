@@ -97,7 +97,8 @@ No se ha iniciado ninguna restauración.</p>
 <p><a href="../" data-hear-i18n="tech.home">Volver al inicio</a></p>
 </main>
 <script type="module">
-import {translateHear3Ui} from '../src/hear3/app-i18n.mjs';
+import {translateHear3Ui,translateHear3TechnicalMessage} from '../src/hear3/app-i18n.mjs';
+const technicalMessage=value=>translateHear3TechnicalMessage(value,document.documentElement.lang.split('-')[0]);
 import {createHear3CatalogStore} from '../src/hear3/catalog-backup-store.mjs';
 import {createHear3LosslessV2HistoryVault} from '../src/hear3/legacy-v2-history-vault.mjs';
 import {createHear3CatalogWriteCoordinator} from '../src/hear3/coordinated-catalog-writer.mjs';
@@ -128,7 +129,7 @@ function render(){
   $('recovery-ack').disabled=busy||!s.requiresRecovery||!s.coherentSnapshotVerified;
   if(s.requiresRecovery)$('restore').disabled=true;
  }catch(e){
-  $('recovery-status').textContent=tr('markerError')+' '+e.message;
+  $('recovery-status').textContent=tr('markerError')+' '+technicalMessage(e.message);
   $('restore').disabled=true;$('recovery-ack').disabled=true;
  }
 }
@@ -149,7 +150,7 @@ async function work(callback){
  if(busy)return;
  $('error').textContent='';busy=true;render();
  try{await callback();}
- catch(e){$('error').textContent=e?.message||String(e);}
+ catch(e){$('error').textContent=technicalMessage(e?.message||String(e));}
  finally{busy=false;render();}
 }
 $('review').addEventListener('click',()=>work(async()=>{
@@ -167,12 +168,12 @@ $('review').addEventListener('click',()=>work(async()=>{
 }));
 $('previous-v3').addEventListener('click',()=>{
  try{download(engine.exportPreviousV3(),'hear3-antes-de-restaurar-catalogo-v3.json');requestedV3=true;}
- catch(e){$('error').textContent=e.message;}
+ catch(e){$('error').textContent=technicalMessage(e.message);}
  finally{render();}
 });
 $('previous-v2').addEventListener('click',()=>{
  try{download(engine.exportPreviousV2(),'hear3-antes-de-restaurar-historial-v2.json');requestedV2=true;}
- catch(e){$('error').textContent=e.message;}
+ catch(e){$('error').textContent=technicalMessage(e.message);}
  finally{render();}
 });
 $('restore').addEventListener('click',()=>work(async()=>{

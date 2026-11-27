@@ -116,3 +116,17 @@ test('P0 injected names render safely as option text, not HTML',async({page})=>{
  await expect(page.getByTestId('delete-target').locator('option').first()).toContainText('<img');
  await expect(page.locator('img')).toHaveCount(0);
 });
+
+test('localized deletion preview preserves exact scope and requires confirmation',async({page})=>{
+ await seed(page);
+ await page.goto('/hear3-library/');
+ await page.getByTestId('delete-target').selectOption('result-one');
+ await page.getByTestId('delete-preview').click();
+ await page.getByTestId('hear-language').selectOption('en');
+ await expect(page.getByTestId('delete-summary')).toContainText('0 devices, 0 profiles and 1 results');
+ await expect(page.getByTestId('delete-target')).toHaveValue('result-one');
+ await expect(page.getByTestId('delete-commit')).toBeEnabled();
+ const dialog=page.waitForEvent('dialog').then(async d=>{expect(d.message()).toContain('Delete exactly 0 devices, 0 profiles and 1 V3 results');await d.dismiss();});
+ await page.getByTestId('delete-commit').click();await dialog;
+ await expect(page.getByTestId('summary')).toContainText('2 devices, 2 profiles, 2 results');
+});

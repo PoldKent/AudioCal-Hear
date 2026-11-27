@@ -140,7 +140,14 @@ export function createWebAudioToneAdapter({
       const amplitude = 10 ** (digitalLevelDbfs / 20);
       const now = ctx.currentTime;
       gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(amplitude, now + 0.004);
+      // Elevated digital references are explicitly authorized by the caller.
+      // A softer envelope reduces abrupt transients; it is not an SPL limit.
+      const fade=digitalLevelDbfs>-42?Math.min(0.35,durationSeconds/3):0.004;
+      gain.gain.linearRampToValueAtTime(amplitude, now + fade);
+      if(digitalLevelDbfs>-42){
+        gain.gain.setValueAtTime(amplitude,now+durationSeconds-fade);
+        gain.gain.linearRampToValueAtTime(0,now+durationSeconds);
+      }
       const entry = { toneId, osc, gain, pan, ctx };
       osc.onended = () => {
         if (active !== entry) return;

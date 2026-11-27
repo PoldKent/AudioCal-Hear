@@ -97,9 +97,12 @@ progress::-moz-progress-bar{background:var(--mint2);border-radius:10px}
 /* Vertical EQ has independent horizontal scrolling at 31 bands.
    The page itself never needs sideways scrolling, and values remain
    accessible in the explicit text rows below the visual. */
-.eq-graph-scroll{width:100%;max-width:650px;overflow-x:auto;overscroll-behavior-inline:contain;margin:20px auto 6px;padding:4px 2px 11px}
-.eq-graph{min-width:100%;width:max-content;display:flex;justify-content:space-evenly;gap:8px;padding:6px 12px 2px}
-.eq-graph-band{width:57px;flex:0 0 57px;display:flex;align-items:center;flex-direction:column;gap:7px;font-variant-numeric:tabular-nums}
+/* Only the result stage expands; the listening journey and reading width stay compact.
+   Center a fitting curve, but keep its first band reachable when scrolling is necessary. */
+.center:has(#result:not([hidden])){width:min(100%,2300px);min-width:0}
+.eq-graph-scroll{width:100%;max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-inline:contain;margin:20px auto 6px;padding:4px 2px 11px}
+.eq-graph{width:max-content;max-width:none;margin-inline:auto;display:flex;gap:8px;padding:6px 12px 2px}
+.eq-graph-band{width:64px;flex:0 0 64px;display:flex;align-items:center;flex-direction:column;gap:7px;font-variant-numeric:tabular-nums}
 .eq-graph-area{height:162px;width:100%;position:relative;border-radius:9px;background:var(--surface);border:1px solid var(--outline);overflow:hidden}
 .eq-graph-zero{position:absolute;left:0;right:0;top:80px;border-top:1px solid var(--muted);opacity:.65}
 .eq-graph-bar{display:block;position:absolute;width:58%;left:21%;border-radius:6px;background:var(--mint2);min-height:2px}

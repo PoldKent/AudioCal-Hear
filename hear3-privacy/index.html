@@ -91,7 +91,8 @@ td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 <p><a href="../" data-hear-i18n="tech.home">Volver al inicio</a></p>
 </main>
 <script type="module">
-import {translateHear3Ui} from '../src/hear3/app-i18n.mjs';
+import {translateHear3Ui,translateHear3TechnicalMessage} from '../src/hear3/app-i18n.mjs';
+const technicalMessage=value=>translateHear3TechnicalMessage(value,document.documentElement.lang.split('-')[0]);
 import {createHear3ScopedStorageCleanup}
  from '../src/hear3/scoped-storage-cleanup.mjs';
 const $=id=>document.getElementById(id);
@@ -130,7 +131,7 @@ $('inspect').addEventListener('click',()=>{
    ?' '+tr('unreadable') : '');
  }catch(error){
   proposal=null;
-  $('warnings').textContent=error?.message??String(error);
+  $('warnings').textContent=technicalMessage(error?.message??String(error));
  }
 });
 $('commit').addEventListener('click',()=>{
@@ -143,10 +144,10 @@ $('commit').addEventListener('click',()=>{
   const outcome=cleanup.commit({userInitiated:true,confirmed:true,
    phrase:$('confirm-phrase').value});
   $('action-status').textContent=outcome.cleared
-   ?tr('deleted',{n:outcome.attempted})+' '+outcome.message
-   :tr('remaining')+' '+outcome.message;
+   ?tr('deleted',{n:outcome.attempted})+' '+technicalMessage(outcome.message)
+   :tr('remaining')+' '+technicalMessage(outcome.message);
  }catch(error){
-  $('action-status').textContent=tr('failed')+' '+(error?.message??String(error));
+  $('action-status').textContent=tr('failed')+' '+technicalMessage(error?.message??String(error));
  }
  invalidate();
 });

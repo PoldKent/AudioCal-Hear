@@ -237,6 +237,9 @@ Primero finaliza un examen y selecciona un perfil de controles.</p>
 <p><a href="../../hear3-preview/">Volver a la vista previa de Hear 3.0</a></p>
 </main>
 <script type="module">
+import {translateHear3Ui as translateTechExam,translateHear3TechnicalMessage} from '../../src/hear3/app-i18n.mjs';
+const technicalMessage=value=>translateHear3TechnicalMessage(value,document.documentElement.lang.split('-')[0]);
+const examTr=(key,params={})=>Object.entries(params).reduce((s,[k,v])=>s.replaceAll('{'+k+'}',String(v)),translateTechExam('tech.exam.'+key,document.documentElement.lang.split('-')[0]));
 import {createSweepPlan,planSweepConfirmations,frequencyAtSweepTime}
  from '../../src/hear3/sweep-planner.mjs';
 import {inspectHear3AudioCapabilities}
@@ -371,16 +374,11 @@ function renderEq(){
  const root=$('eq-rows');
  root.replaceChildren();
  if(!eqDraft){
-  $('eq-status').textContent='Finaliza el examen de tonos para calcular una curva EQ provisional.';
-  $('eq-headroom').textContent='Sin estudio DSP. La preamplificación y el headroom físicos no están verificados.';
+  $('eq-status').textContent=examTr('eqEmpty');
+  $('eq-headroom').textContent=examTr('noDsp');
   return;
  }
- $('eq-status').textContent='Modelo experimental: '+eqDraft.selectedMethod+
-  '. Bandas con intervalos subjetivos utilizables: '+eqDraft.observedEligibleBands+
-  ' de '+eqDraft.bandCount+'. Límite matemático de ganancia: ±'+eqDraft.capDb+
-  ' dB. '+(eqDraft.correctionCoverage==='neutral-only-no-valid-contrast'
-   ?'Evidencia insuficiente: todas las ganancias son neutras.'
-   :'Cálculo de contraste relativo terminado; no es un preset calibrado.');
+ $('eq-status').textContent=examTr('model',{method:eqDraft.selectedMethod,n:eqDraft.observedEligibleBands,total:eqDraft.bandCount,cap:eqDraft.capDb})+' '+examTr(eqDraft.correctionCoverage==='neutral-only-no-valid-contrast'?'neutral':'contrast');
  const list=document.createElement('ul');
  for(const b of eqDraft.rows){
   const li=document.createElement('li');
@@ -395,24 +393,17 @@ function renderEq(){
  root.append(list);
  const digital=eqDigitalModel;
  $('eq-headroom').textContent=digital
-  ?'Referencia DSP NO calibrada: cascada biquad peaking Q='+digital.referenceQ+
-   ', '+digital.referenceSampleRateHz+' Hz asumidos. Pico de respuesta compleja: '+
-   digital.modeledPeakMagnitudeDb+' dB; norma L1 parcial: '+
-   digital.partialImpulseL1Db+' dB. Atenuación sugerida SOLO para el modelo digital: '+
-   (digital.suggestedReferencePreampDb===null?'no disponible: excede el presupuesto':
-    digital.suggestedReferencePreampDb+' dB')+
-   '. Horizonte '+digital.finiteHorizonSamples+
-   ' muestras, entrada limitada a ±1, estado inicial cero. NO certifica picos entre muestras, DSP del equipo, dB SPL ni headroom físico; nunca se aplicará automáticamente.'
-  :'Modelado DSP no disponible: '+(eqDigitalModelError??'sin datos')+
-   '. La curva original permanece solo para revisión; sin preamplificación autorizada.';
+  ?examTr('dsp',{q:digital.referenceQ,hz:digital.referenceSampleRateHz,peak:digital.modeledPeakMagnitudeDb,l1:digital.partialImpulseL1Db,preamp:digital.suggestedReferencePreampDb===null?examTr('preampUnavailable'):digital.suggestedReferencePreampDb+' dB',samples:digital.finiteHorizonSamples})
+  :examTr('dspUnavailable',{detail:technicalMessage(eqDigitalModelError??examTr('noData'))});
 }
 let comparisonCounter=0;
 const comparisonReports=[];
 const comparison=createHear3ContextualToneComparison({onChange:render});
-function createExam(plan){
+function createExam(plan,initialDbfs=-60){
+ if(![-60,-54,-48].includes(initialDbfs))throw Error('Invalid saved initial digital level');
  return createHear3ResumableAdaptiveExam({plan,profileId,
   minDbfs:levelRange.minDbfs,maxDbfs:levelRange.maxDbfs,
-  initialDbfs:-60,maxTrialsPerBand:7,coarseStepDb:6,
+  initialDbfs,maxTrialsPerBand:7,coarseStepDb:6,
   durationSeconds:3,progressStore,
  });
 }
@@ -424,9 +415,9 @@ function setEnabled(id,enabled){$(id).disabled=!enabled;}
 function render(){
  const s=sweepRunner.snapshot();
  const prev=sweepRunner.lastResult();
- setLiveText('sweep-status',s.status==='playing'?'Barrido en reproducción':
-  sweepStarting?'Preparando barrido':prev?.status==='completed'?'Barrido finalizado':
-  prev?.status==='interrupted'?'Barrido interrumpido; sin confirmación automática':'Listo para comenzar');
+ setLiveText('sweep-status',s.status==='playing'?examTr('sweepPlaying'):
+  sweepStarting?examTr('sweepStarting'):prev?.status==='completed'?examTr('sweepComplete'):
+  prev?.status==='interrupted'?examTr('sweepInterrupted'):examTr('ready'));
  $('sweep-progress').value=s.status==='playing'?s.elapsedSeconds:
   prev?.status==='completed'?20:0;
  const sweeping=s.status==='playing';
@@ -435,8 +426,7 @@ function render(){
  $('sweep-level').textContent=sweeping?s.levelDbfs+' dBFS':'—';
  $('sweep-remaining').textContent=sweeping?
   Math.ceil(Math.max(0,s.plan.durationSeconds-s.elapsedSeconds))+' s':'—';
- $('sweep-count').textContent='Observaciones informativas: '+
-  (s.status==='playing'?s.reports.length:prev?.reports?.length??0);
+ $('sweep-count').textContent=examTr('observations',{n:s.status==='playing'?s.reports.length:prev?.reports?.length??0});
  const local=progressReader.get();
  const editableLayout=!exam&&!sweepStarting&&s.status!=='playing'&&!prev;
  setEnabled('layout-apply',editableLayout);
@@ -462,19 +452,19 @@ function render(){
  renderTransfer();
  const durability=exam?.getPersistence();
  $('recovery-status').textContent=local.checkpoint
-  ?'Copia local disponible ('+local.durability+'). '+
-    (durability?.warning??local.warnings.join(' '))
-  :'Todavía no existe un checkpoint verificable. '+
-    (durability?.warning??local.warnings.join(' '));
+  ?examTr('checkpoint',{state:local.durability})+' '+
+    (technicalMessage(durability?.warning??local.warnings.join(' ')))
+  :examTr('noCheckpoint')+' '+
+    (technicalMessage(durability?.warning??local.warnings.join(' ')));
  if(!exam)return;
  const data=currentExam;
  const current=data.bands.find(b=>b.id===data.currentBandId);
- setLiveText('tone-status',data.status==='completed'?'Todos los tonos planificados están revisados':
-  data.status==='paused'?'Pausado: requiere reanudación explícita':
-  data.status==='awaiting-confirmation'?'Contradicción: confirma o conserva inconclusa':
-  data.status==='playing'?'Tono en reproducción':
-  data.status==='starting'?'Preparando tono':'Listo para el siguiente tono');
- $('coverage').textContent='Bandas revisadas: '+data.completedBands+' de '+data.totalBands;
+ setLiveText('tone-status',data.status==='completed'?examTr('toneComplete'):
+  data.status==='paused'?examTr('tonePaused'):
+  data.status==='awaiting-confirmation'?examTr('toneConflict'):
+  data.status==='playing'?examTr('tonePlaying'):
+  data.status==='starting'?examTr('toneStarting'):examTr('toneReady'));
+ $('coverage').textContent=examTr('coverage',{n:data.completedBands,total:data.totalBands});
  $('frequency').textContent=current?current.frequencyHz+' Hz':'—';
  $('dbfs').textContent=data.status==='playing'?
   (exam?.getSession().currentTone?.digitalLevelDbfs??'—')+' dBFS':
@@ -484,13 +474,13 @@ function render(){
  const comparing=['first','gap','second'].includes(cmp.state);
  const needsComparisonReply=cmp.state==='awaiting-response'&&
    data.status==='awaiting-confirmation';
- setLiveText('comparison-status',cmp.state==='first'?'Comparación: reproduciendo el primer tono':
-   cmp.state==='gap'?'Comparación: separación silenciosa entre tonos':
-   cmp.state==='second'?'Comparación: reproduciendo el segundo tono':
-   needsComparisonReply?'Los dos tonos terminaron. Elige una respuesta perceptiva.':
-   cmp.state==='interrupted'?'Comparación interrumpida: sin evidencia perceptiva nueva':
-   cmp.state==='completed'?'Última comparación terminada. Respuestas: '+comparisonReports.length:
-   'Comparaciones contextuales: ninguna.');
+ setLiveText('comparison-status',cmp.state==='first'?examTr('compareFirst'):
+   cmp.state==='gap'?examTr('compareGap'):
+   cmp.state==='second'?examTr('compareSecond'):
+   needsComparisonReply?examTr('compareReply'):
+   cmp.state==='interrupted'?examTr('compareInterrupted'):
+   cmp.state==='completed'?examTr('compareDone',{n:comparisonReports.length}):
+   examTr('compareNone'));
  for(const id of ['comparison-first','comparison-second','comparison-similar',
   'comparison-neither','comparison-uncertain'])setEnabled(id,needsComparisonReply);
  const elapsed=data.status==='playing'?Math.min(3000,performance.now()-toneStartVisual):0;
@@ -534,7 +524,7 @@ async function run(action){
  setExamErrorHelp(null);
  try{await action();}
  catch(e){
-  $('error').textContent=e?.message??String(e);
+  $('error').textContent=technicalMessage(e?.message??String(e));
   setExamErrorHelp(e);
  }
  finally{
@@ -589,8 +579,7 @@ $('tone-not').addEventListener('click',()=>run(()=>exam.answer('not-heard')));
 $('tone-review-previous').addEventListener('click',()=>run(()=>{
  const data=exam?.snapshot();
  if(!data?.canReviewPreviousBand)throw Error('Esta frecuencia ya no puede corregirse sin perder continuidad.');
- if(!confirm('¿Repetir los tonos de '+data.reviewableFrequencyHz+
-  ' Hz? Las respuestas anteriores quedarán registradas como anuladas, sin afectar las demás frecuencias. No sonará audio hasta que pulses reproducir.'))return;
+ if(!confirm(examTr('confirmRetake',{hz:data.reviewableFrequencyHz})))return;
  const updated=exam.retakePreviousBand({userConfirmed:true});
  // Do not leave a previously generated EQ attached to an unfinished exam.
  updateEqDraft();archiveTransfer?.discard();archiveTransfer=null;
@@ -655,8 +644,12 @@ $('recover-exam').addEventListener('click',()=>run(async()=>{
  if(exam)throw Error('Ya hay un examen en esta página.');
  const saved=progressStore.load();
  if(!saved.checkpoint)throw Error('No hay copia local verificada para recuperar.');
- if(!confirm('¿Recuperar las respuestas y el plan guardados? No se reproducirá audio.'))return;
- const candidate=createExam(saved.checkpoint.plan);
+ if(!confirm(examTr('confirmRecover')))return;
+ // Elevated checkpoints require fresh reference checks in the main guided route.
+ if(saved.checkpoint.progress?.options?.initialDbfs===-12){
+  throw Error('La referencia elevada requiere continuar desde la pantalla principal de Hear; no se modificaron los datos.');
+ }
+ const candidate=createExam(saved.checkpoint.plan,saved.checkpoint.progress?.options?.initialDbfs);
  try{
   await candidate.recover({userInitiated:true});
   exam=candidate;
@@ -675,7 +668,7 @@ $('export-exam').addEventListener('click',()=>run(()=>{
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }));
 $('delete-exam').addEventListener('click',()=>run(()=>{
- if(!confirm('¿Eliminar las copias guardadas de este examen V3 de este navegador? No borra perfiles V2 ni archivos descargados.'))return;
+ if(!confirm(examTr('confirmDelete')))return;
  const result=exam?exam.clearCheckpoint({confirmed:true}):progressStore.clear({confirmed:true});
  if(!result.cleared)throw Error(result.warning??'La eliminación no pudo verificarse.');
 }));
@@ -794,10 +787,8 @@ $('archive-preview').addEventListener('click',()=>run(()=>{
 $('archive-commit').addEventListener('click',()=>run(async()=>{
  if(!archiveTransfer)throw Error('Revisa antes las respuestas y el alcance del guardado.');
  const addEq=$('archive-eq-optin').checked;
- if(!confirm(addEq
-  ?'¿Guardar respuestas y una curva EQ PROVISIONAL no calibrada? No aplica valores automáticamente.'
-  :'¿Guardar las respuestas experimentales en el equipo o perfil seleccionado, sin EQ ni diagnóstico?'))return;
- if(addEq&&!confirm('Confirmación adicional: los valores derivan de tonos subjetivos sin validación física, SPL ni headroom. ¿Guardar solo para revisión?'))return;
+ if(!confirm(examTr(addEq?'confirmEq':'confirmResponses')))return;
+ if(addEq&&!confirm(examTr('confirmExtra')))return;
  const {response:result}=await catalogWriter.run(()=>
   archiveTransfer.commit({userInitiated:true,confirmed:true,
    confirmProvisionalEq:addEq}));
