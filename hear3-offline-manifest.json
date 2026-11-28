@@ -27,6 +27,7 @@
     "src/hear3/coordinated-catalog-writer.mjs",
     "src/hear3/device-profile-contract.mjs",
     "src/hear3/eq-control-quantization.mjs",
+    "src/hear3/eq-preview-player.mjs",
     "src/hear3/eq-band-layouts.mjs",
     "src/hear3/focus-experience.css",
     "src/hear3/focus-experience.mjs",

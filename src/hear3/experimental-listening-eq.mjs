@@ -57,8 +57,9 @@ export function proposeHear3ExperimentalListeningEq({
   let gain=row.gainDb,reason='relative-tone-contrast',confidence=row.confidence;
   if(loudByFrequency.has(row.frequencyHz)){
    // A user-reported uncomfortable tone is a signal to CUT, never boost.
-   // Limit the suggestion to a 1 dB attenuation, independent of volume.
-   gain=-Math.min(baseEq.capDb,1);
+   // It guarantees at least a 1 dB attenuation and never weakens a deeper
+   // cut already supported by the tone contrast (still within the cap).
+   gain=Math.min(row.gainDb,-Math.min(baseEq.capDb,1));
    reason='explicit-too-loud-attenuate';
    confidence='subjective-single-response';
   }else if(heard.length===0&&unheard.length>=2&&
@@ -102,4 +103,36 @@ export function proposeHear3ExperimentalListeningEq({
    'No calibrated acoustic output, device headroom, clipping, SPL, or health benefit has been established. Do not auto-apply.',
   ]),
  });
+}
+/**
+ * Explains WHY bands stay at 0 dB when the physical volume made the test
+ * run out of digital range. floorHeard: heard even at the lowest authorized
+ * digital level (physical volume probably too high to compare).
+ * ceilingMissed: never heard, even at the highest authorized level (check
+ * connection, mute, fit or the device's range — never "raise the volume").
+ */
+export function summarizeHear3DigitalRangeCoverage({examSnapshot,sessionSnapshot}={}){
+ check(examSnapshot?.status==='completed'&&Array.isArray(examSnapshot.bands)&&
+  sessionSnapshot&&Array.isArray(sessionSnapshot.invalidatedToneIds??[]),
+  'Coverage requires a completed exam');
+ const range=sessionSnapshot.authorizedDigitalRangeDbfs??examSnapshot.authorizedDigitalRangeDbfs;
+ check(range&&finite(range.minDbfs)&&finite(range.maxDbfs),'Coverage requires the authorized range');
+ const retired=new Set(sessionSnapshot.invalidatedToneIds??[]);
+ const floorHeard=[],ceilingMissed=[];
+ for(const band of examSnapshot.bands){
+  const valid=(band.observations??[]).filter(o=>!retired.has(o.toneId));
+  const heard=valid.filter(o=>o.response==='heard');
+  const missed=valid.filter(o=>o.response==='not-heard');
+  if(heard.length&&!missed.length&&
+   Math.min(...heard.map(o=>o.digitalLevelDbfs))<=range.minDbfs+0.01)floorHeard.push(band.frequencyHz);
+  if(missed.length&&!heard.length&&
+   Math.max(...missed.map(o=>o.digitalLevelDbfs))>=range.maxDbfs-0.01)ceilingMissed.push(band.frequencyHz);
+ }
+ const total=examSnapshot.bands.length;
+ // One silent extreme band (e.g. 16 kHz) is normal; advise only on a pattern.
+ const advice=floorHeard.length>=2?'volume-too-high':
+  ceilingMissed.length>=2?'not-heard-at-ceiling':null;
+ return Object.freeze({total,floorHeard:Object.freeze(floorHeard),
+  ceilingMissed:Object.freeze(ceilingMissed),advice,
+  minDbfs:range.minDbfs,maxDbfs:range.maxDbfs});
 }

@@ -1,6 +1,6 @@
 const {test,expect}=require('@playwright/test');
 const HOME='/';
-const CACHE='audiocal-hear3-prototype-static-v20';
+const CACHE='audiocal-hear3-prototype-static-v21';
 
 async function supported(page){
  return page.evaluate(()=>Boolean(window.isSecureContext&&navigator.serviceWorker&&window.caches));

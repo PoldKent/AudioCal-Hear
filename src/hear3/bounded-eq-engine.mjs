@@ -125,9 +125,11 @@ function localReference(data,index,anchor){
  if(!left||!right)return anchor; // avoid edge extrapolation
  const logSpan=Math.log2(right.frequencyHz/left.frequencyHz);
  if(logSpan>3)return anchor; // do not interpolate across very distant evidence
- const share=Math.log(data[index].frequencyHz/left.frequencyHz)/
-  Math.log(right.frequencyHz/left.frequencyHz);
- return left.bracket.midpoint*(1-share)+right.bracket.midpoint*share;
+ // Robust local reference: the median of both neighbours and the global
+ // anchor. A single deviant neighbour can no longer push an otherwise
+ // ordinary band in the opposite direction, while a band that differs from
+ // two agreeing neighbours still keeps its local contrast.
+ return median([left.bracket.midpoint,right.bracket.midpoint,anchor]);
 }
 /**
  * Returns an immediately inspectable numerical EQ hypothesis. Never apply

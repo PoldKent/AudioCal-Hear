@@ -2,6 +2,16 @@
 
 [English](CHANGELOG.md) | **Español**
 
+## Hear 3 — precisión del EQ y vista previa · 2026-11-28
+
+- Las bandas por defecto ahora cubren graves y agudos: 5 bandas de 60 Hz a 14 kHz (las del ecualizador integrado de Android). Las 5 bandas de 125 Hz a 2 kHz siguen disponibles.
+- El tipo de equipo y las bandas se eligen a la vista, antes de empezar.
+- Si casi todo se oye incluso al nivel digital más bajo, Hear explica que el volumen físico está demasiado alto y pide repetir la prueba, en lugar de mostrar una curva plana sin motivo. También avisa cuando varias bandas no se oyen ni al nivel más alto, sin pedir subir el volumen.
+- «Demasiado fuerte» ya no reduce un recorte mayor: conserva el recorte calculado y garantiza al menos −1 dB.
+- Una banda distinta ya no provoca cambios en sentido contrario en sus vecinas.
+- Nuevo: escuchar el EQ con una canción propia, con comparación con y sin EQ al mismo nivel. El archivo no se sube ni se guarda y nada suena sin pulsar Reproducir.
+- El texto copiado, el TXT y la imagen PNG salen en el idioma elegido.
+
 ## Hear 2.0 — versión preliminar de desarrollo · 2026-11-02
 
 - Se consolidaron las mejoras en `main` y se eliminaron 27 ramas obsoletas sin fusionar de nuevo algoritmos antiguos de EQ.

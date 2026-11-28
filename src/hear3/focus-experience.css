@@ -150,3 +150,13 @@ progress::-moz-progress-bar{background:var(--mint2);border-radius:10px}
 .eq-edit-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 .eq-edit-actions .small-action{margin:0}
 @media(max-width:420px){.eq-edit-band{grid-template-columns:minmax(65px,1fr) minmax(55px,auto) auto;gap:4px 9px}.eq-edit-band input[type=range]{grid-column:1/-1;grid-row:2}.eq-edit-band label{grid-column:1}.eq-edit-band .eq-edit-value{grid-column:2}.eq-edit-band button{grid-column:3}}
+/* Equipment choice is always visible: users must match their real EQ bands. */
+.equipment-choice{border:1px solid var(--outline);border-radius:14px;padding:12px 16px;margin:16px auto}
+.equipment-choice legend{color:var(--muted);font-size:.86rem;padding:0 6px}
+.equipment-choice select,.equipment-choice input[type=text]{width:100%}
+.equipment-choice details{margin-top:10px}
+.equipment-choice details summary{cursor:pointer;font-size:.82rem;color:var(--muted);text-align:left}
+.level-advice{border:1px solid var(--outline);border-radius:12px;padding:10px 12px;text-align:left}
+.eq-preview-panel{max-width:650px}
+.eq-preview-panel input[type=file]{max-width:100%;color:var(--muted)}
+.eq-preview-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin-top:12px}

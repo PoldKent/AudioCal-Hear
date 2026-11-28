@@ -7,7 +7,7 @@
 'use strict';
 
 const CACHE_PREFIX='audiocal-hear3-prototype-static-';
-const CACHE_NAME=CACHE_PREFIX+'v20';
+const CACHE_NAME=CACHE_PREFIX+'v21';
 const SCOPE=new URL(self.registration.scope);
 const MANIFEST_URL=new URL('hear3-offline-manifest.json',SCOPE).href;
 
