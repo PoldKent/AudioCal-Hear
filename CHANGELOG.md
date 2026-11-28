@@ -2,6 +2,16 @@
 
 **English** | [Español](CHANGELOG.es.md)
 
+## Hear 3 — EQ accuracy and preview · 2026-11-28
+
+- Default bands now cover bass and treble: 5 bands from 60 Hz to 14 kHz (Android's built-in equalizer). The 125 Hz–2 kHz 5-band layout remains available.
+- Device type and bands are chosen in plain view before starting.
+- When almost everything is heard even at the lowest digital level, Hear explains that the physical volume is too high and asks to repeat the test instead of showing an unexplained flat curve. It also warns when several bands are not heard at the highest level, without asking to raise the volume.
+- “Too loud” no longer weakens a deeper cut: it keeps the calculated cut and guarantees at least −1 dB.
+- One deviating band no longer pushes its neighbours in the opposite direction.
+- New: listen to the EQ with your own song, comparing with and without EQ at the same level. The file is never uploaded or stored and nothing plays until you press Play.
+- Copied text, TXT and PNG exports use the selected language.
+
 ## Hear 2.0 development preview — 2026-11-02
 
 - Consolidated earlier feature branches into a single `main` and removed 27 obsolete branches; no lost or hidden EQ algorithms are to be reintroduced.

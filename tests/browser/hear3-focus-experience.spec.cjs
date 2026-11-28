@@ -82,17 +82,17 @@ test('direct path starts sound after consent, receives tones, completes and show
  await expect(page.getByTestId('focus-result')).toBeVisible();
  await expect(page.getByTestId('focus-eq-rows').locator('.eq-row')).toHaveCount(5);
  await expect(page.getByTestId('focus-eq-graph').locator('.eq-graph-band')).toHaveCount(5);
- await expect(page.getByTestId('focus-eq-graph').locator('.eq-graph-band').first()).toContainText('125 Hz');
+ await expect(page.getByTestId('focus-eq-graph').locator('.eq-graph-band').first()).toContainText('60 Hz');
  await expect(page.locator('#eq-howto')).not.toHaveAttribute('open');
  await expect(page.getByTestId('focus-copy')).toBeVisible();
  // EQ appears immediately, no profile creation or archival step required.
- await expect(page.getByTestId('focus-eq-rows').locator('.eq-row').first()).toContainText('125 Hz');
+ await expect(page.getByTestId('focus-eq-rows').locator('.eq-row').first()).toContainText('60 Hz');
  await page.locator('#result [data-hear-i18n="focus.result.saveSection"]').click();
  const startedDownload=page.waitForEvent('download');
  await page.locator('#download-eq').click();
  const download=await startedDownload;
  const txt=require('node:fs').readFileSync(await download.path(),'utf8');
- expect(txt).toContain('125 Hz');
+ expect(txt).toContain('60 Hz');
  expect(txt.toLowerCase()).toContain('no calibrado');
  const csvReady=page.waitForEvent('download');
  await page.locator('#download-eq-csv').click();
@@ -105,7 +105,7 @@ test('direct path starts sound after consent, receives tones, completes and show
  expect(png.suggestedFilename()).toMatch(/\.png$/);
  const pngBytes=require('node:fs').readFileSync(await png.path());
  expect(pngBytes.subarray(1,4).toString('ascii')).toBe('PNG');
- expect(txt).toContain('125 Hz = +0.5 dB'); // No sound at the digital test ceiling: a *bounded* hypothesis.
+ expect(txt).toContain('60 Hz = +0.5 dB'); // No sound at the digital test ceiling: a *bounded* hypothesis.
  // Saving is optional and requires a separate affirmative user choice.
  expect(await page.evaluate(async()=>{
   const {createHear3CatalogStore}=await import('/src/hear3/catalog-backup-store.mjs');
@@ -162,7 +162,7 @@ test('sweep marks heard and missed regions, and an uncomfortable sound stops ins
  const loud=await page.evaluate(()=>
   JSON.parse(sessionStorage.getItem('hear3:focus-loudness:v1')).reports);
  expect(loud).toHaveLength(1);
- expect(loud[0].frequencyHz).toBe(125);
+ expect(loud[0].frequencyHz).toBe(60);
  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(2);
 });
 
@@ -239,7 +239,7 @@ test('correcting a non-adjacent frequency preserves later bands and never autopl
  await page.getByTestId('focus-confirm').click();
  await expect(page.getByTestId('focus-tones')).toBeVisible();
  await expect(page.locator('#tones h1')).toBeFocused();
- await expect(page.locator('#tone-hz')).toHaveText('125 Hz');
+ await expect(page.locator('#tone-hz')).toHaveText('60 Hz');
  await expect(page.locator('#band-count')).toContainText('1 de 5');
  const starts=await page.evaluate(()=>window.__hearFocusStarts);
  expect(starts).toBe(21);
@@ -250,14 +250,14 @@ test('correcting a non-adjacent frequency preserves later bands and never autopl
  expect(after.progress.bands.filter(x=>x.status!=='pending')).toHaveLength(4);
  expect(after.audioSession.observations).toEqual(before);
  expect(after.audioSession.invalidatedToneIds).toEqual(
-  before.filter(x=>x.frequencyHz===125).map(x=>x.toneId));
+  before.filter(x=>x.frequencyHz===60).map(x=>x.toneId));
  await page.reload();
  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
  await page.getByTestId('focus-begin').click();
  await page.getByTestId('focus-volume').check();
  await page.getByTestId('focus-confirm').click();
  await expect(page.getByTestId('focus-tones')).toBeVisible();
- await expect(page.locator('#tone-hz')).toHaveText('125 Hz');
+ await expect(page.locator('#tone-hz')).toHaveText('60 Hz');
  expect(await page.evaluate(()=>window.__hearFocusStarts)).toBe(0);
  for(let i=0;i<4;i++){
   await page.getByTestId('focus-tone-play').click();
@@ -390,7 +390,7 @@ test('immediate EQ manual edits are reversible, exported from the visible draft 
  await page.locator('#device-options > summary').click();
  await expect(page.locator('#bands option[value="4"]')).toHaveText('4 bandas');
  await expect(page.locator('#bands option[value="15"]')).toHaveText('15 bandas');
- await expect(page.getByTestId('focus-bands')).toHaveValue('5');
+ await expect(page.getByTestId('focus-bands')).toHaveValue('android-5');
  await page.getByTestId('focus-bands').selectOption('4');
  await page.locator('#device-options > summary').click();
  await page.getByTestId('focus-volume').check();
