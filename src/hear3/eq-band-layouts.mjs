@@ -6,6 +6,9 @@
 const presets=Object.freeze({
  '4':[125,500,2000,8000],
  '5':[125,250,500,1000,2000],
+ // Full-range 5-band layout used by Android's built-in equalizer engine.
+ // It is the default because it covers bass AND treble; still user-declared.
+ 'android-5':[60,230,910,3600,14000],
  '7':[63,125,250,500,1000,2000,4000],
  '10':[31.5,63,125,250,500,1000,2000,4000,8000,16000],
  '15':[25,40,63,100,160,250,400,630,1000,1600,2500,4000,6300,10000,16000],

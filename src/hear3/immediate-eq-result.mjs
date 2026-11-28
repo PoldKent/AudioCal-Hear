@@ -42,12 +42,13 @@ export function inspectHear3ImmediateEq(draft){
    ?'No hay contraste suficiente; curva neutra.':'Valores orientativos basados en los tonos.',
   warning:caution});
 }
-export function formatHear3ImmediateEq(review,{format='txt'}={}){
+const label=(value,fallback)=>typeof value==='string'&&value.trim()&&value.length<=300?value:fallback;
+export function formatHear3ImmediateEq(review,{format='txt',title}={}){
  check(review&&Array.isArray(review.rows)&&review.rows.length>=2&&review.rows.length<=31,
   'No existe todavía una curva que copiar.');
  check(['txt','csv'].includes(format),'Formato de salida no permitido.');
  if(format==='txt')return [
-  'AudioCal Hear · Mi ecualizador (no calibrado)',
+  label(title,'AudioCal Hear · Mi ecualizador (no calibrado)'),
   review.warning,
   ...review.rows.map(r=>r.frequencyHz+' Hz = '+signed(r.gainDb)+' dB'),
  ].join('\n')+'\n';
@@ -58,7 +59,7 @@ export function formatHear3ImmediateEq(review,{format='txt'}={}){
   '"'+review.warning.replaceAll('"','""')+'"',
  ].join('\r\n')+'\r\n';
 }
-export function paintHear3ImmediateEqPng(canvas,review){
+export function paintHear3ImmediateEqPng(canvas,review,labels={}){
  check(canvas&&typeof canvas.getContext==='function','Canvas no disponible.');
  const rows=review.rows;
  check(rows?.length>=2&&rows.length<=31,'Curva EQ inválida.');
@@ -68,9 +69,9 @@ export function paintHear3ImmediateEqPng(canvas,review){
  check(g,'Canvas 2D no disponible.');
  g.fillStyle='#fff';g.fillRect(0,0,canvas.width,canvas.height);
  g.fillStyle='#122e42';g.font='bold 28px system-ui';
- g.fillText('AudioCal Hear · Mi ecualizador',30,47);
+ g.fillText(label(labels.title,'AudioCal Hear · Mi ecualizador'),30,47);
  g.font='15px system-ui';
- g.fillText('Ajustes orientativos · NO calibrados · NO aplicar automáticamente',30,78);
+ g.fillText(label(labels.subtitle,'Ajustes orientativos · NO calibrados · NO aplicar automáticamente'),30,78);
  const baseline=265,spacing=(canvas.width-110)/rows.length;
  g.strokeStyle='#9eb5c3';g.lineWidth=2;g.beginPath();
  g.moveTo(26,baseline);g.lineTo(canvas.width-28,baseline);g.stroke();
@@ -84,8 +85,8 @@ export function paintHear3ImmediateEqPng(canvas,review){
   g.fillText(signed(r.gainDb)+' dB',x,r.gainDb>0?baseline-h-8:baseline+49);
  }
  g.font='14px system-ui';
- g.fillText('dB de ganancia de EQ, NO nivel digital dBFS ni presión sonora dB SPL.',30,420);
- g.fillText('Sin verificación de respuesta física, recorte, SPL ni headroom de dispositivo.',30,448);
+ g.fillText(label(labels.units,'dB de ganancia de EQ, NO nivel digital dBFS ni presión sonora dB SPL.'),30,420);
+ g.fillText(label(labels.verify,'Sin verificación de respuesta física, recorte, SPL ni headroom de dispositivo.'),30,448);
  return canvas;
 }
 export function mountHear3ImmediateEq({root,source,getDraft,categorySelector=null,env=globalThis}){

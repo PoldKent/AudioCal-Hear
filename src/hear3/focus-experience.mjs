@@ -6,7 +6,8 @@
  */
 import {createSweepPlan,planSweepConfirmations,frequencyAtSweepTime} from './sweep-planner.mjs';
 import {createSweepAudioRunner} from './sweep-audio-runner.mjs';
-import {proposeHear3ExperimentalListeningEq} from './experimental-listening-eq.mjs';
+import {proposeHear3ExperimentalListeningEq,summarizeHear3DigitalRangeCoverage} from './experimental-listening-eq.mjs';
+import {createHear3EqPreviewPlayer} from './eq-preview-player.mjs';
 import {resolveHear3GraphicBandLayout} from './eq-band-layouts.mjs';
 import {inspectHear3AudioCapabilities} from './audio-capability-preflight.mjs';
 import {createHear3AdaptiveProgressStore} from './adaptive-progress-store.mjs';
@@ -36,7 +37,8 @@ const text=(id,value)=>{const node=$(id),next=String(value);if(node.textContent!
 const safeError=e=>typeof e?.message==='string'&&e.message.length<280
  ?e.message:'No pudimos completar esa acción. El sonido permanece detenido.';
 
-export function buildHearFocusLayout({preset='5',custom=''}={}){
+export const HEAR_FOCUS_DEFAULT_BAND_PRESET='android-5';
+export function buildHearFocusLayout({preset=HEAR_FOCUS_DEFAULT_BAND_PRESET,custom=''}={}){
  return resolveHear3GraphicBandLayout({
   preset,customFrequencies:custom,
  });
@@ -66,7 +68,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  // The verified tone checkpoint remains the source of truth for progression.
  const eqEquipmentKey='hear3:focus-equipment:v1';
  const allowedCategories=new Set(['headphones','speaker','car','application','interface']);
- const allowedBandPresets=new Set(['4','5','7','10','15','31','custom']);
+ const allowedBandPresets=new Set(['4','5','android-5','7','10','15','31','custom']);
  function restoreEquipment(){
   try{
    const saved=JSON.parse(env.localStorage?.getItem(eqEquipmentKey)||'null');
@@ -89,6 +91,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  restoreEquipment();
  const catalogStore=createHear3CatalogStore();
  let view='welcome',pendingRecovery=false,exam=null,eq=null,review=null;
+ let levelCoverage=null,preview=null,previewStatus={key:'empty',values:{}};
  let bands=null,sweepPlan=null,starting=false,disposed=false;
  let initialLevel=-60,sweepLevel=-60;
  let referenceIndex=0,referencePhase='idle',referenceAdapter=null,referenceId=0,referenceActive=null;
@@ -281,6 +284,7 @@ export function mountHearFocus({doc=document,env=window}={}){
   if(!VIEWS.includes(next))throw Error('Pantalla desconocida');
   const changed=view!==next;
   view=next;
+  if(next!=='result')stopPreview();
   for(const id of VIEWS)element(id).hidden=id!==next;
   const step=next==='welcome'||next==='ready'?1:next==='result'?3:2;
   for(let i=1;i<=3;i++)element('p-'+i).classList.toggle('filled',i<=step);
@@ -334,6 +338,77 @@ export function mountHearFocus({doc=document,env=window}={}){
    down:review.rows.filter(r=>r.gainDb<0).length,
    flat:review.rows.filter(r=>r.gainDb===0).length,
   }));
+  renderLevelAdvice();
+  renderPreview();
+ }
+ function renderLevelAdvice(){
+  const node=element('eq-level-advice');
+  const c=levelCoverage;
+  if(!c?.advice){node.hidden=true;output('eq-level-advice','');return;}
+  output('eq-level-advice',c.advice==='volume-too-high'
+   ?msg('floorAdvice',{n:c.floorHeard.length,total:c.total,min:c.minDbfs})
+   :msg('ceilingAdvice',{n:c.ceilingMissed.length,total:c.total}));
+  node.hidden=false;
+ }
+ const previewMsg=(key,values={})=>{
+  const lang=doc.documentElement.lang?.split('-')[0]||'es';
+  return Object.entries(values).reduce((t,[k,v])=>t.replaceAll('{'+k+'}',String(v)),
+   translateHear3Ui('focus.preview.'+key,lang)??key);
+ };
+ function setPreviewStatus(key,values={}){previewStatus={key,values};renderPreview();}
+ function renderPreview(){
+  const state=preview?.getState().state??'empty';
+  const playing=state==='playing';
+  element('eq-preview-play').disabled=state==='empty';
+  element('eq-preview-stop').disabled=!(playing||state==='paused');
+  element('eq-preview-bypass').disabled=state==='empty';
+  output('eq-preview-play',previewMsg(playing?'pause':'play'));
+  output('eq-preview-status',previewMsg(previewStatus.key,previewStatus.values));
+ }
+ function ensurePreview(){
+  if(!preview){
+   // A detached media element is created only after the user picks a file:
+   // the page never contains an <audio> element that could autoplay.
+   const audio=doc.createElement('audio');
+   audio.preload='none';
+   audio.addEventListener('ended',()=>{preview?.stop();setPreviewStatus('stopped');});
+   preview=createHear3EqPreviewPlayer({env,audio});
+  }
+  return preview;
+ }
+ function stopPreview(){
+  if(!preview)return;
+  const state=preview.getState().state;
+  preview.stop();
+  if(state==='playing'||state==='paused')setPreviewStatus('stopped');
+ }
+ function previewFile(){
+  const file=element('eq-preview-file').files?.[0];
+  if(!file)return;
+  try{
+   const player=ensurePreview();
+   player.loadFile(file);
+   if(review)player.setEq(review.rows);
+   player.setBypass(element('eq-preview-bypass').checked);
+   setPreviewStatus('ready',{name:file.name.slice(0,80)});
+  }catch{
+   element('eq-preview-file').value='';
+   setPreviewStatus('invalid');
+  }
+ }
+ async function togglePreview(){
+  const player=ensurePreview();
+  if(player.getState().state==='playing'){player.pause();setPreviewStatus('paused');return;}
+  if(review)player.setEq(review.rows);
+  try{await player.play({userInitiated:true});}
+  catch{player.stop();setPreviewStatus('unsupported');return;}
+  previewPlayingStatus();
+ }
+ function previewPlayingStatus(){
+  const st=preview?.getState();
+  if(st?.state!=='playing')return;
+  if(st.bypass)setPreviewStatus('playingFlat');
+  else setPreviewStatus('playingEq',{pre:String(st.preGainDb).replace('-','−')});
  }
  function buildEq(){
   if(!exam)return false;
@@ -348,6 +423,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    baseEq:base,examSnapshot:state,sessionSnapshot:session,
    loudToneReports:verifiedLoudReports(session),
   });
+  levelCoverage=summarizeHear3DigitalRangeCoverage({examSnapshot:state,sessionSnapshot:session});
   originalReview=inspectHear3ImmediateEq(draft);eq=draft;
   eqHistory=createHear3EqEditHistory({initial:originalReview.rows.map(r=>r.gainDb),capDb:originalReview.capDb});
   element('eq-edit-options').open=false;
@@ -450,13 +526,17 @@ export function mountHearFocus({doc=document,env=window}={}){
   const values=eqHistory.current();
   const edited=changedBands()>0;
   review=Object.freeze({...originalReview,
-   warning:originalReview.warning+(edited?' Ajustes manuales: no son una nueva medición auditiva.':''),
+   warning:msg('copyCaution')+(edited?' '+msg('copyManual'):''),
    rows:Object.freeze(originalReview.rows.map((r,i)=>Object.freeze({
     ...r,gainDb:values[i],source:values[i]===r.gainDb?r.source:'manual-user-adjustment',
    }))),
   });
   renderEqGraph();
   syncEqEditor();
+  if(preview&&preview.getState().state!=='empty'){
+   try{preview.setEq(review.rows);}catch{}
+   previewPlayingStatus();
+  }
  }
  async function prepareTonesFromSweep(){
   if(view!=='sweep'||exam||!bands||!sweepPlan)return;
@@ -533,7 +613,8 @@ export function mountHearFocus({doc=document,env=window}={}){
    exam=null;
   }else outcome=store.clear({confirmed:true});
   if(!outcome.cleared)throw Error('No pudimos verificar que el progreso anterior se haya eliminado.');
-  pendingRecovery=false;eq=null;review=null;eqHistory=null;originalReview=null;
+  pendingRecovery=false;eq=null;review=null;eqHistory=null;originalReview=null;levelCoverage=null;
+  stopPreview();
   resetReference();referenceBlocked=false;initialLevel=-60;element('start-level').value='-60';element('start-level-options').hidden=false;
   saveResultId=null;
   element('saved-eq-link').hidden=true;
@@ -743,7 +824,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  }
  async function copyEq(){
   if(!review)throw Error('No hay ajustes que copiar.');
-  const content=formatHear3ImmediateEq(review,{format:'txt'});
+  const content=formatHear3ImmediateEq(review,{format:'txt',title:msg('copyTitle')});
   if(!env.navigator?.clipboard?.writeText){
    // Clipboard APIs may be unavailable in an insecure/restricted context:
    // never claim success. TXT download remains available.
@@ -761,7 +842,8 @@ export function mountHearFocus({doc=document,env=window}={}){
  function downloadEq(format='txt'){
   if(!review)throw Error('Primero termina la prueba.');
   if(format==='png'){
-   const canvas=paintHear3ImmediateEqPng(doc.createElement('canvas'),review);
+   const canvas=paintHear3ImmediateEqPng(doc.createElement('canvas'),review,{
+    title:msg('pngTitle'),subtitle:msg('pngSubtitle'),units:msg('pngUnits'),verify:msg('pngVerify')});
    const a=doc.createElement('a');
    a.href=canvas.toDataURL('image/png');
    a.download='hear-ecualizador-experimental.png';
@@ -769,7 +851,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    return;
   }
   if(!['txt','csv'].includes(format))throw Error('Formato de descarga desconocido.');
-  const content=formatHear3ImmediateEq(review,{format});
+  const content=formatHear3ImmediateEq(review,{format,title:msg('copyTitle')});
   downloadBlob(new Blob([content],{type:format==='csv'?
    'text/csv;charset=utf-8':'text/plain;charset=utf-8'}),
    'hear-ecualizador-experimental.'+format);
@@ -923,6 +1005,13 @@ export function mountHearFocus({doc=document,env=window}={}){
   const custom=element('bands').value==='custom';
   element('custom-bands').hidden=!custom;
   element('custom-label').hidden=!custom;
+  if(custom)element('custom-bands').focus({preventScroll:true});
+ });
+ element('eq-preview-file').addEventListener('change',previewFile);
+ element('eq-preview-play').addEventListener('click',()=>void togglePreview());
+ element('eq-preview-stop').addEventListener('click',stopPreview);
+ element('eq-preview-bypass').addEventListener('change',()=>{
+  preview?.setBypass(element('eq-preview-bypass').checked);previewPlayingStatus();
  });
  element('start-level').addEventListener('change',()=>{resetReference();referenceBlocked=false;element('volume-ok').checked=false;renderReference();});
  element('volume-ok').addEventListener('change',()=>{if(element('volume-ok').checked)notice('');else resetReference();renderReference();});
@@ -951,6 +1040,7 @@ export function mountHearFocus({doc=document,env=window}={}){
  const onLeave=(event)=>{
   if(disposed)return;
   resetReference();
+  stopPreview();
   if(event?.persisted===true){
    // The audio runner registered its pagehide listener before this one.
    // It may already have silenced the sweep and switched to 'ready', so
@@ -975,6 +1065,7 @@ export function mountHearFocus({doc=document,env=window}={}){
    return;
   }
   disposed=true;
+  void preview?.dispose();preview=null;
   env.clearInterval(timer);
   sweep.stop('pagehide');
   void sweep.dispose();
